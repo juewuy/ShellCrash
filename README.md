@@ -10,6 +10,7 @@ clash对tun模式的官方文档内容不是很完善，折腾了好几天也没
 fake-ip模式在数据向dns查询时默认会返回例如198.18.0.x这样的虚拟ip地址，故部分必须验证真实ip地址的网站或app可能会受影响<br>
 系统默认的dnsmasq会强行劫持所有53端口流量，所以必须修改dnsmasq的默认端口以让流量经过clash内置的dns服务以使用fake-ip模式<br>
 fake-ip+tun模式的透明代理方式可能适用于大部分同样采用openwrt内核的路由器或者软路由，有需求的可以自行斟酌使用<br>
+理论上clash可以通过内置规则去广告，这里提供的规则没有包括，有需求的可以参考https://github.com/ACL4SSR/ACL4SSR 使用
 
 使用依赖：
 --
