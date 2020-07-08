@@ -11,6 +11,12 @@ fake-ip模式在数据向dns查询时默认会返回例如198.18.0.x这样的虚
 系统默认的dnsmasq非常霸道，会强行劫持所有53端口流量，所以必须修改dnsmasq的默认端口以让流量经过clash内置dns服务<br>
 fake-ip+tun模式的透明代理方式可能适用于大部分采用openwrt内核的路由器或者软路由，有需求的可以自行斟酌使用<br>
 
+使用依赖：
+--
+请确认路由器或设备已经开启ssh并获取root权限，小米AX系列可参考：https://www.right.com.cn/forum/thread-4032490-1-1.html<br>
+ssh工具或telent工具，例如putty，bitvise<br>
+scp工具，如winscp（内置了putty，注意小米AX系列没有内置sftp服务，而是内置了scp服务）<br>
+
 使用方式：
 --
 下载clash.zip，并解压<br>
