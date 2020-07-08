@@ -3,7 +3,7 @@
 =====
 PS：
 --
-支持ss,v2ray,trojan，但不支持ssr，也不支持订阅<br>
+支持ss,v2ray,trojan，但不支持ssr，也不支持订阅（需要自行编辑config.yaml以配置服务器）<br>
 小米路由内置的openwrt默认阉割了对tproxy的支持，所以使用redir模式做透明代理时无法转发udp流量，只能采用tun模式转发udp流量<br>
 tun模式对udp的转发支持非常好，而且延迟非常低，小米官方内置的tx网游加速器其实就是使用的tun模式<br>
 clash对tun模式的官方文档内容不是很完善，折腾了好几天也没搞懂怎么使用真实ip模式进行透明代理，故只能采用配置相对简单的fake-ip模式<br>
