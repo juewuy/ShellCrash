@@ -11,7 +11,7 @@ mode: Rule
 # 设置日志输出级别 silent / info / warning / error / debug 越高越倾向于调试
 log-level: info
 # clash 的 RESTful API 网页调试端口
-external-controller: 127.0.0.1:9090
+external-controller: 0.0.0.0:9090
 # RESTful API 的口令 (可选)
 # secret: ""
 # external-ui: clash-dashboard
@@ -102,12 +102,12 @@ proxies:            #代理节点配置，参考下列规则修改
   server: 9.99.99.99
   port: 6666
   cipher: chacha20-ietf-poly1305
-  password: "123"
+  password: "asdf1234"
   #udp: true 
 
 - name: "Trojan"
   type: trojan
-  server: tyu.abc.xyz
+  server: 123.abc.xyz
   port: 443
   password: asdf1234
   skip-cert-verify: true
