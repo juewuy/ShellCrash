@@ -14,7 +14,7 @@ fake-ip+tun模式的透明代理方式可能适用于大部分采用openwrt内�
 使用方式：
 --
 下载clash.zip，并解压<br>
-`根据自己需求参考备注修改config.yaml配置文件（重要！！！）`<br>
+根据自己需求参考备注修改config.yaml配置文件`重要！！！`<br>
 也可以自行下载或更新clash-tun模式核心文件并重命名 https://github.com/Dreamacro/clash/releases/tag/premium （小米AX系列都是armv7架构，其他路由器请自查）<br>
 将clash文件夹以及内部4个文件通过winSCP上传到路由器/etc文件夹下<br>
 在ssh中用root用户执行下列相应命令即可！<br>
