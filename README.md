@@ -68,3 +68,9 @@ e，可能会和小米路由器内置的网游加速器冲突，请谨慎同时�
 f，不支持订阅，由于clash本身不支持对v2ray，ss，trojan等协议的订阅，所以订阅只能通过更新config.yaml来进行，有条件的可以自行写脚本<br>
 g，不支持ssr，clash官方不支持ssr，而支持ssr的clashr又不支持tun，so……<br>
 
+参考：
+--
+https://lancellc.gitbook.io/clash/start-clash/clash-tun-mode
+https://comzyh.gitbook.io/clash/
+https://h-cheung.gitlab.io/post/使用_clash_和路由表实现透明代理/
+
