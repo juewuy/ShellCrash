@@ -42,7 +42,7 @@ service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dns
 #启用clash透明网关
 service clash enable    #启用clash开机启动
 service clash start     #启动clash服务
-sed -i 's|port=53|port=5335|' /etc/dnsmasq.conf #修改dnsmasq监听端口
+sed -i "8iport=5335" /etc/dnsmasq.conf #修改dnsmasq监听端口为5335
 service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视）
 ```
 ```sh
