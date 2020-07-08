@@ -67,6 +67,7 @@ d，由于变相禁用的dnsmasq的dns解析服务，miwifi.com或www.miwifi.com
 e，可能会和小米路由器内置的网游加速器冲突，请谨慎同时使用<br>
 f，不支持订阅，由于clash本身不支持对v2ray，ss，trojan等协议的订阅，所以订阅只能通过更新config.yaml来进行，有条件的可以自行写脚本<br>
 g，不支持ssr，clash官方不支持ssr，而支持ssr的clashr又不支持tun，so……<br>
+9，全局模式代理无效，原因不明，同样的配置文件在pc端或者安卓上都可以使用全局模式，怀疑是tun模式的bug
 
 参考：
 --
