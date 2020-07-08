@@ -26,8 +26,8 @@ scp工具，如winscp（内置了putty，注意小米AX系列没有内置sftp服
 在ssh中用root用户执行下列相应命令即可！<br>
 
 启用后可以通过 http://clash.razord.top 管理clash内置规则<br>
-默认http代理接口7890，sock5接口7891<br>
 启动后无需其他设置即可连接代理服务器<br>
+也可以自行配置http代理（端口7890）或者sock5代理（端口7891）（速度比tun模式更快但是相对延迟可能较高）<br>
 ```sh
 #首次启用clash
 mv /etc/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
