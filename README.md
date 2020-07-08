@@ -70,7 +70,7 @@ g，不支持ssr，clash官方不支持ssr，而支持ssr的clashr又不支持tu
 
 参考：
 --
-https://lancellc.gitbook.io/clash/start-clash/clash-tun-mode
-https://comzyh.gitbook.io/clash/
-https://h-cheung.gitlab.io/post/使用_clash_和路由表实现透明代理/
+https://lancellc.gitbook.io/clash/start-clash/clash-tun-mode<br>
+https://comzyh.gitbook.io/clash/<br>
+https://h-cheung.gitlab.io/post/使用_clash_和路由表实现透明代理/<br>
 
