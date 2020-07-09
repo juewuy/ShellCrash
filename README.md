@@ -14,15 +14,15 @@ fake-ip+tun模式的透明代理方式可能适用于大部分同样采用openwr
 
 使用依赖：
 --
-请确认路由器或设备已经开启ssh并获取root权限，小米AX系列可参考：https://www.right.com.cn/forum/thread-4032490-1-1.html<br>
-ssh工具或telent工具，例如putty，bitvise<br>
-scp工具，如winscp（内置了putty，注意小米AX系列没有内置sftp服务，而是内置了scp服务）<br>
+•请确认路由器或设备已经开启ssh并获取root权限，小米AX系列可参考：https://www.right.com.cn/forum/thread-4032490-1-1.html<br>
+•ssh工具，例如putty，bitvise等<br>
+•scp工具，如winscp（内置了putty，注意小米AX系列没有内置sftp服务，而是内置了scp服务）<br>
 
 使用方式：
 --
 下载clash.zip https://github.com/juewuy/clash_tun-for-Miwifi/raw/master/clash.zip 并解压<br>
-根据自己需求参考备注修改config.yaml配置文件`重要！！！`<br>
-也可以自行下载或更新clash-tun模式核心文件并重命名为clash https://github.com/Dreamacro/clash/releases/tag/premium （小米AX系列都是armv7架构，其他路由器请自查）<br>
+根据自己需求参考备注修改config.yaml配置文件并保存`重要！！！`<br>
+如有必要，也可以自行前往下载更新clash核心文件 https://github.com/Dreamacro/clash/releases/tag/premium （小米AX系列都是armv7架构，其他路由器请自查）<br>
 将clash文件夹以及内部4个文件通过winSCP上传到路由器/etc文件夹下（最终应该是/etc/clash/……）<br>
 在ssh中用root用户执行下方的相应命令即可！（理论上非root用户也可以运行，请参考官方文档自行研究）<br>
 
@@ -67,7 +67,7 @@ d，由于变相禁用了dnsmasq的dns解析服务且clash不支持内置hosts�
 e，由于同样使用了tun模式虚拟网卡，clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
 f，不支持订阅，由于clash本身不支持对v2ray，ss，trojan等协议的订阅，所以订阅只能通过更新clash的配置文件config.yaml来进行，有条件的可以自行写更新脚本<br>
 g，不支持ssr，clash官方不支持ssr，而支持ssr的clashr又不支持tun……<br>
-h，全局模式代理无效，原因不明，同样的配置文件在pc端或者安卓上都可以使用全局模式，怀疑是tun模式的bug
+h，全局模式代理无效，原因不明，同样的配置文件在pc端或者安卓上都可以使用全局模式，怀疑是clash核心的bug
 
 参考：
 --
