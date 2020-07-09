@@ -25,20 +25,13 @@ PS：
 *·如有必要，也可以自行前往下载更新clash核心文件 https://github.com/Dreamacro/clash/releases/tag/premium （小米AX系列都是armv7架构，其他路由器请自查）<br>*
 •将clash文件夹以及内部4个文件通过winSCP上传到路由器/etc文件夹下（最终应该是/etc/clash/"4个文件"）<br>
 •登陆SSH，并在SSH中用root用户执行下方的相应命令即可！（理论上非root用户也可以运行，请参考官方文档自行研究）<br>
-•启用后可以通过 http://clash.razord.top 管理clash内置规则，通常无需额外设置即可正常使用<br>
+•启用后可以通过 http://clash.razord.top 管理clash内置规则，通常无需额外设置即可正常使用，且设备重启后会保持自动运行<br>
 *•也可以自行配置http代理（端口7890）或者sock5代理（端口7891）（速度比tun模式更快但是相对延迟可能略高）<br>*
 ```Shell
 #首次启用clash
 mv /etc/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
 chmod  777 /etc/clash/clash  #授予权限
 chmod  777 /etc/init.d/clash #授予权限
-service clash enable    #启用clash开机启动
-service clash start     #启动clash服务
-sed -i "8iport=5335" /etc/dnsmasq.conf #修改dnsmasq监听端口为5335
-service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视）
-```
-```Shell
-#启用clash透明网关
 service clash enable    #启用clash开机启动
 service clash start     #启动clash服务
 sed -i "8iport=5335" /etc/dnsmasq.conf #修改dnsmasq监听端口为5335
@@ -51,8 +44,15 @@ service clash stop      #停止clash服务
 sed -i '/port=5335/d' /etc/dnsmasq.conf #重置dnsmasq监听端口为默认值（port:53)
 service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视，不放心可重启系统）
 ```
+```Shell
+#停止后再次启用clash透明网关
+service clash enable    #启用clash开机启动
+service clash start     #启动clash服务
+sed -i "8iport=5335" /etc/dnsmasq.conf #修改dnsmasq监听端口为5335
+service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视）
+```
 ```Shell  
-#卸载clash相关文件（卸载前请先配合“停止clash透明网关”使用）
+#卸载clash相关文件（执行前必须先输入“停止clash透明网关”相关命令，否则可能导致上不了网）
 rm -rf /etc/clash       #删除clash文件夹及文件
 rm /etc/init.d/clash    #删除clash开机启动文件
 ```
