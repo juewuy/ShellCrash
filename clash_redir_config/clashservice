@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Example script
+# Copyright (C) 2007 OpenWrt.org
+
+USE_PROCD=1
+START=99
+
+start_service() {
+    #创建clash后台进程
+        procd_open_instance
+        procd_set_param respawn
+        procd_set_param stderr 1
+        procd_set_param stdout 1
+        procd_set_param command /etc/clash/clash -d /etc/clash
+        procd_close_instance
+    #修改iptables规则使流量进入clash
+		iptables -t nat -N Clash
+        iptables -t nat -A Clash -d 192.168.0.0/16 -j RETURN
+        iptables -t nat -A Clash -p tcp -j REDIRECT --to-ports 7892
+        iptables -t nat -A PREROUTING -p tcp -j Clash
+        iptables -t nat -A PREROUTING -p tcp -j REDIRECT --to-ports 7892
+}
+
+stop_service() {
+    #清空iptables clash相关规则
+        iptables -t nat -F Clash
+}
