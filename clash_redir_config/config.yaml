@@ -20,7 +20,7 @@ dns:
   enable: true
   listen: 0.0.0.0:53                #监听端口，0.0.0.0则拦截所有
   fake-ip-range: 198.18.0.1/16      #fake-ip模式下子网段，尽量不要改动
-  enhanced-mode: redir-host         #或者fake-ip，尽量不要改动
+  enhanced-mode: fake-ip         #或者redir-host（可能有bug），尽量不要改动
   nameserver:       #国内DNS，可配置多条
     - tls://dns.rubyfish.cn:853
     #- 114.114.114.114
