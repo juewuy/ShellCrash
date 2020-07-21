@@ -186,11 +186,12 @@ proxy-groups:
 # 规则
 rules:
 # Unbreak
+#clash面板
+- DOMAIN,clash.razord.top,DIRECT
 # > Google
 - DOMAIN-SUFFIX,googletraveladservices.com,DIRECT
 - DOMAIN,dl.google.com,DIRECT
 - DOMAIN,mtalk.google.com,DIRECT
-
 # Internet Service Providers Hijacking 运营商劫持
 - DOMAIN-SUFFIX,17gouwuba.com,Hijacking
 - DOMAIN-SUFFIX,186078.com,Hijacking
