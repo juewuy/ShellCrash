@@ -105,7 +105,7 @@ proxies:            #代理节点配置，参考下列规则修改
    port: 443                        # 端口号
    cipher: chacha20-ietf-poly1305   # 加密方法
    password: "password"             # SS 密码
-   # udp: true                                #默认不开启
+   # udp: true                                #udp转发，默认不开启
 - name: "v2ray"                     # 软件显示的节点名字
    type: vmess                      # 代理类型
    server: v2rayssr.com             # 服务器 IP
@@ -115,13 +115,13 @@ proxies:            #代理节点配置，参考下列规则修改
    cipher: auto
    #上面几行为必选参数
    #下面几行为可选参数  根据你的配置情况来
-   # udp: true    #默认不开启
-   # tls: true      #TLS 开启
-   # skip-cert-verify: true     #默认不开启
+   # udp: true    #udp转发，默认不开启
+   # tls: true      #TLS证书模式 开启
+   # skip-cert-verify: true     #跳过证书验证，默认不开启
    # network: ws    # 网路类型 WS HTTP 等
    # ws-path: /path  # 路径
    # ws-headers:     #默认不开启
-   #  Host: v2ray.com    # HOST
+   #  Host: v2ray.com    # HOST网址
 
 - name: "Trojan"
   type: trojan             # 代理类型

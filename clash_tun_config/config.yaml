@@ -97,26 +97,43 @@ proxies:            #代理节点配置，参考下列规则修改
   #  #   - h2
   #  #   - http/1.1
   #  # skip-cert-verify: true
-- name: "ss"
-  type: ss
-  server: 9.99.99.99
-  port: 6666
-  cipher: chacha20-ietf-poly1305
-  password: "asdf1234"
-  #udp: true 
+- name: "你的SS节点1"               # 软件显示的节点名字
+   type: ss                         # 代理类型
+   server: 1.2.4.8                  # 服务器 IP
+   port: 443                        # 端口号
+   cipher: chacha20-ietf-poly1305   # 加密方法
+   password: "password"             # SS 密码
+   # udp: true                                #udp转发，默认不开启
+- name: "v2ray"                     # 软件显示的节点名字
+   type: vmess                      # 代理类型
+   server: v2rayssr.com             # 服务器 IP
+   port: 443                        #  端口号
+   uuid: a3482e88-686a-4a58-8126-99c9df64b7bf
+   alterId: 64                      #额外的 ID
+   cipher: auto
+   #上面几行为必选参数
+   #下面几行为可选参数  根据你的配置情况来
+   # udp: true    #udp转发，默认不开启
+   # tls: true      #TLS证书模式 开启
+   # skip-cert-verify: true     #跳过证书验证，默认不开启
+   # network: ws    # 网路类型 WS HTTP 等
+   # ws-path: /path  # 路径
+   # ws-headers:     #默认不开启
+   #  Host: v2ray.com    # HOST网址
 
 - name: "Trojan"
-  type: trojan
-  server: 123.abc.xyz
-  port: 443
-  password: asdf1234
-  skip-cert-verify: true
+  type: trojan             # 代理类型
+  server: 123.abc.xyz      # 代理服务器地址
+  port: 443                # 端口，通常都是443
+  password: asdf1234       # 密码
+  skip-cert-verify: true   # 跳过证书验证，建议打开
 
 proxy-groups:
 - name: "自动节点选择"
   type: url-test
   proxies:
     - "ss"      #添加或者删除节点时要同步修改
+    - "v2ray"
     - "Trojan"
   url: 'http://www.gstatic.com/generate_204'
   interval: 300
@@ -127,6 +144,7 @@ proxy-groups:
   proxies:
     - "自动节点选择"
     - "ss"      #添加或者删除节点时要同步修改
+    - "v2ray"
     - "Trojan"
 # 白名单模式 PROXY，黑名单模式 DIRECT
 - name: "Final"
@@ -146,6 +164,7 @@ proxy-groups:
   proxies:
     - "PROXY"
     - "ss"      #添加或者删除节点时要同步修改     
+    - "v2ray"
     - "Trojan"
 # 大陆流媒体面向港澳台限定服务
 - name: "HKMTMedia"
@@ -153,6 +172,7 @@ proxy-groups:
   proxies:
     - "DIRECT"
     - "ss"      #添加或者删除节点时要同步修改
+    - "v2ray"
     - "Trojan"
 # 运营商及声名狼藉网站劫持
 - name: "Hijacking"
