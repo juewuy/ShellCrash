@@ -21,7 +21,7 @@ PS：
 
 使用方式：
 --
-•下载 [clash.zip](https://github.com/juewuy/clash_tun-for-Miwifi/raw/master/clash.zip) 并解压<br>
+•下载 [clash_tun.zip](https://github.com/juewuy/clash_tun-for-Miwifi/raw/master/clash_tun.zip) 并解压<br>
 •**根据自己需求参考文件内的注释，修改config.yaml配置文件并保存`重要！！！`**<br>
 •推荐使用notepad++打开yaml文件，如果只添加单个服务器可以直接在原示例上修改即可，多余的示例服务器不用删除<br>
 *·如有必要，也可以自行前往下载更新clash核心文件 https://github.com/Dreamacro/clash/releases/tag/premium （小米AX3600是armv8，ax1800/ax5是armv7，其他路由器请自查）<br>*
@@ -58,17 +58,22 @@ service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dns
 rm -rf /etc/clash       #删除clash文件夹及文件
 rm /etc/init.d/clash    #删除clash开机启动文件
 ```
+故障解决：
+--
+•在浏览器或设备WiFi管理的高级选项中配置http代理（IP为路由器IP，端口7890），如果能连通外网则说明clash服务运行正常，不能连通则说明clash运行失败或者配置错误<br>
+•如果能正常连接国内网站而无法访问屏蔽网站，请在浏览器中打开 http://clash.razord.top 查看日志，大概率是config.yaml文件配置问题<br>
+•如果能连通http代理但是无法使用透明代理，可能是tun网卡启用失败或者dnsmasq启动失败，重启设备通常可以解决，或重新执行安装命令<br>
 
 已知问题：
 --
 •部分软件不会经过clash，例如telegram，可以通过设置软件内置sock5或http代理解决<br>
-•tun模式的CPU耗用较高，速度不是很理想，而且会影响全局流量（所有tcp和udp流量都会经过tun虚拟网卡和clash），ax1800实测带宽在60M左右。不过p2p流量通常不会进入tun，故P2Peye.com下载速度不受影响<br>
-•由于使用了clash的fake-ip模式，暂不支持ipv6，且部分v4网站可能会出现验证错误，待确认<br>
+•部分系统版本较低（安卓6.0以下）的安卓设备可能无法正确通过dhcp服务获取dns地址，需要手动在WIFI中设置dns为路由器网关地址<br>
+•tun模式的CPU耗用较高，速度不是很理想，而且会影响全局流量（所有tcp和udp流量都会经过tun虚拟网卡和clash），ax1800实测带宽在60M左右。不过p2p流量通常不会进入tun，故P2P下载速度通常不受影响<br>
+•由于使用了clash的fake-ip模式，暂不支持ipv6<br>
 •由于同样使用了tun模式虚拟网卡，clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
-•不支持订阅，由于clash本身不支持对v2ray，ss，trojan等协议的订阅，所以订阅只能通过更新clash的配置文件config.yaml来进行，有条件的可以自行写更新脚本<br>
 •全局模式代理无效，原因不明，同样的配置文件在pc端或者安卓上都可以使用全局模式，怀疑是clash核心的bug
 
-参考：
+感谢：
 --
 •https://lancellc.gitbook.io/clash/start-clash/clash-tun-mode<br>
 •https://comzyh.gitbook.io/clash/<br>
