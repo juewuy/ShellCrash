@@ -58,6 +58,11 @@ service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dns
 rm -rf /etc/clash       #删除clash文件夹及文件
 rm /etc/init.d/clash    #删除clash开机启动文件
 ```
+故障解决：
+--
+•在浏览器或设备WiFi管理的高级选项中配置http代理（IP为路由器IP，端口7890），如果能连通外网则说明clash服务运行正常，不能连通则说明clash运行失败或者配置错误<br>
+•如果能正常连接国内网站而无法访问屏蔽网站，请在浏览器中打开 http://clash.razord.top 查看日志，大概率是config.yaml文件配置问题<br>
+•如果能连通http代理但是无法使用透明代理，可能是tun网卡启用失败或者dnsmasq启动失败，重启设备通常可以解决，或重新执行安装命令<br>
 
 已知问题：
 --
