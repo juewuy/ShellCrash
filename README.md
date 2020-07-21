@@ -53,8 +53,9 @@ service clash start     #启动clash服务
 sed -i "8iport=5335" /etc/dnsmasq.conf #修改dnsmasq监听端口为5335
 service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视）
 ```
+**卸载clash！卸载前（或者卸载后）必须输入“停止clash透明网关”相关命令，否则会导致不能上网！！！**
 ```Shell  
-#卸载clash相关文件（执行前必须先输入“停止clash透明网关”相关命令，否则可能导致上不了网）
+#完全卸载clash相关文件（执行前必须先输入“停止clash透明网关”相关命令，否则可能导致上不了网）
 rm -rf /etc/clash       #删除clash文件夹及文件
 rm /etc/init.d/clash    #删除clash开机启动文件
 ```
