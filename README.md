@@ -28,10 +28,10 @@ PS：
 mv /etc/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
 chmod  777 /etc/clash/clash  #授予权限
 chmod  777 /etc/init.d/clash #授予权限
-service clash enable    #启用clash开机启动
-service clash start     #启动clash服务
 sed -i "8iport=5335" /etc/dnsmasq.conf #修改dnsmasq监听端口为5335
 service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视）
+service clash enable    #启用clash开机启动
+service clash start     #启动clash服务
 ```
 ```Shell 
 #停止clash透明网关-Tun模式
@@ -50,10 +50,10 @@ service firewall restart #重启防火墙以重置iptables规则
 ```
 ```Shell
 #停止后再次启用clash透明网关
-service clash enable    #启用clash开机启动
-service clash start     #启动clash服务
 sed -i "8iport=5335" /etc/dnsmasq.conf #修改dnsmasq监听端口为5335
 service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视）
+service clash enable    #启用clash开机启动
+service clash start     #启动clash服务
 ```
 ```Shell  
 #完全卸载clash相关文件
