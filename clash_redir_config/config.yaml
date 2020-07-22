@@ -11,7 +11,7 @@ mode: Rule
 # 设置日志输出级别 silent / info / warning / error / debug 越高越倾向于调试
 log-level: info
 # clash 的 RESTful API 网页调试端口
-external-controller: 0.0.0.0:9090
+external-controller: 0.0.0.0:9999
 # RESTful API 的口令 (可选)
 # secret: ""
 # external-ui: clash-dashboard
@@ -87,7 +87,7 @@ proxy-groups:
     - "v2ray"
     - "Trojan"
   url: 'http://www.gstatic.com/generate_204'
-  interval: 300
+  interval: 999
 
 # 代理节点选择
 - name: "PROXY"
