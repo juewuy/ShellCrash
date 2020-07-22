@@ -7,7 +7,7 @@ PS：
 •支持ss,v2ray,trojan，但不支持ssr，也不支持订阅<br>
 •需要自行编辑config.yaml以配置服务器<br>
 •本内容中的透明代理方式可能适用于大部分同样采用openwrt内核的路由器或者软路由，有需求的可以自行斟酌使用<br>
-•clash支持通过内置规则去广告，有需求的可以参考https://github.com/ACL4SSR/ACL4SSR 使用
+•可以使用https://acl4ssr.netlify.app导入订阅以及去广告规则<br>
 
 使用依赖：
 --
