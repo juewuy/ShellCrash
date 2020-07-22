@@ -47,8 +47,8 @@ proxies:            #代理节点配置
   #   aes-128-ctr aes-192-ctr aes-256-ctr
   #   rc4-md5 chacha20-ietf xchacha20
   #   chacha20-ietf-poly1305 xchacha20-ietf-poly1305
-#以下为配置具体示例，可以直接在上面修改配置，用不到的可以不删除
-#不会改的可以使用https://clash.skk.moe/proxy生成配置
+#以下为配置具体示例，可以直接修改
+#懒得改的可以使用https://clash.skk.moe/proxy生成配置
 - name: "ss"                       # 软件显示的节点名字
   type: ss                         # 代理类型
   server: 1.2.4.8                  # 服务器 IP
