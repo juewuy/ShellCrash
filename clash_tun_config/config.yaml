@@ -39,88 +39,38 @@ experimental:       #实验性功能，尽量不要改动
   ignore-resolve-fail: true         # 忽略 DNS 解析失败，默认值为 true
   interface-name: en0
 
-proxies:            #代理节点配置，参考下列规则修改
-
-  # Shadowsocks 支持的加密方式:
+proxies:            #代理节点配置
+  #   注意Shadowsocks仅支持如下加密方式:
   #   aes-128-gcm aes-192-gcm aes-256-gcm
   #   aes-128-cfb aes-192-cfb aes-256-cfb
   #   aes-128-ctr aes-192-ctr aes-256-ctr
   #   rc4-md5 chacha20-ietf xchacha20
   #   chacha20-ietf-poly1305 xchacha20-ietf-poly1305
-  # Shadowsocks 配置范本
-  #第一种配置
-  #- name: "你的SS节点1"               # 软件显示的节点名字
-  #  type: ss                                  # 代理类型
-  #  server: 1.2.4.8                          # 服务器 IP
-  #  port: 443                                 #  端口号
-  #  cipher: chacha20-ietf-poly1305   # 加密方法
-  #  password: "password"                # SS 密码
-  #  # udp: true                                #默认不开启
-  #第二种配置
-  # Shadowsocks + simple-obfs   配置范本
-  #- name: "你的SS节点2"
-  #  type: ss
-  #  server: 1.2.4.8
-  #  port: 443
-  #  cipher: chacha20-ietf-poly1305
-  #  password: "password"
-  #  plugin: obfs
-  #  plugin-opts:                 
-  #    mode: tls # or http               #  大部分选择 HTTP
-  #    # host: bing.com                  #  伪装
-  # VMess 的配置
-  #- name: "你的V2RAY节点1" # 软件显示的节点名字
-  #  type: vmess # 代理类型
-  #  server: v2rayssr.com # 服务器 IP
-  #  port: 443 #  端口号
-  #  uuid: a3482e88-686a-4a58-8126-99c9df64b7bf
-  #  alterId: 64  #额外的 ID
-  #  cipher: auto
-  #  #上面几行为必选参数
-  #  #下面几行为可选参数  根据你的配置情况来
-  #  # udp: true    #默认不开启
-  #  # tls: true      #TLS 开启
-  #  # skip-cert-verify: true     #默认不开启
-  #  # network: ws    # 网路类型 WS HTTP 等
-  #  # ws-path: /path  # 路径
-  #  # ws-headers:     #默认不开启
-  #  #  Host: v2ray.com    # HOST
-  # Trojan 的配置
-  #- name: "trojan"
-  #  type: trojan
-  #  server: server
-  #  port: 443
-  #  password: yourpsk
-  #  # udp: true
-  #  # sni: example.com # aka server name
-  #  # alpn:
-  #  #   - h2
-  #  #   - http/1.1
-  #  # skip-cert-verify: true
-- name: "你的SS节点1"               # 软件显示的节点名字
-   type: ss                         # 代理类型
-   server: 1.2.4.8                  # 服务器 IP
-   port: 443                        # 端口号
-   cipher: chacha20-ietf-poly1305   # 加密方法
-   password: "password"             # SS 密码
-   # udp: true                                #udp转发，默认不开启
-- name: "v2ray"                     # 软件显示的节点名字
-   type: vmess                      # 代理类型
-   server: v2rayssr.com             # 服务器 IP
-   port: 443                        #  端口号
-   uuid: a3482e88-686a-4a58-8126-99c9df64b7bf
-   alterId: 64                      #额外的 ID
-   cipher: auto
-   #上面几行为必选参数
-   #下面几行为可选参数  根据你的配置情况来
-   # udp: true    #udp转发，默认不开启
-   # tls: true      #TLS证书模式 开启
-   # skip-cert-verify: true     #跳过证书验证，默认不开启
-   # network: ws    # 网路类型 WS HTTP 等
-   # ws-path: /path  # 路径
-   # ws-headers:     #默认不开启
-   #  Host: v2ray.com    # HOST网址
-
+#以下为配置具体示例，可以直接在上面修改配置，用不到的可以不删除
+#不会改的可以使用https://clash.skk.moe/proxy生成配置
+- name: "ss"                       # 软件显示的节点名字
+  type: ss                         # 代理类型
+  server: 1.2.4.8                  # 服务器 IP
+  port: 443                        # 端口号
+  cipher: chacha20-ietf-poly1305   # 加密方法
+  password: "password"             # SS 密码
+  #udp: true                       #udp转发，默认不开启
+- name: "v2ray"                    # 软件显示的节点名字
+  type: vmess                      # 代理类型
+  server: v2rayssr.com             # 服务器 IP
+  port: 443                        #  端口号
+  uuid: a3482e88-686a-4a58-8126-99c9df64b7bf
+  alterId: 64                      #额外的 ID
+  cipher: auto
+  #上面几行为必选参数
+  #下面几行为可选参数  根据你的配置情况来,需要删除#号以生效
+  #udp: true    #udp转发，默认不开启
+  #tls: true      #TLS证书模式 开启
+  #skip-cert-verify: true     #跳过证书验证，默认不开启
+  #network: ws    # 网路类型 WS HTTP 等
+  #ws-path: /path  # 路径
+  #ws-headers:     #默认不开启
+  #Host: v2ray.com    # HOST网址
 - name: "Trojan"
   type: trojan             # 代理类型
   server: 123.abc.xyz      # 代理服务器地址
@@ -128,7 +78,7 @@ proxies:            #代理节点配置，参考下列规则修改
   password: asdf1234       # 密码
   skip-cert-verify: true   # 跳过证书验证，建议打开
 
-proxy-groups:
+proxy-groups:    #代理服务器组
 - name: "自动节点选择"
   type: url-test
   proxies:
