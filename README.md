@@ -7,7 +7,7 @@ PS：
 •支持ss,v2ray,trojan，但不支持ssr，也不支持订阅<br>
 •需要自行编辑config.yaml以配置服务器<br>
 •本内容中的透明代理方式可能适用于大部分同样采用openwrt内核的路由器或者软路由，有需求的可以自行斟酌使用<br>
-•可以使用https://acl4ssr.netlify.app导入订阅以及去广告规则<br>
+•可以使用 https://acl4ssr.netlify.app 导入订阅以及去广告规则<br>
 
 使用依赖：
 --
