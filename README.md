@@ -3,6 +3,7 @@
 =====
 PS：
 --
+•新增了管理脚本，按照完成后执行clash命令即可使用脚本！之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用<br>
 •新增了redir模式，redir模式速度更快但是不支持UDP转发；tun模式支持UDP转发，但CPU和内存占用相对更高，请根据需求选择<br>
 •支持ss,v2ray,trojan，但不支持ssr，也不支持订阅<br>
 •需要自行编辑config.yaml以配置服务器<br>
@@ -23,34 +24,18 @@ PS：
 *·如有必要，也可以自行前往下载更新clash核心文件并自行改名 https://github.com/Dreamacro/clash/releases/tag/premium （小米AX3600是armv8，ax1800/ax5是armv7，其他路由器请自查）<br>*
 •将下载并修改后的4个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"4个文件"）<br>
 •登陆SSH，并在SSH中用root用户执行下方的**对应命令**即可使用！<br>
-**首次安装clash**
+**首次安装**
 ```Shell
-mv /etc/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
-chmod  777 /etc/clash/clash  #授予权限
-chmod  777 /etc/init.d/clash #授予权限
-service clash enable    #启用clash开机启动
-service clash start     #启动clash服务
+mv /etc/clash/clashservice /etc/init.d/clash #移动clash服务文件
+mv /etc/clash/clashsh /bin/clash             #移动clash管理脚本
+chmod  777 /etc/clash/clash                  #授予权限
+chmod  777 /etc/init.d/clash                 #授予权限
+chmod  777 /bin/clash                        #授予权限
+clash                                        #使用管理脚本
 ```
-**停止clash**
+**管理脚本**
 ```Shell 
-service clash stop      #停止clash服务
-```
-**启用clash**
-```Shell
-service clash start     #启动clash服务
-```
-**设置clash开机启动**
-```Shell 
-service clash enable    #启用clash开机启动
-```
-**禁止clash开机启动**
-```Shell 
-service clash disable   #禁止clash开机启动
-```
-**卸载clash相关文件**
-```Shell
-rm -rf /etc/clash       #删除clash文件夹及文件
-rm /etc/init.d/clash    #删除clash开机启动文件
+clash                                        #使用管理脚本
 ```
 •启用后可以通过 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则<br>
 

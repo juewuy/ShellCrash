@@ -1,0 +1,63 @@
+#!/bin/sh
+# Copyright (C) 2006-2011 OpenWrt.org
+
+echo "***********************************************"
+echo "**                 欢迎使用                  **"
+echo "**              Clash for Miwifi             **"
+echo "**                             by  Juewuy    **"
+echo "***********************************************"
+echo 1 启动clash服务
+echo 2 重启clash服务
+echo 3 停止clash服务
+echo 4 设置clash开机启动
+echo 5 禁止clash开机启动
+echo 6 卸载clash相关文件（慎用！）
+echo 0 退出脚本
+read -p "请输入对应数字>" num
+  if [[ $num == 0 ]]; then
+  exit;
+  
+  elif [[ $num == 1 ]]; then
+  /etc/init.d/clash start
+  echo clash服务已启动！
+  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
+  exit;
+  
+  elif [[ $num == 2 ]]; then
+  /etc/init.d/clash stop
+  /etc/init.d/clash start
+  echo clash服务已启动！
+  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
+  exit;
+
+  elif [[ $num == 3 ]]; then
+  /etc/init.d/clash stop
+  echo clash服务已停止！
+  exit;
+
+  elif [[ $num == 4 ]]; then
+  /etc/init.d/clash enable
+  echo 已设置clash开机启动！
+  exit;
+
+  elif [[ $num == 5 ]]; then
+  /etc/init.d/clash disable
+  echo 已禁止clash开机启动！
+  exit;
+
+  elif [[ $num == 6 ]]; then
+    read -p "确认卸载clash？[1/0] " res
+	if [ "$res" = '1' ]; then
+    /etc/init.d/clash disable
+    /etc/init.d/clash stop
+    rm -rf /etc/clash
+    rm /etc/init.d/clash
+    rm /bin/clash
+    echo 已卸载clash相关文件！
+	fi
+  exit;
+  
+  else
+  echo 请输入正确的数字！
+  fi
+  exit 1
