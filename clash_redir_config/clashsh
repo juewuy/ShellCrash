@@ -3,7 +3,7 @@
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
-echo "**              Clash for Miwifi             **"
+echo "**        Clash for Miwifi（Redir模式）      **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 echo 1 启动clash服务
