@@ -18,11 +18,11 @@ PS：
 
 使用方式：
 --
-•根据**个人需求**下载 [Tun模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_tun_config)**或者** [Redir模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_redir_config)中的全部4个文件到本地电脑 <br>
+•根据**个人需求**下载 [Tun模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_tun_config)**或者** [Redir模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_redir_config)中的全部5个文件到本地电脑 <br>
 •**根据自己需求参考文件内的注释，修改config.yaml配置文件并保存`重要！！！`**<br>
 •推荐使用notepad++打开yaml文件，如果只添加单个服务器可以直接在原示例上修改即可，多余的示例服务器不用删除<br>
 *·如有必要，也可以自行前往下载更新clash核心文件并自行改名 https://github.com/Dreamacro/clash/releases/tag/premium （小米AX3600是armv8，ax1800/ax5是armv7，其他路由器请自查）<br>*
-•将下载并修改后的4个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"4个文件"）<br>
+•将下载并修改后的5个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"5个文件"）<br>
 •登陆SSH，并在SSH中用root用户执行下方的**对应命令**即可使用！<br>
 **首次安装**
 ```Shell
