@@ -27,6 +27,7 @@ PS：
 •登陆SSH，并在SSH中用root用户执行下方的**对应命令**即可使用！<br>
 **首次安装**
 ```Shell
+chmod  755 /bin                              #使bin目录可写
 mv /etc/clash/clashservice /etc/init.d/clash #移动clash服务文件
 mv /etc/clash/clashsh /bin/clash             #移动clash管理脚本
 chmod  777 /etc/clash/clash                  #授予权限
