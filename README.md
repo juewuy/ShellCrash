@@ -3,7 +3,8 @@
 =====
 PS：
 --
-•新增了管理脚本，按照完成后执行clash命令即可使用脚本！之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用<br>
+•新增了管理脚本，安装完成后执行clash命令即可使用脚本！<br>
+•之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用脚本<br>
 •新增了redir模式，redir模式速度更快但是不支持UDP转发；tun模式支持UDP转发，但CPU和内存占用相对更高，请根据需求选择<br>
 •支持ss,v2ray,trojan，但不支持ssr，也不支持订阅<br>
 •需要自行编辑config.yaml以配置服务器<br>
@@ -13,7 +14,7 @@ PS：
 使用依赖：
 --
 •请确认路由器或设备已经开启SSH并获取root权限，小米AX系列可参考：https://www.right.com.cn/forum/thread-4032490-1-1.html 开启<br>
-•SSH连接工具，例如putty，bitvise等，请自行安装使用<br>
+•SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等，请自行安装使用<br>
 •SCP连接工具，如winscp（内置了putty，只安装这一个其实就可以）<br>
 
 使用方式：
