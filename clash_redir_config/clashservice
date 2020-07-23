@@ -14,7 +14,15 @@ start_service() {
 	procd_set_param command /etc/clash/clash -d /etc/clash
 	procd_close_instance
     #修改iptables规则使流量进入clash
-	iptables -t nat -N clash	
+	iptables -t nat -N clash
 	iptables -t nat -A clash -p tcp -j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
+	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
+}
+stop_service() {
+    #重置iptables规则
+	iptables -t nat -D PREROUTING -p tcp -j clash
+	iptables -t nat -F clash
+	iptables -t nat -X clash
+	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
 }

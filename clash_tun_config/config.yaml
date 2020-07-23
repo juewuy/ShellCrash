@@ -18,12 +18,12 @@ external-controller: 0.0.0.0:9999
 
 dns:
   enable: true
-  listen: 0.0.0.0:53                #监听端口，0.0.0.0则拦截所有
+  listen: 0.0.0.0:1053                #监听端口，0.0.0.0则拦截所有
   fake-ip-range: 198.18.0.1/16      #fake-ip模式下子网段，尽量不要改动
   enhanced-mode: fake-ip            #尽量不要改动
   nameserver:       #国内DNS，可配置多条
     - tls://dns.rubyfish.cn:853
-    - 127.0.0.1:5335                #本地dnsmasq服务器
+    - 127.0.0.1:53                #本地dnsmasq服务器
   fallback:         #国外DNS，可配置多条
     - tcp://1.1.1.1
     - tls://dns.google:853
@@ -86,7 +86,7 @@ proxy-groups:    #代理服务器组
     - "v2ray"
     - "Trojan"
   url: 'http://www.gstatic.com/generate_204'
-  interval: 999
+  interval: 100
 
 # 代理节点选择
 - name: "PROXY"
