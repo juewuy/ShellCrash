@@ -41,12 +41,10 @@ sed -i '/port=5335/d' /etc/dnsmasq.conf #重置dnsmasq监听端口为默认值�
 service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视，不放心可重启系统）
 ```
 ```Shell 
-#停止clash透明网关-Redir模式
+#停止clash透明网关-Redir模式（需重启设备）
 service clash disable   #禁用clash开机启动
-service clash stop      #停止clash服务
 sed -i '/port=5335/d' /etc/dnsmasq.conf #重置dnsmasq监听端口为默认值（port:53)
-service dnsmasq restart #重启dnsmasq服务（报错“cp: can't stat '/etc/dnsmasq.d/*'……”可无视，不放心可重启系统）
-service firewall restart #重启防火墙以重置iptables规则
+reboot #重启设备
 ```
 ```Shell
 #停止后再次启用clash透明网关
