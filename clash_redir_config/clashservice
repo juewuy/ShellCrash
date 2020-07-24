@@ -15,6 +15,15 @@ start_service() {
 	procd_close_instance
     #修改iptables规则使流量进入clash
 	iptables -t nat -N clash
+	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
+	iptables -t nat -A clash -d 10.0.0.0/8 -j RETURN
+	iptables -t nat -A clash -d 127.0.0.0/8 -j RETURN
+	iptables -t nat -A clash -d 169.254.0.0/16 -j RETURN
+	iptables -t nat -A clash -d 172.16.0.0/12 -j RETURN
+	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
+	iptables -t nat -A clash -d 198.18.0.1/16 -j RETURN
+	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
+	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -p tcp -j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
