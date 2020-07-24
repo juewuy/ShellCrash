@@ -3,7 +3,8 @@
 =====
 PS：
 --
-•新增了管理脚本，按照完成后执行clash命令即可使用脚本！之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用<br>
+•新增了管理脚本，安装完成后执行clash命令即可使用脚本！<br>
+•之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用脚本<br>
 •新增了redir模式，redir模式速度更快但是不支持UDP转发；tun模式支持UDP转发，但CPU和内存占用相对更高，请根据需求选择<br>
 •支持ss,v2ray,trojan，但不支持ssr，也不支持订阅<br>
 •需要自行编辑config.yaml以配置服务器<br>
@@ -13,7 +14,7 @@ PS：
 使用依赖：
 --
 •请确认路由器或设备已经开启SSH并获取root权限，小米AX系列可参考：https://www.right.com.cn/forum/thread-4032490-1-1.html 开启<br>
-•SSH连接工具，例如putty，bitvise等，请自行安装使用<br>
+•SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等，请自行安装使用<br>
 •SCP连接工具，如winscp（内置了putty，只安装这一个其实就可以）<br>
 
 使用方式：
@@ -41,16 +42,17 @@ clash                                        #使用管理脚本
 
 故障解决：
 --
+•部分设备安装时提示bin目录只读（readonly），可以通过输入：chmod  755 /bin 来使bin目录可写，之后重新执行安装命令即可完成安装,/etc/init.d目录同理<br>
 •如果能正常连接国内网站而无法访问屏蔽网站，请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
 •如果能连通http代理（可在浏览器中设置http代理，端口为7890）但是无法使用透明代理，可能是tun网卡启用失败或者dnsmasq启动失败，重启设备通常可以解决<br>
 
 已知问题：
 --
-•由于使用了clash的fake-ip模式，暂不支持ipv6<br>
+•由于使用了clash的fake-ip模式，不支持ipv6<br>
 •Tun模式下clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
 •Tun模式下部分软件不会经过clash，例如telegram，可以通过设置软件内置sock5或http代理解决<br>
-•Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由于官方系统阉割了Tproxy导致，故无法修复<br>
-•全局模式代理无效，原因不明，同样的配置文件在pc端或者安卓上都可以使用全局模式，怀疑是clash核心的bug<br>
+•Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致<br>
+•全局模式代理无效，同样的配置文件在pc端或者安卓上都可以使用全局模式，疑是clash核心的bug<br>
 
 感谢：
 --
