@@ -19,7 +19,7 @@ PS：
 使用方式：
 --
 •根据**个人需求**下载 [Tun模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_tun_config)**或者** [Redir模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_redir_config)中的全部5个文件到本地电脑 <br>
-•需要使用SSR节点的用户可以额外下载[ClashR核心文件](https://github.com/juewuy/clash-for-Miwifi/raw/master/clashr/clash)并覆盖原有的clash核心文件（仅支持Redir模式）
+•需要使用SSR节点的用户可以额外下载[ClashR核心文件](https://github.com/juewuy/clash-for-Miwifi/raw/master/clashr/clash)并覆盖原有的clash核心文件（仅支持Redir模式）<br>
 •**根据自己需求参考文件内的注释，修改config.yaml配置文件并保存`重要！！！`**<br>
 •推荐使用notepad++打开yaml文件，如果只添加单个服务器可以直接在原示例上修改即可，多余的示例服务器不用删除<br>
 •可以使用 https://clash.skk.moe/proxy 生成单个节点配置；使用 https://acl4ssr.netlify.app 生成订阅或链接的节点配置<br>
