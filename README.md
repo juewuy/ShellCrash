@@ -52,7 +52,7 @@ clash                                        #使用管理脚本
 --
 •由于使用了clash的fake-ip模式，不支持ipv6<br>
 •Tun模式下clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
-•Tun模式下部分软件不会经过clash，例如telegram，可以通过设置软件内置sock5或http代理解决<br>
+•Tun模式下部分软件不会经过clash，例如telegram，可以通过设置软件内置sock5（IP=路由IP，port=7891）或http代理（IP=路由IP，port=7890）解决<br>
 •Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致<br>
 •全局模式代理无效，同样的配置文件在pc端或者安卓上都可以使用全局模式，疑是clash核心的bug<br>
 
