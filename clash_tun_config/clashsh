@@ -4,7 +4,7 @@
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
-echo "**        Clash for Miwifi（Redir模式）      **"
+echo "**        Clash for Miwifi（Tun模式）        **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 Number1=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`
