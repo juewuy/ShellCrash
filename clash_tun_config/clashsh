@@ -1,48 +1,94 @@
 #!/bin/sh
 # Copyright (C) 2006-2011 OpenWrt.org
 
+
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
-echo "**          Clash for Miwifi（Tun模式）      **"
+echo "**        Clash for Miwifi（Redir模式）      **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
+Number1=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`
+if [ $Number1 -gt 0 ];then
+Mark1="\033[32m正在运行\033[0m"
+else
+Mark1="\033[31m没有运行\033[0m"
+fi
+Mark2="\033[31m未设置开机启动！\033[0m"
+echo -e "Clash服务$Mark1,$Mark2"
+clashsh(){
+echo -----------------------------------------------
 echo 1 启动clash服务
 echo 2 重启clash服务
 echo 3 停止clash服务
 echo 4 设置clash开机启动
 echo 5 禁止clash开机启动
-echo 6 卸载clash相关文件（慎用！）
+echo 6 卸载clash相关文件
 echo 0 退出脚本
 read -p "请输入对应数字>" num
+if [[ $num -le 6 ]] > /dev/null 2>&1; then 
   if [[ $num == 0 ]]; then
   exit;
   
   elif [[ $num == 1 ]]; then
-  /etc/init.d/clash start
-  echo clash服务已启动！
-  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
-  exit;
+    if [ $Number1 -gt 0 ];then
+	echo -----------------------------------------------
+	echo -e "\033[31mclash服务运行中，请勿重复启动！\033[0m"
+	clashsh
+	exit;
+	else
+    /etc/init.d/clash start
+    Number2=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`
+      if [ $Number2 -gt 0 ];then
+	  echo -----------------------------------------------
+      echo -e "\033[32mclash服务已启动！\033[0m"
+	  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
+	  clashsh
+      else
+	  echo -----------------------------------------------
+      echo -e "\033[31mclash服务启动失败！请检查配置文件！\033[0m"
+	  clashsh
+      fi
+	  exit;
+	fi
+	exit;
   
   elif [[ $num == 2 ]]; then
-  /etc/init.d/clash stop
-  /etc/init.d/clash start
-  echo clash服务已启动！
-  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
-  exit;
+    /etc/init.d/clash stop > /dev/null 2>&1
+    /etc/init.d/clash start
+    Number2=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`
+      if [ $Number2 -gt 0 ];then
+	  echo -----------------------------------------------
+      echo -e "\033[32mclash服务已启动！\033[0m"
+	  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
+	  clashsh
+      else
+	  echo -----------------------------------------------
+      echo -e "\033[31mclash服务启动失败！请检查配置文件！\033[0m"
+	  clashsh
+      fi
+	  exit;
 
   elif [[ $num == 3 ]]; then
-  /etc/init.d/clash stop
-  echo clash服务已停止！
+  /etc/init.d/clash stop > /dev/null 2>&1
+  echo -----------------------------------------------
+  echo -e "\033[31mClash服务已停止！\033[0m"
+  echo -----------------------------------------------
   exit;
 
   elif [[ $num == 4 ]]; then
   /etc/init.d/clash enable
-  echo 已设置clash开机启动！
+  sed -i '2,30s/1m未/2m已/g' /bin/clash
+  echo -----------------------------------------------
+  echo -e "\033[32m已设置Clash开机启动！\033[0m"
+  clashsh
   exit;
 
   elif [[ $num == 5 ]]; then
   /etc/init.d/clash disable
-  echo 已禁止clash开机启动！
+  sed -i '2,30s/2m已/1m未/g' /bin/clash
+  echo -----------------------------------------------
+  echo -e "\033[33m已禁止Clash开机启动！\033[0m"
+  clashsh
   exit;
 
   elif [[ $num == 6 ]]; then
@@ -58,6 +104,12 @@ read -p "请输入对应数字>" num
   exit;
   
   else
-  echo 请输入正确的数字！
+  echo -e "\033[31m请输入正确的数字！\033[0m"
   fi
   exit 1
+else
+echo -e "\033[31m请输入正确的数字！\033[0m"
+fi
+exit 1
+}
+clashsh
