@@ -1,9 +1,16 @@
 # clash-for-Miwifi
 在小米AX3600/AX1800/AX5等路由器上使用clash做透明代理
 =====
-PS：
+更新日志：
 --
-•新增了管理脚本，安装完成后执行clash命令即可使用脚本！<br>
+v0.2
+-
+1.合并Tun和Redir模式为一套文件，可以通过管理脚本直接切换<br>
+2.同步官方最新premium版核心，支持SSR<br>
+3.优化脚本可用性，增加了部分实用功能<br>
+
+v0.1
+-
 •之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用脚本<br>
 •新增了redir模式，redir模式速度更快但是不支持UDP转发；tun模式支持UDP转发，但CPU和内存占用相对更高，请根据需求选择<br>
 •支持ss,v2ray,trojan，Redir模式有限支持ssr，不支持订阅<br>
@@ -18,12 +25,11 @@ PS：
 
 使用方式：
 --
-•根据**个人需求**下载 [Tun模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_tun_config)**或者** [Redir模式](https://github.com/juewuy/clash_tun-for-Miwifi/tree/master/clash_redir_config)中的全部5个文件到本地电脑 <br>
-•需要使用SSR节点的用户可以额外下载[ClashR核心文件](https://github.com/juewuy/clash-for-Miwifi/raw/master/clashr/clash)并覆盖原有的clash核心文件（仅支持Redir模式）<br>
+•下载 [目录中全部5个文件](https://github.com/juewuy/clash-for-Miwifi/tree/master/clash)到本地电脑 <br>
 •**根据自己需求参考文件内的注释，修改config.yaml配置文件并保存`重要！！！`**<br>
 •推荐使用notepad++打开yaml文件，如果只添加单个服务器可以直接在原示例上修改即可，多余的示例服务器不用删除<br>
 •可以使用 https://clash.skk.moe/proxy 生成单个节点配置；使用 https://acl4ssr.netlify.app 生成订阅或链接的节点配置<br>
-*·如有必要，也可以自行前往下载更新clash核心文件并自行改名 https://github.com/Dreamacro/clash/releases/tag/premium （小米AX3600是armv8，ax1800/ax5是armv7，其他路由器请自查）<br>*
+*·如有必要，也可以自行前往下载更新clash核心文件并自行改名<br>*
 •将下载并修改后的5个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"5个文件"）<br>
 •登陆SSH，并在SSH中用root用户执行下方的**对应命令**即可使用！<br>
 
@@ -45,12 +51,13 @@ clash                                        #使用管理脚本
 故障解决：
 --
 •部分设备安装时提示bin目录只读（readonly），可以通过输入：chmod  755 /bin 来使bin目录可写，之后重新执行安装命令即可完成安装,/etc/init.d目录同理<br>
+•如果 http://clash.razord.top 打不开，请尝试使用 https://clash.razord.top https://yacd.haishan.me http://yacd.haishan.me 或者尝试清理浏览器缓存<br>
 •如果能正常连接国内网站而无法访问屏蔽网站，请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
 •如果能连通http代理（可在浏览器中设置http代理，端口为7890）但是无法使用透明代理，可能是tun网卡启用失败或者dnsmasq启动失败，重启设备通常可以解决<br>
 
 已知问题：
 --
-•由于使用了clash的fake-ip模式，不支持ipv6<br>
+•由于使用了clash的fake-ip模式，故不支持ipv6<br>
 •Tun模式下clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
 •Tun模式下部分软件不会经过clash，例如telegram，可以通过设置软件内置sock5（IP=路由IP，port=7891）或http代理（IP=路由IP，port=7890）解决<br>
 •Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致<br>
