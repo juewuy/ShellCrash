@@ -40,7 +40,7 @@ clash                                        #使用管理脚本
 ```Shell 
 clash                                        #使用管理脚本
 ```
-•启用后可以通过 http://clash.razord.top （或者 http://yacd.haishan.me ） （IP为网关IP，端口为9999）管理clash内置规则<br>
+•启用后可以通过 http://clash.razord.top （或者 https://yacd.haishan.me ） （Host为网关IP，端口为9999，密钥为空）管理clash内置规则<br>
 
 故障解决：
 --
