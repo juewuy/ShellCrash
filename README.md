@@ -5,14 +5,14 @@
 --
 v0.2
 -
-1.合并Tun和Redir模式为一套文件，可以通过管理脚本直接切换<br>
-2.同步官方最新premium版核心，支持SSR<br>
-3.优化脚本可用性，增加了部分实用功能<br>
+•合并Tun和Redir模式为一套文件，可以通过管理脚本直接切换<br>
+•同步官方最新premium版核心，全面支持ssr<br>
+•优化脚本可用性，增加了部分实用功能<br>
 
 v0.1
 -
 •之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用脚本<br>
-•新增了redir模式，redir模式速度更快但是不支持UDP转发；tun模式支持UDP转发，但CPU和内存占用相对更高，请根据需求选择<br>
+•增加redir模式，redir模式速度更快但是不支持UDP转发；tun模式支持UDP转发，但CPU和内存占用相对更高，请根据需求选择<br>
 •支持ss,v2ray,trojan，Redir模式有限支持ssr，不支持订阅<br>
 •需要自行编辑config.yaml以配置服务器<br>
 •可以使用 https://acl4ssr.netlify.app 导入订阅以及去广告规则<br>
