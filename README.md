@@ -54,7 +54,7 @@ clash                                        #使用管理脚本
 •如果 http://clash.razord.top 打不开，请尝试使用 https://clash.razord.top https://yacd.haishan.me http://yacd.haishan.me 或者尝试清理浏览器缓存<br>
 •如果能正常连接国内网站而无法访问屏蔽网站，请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
 •如果能连通http代理（可在浏览器中设置http代理，端口为7890）但是无法使用透明代理，可能是tun网卡启用失败或者dnsmasq启动失败，重启设备通常可以解决<br>
-•或者加入tg群询问 https://t.me/joinchat/Q6m08xhJ9iZ6yC__cxmPjw <br>
+•或者加入tg群询问 https://t.me/clashfm <br>
 
 已知问题：
 --
