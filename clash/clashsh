@@ -11,7 +11,8 @@ Mark2="\033[31m未设置开机启动！\033[0m"
 Mark3="Tun模式"
 
 clashlink(){
-exit;
+echo 施工中，敬请期待！
+clashsh
 } 
 clashadv(){
 echo -----------------------------------------------
