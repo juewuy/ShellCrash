@@ -29,16 +29,11 @@ dns:
     - tcp://1.1.1.1
     - tls://dns.google:853
     #- 8.8.4.4
-
-# tun:                #tun模式网卡设置，尽量不要改动
-  # enable: true
-  # stack: system
-  # dns-hijack:
-    # - tcp://8.8.8.8:53
+tun: {enable: false, stack: system}
   
 experimental:       #实验性功能，尽量不要改动
   ignore-resolve-fail: true         # 忽略 DNS 解析失败，默认值为 true
-  #interface-name: en0
+  interface-name: en0
 
 proxies:            #代理节点配置
   #   注意ss/ssr节点仅支持如下加密方式:

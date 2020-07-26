@@ -45,7 +45,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	elif [[ $num == 1 ]]; then
 	  if [[ $Mark3 = "Redir模式" ]]; then
 		sed -i '1,20s/Redir模式/Tun模式/' /bin/clash		#修改Mark3标记
-	  
+	    sed -i '1,40s/tun: {enable: false/tun: {enable: true/' /etc/clash/config.yaml		#修改配置文件
 		if [ $Number1 -gt 0 ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m正在重启clash进程……\033[0m"
@@ -74,7 +74,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	elif [[ $num == 2 ]]; then
 	  if [[ $Mark3 = "Tun模式" ]]; then
 		sed -i '1,20s/Tun模式/Redir模式/' /bin/clash		#修改Mark3标记
-	  
+	  	sed -i '1,40s/tun: {enable: true/tun: {enable: false/' /etc/clash/config.yaml		#修改配置文件
 		if [ $Number1 -gt 0 ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m正在重启clash进程……\033[0m"
