@@ -10,14 +10,18 @@ v0.2
 -
 •合并Tun和Redir模式为一套文件，可以通过管理脚本直接切换<br>
 •同步官方最新premium版核心，全面支持ssr<br>
-•优化脚本可用性，增加了部分实用功能<br>
+•大幅度优化管理脚本，增加部分实用功能<br>
 
 v0.1
 -
-•增加redir模式<br>
-•支持ss,v2ray,trojan，Redir模式支持ssr，不支持订阅<br>
-•需要自行编辑config.yaml以配置服务器<br>
-•可以使用 https://acl4ssr.netlify.app 导入订阅以及去广告规则<br>
+•支持redir模式<br>
+•增加了一个简单的管理脚本<br>
+•支持ss、v2ray以及trojan协议，Redir模式额外支持ssr协议<br>
+
+更早的版本
+-
+•支持Tun模式<br>
+•支持ss、v2ray以及trojan协议<br>
 
 使用依赖：
 --
