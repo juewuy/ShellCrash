@@ -1,11 +1,13 @@
-mixed-port: 7890     # HTTP&SOCKS5 二合一代理端口
-redir-port: 7892     # Redir模式端口
+port: 7890           # HTTP代理端口
+socks-port: 7891     # SOCKS5代理端口
+mixed-port: 8888     # HTTP&SOCKS5代理二合一端口
+redir-port: 7892     # Redir模式代理端口
 allow-lan: true      # 允许局域网连接
 mode: Rule           # 默认代理模式，可在网页调试页面更换
 log-level: info      # 日志级别 silent / info / warning / error / debug
-external-controller: 0.0.0.0:9999                                # 网页调试端口
+external-controller: ':9999'                                # 网页调试端口
 secret: ""           # 网页调试密码，默认为空
-dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [tls://dns.rubyfish.cn:853, 127.0.0.1:53], fallback: [tcp://1.1.1.1, tls://dns.google:853]}
+dns: {enable: true, listen: ':1053', fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [tls://dns.rubyfish.cn:853, 127.0.0.1:53], fallback: [tcp://1.1.1.1, tls://dns.google:853]}
 tun: {enable: false, stack: system}                              #Tun模式设置
 experimental: {ignore-resolve-fail: true, interface-name: en0}   #实验性功能，尽量不要改动
 
