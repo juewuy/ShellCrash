@@ -6,20 +6,17 @@
 
 •旧版本请重新下载[目录中除config.yaml和Country.mmdb以外的3个文件](https://github.com/juewuy/clash-for-Miwifi/tree/master/clash)上传到etc/clash后，并重新使用安装命令安装以完成更新<br>
 
-v0.2
--
+#### v0.2
 •合并Tun和Redir模式为一套文件，可以通过管理脚本直接切换<br>
 •同步官方最新premium版核心，全面支持ssr<br>
 •大幅度优化管理脚本，增加部分实用功能<br>
 
-v0.1
--
+#### v0.1
 •支持redir模式<br>
 •增加了一个简单的管理脚本<br>
 •支持ss、v2ray以及trojan协议，Redir模式额外支持ssr协议<br>
 
-更早的版本
--
+#### 更早的版本
 •支持Tun模式<br>
 •支持ss、v2ray以及trojan协议<br>
 
