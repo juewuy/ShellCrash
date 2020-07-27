@@ -3,6 +3,7 @@
 =====
 更新日志：
 --
+•旧版本请重新下载[目录中除config.yaml和Country.mmdb以外的3个文件](https://github.com/juewuy/clash-for-Miwifi/tree/master/clash)上传到etc/clash后，并重新使用安装命令安装以完成更新<br>
 v0.2
 -
 •合并Tun和Redir模式为一套文件，可以通过管理脚本直接切换<br>
@@ -11,9 +12,8 @@ v0.2
 
 v0.1
 -
-•之前版本安装的用户可以将clashservice和clashsh两个文件上传到etc/clash下后重新执行安装命令即可使用脚本<br>
-•增加redir模式，redir模式速度更快但是不支持UDP转发；tun模式支持UDP转发，但CPU和内存占用相对更高，请根据需求选择<br>
-•支持ss,v2ray,trojan，Redir模式有限支持ssr，不支持订阅<br>
+•增加redir模式<br>
+•支持ss,v2ray,trojan，Redir模式支持ssr，不支持订阅<br>
 •需要自行编辑config.yaml以配置服务器<br>
 •可以使用 https://acl4ssr.netlify.app 导入订阅以及去广告规则<br>
 
@@ -50,19 +50,27 @@ clash                                        #使用管理脚本
 
 故障解决：
 --
-•部分设备安装时提示bin目录只读（readonly），可以通过输入mount -o remount rw / 来使目录临时可写，之后重新执行安装命令即可完成安装<br>
-•如果 http://clash.razord.top 打不开，请尝试使用 https://clash.razord.top https://yacd.haishan.me http://yacd.haishan.me 或者尝试清理浏览器缓存<br>
-•如果能正常连接国内网站而无法访问屏蔽网站，请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
-•如果能连通http代理（可在浏览器中设置http代理，端口为7890）但是无法使用透明代理，可能是tun网卡启用失败或者dnsmasq启动失败，重启设备通常可以解决<br>
-•或者加入tg群询问 https://t.me/clashfm <br>
+•部分设备安装时提示bin目录只读（readonly）：可以通过输入mount -o remount rw /bin 来使目录临时可写，之后重新执行安装命令即可完成安装<br>
+•如果 http://clash.razord.top 打不开：请尝试使用 https://clash.razord.top http://yacd.haishan.me https://yacd.haishan.me 或者尝试清理浏览器缓存<br>
+•如果能正常连接国内网站而无法访问屏蔽网站：请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
+•全局模式无效：全局模式启用后请在管理面板手动勾选代理节点即可<br>
+•其他问题请前往我的tg群询问 https://t.me/clashfm <br>
 
 已知问题：
 --
-•由于使用了clash的fake-ip模式，故不支持ipv6<br>
+•由于使用了clash的fake-ip模式，故两种模式均不支持ipv6<br>
 •Tun模式下clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
 •Tun模式下部分软件不会经过clash，例如telegram，可以通过设置软件内置sock5（IP=路由IP，port=7891）或http代理（IP=路由IP，port=7890）解决<br>
-•Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致<br>
-•全局模式代理无效，同样的配置文件在pc端或者安卓上都可以使用全局模式，疑是clash核心的bug<br>
+•Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致，暂时无解，外服游戏用户建议使用Tun模式<br>
+
+ToDo：
+--
+•管理脚本增加订阅功能<br>
+•管理脚本增加更新功能<br>
+•添加一键安装脚本<br>
+•修复redir-host DNS以及IPV6支持<br>
+•……<br>
+
 
 感谢：
 --
