@@ -5,6 +5,11 @@
 --
 
 •旧版本请重新下载[目录中除config.yaml和Country.mmdb以外的3个文件](https://github.com/juewuy/clash-for-Miwifi/tree/master/clash)上传到etc/clash后，并重新使用安装命令安装以完成更新<br>
+#### v0.5
+•新增订阅功能，功能强大，欢迎体验！<br>
+•修改了配置记录的位置和格式，大幅度增加了脚本可用性<br>
+•clash核心使用upx压缩，大幅度缩减了体积<br>
+•新增若干小功能及使用优化<br>
 
 #### v0.2
 •合并Tun和Redir模式为一套文件，可以通过管理脚本直接切换<br>
