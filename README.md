@@ -54,7 +54,7 @@ clash                                        #使用管理脚本
 故障解决：
 --
 •部分设备安装时提示bin目录只读（readonly）：可以通过输入mount -o remount rw /bin 来使目录临时可写，之后重新执行安装命令即可完成安装<br>
-•如果 http://clash.razord.top 打不开：请尝试使用 https://clash.razord.top http://yacd.haishan.me https://yacd.haishan.me 或者尝试清理浏览器缓存<br>
+•如果https://yacd.haishan.me 打不开：请尝试使用 http://clash.razord.top http://app.tossp.com  或者尝试清理浏览器缓存<br>
 •如果能正常连接国内网站而无法访问屏蔽网站：请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
 •全局模式无效：全局模式启用后请在管理面板手动勾选代理节点即可<br>
 •其他问题请前往我的tg群询问 https://t.me/clashfm <br>
