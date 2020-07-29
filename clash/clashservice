@@ -4,6 +4,24 @@
 
 USE_PROCD=1
 START=99
+
+getconfig(){
+ccfg=/etc/clash/mark
+csh=/bin/clash
+if [ ! -f "$ccfg" ]; then
+echo mark文件不存在，默认以Redir模式运行！
+cat >$ccfg<<EOF
+#标识clash运行状态的文件，请勿改动！
+EOF
+redir_mod=redir模式
+fi
+source $ccfg
+}
+mark_time(){
+start_time=`date +%s`
+sed -i '/start_time*/'d $ccfg
+sed -i "3i\start_time=$start_time" $ccfg
+}
 start_redir(){
 	#修改iptables规则使流量进入clash
 	iptables -t nat -N clash
@@ -43,20 +61,20 @@ start_service() {
 	procd_set_param command /etc/clash/clash -d /etc/clash
 	procd_close_instance
 	#修改iptables规则使流量进入clash
-	Mod=`cat /bin/clash | grep 'Mark3=' -m1`
-	result=$(echo $Mod | grep "Tun模式")
-	if [[ "$result" != "" ]];then
+	getconfig
+	if [[ "$redir_mod" = "Tun模式" ]];then
 		stop_tun
 		start_tun
+		mark_time
 	else
 		stop_redir
 		start_redir
+		mark_time
 	fi
 }
 stop_service() {
-	Mod=`cat /bin/clash | grep 'Mark3=' -m1`
-	result=$(echo $Mod | grep "Tun模式")
-	if [[ "$result" != "" ]];then
+	getconfig
+	if [[ "$redir_mod" = "Tun模式" ]];then
 		stop_tun
 	else
 		stop_redir
