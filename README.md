@@ -50,12 +50,15 @@ clash                                        #使用管理脚本
 ```
 •启用后可以通过 http://clash.razord.top （或者 https://yacd.haishan.me http://app.tossp.com ） （Host为网关IP，端口为9999，密钥为空）管理clash内置规则<br>
 
+问题反馈：
+--
+### https://t.me/clashfm 
+
 故障解决：
 --
 •部分设备安装时提示bin目录只读（readonly）：可以通过输入mount -o remount rw /bin 来使目录临时可写，之后重新执行安装命令即可完成安装<br>
 •部分设备确实无法写入bin目录的，也可以通过sh /etc/clash/clashsh 命令来运行管理脚本<br>
 •如果能正常连接国内网站而无法访问屏蔽网站：请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
-•其他问题请前往我的tg群询问 https://t.me/clashfm <br>
 
 已知问题：
 --
