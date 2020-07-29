@@ -9,6 +9,7 @@
 •新增订阅功能，功能强大，欢迎体验！<br>
 •修改了配置记录的位置和格式，大幅度增加了脚本可用性<br>
 •clash核心使用upx压缩，大幅度缩减了体积<br>
+•更新到新版本clash核心，修复Tun模式电报无法正常代理的bug<br>
 •新增若干小功能及使用优化<br>
 
 #### v0.2
@@ -64,7 +65,7 @@ clash                                        #使用管理脚本
 --
 •由于使用了clash的fake-ip模式，故两种模式均不支持ipv6<br>
 •Tun模式下clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
-•Tun模式下部分软件不会经过clash，例如telegram，可以通过设置软件内置sock5（IP=路由IP，port=7891）或http代理（IP=路由IP，port=7890）解决<br>
+•Tun模式下部分软件可能不会经过clash，可以通过设置软件内置sock5（IP=路由IP，port=7891）或http代理（IP=路由IP，port=7890）解决<br>
 •Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致，暂时无解，外服游戏用户建议使用Tun模式<br>
 
 ToDo：
