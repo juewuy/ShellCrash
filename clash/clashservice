@@ -36,6 +36,8 @@ start_redir(){
 	iptables -t nat -A clash -p tcp -j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
+	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
+
 }
 stop_redir(){
     #重置iptables规则
@@ -43,14 +45,17 @@ stop_redir(){
 	iptables -t nat -F clash > /dev/null 2>&1
 	iptables -t nat -X clash > /dev/null 2>&1
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1	
 }
 start_tun(){
 	#修改iptables规则使流量进入clash
 	iptables -I FORWARD -o utun -j ACCEPT
 	iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
+	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
 }
 stop_tun(){
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
 }
 start_service() {
     #创建clash后台进程
