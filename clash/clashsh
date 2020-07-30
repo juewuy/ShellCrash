@@ -9,9 +9,10 @@ echo "***********************************************"
 
 getconfig(){
 #文件路径
-ccfg=/etc/clash/mark
-csh=/bin/clash
-yaml=/etc/clash/config.yaml
+cpath=/etc/clash #clash目录地址，如有变动只需要修改此处
+sed -i "/^cpath\=*/ccpath\=$cpath" /etc/init.d/clash #同步service文件中的clash路径
+ccfg=$cpath/mark
+yaml=$cpath/config.yaml
 #检查标识文件
 if [ ! -f "$ccfg" ]; then
 echo mark文件不存在，正在创建！
@@ -23,8 +24,10 @@ source $ccfg
 #获取自启状态
 if [ $auto_start = true ] > /dev/null 2>&1; then 
 auto="\033[32m已设置开机启动！\033[0m"
+auto1="禁用clash开机启动"
 else
 auto="\033[31m未设置开机启动！\033[0m"
+auto1="允许clash开机启动"
 fi
 #获取运行模式
 if [ ! -n "$redir_mod" ]; then
@@ -60,7 +63,7 @@ fi
 
 getyaml(){
 source $ccfg
-#前后端订阅服务器地址索引
+#前后端订阅服务器地址索引，可在此处添加！
 Server=`sed -n ""$server_link"p"<<EOF
 subconverter-web.now.sh
 subcon.py6.pw
@@ -99,7 +102,7 @@ else
 redir='redir-port: 7892'
 external='external-controller: 0.0.0.0:9999'
 dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [tls://dns.rubyfish.cn:853, 127.0.0.1:53], fallback: [tcp://1.1.1.1, tls://dns.google:853]}'
-tun='tun: {enable: true, stack: system}' 
+tun='tun: {enable: false, stack: system}' 
 exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 ###################################
 	#预删除需要添加的项目
@@ -122,8 +125,9 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#重启clash服务
 	/etc/init.d/clash stop
 	/etc/init.d/clash start
-	Num=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`
-		if [ $Num > 0 ];then
+	sleep 1
+	uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`
+		if [ $uid > 0 ];then
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
@@ -357,15 +361,16 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	  if [[ $redir_mod = "Redir模式" ]]; then
 	    sed -i '/redir_mod*/'d $ccfg
 		sed -i "2i\redir_mod=Tun模式" $ccfg	#修改redir_mod标记
-	    sed -i '1,40s/tun: {enable: false/tun: {enable: true/' $yaml		#修改配置文件
+	    sed -i '5,20s/tun: {enable: false/tun: {enable: true/' $yaml		#修改配置文件
 		if [ $uid > 0 ];then > /dev/null 2>&1
 		echo -----------------------------------------------
 		echo -e "\033[33m正在重启clash进程……\033[0m"
 		/etc/init.d/clash stop > /dev/null 2>&1
 		fi	  
 		/etc/init.d/clash start
-		Num=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`	  
-		if [ $Num > 0 ];then
+		sleep 1
+		uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`	  
+		if [ $uid > 0 ];then
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "\033[33mclash已成功切换为：\033[47;34m Tun模式! \033[0m"
@@ -386,15 +391,16 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	  if [[ $redir_mod = "Tun模式" ]]; then
 	    sed -i '/redir_mod*/'d $ccfg
 		sed -i "2i\redir_mod=Redir模式" $ccfg	#修改redir_mod标记
-	    sed -i '1,40s/tun: {enable: false/tun: {enable: true/' $yaml		#修改配置文件
+	    sed -i '5,20s/tun: {enable: true/tun: {enable: false/' $yaml		#修改配置文件
 		if [ $uid > 0 ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m正在重启clash进程……\033[0m"
 		/etc/init.d/clash stop > /dev/null 2>&1
 		fi	  
 		/etc/init.d/clash start
-		Num=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`	  
-		if [ $Num > 0 ];then
+		sleep 1
+		uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`	  
+		if [ $uid > 0 ];then
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "\033[33mclash已成功切换为：\033[47;34m Redir模式! \033[0m"
@@ -420,7 +426,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	if [ "$res" = '1' ]; then
     /etc/init.d/clash disable
     /etc/init.d/clash stop
-    rm -rf /etc/clash
+    rm -rf $cpath
     rm /etc/init.d/clash
     rm $csh
     echo 已卸载clash相关文件！
@@ -443,8 +449,8 @@ getconfig
 echo 1 启动/重启clash服务
 echo 2 测试代理服务器连通性
 echo 3 停止clash服务
-echo 4 允许clash开机启动
-echo 5 禁止clash开机启动
+echo 4 $auto1
+echo 5 设置定时任务（施工中）
 echo 6 使用链接导入节点/订阅
 echo 7 高级设置
 echo 0 退出脚本
@@ -458,11 +464,11 @@ if [[ $num -le 7 ]] > /dev/null 2>&1; then
 	echo -----------------------------------------------
 	/etc/init.d/clash stop > /dev/null 2>&1
 	echo -e "\033[31mClash服务已停止！\033[0m"
-	sleep 1
 	fi
     /etc/init.d/clash start
-    Num=`ps |grep -w /etc/clash/clash|grep -v grep|wc -l`
-      if [ $Num > 0 ];then
+	sleep 1
+    uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`
+      if [ $uid > 0 ];then
 	  echo -----------------------------------------------
       echo -e "\033[32mclash服务已启动！\033[0m"
 	  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
@@ -493,19 +499,28 @@ if [[ $num -le 7 ]] > /dev/null 2>&1; then
   exit;
 
   elif [[ $num == 4 ]]; then
-  /etc/init.d/clash enable
-  sed -i '/auto_start*/'d $ccfg
-  sed -i "1i\auto_start=true" $ccfg
-  echo -----------------------------------------------
-  echo -e "\033[32m已设置Clash开机启动！\033[0m"
-  clashsh
+    sed -i '/auto_start*/'d $ccfg
+	echo -----------------------------------------------
+	  if [ $auto_start = true ] > /dev/null 2>&1; then 
+	  /etc/init.d/clash disable
+	  sed -i "1i\auto_start=false" $ccfg
+	  echo -e "\033[33m已禁止Clash开机启动！\033[0m"
+	  else
+	  /etc/init.d/clash enable
+	  sed -i "1i\auto_start=true" $ccfg
+	  echo -e "\033[32m已设置Clash开机启动！\033[0m"
+	  fi
+	clashsh
 
   elif [[ $num == 5 ]]; then
-  /etc/init.d/clash disable
-  sed -i '/auto_start*/'d $ccfg
-  sed -i "1i\auto_start=false" $ccfg
-  echo -----------------------------------------------
-  echo -e "\033[33m已禁止Clash开机启动！\033[0m"
+echo -----------------------------------------------
+echo -e "\033[31m正在施工中，敬请期待！\033[0m"
+echo -e "\033[32m正在施工中，敬请期待！\033[0m"
+echo -e "\033[33m正在施工中，敬请期待！\033[0m"
+echo -e "\033[34m正在施工中，敬请期待！\033[0m"
+echo -e "\033[35m正在施工中，敬请期待！\033[0m"
+echo -e "\033[36m正在施工中，敬请期待！\033[0m"
+
   clashsh
     
   elif [[ $num == 6 ]]; then
