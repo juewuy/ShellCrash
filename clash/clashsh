@@ -154,21 +154,21 @@ exit
 getlink(){
 #设置输入循环
 i=1
-while [ $i -le 5 ]
+while [ $i -le 9 ]
 do
 echo -----------------------------------------------
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo -----------------------------------------------
-echo -e "\033[32m支持批量导入Vmess/SSR/SS格式的订阅链接"
-echo -e "支持批量导入Vmess/SSR/SS/Trojan格式的节点链接"
+echo -e "\033[32m支持导入单个\033[30;47m Http \033[0;32m格式的订阅链接（多个会被覆盖）"
+echo -e "支持批量导入\033[30;47m Vmess/SSR/SS/Trojan \033[0;32m格式的节点链接"
 echo -e "多个较短的链接可以用|分隔以一次性输入"
-echo -e "多个较长的链接请尽量分多次输入，可支持多达5次输入"
+echo -e "多个较长的链接请尽量分多次输入，可支持多达9次输入"
 echo -e "\033[33m输入回车以开始导入链接！\033[0m"
 echo -e "\033[33m 0 返回上级目录！\033[0m"
 echo
 url=""
 read -p "请输入第"$i"个链接 > " url
-  test=$(echo $url | grep "://"
+  test=$(echo $url | grep "://")
   url=`echo ${url/\ \(*\)/''}`   #删除恶心的超链接内容
   if [[ "$test" != "" ]];then
 	if [[ $i == 1 ]];then
