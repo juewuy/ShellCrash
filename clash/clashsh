@@ -168,7 +168,7 @@ echo -e "\033[33m 0 返回上级目录！\033[0m"
 echo
 url=""
 read -p "请输入第"$i"个链接 > " url
-  test=$(echo $url | egrep 'vmess://|ss://|ssr://|trojan://')  #grep "://"
+  test=$(echo $url | grep "://"
   url=`echo ${url/\ \(*\)/''}`   #删除恶心的超链接内容
   if [[ "$test" != "" ]];then
 	if [[ $i == 1 ]];then
