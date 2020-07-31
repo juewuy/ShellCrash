@@ -97,7 +97,7 @@ echo -----------------------------------------------
 echo 配置文件获取失败！请检查链接或者更换后端地址！
 exit;
 else
-  if cat $yamlnew | grep proxies>/dev/null;then
+  if cat $yamlnew | grep ', server:' >/dev/null;then
 ##########需要变更的配置###########
 redir='redir-port: 7892'
 external='external-controller: 0.0.0.0:9999'
@@ -140,8 +140,12 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 		exit;
   else
   echo -----------------------------------------------
-  echo 囧囧囧 获取到了配置文件，但格式似乎不对 囧囧囧
-  echo 请手动输入命令：cat $yamlnew 以检查配置文件信息！
+  echo -e "\033[33m囧囧囧 获取到了配置文件，但格式似乎不对 囧囧囧\033[0m"
+  echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  sed -n '1,20p' $yamlnew
+  echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  echo -e "\033[33m请检查如上配置文件信息:\033[0m"
+  echo -----------------------------------------------
   fi
   exit;
 fi
@@ -158,14 +162,17 @@ echo -----------------------------------------------
 echo -e "\033[32m支持批量导入Vmess/SSR/SS格式的订阅链接"
 echo -e "支持批量导入Vmess/SSR/SS/Trojan格式的节点链接"
 echo -e "多个较短的链接可以用|分隔以一次性输入"
-echo -e "多个较长的链接请尽量分多次输入"
-echo -e "\033[33m输入回车以结束输入！\033[0m"
+echo -e "多个较长的链接请尽量分多次输入，可支持多达5次输入"
+echo -e "\033[33m输入回车以开始导入链接！\033[0m"
+echo -e "\033[33m 0 返回上级目录！\033[0m"
 echo
+url=""
 read -p "请输入第"$i"个链接 > " url
-  test=$(echo $url | grep "://")
+  test=$(echo $url | egrep 'vmess://|ss://|ssr://|trojan://')  #grep "://"
+  url=`echo ${url/\ \(*\)/''}`   #删除恶心的超链接内容
   if [[ "$test" != "" ]];then
 	if [[ $i == 1 ]];then
-	Url=$url
+	Url="$url"
 	else
 	Url="$Url"\|"$url"
 	fi
@@ -182,12 +189,11 @@ read -p "请输入第"$i"个链接 > " url
 		sed -i "6i\Url=\'$Url\'" $ccfg
 		#获取在线yaml文件
 		getyaml
-		echo 111
 		exit;
 	    fi
 	  fi
   elif [[ $url == 0 ]];then
-    clashsh
+    clashlink
   else
     echo -----------------------------------------------
     echo 请输入正确的订阅/分享链接！！！
@@ -195,6 +201,7 @@ read -p "请输入第"$i"个链接 > " url
 done
 echo -----------------------------------------------
 echo 输入太多啦，可能会导致订阅失败！
+echo 多个较短的链接请尽量用|分隔以一次性输入！
 echo 请检查输入的链接是否正确：$Url
 read -p "确认导入配置文件？原配置文件将被更名为config.bak![1/0] > " res
 	    if [ "$res" = '1' ]; then
@@ -203,7 +210,6 @@ read -p "确认导入配置文件？原配置文件将被更名为config.bak![1/
 		sed -i "6i\Url=\'$Url\'" $ccfg
 		#获取在线yaml文件
 		getyaml
-		echo 222
 		exit;
 		else
 		echo -----------------------------------------------
@@ -238,8 +244,8 @@ echo -e 0 返回上级菜单
 read -p "请输入对应数字 > " num
 if [ -z $num ];then
   echo -----------------------------------------------
-  echo 请输入正确的数字！
-  clashlink
+  echo -e "\033[31m请输入正确的数字！\033[0m"
+  clashsh
 elif [[ $num == 1 ]];then
   getlink
 elif [[ $num == 2 ]];then
@@ -255,7 +261,7 @@ elif [[ $num == 2 ]];then
   read -p "请输入对应数字 > " num
     if [ -z $num ];then
 	  echo -----------------------------------------------
-	  echo 请输入正确的数字！
+	  echo -e "\033[31m请输入正确的数字！\033[0m"
 	  clashlink
 	else
 	  #将对应标记值写入mark
@@ -277,9 +283,12 @@ elif [[ $num == 3 ]];then
   read -p "请输入对应数字 > " num
     if [ -z $num ];then
 	  echo -----------------------------------------------
-	  echo 请输入正确的数字！
+	  echo -e "\033[31m请输入正确的数字！\033[0m"
 	  clashlink
 	else
+	  if [[ $num == 0 ]];then
+	  clashlink
+	  fi
 	  #将对应标记值写入mark
 	  sed -i '/server_link*/'d $ccfg
       sed -i "4i\server_link="$num"" $ccfg		
@@ -325,7 +334,8 @@ elif [[ $num == 5 ]];then
 elif [[ $num == 0 ]];then
   clashsh
 else
-  echo 请输入正确的数字！
+  echo -----------------------------------------------
+  echo -e "\033[31m请输入正确的数字！\033[0m"
   exit;
 fi
 }
@@ -417,6 +427,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		clashadv
 	  fi
 	else
+	  echo -----------------------------------------------
 	  echo -e "\033[31m请输入正确的数字！\033[0m"
       clashadv
 	fi
@@ -437,6 +448,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
     clashadv
   fi
 else
+  echo -----------------------------------------------
   echo -e "\033[31m请输入正确的数字！\033[0m"
   clashsh
 fi
@@ -530,10 +542,12 @@ echo -e "\033[36m正在施工中，敬请期待！\033[0m"
   clashadv
   
   else
+  echo -----------------------------------------------
   echo -e "\033[31m请输入正确的数字！\033[0m"
   fi
   exit 1
 else
+echo -----------------------------------------------
 echo -e "\033[31m请输入正确的数字！\033[0m"
 fi
 exit 1
