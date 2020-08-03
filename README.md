@@ -38,22 +38,20 @@
 
 使用方式：
 --
-~下载 [目录中全部5个文件](https://github.com/juewuy/clash-for-Miwifi/tree/master/clash)到本地电脑 <br>
-~将下载并修改后的5个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"5个文件"）<br>
+~下载 [压缩包文件](https://github.com/juewuy/clash-for-Miwifi/raw/master/bin/clashfm.tar.gz)到本地电脑并解压<br>
+~将解压后的5个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"5个文件"）<br>
 ~登陆SSH，并在SSH中用root用户执行下方的命令即可使用！<br>
 
 **首次安装**
 ```Shell
 mv /etc/clash/clashservice /etc/init.d/clash #移动clash服务文件
-mv /etc/clash/clashsh /bin/clash             #移动clash管理脚本
 chmod  777 /etc/clash/clash                  #授予权限
 chmod  777 /etc/init.d/clash                 #授予权限
-chmod  777 /bin/clash                        #授予权限
-clash                                        #使用管理脚本
+sh /etc/clash/clash.sh                       #使用管理脚本
 ```
 **管理脚本**
 ```Shell 
-clash                                        #使用管理脚本
+sh /etc/clash/clash.sh                       #使用管理脚本
 ```
 ~启用后可以通过 http://clash.razord.top （或者 https://yacd.haishan.me http://app.tossp.com ） （Host为网关IP，端口为9999，密钥为空）管理clash内置规则<br>
 
