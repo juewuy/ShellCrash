@@ -38,22 +38,20 @@
 
 使用方式：
 --
-~下载 [目录中全部5个文件](https://github.com/juewuy/clash-for-Miwifi/tree/master/clash)到本地电脑 <br>
-~将下载并修改后的5个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"5个文件"）<br>
+~下载 [压缩包文件](https://github.com/juewuy/clash-for-Miwifi/raw/master/bin/clashfm.tar.gz)到本地电脑并解压<br>
+~将解压后的5个文件通过winSCP上传到路由器/etc/clash文件夹（clash文件夹请自行创建）下（最终应该是/etc/clash/"5个文件"）<br>
 ~登陆SSH，并在SSH中用root用户执行下方的命令即可使用！<br>
 
 **首次安装**
 ```Shell
 mv /etc/clash/clashservice /etc/init.d/clash #移动clash服务文件
-mv /etc/clash/clashsh /bin/clash             #移动clash管理脚本
 chmod  777 /etc/clash/clash                  #授予权限
 chmod  777 /etc/init.d/clash                 #授予权限
-chmod  777 /bin/clash                        #授予权限
-clash                                        #使用管理脚本
+sh /etc/clash/clash.sh                       #使用管理脚本
 ```
 **管理脚本**
 ```Shell 
-clash                                        #使用管理脚本
+sh /etc/clash/clash.sh                       #使用管理脚本
 ```
 ~启用后可以通过 http://clash.razord.top （或者 https://yacd.haishan.me http://app.tossp.com ） （Host为网关IP，端口为9999，密钥为空）管理clash内置规则<br>
 
@@ -63,7 +61,6 @@ clash                                        #使用管理脚本
 
 故障解决：
 --
-~部分设备安装时提示bin目录只读（readonly）：可以通过sh /etc/clash/clashsh 命令来运行管理脚本，或者加群获取一键安装脚本<br>
 ~如果能正常连接国内网站而无法访问屏蔽网站：请在浏览器中打开 http://clash.razord.top 并使用测速功能，之后手动指定服务器即可；如果所有服务器都不可用即代表配置文件有问题<br>
 
 已知问题：
@@ -74,8 +71,8 @@ clash                                        #使用管理脚本
 
 ToDo：
 --
-~~~管理脚本增加订阅功能~~<br>
-~~~添加一键安装脚本~~<br>
+~~管理脚本增加订阅功能~~<br>
+~~添加一键安装脚本~~<br>
 ~增加屏蔽P2P流量功能<br>
 ~管理脚本增加更新功能<br>
 ~尝试更新openssl版本<br>
