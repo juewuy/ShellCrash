@@ -481,8 +481,10 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
     /etc/init.d/clash disable
     /etc/init.d/clash stop
     rm -rf $cpath
-    rm /etc/init.d/clash
-    rm $csh
+    rm -rf /etc/init.d/clash
+    rm -rf $csh
+	sed -i '/alias clash=*/'d /etc/profile
+	sed -i '/export clashdir=*/'d /etc/profile
     echo 已卸载clash相关文件！
 	fi
     exit;

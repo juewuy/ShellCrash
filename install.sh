@@ -54,6 +54,7 @@ fi
 #解压
 echo -----------------------------------------------
 echo 开始解压文件！
+mkdir $dir/clash > /dev/null
 tar -zxvf '/tmp/clashfm.tar.gz' -C $dir/clash/ > /dev/null
 [ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 #初始化文件目录
