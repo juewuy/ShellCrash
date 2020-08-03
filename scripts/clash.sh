@@ -9,7 +9,7 @@ echo "***********************************************"
 
 getconfig(){
 #文件路径
-cpath=/etc/clash #clash目录地址，如有变动只需要修改此处
+cpath=$clashdir #clash目录地址
 sed -i "/^cpath\=*/ccpath\=$cpath" /etc/init.d/clash #同步service文件中的clash路径
 ccfg=$cpath/mark
 yaml=$cpath/config.yaml
@@ -85,13 +85,13 @@ echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
 echo -e "\033[36m-----------------------------------------------"
 echo -e "|                                             |"
 echo -e "|         需要一点时间，请耐心等待！          |"
-echo -e "|                                             |"
+echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出        |"
 echo -e "-----------------------------------------------\033[0m"
 #获取在线yaml文件
 yamlnew=$yaml.new
 rm $yamlnew > /dev/null 2>&1
 
-result=$(curl -w %{http_code} -skLo $yamlnew $Https)
+result=$(curl -w %{http_code} -kLo $yamlnew $Https)
 if [ "$result" != "200" ];then
 echo -----------------------------------------------
 echo -e "\033[31m配置文件获取失败！\033[0m"
@@ -104,7 +104,7 @@ read -p "是否更换后端地址后重试？[1/0] > " res
 	server_link=0
 	fi
 	server_link=$(($server_link + 1))
-	echo $server_link
+	#echo $server_link
     sed -i "5i\server_link=$server_link" $ccfg
 	getyaml
   fi
@@ -114,7 +114,7 @@ else
 ##########需要变更的配置###########
 redir='redir-port: 7892'
 external='external-controller: 0.0.0.0:9999'
-dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [tls://dns.rubyfish.cn:853, 127.0.0.1:53], fallback: [tcp://1.1.1.1, tls://dns.google:853]}'
+dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, tls://dns.google:853]}'
 tun='tun: {enable: false, stack: system}' 
 exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 ###################################
@@ -129,8 +129,11 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	sed -i "6a$external" $yamlnew
 	sed -i "7a$dns" $yamlnew
 	sed -i "8a$tun" $yamlnew
-	sed -i "9a$experimental" $yamlnew
-	sed -i "1,40s/sni: \S*/\1skip-cert-verify: true}/" $yamlnew
+	sed -i "9a$exper" $yamlnew
+	if [ "$skip_cert" != "未开启" ];then
+	sed -i "10,99s/sni: \S*/\1skip-cert-verify: true}/" $yamlnew  #跳过trojan本地证书验证
+	sed -i '10,99s/}}/}, skip-cert-verify: true}/' $yamlnew  #跳过v2+ssl本地证书验证
+	fi
 	#替换文件
 	mv $yaml $yaml.bak
 	mv $yamlnew $yaml
@@ -359,10 +362,17 @@ else
 fi
 }
 clashadv(){
+#获取高级配置
+if [ ! -n "$skip_cert" ]; then
+sed -i "2i\skip_cert=已开启" $ccfg
+skip_cert=已开启
+fi
+#
 echo -----------------------------------------------
 echo -e "\033[33m欢迎使用高级模式菜单：\033[0m"
 echo 1 切换代理模式（Tun/Redir）
-echo 2 更新clash核心文件（施工中）
+echo 2 跳过本地证书验证（用于解决自建节点出现证书验证错误）：$skip_cert
+echo 3 更新clash核心文件（施工中）
 echo 3 更新GeoIP数据库（施工中）
 echo 4 更新管理脚本（施工中）
 echo 9 卸载clash
@@ -450,7 +460,21 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	  echo -e "\033[31m请输入正确的数字！\033[0m"
       clashadv
 	fi
-	
+  elif [[ $num == 2 ]]; then	
+	sed -i '/skip_cert*/'d $ccfg
+	echo -----------------------------------------------
+	  if [ "$skip_cert" = "未开启" ] > /dev/null 2>&1; then 
+	  sed -i "1i\skip_cert=已开启" $ccfg
+	  echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
+	  skip_cert=已开启
+	  else
+	  /etc/init.d/clash enable
+	  sed -i "1i\skip_cert=未开启" $ccfg
+	  echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
+	  skip_cert=未开启
+	  fi
+	clashadv
+  
   elif [[ $num == 9 ]]; then
     read -p "确认卸载clash？（警告：该操作不可逆！）[1/0] " res
 	if [ "$res" = '1' ]; then
@@ -484,13 +508,19 @@ echo 4 $auto1
 echo 5 设置定时任务（施工中）
 echo 6 使用链接导入节点/订阅
 echo 7 高级设置
+echo 8 测试菜单
 echo 0 退出脚本
 read -p "请输入对应数字 > " num
-if [[ $num -le 7 ]] > /dev/null 2>&1; then 
+if [[ $num -le 8 ]] > /dev/null 2>&1; then 
   if [[ $num == 0 ]]; then
   exit;
   
   elif [[ $num == 1 ]]; then
+	if [ ! -f "$yaml" ];then
+	echo -----------------------------------------------
+	echo -e "\033[31m没有找到配置文件，请先导入节点/订阅链接！\033[0m"
+	clashlink
+	fi
     if [ $uid > 0 ];then
 	echo -----------------------------------------------
 	/etc/init.d/clash stop > /dev/null 2>&1
@@ -559,7 +589,48 @@ echo -e "\033[36m正在施工中，敬请期待！\033[0m"
 
   elif [[ $num == 7 ]]; then
   clashadv
-  
+  elif [[ $num == 8 ]]; then
+	echo -----------------------------------------------
+	echo -e "\033[31m这里是隐藏的测试命令菜单\033[0m"
+	echo 1 不能正常运行时，手动运行clash查看报错信息：
+	echo 2 查看系统53端口占用 
+	echo 3 测试ssl加密（aes-128-gcm）跑分
+	echo 4 查看iptables端口转发详情
+	echo 5 查看config.yaml前40行
+	echo 0 返回上级目录！
+	read -p "请输入对应数字 > " num
+	if [[ $num == 0 ]]; then
+		clashsh
+	elif [[ $num == 1 ]]; then
+	echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
+	$cpath/clash -d $cpath & { sleep 3 ; kill $! & }
+	echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
+	exit;
+	elif [[ $num == 2 ]]; then
+	echo -----------------------------------------------
+	netstat -ntulp |grep 53
+	echo -----------------------------------------------
+	exit;
+	elif [[ $num == 3 ]]; then
+	echo -----------------------------------------------
+	openssl speed -multi 4 -evp aes-128-gcm
+	echo -----------------------------------------------
+	exit;
+	elif [[ $num == 4 ]]; then
+	echo -----------------------------------------------
+	iptables  -t nat  -L PREROUTING --line-numbers
+	echo -----------------------------------------------
+	exit;
+	elif [[ $num == 5 ]]; then
+	echo -----------------------------------------------
+	sed -n '1,40p' $yaml
+	echo -----------------------------------------------
+	exit;
+	else
+	echo -----------------------------------------------
+	echo -e "\033[31m请输入正确的数字！\033[0m"
+	clashadv
+	fi
   else
   echo -----------------------------------------------
   echo -e "\033[31m请输入正确的数字！\033[0m"

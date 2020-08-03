@@ -43,8 +43,10 @@ echo -----------------------------------------------
 echo 开始从服务器获取安装文件！
 tarurl=$url/bin/clashfm.tar.gz
 if command -v curl &> /dev/null; then
-	result=$(curl -w %{http_code} -skLo /tmp/clashfm.tar.gz $tarurl)
-else
+echo 111
+	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
+	result="200"
+else $result
 	wget-ssl -q --no-check-certificate --tries=1 --timeout=10 -O /tmp/clashfm.tar.gz $tarurl
 	[ $? -eq 0 ] && result="200"
 fi
@@ -52,24 +54,23 @@ fi
 #解压
 echo -----------------------------------------------
 echo 开始解压文件！
-tar -zxvf '/tmp/clashfm.tar.gz' -C $dir > /dev/null
+tar -zxvf '/tmp/clashfm.tar.gz' -C $dir/clash/ > /dev/null
 [ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 #初始化文件目录
-mv $dir/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
-chmod  777 $dir/clash  #授予权限
+mv $dir/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
+chmod  777 $dir/clash/clash  #授予权限
 chmod  777 /etc/init.d/clash #授予权限
-fi
+
 #设置环境变量
 sed -i '/alias clash=*/'d /etc/profile
-echo "alias clash=\"sh $dir/clash/clash.sh\"" >> /etc/profile
-alias clash="sh $dir/clash/clash.sh" #设置快捷命令环境变量
+echo "alias clash=\"sh $dir/clash/clash.sh\"" >> /etc/profile #设置快捷命令环境变量
 sed -i '/export clashdir=*/'d /etc/profile
-echo "export clashdir=\"$dir/clash\"" >> /etc/profile
-export clashdir="$dir/clash" #设置clash路径环境变量
+echo "export clashdir=\"$dir/clash\"" >> /etc/profile #设置clash路径环境变量
 #删除临时文件
 rm -rf /tmp/clashfm.tar.gz 
 #提示
 echo -----------------------------------------------
 echo clash for Miwifi 已经安装成功!
 echo -e "\033[33m直接输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
-
+echo -----------------------------------------------
+exit 1
