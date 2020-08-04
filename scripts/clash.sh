@@ -17,7 +17,7 @@ yaml=$cpath/config.yaml
 if [ ! -f "$ccfg" ]; then
 echo mark文件不存在，正在创建！
 cat >$ccfg<<EOF
-#标识clash运行状态的文件，请勿改动！
+#标识clash运行状态的文件，不明勿动！
 EOF
 fi
 source $ccfg
@@ -181,11 +181,10 @@ echo -e "\033[33m支持批量导入\033[30;46m Http/Https/Clash \033[0;33m等格
 echo -e "支持批量导入\033[30;42m Vmess/SSR/SS/Trojan/Sock5 \033[0;33m等格式的节点链接"
 echo -e "\033[36m多个较短的链接可以用\033[30;47m | \033[0;36m分隔以一次性输入"
 echo -e "多个较长的链接请尽量分多次输入，可支持多达\033[30;47m 9 \033[0;36m次输入"
-echo -e "\033[0m注意SSR/SS不支持\033[30;47m chacha20加密 \033[0m"
+echo -e "\033[31;47m注意SSR/SS不支持：\033[30;47mchacha20加密 \033[0m"
 echo -e "\033[44;37m直接输入回车以结束输入并开始导入链接！\033[0m"
 echo -e "\033[33m 0 返回上级目录！\033[0m"
-echo
-url=""
+echo -----------------------------------------------
 read -p "请输入第"$i"个链接 > " url
   test=$(echo $url | grep "://")
   url=`echo ${url/\ \(*\)/''}`   #删除恶心的超链接内容
@@ -193,7 +192,7 @@ read -p "请输入第"$i"个链接 > " url
   url=`echo ${url/\&config\=*/""}`   #将clash完整链接还原成单一链接
   url=`echo ${url//\&/\%26}`   #将分隔符 & 替换成urlcode：%26
   if [[ "$test" != "" ]];then
-	if [[ $i == 1 ]];then
+	if [[ -z $Url ]];then
 	Url="$url"
 	else
 	Url="$Url"\|"$url"
@@ -270,6 +269,18 @@ if [ -z $num ];then
   echo -e "\033[31m请输入正确的数字！\033[0m"
   clashsh
 elif [[ $num == 1 ]];then
+  if [ -n "$Url" ];then
+    echo -----------------------------------------------
+    echo -e "\033[33m检测到已记录的订阅链接：\033[0m"
+    echo -e "\033[4;32m$Url\033[0m"
+    echo -----------------------------------------------
+	read -p "清空链接/追加导入？[1/0] > " res
+	  if [ "$res" = '1' ]; then
+      Url=""
+	  echo -----------------------------------------------
+	  echo -e "\033[31m链接已清空！\033[0m"
+	  fi
+  fi
   getlink
 elif [[ $num == 2 ]];then
   echo -----------------------------------------------
@@ -369,14 +380,19 @@ if [ ! -n "$skip_cert" ]; then
 sed -i "2i\skip_cert=已开启" $ccfg
 skip_cert=已开启
 fi
+if [ ! -n "$common_ports" ]; then
+sed -i "2i\common_ports=未开启" $ccfg
+common_ports=未开启
+fi
 #
 echo -----------------------------------------------
 echo -e "\033[33m欢迎使用高级模式菜单：\033[0m"
 echo 1 切换代理模式（Tun/Redir）
 echo 2 跳过本地证书验证（用于解决自建节点出现证书验证错误）：$skip_cert
-echo 3 更新clash核心文件（施工中）
-echo 3 更新GeoIP数据库（施工中）
-echo 4 更新管理脚本（施工中）
+echo 3 只代理常用端口（用于屏蔽P2P流量）：$common_ports
+echo 4 更新clash核心文件（施工中）
+echo 5 更新GeoIP数据库（施工中）
+echo 6 更新管理脚本（施工中）
 echo 9 卸载clash
 echo 0 返回上级菜单 
 read -p "请输入对应数字 > " num
@@ -476,7 +492,21 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	  skip_cert=未开启
 	  fi
 	clashadv
-  
+	
+  elif [[ $num == 3 ]]; then	
+	sed -i '/common_ports*/'d $ccfg
+	echo -----------------------------------------------
+	  if [ "$common_ports" = "未开启" ] > /dev/null 2>&1; then 
+	  sed -i "1i\common_ports=已开启" $ccfg
+	  echo -e "\033[33m已设为仅代理（22,53,587,465,995,993,143,80,443）等常用端口！！\033[0m"
+	  common_ports=已开启
+	  else
+	  /etc/init.d/clash enable
+	  sed -i "1i\common_ports=未开启" $ccfg
+	  echo -e "\033[33m已设为代理全部端口！！\033[0m"
+	  common_ports=未开启
+	  fi
+	clashadv  
   elif [[ $num == 9 ]]; then
     read -p "确认卸载clash？（警告：该操作不可逆！）[1/0] " res
 	if [ "$res" = '1' ]; then

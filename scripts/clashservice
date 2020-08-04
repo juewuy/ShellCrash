@@ -9,13 +9,18 @@ getconfig(){
 cpath=/etc/clash
 ccfg=$cpath/mark
 if [ ! -f "$ccfg" ]; then
-echo mark文件不存在，默认以Redir模式运行！
+	echo mark文件不存在，默认以Redir模式运行！
 cat >$ccfg<<EOF
-#标识clash运行状态的文件，请勿改动！
+#标识clash运行状态的文件，不明勿动！
 EOF
-redir_mod=redir模式
+	redir_mod=redir模式
+	common_ports=未开启
 fi
-source $ccfg
+source $ccfg #加载配置文件
+#是否代理常用端口
+if [ "$common_ports" = "已开启" ];then
+	ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
+fi
 }
 mark_time(){
 start_time=`date +%s`
@@ -33,7 +38,7 @@ start_redir(){
 	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
-	iptables -t nat -A clash -p tcp -j REDIRECT --to-ports 7892
+	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
 	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
