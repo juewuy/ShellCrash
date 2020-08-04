@@ -43,7 +43,7 @@ echo -----------------------------------------------
 echo 开始从服务器获取安装文件！
 tarurl=$url/bin/clashfm.tar.gz
 if command -v curl &> /dev/null; then
-echo 111
+echo 没有好的服务器，下载慢或者没速度请见谅！！！
 	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
 	result="200"
 else $result
@@ -54,7 +54,7 @@ fi
 #解压
 echo -----------------------------------------------
 echo 开始解压文件！
-mkdir $dir/clash > /dev/null
+mkdir -p $dir/clash > /dev/null
 tar -zxvf '/tmp/clashfm.tar.gz' -C $dir/clash/ > /dev/null
 [ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 #初始化文件目录
@@ -74,4 +74,4 @@ echo -----------------------------------------------
 echo clash for Miwifi 已经安装成功!
 echo -e "\033[33m直接输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
 echo -----------------------------------------------
-exit 1
+

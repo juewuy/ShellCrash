@@ -35,9 +35,10 @@ sed -i "2i\redir_mod=Redir模式" $ccfg
 redir_mod=Redir模式
 fi
 #获取运行状态
-uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`
-if [ $uid > 0 ];then
+status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
+if [[ $status -gt 0 ]];then
 run="\033[32m正在运行（$redir_mod）\033[0m"
+uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`
 VmRSS=`cat /proc/$uid/status|grep -w VmRSS|awk '{print $2,$3}'`
   #获取运行时长
   if [ "$start_time" > 0 ] > /dev/null 2>&1; then 
@@ -56,7 +57,7 @@ fi
 #输出状态
 echo -----------------------------------------------
 echo -e "Clash服务"$run"，"$auto""
-if [ $uid > 0 ];then
+if [ $status -gt 0 ];then
 echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
 fi
 }
@@ -134,6 +135,7 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	sed -i "10,99s/sni: \S*/\1skip-cert-verify: true}/" $yamlnew  #跳过trojan本地证书验证
 	sed -i '10,99s/}}/}, skip-cert-verify: true}/' $yamlnew  #跳过v2+ssl本地证书验证
 	fi
+	sed -i '/rules:/a \ - DOMAIN-SUFFIX,clash.razord.top,🎯 全球直连' $yamlnew 
 	#替换文件
 	mv $yaml $yaml.bak
 	mv $yamlnew $yaml
@@ -142,8 +144,8 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	/etc/init.d/clash stop
 	/etc/init.d/clash start
 	sleep 1
-	uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`
-		if [ $uid > 0 ];then
+	status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
+		if [[ $status -gt 0 ]];then
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
@@ -401,15 +403,15 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	    sed -i '/redir_mod*/'d $ccfg
 		sed -i "2i\redir_mod=Tun模式" $ccfg	#修改redir_mod标记
 	    sed -i '5,20s/tun: {enable: false/tun: {enable: true/' $yaml		#修改配置文件
-		if [ $uid > 0 ];then > /dev/null 2>&1
+		if [  $status -gt 0 ];then > /dev/null 2>&1
 		echo -----------------------------------------------
 		echo -e "\033[33m正在重启clash进程……\033[0m"
 		/etc/init.d/clash stop > /dev/null 2>&1
 		fi	  
 		/etc/init.d/clash start
 		sleep 1
-		uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`	  
-		if [ $uid > 0 ];then
+		status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
+		if [[ $status -gt 0 ]];then
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "\033[33mclash已成功切换为：\033[47;34m Tun模式! \033[0m"
@@ -431,15 +433,15 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	    sed -i '/redir_mod*/'d $ccfg
 		sed -i "2i\redir_mod=Redir模式" $ccfg	#修改redir_mod标记
 	    sed -i '5,20s/tun: {enable: true/tun: {enable: false/' $yaml		#修改配置文件
-		if [ $uid > 0 ];then
+		if [ $status -gt 0 ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m正在重启clash进程……\033[0m"
 		/etc/init.d/clash stop > /dev/null 2>&1
 		fi	  
 		/etc/init.d/clash start
 		sleep 1
-		uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`	  
-		if [ $uid > 0 ];then
+		status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
+		if [[ $status -gt 0 ]];then
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "\033[33mclash已成功切换为：\033[47;34m Redir模式! \033[0m"
@@ -523,15 +525,15 @@ if [[ $num -le 8 ]] > /dev/null 2>&1; then
 	echo -e "\033[31m没有找到配置文件，请先导入节点/订阅链接！\033[0m"
 	clashlink
 	fi
-    if [ $uid > 0 ];then
+    if [ $status -gt 0 ];then
 	echo -----------------------------------------------
 	/etc/init.d/clash stop > /dev/null 2>&1
 	echo -e "\033[31mClash服务已停止！\033[0m"
 	fi
     /etc/init.d/clash start
 	sleep 1
-    uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`
-      if [ $uid > 0 ];then
+    status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
+	  if [[ $status -gt 0 ]];then
 	  echo -----------------------------------------------
       echo -e "\033[32mclash服务已启动！\033[0m"
 	  echo 可以使用 http://clash.razord.top （IP为网关IP，端口为9999）管理clash内置规则
