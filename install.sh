@@ -45,7 +45,6 @@ tarurl=$url/bin/clashfm.tar.gz
 if command -v curl &> /dev/null; then
 echo 没有好的服务器，下载慢或者没速度请见谅！！！
 	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
-	result="200"
 else $result
 	wget-ssl -q --no-check-certificate --tries=1 --timeout=10 -O /tmp/clashfm.tar.gz $tarurl
 	[ $? -eq 0 ] && result="200"
