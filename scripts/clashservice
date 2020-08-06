@@ -29,11 +29,12 @@ fi
 modifyyaml(){
 ##########需要变更的配置###########
 redir='redir-port: 7892'
+ipv6='ipv6: true'
 external='external-controller: 0.0.0.0:9999'
 if [ "$dns_mod" = "fake-ip" ];then
 dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4]}'
 else
-dns='dns: {enable: true, listen: 0.0.0.0:1053, enhanced-mode: redir-host, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4]}'
+dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:1053, enhanced-mode: redir-host, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4]}'
 fi
 if [ "$redir_mod" = "Tun模式" ];then
 tun='tun: {enable: true, stack: system}'
@@ -44,12 +45,14 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 ###################################
 	#预删除需要添加的项目
 	sed -i '/^redir-port:*/'d $clashdir/config.yaml
+	sed -i '/^ipv6: true:*/'d $clashdir/config.yaml
 	sed -i '/^external-controller:*/'d $clashdir/config.yaml
 	sed -i '/^dns:*/'d $clashdir/config.yaml
 	sed -i '/^tun:*/'d $clashdir/config.yaml
 	sed -i '/^experimental:*/'d $clashdir/config.yaml
 	#添加配置
 	sed -i "2a$redir" $clashdir/config.yaml
+	sed -i "5a$ipv6" $clashdir/config.yaml
 	sed -i "6a$external" $clashdir/config.yaml
 	sed -i "7a$dns" $clashdir/config.yaml
 	sed -i "8a$tun" $clashdir/config.yaml
@@ -78,6 +81,7 @@ start_redir(){
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
+	#ip6tables -t nat -A PREROUTING -p tcp $ports-j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
 	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
 }
@@ -87,17 +91,12 @@ stop_redir(){
 	iptables -t nat -F clash > /dev/null 2>&1
 	iptables -t nat -X clash > /dev/null 2>&1
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+	#ip6tables -t nat -A PREROUTING -p tcp $ports-j REDIRECT --to-ports 7892 > /dev/null 2>&1
 	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
 }
 start_tun(){
-	#修改iptables规则使流量进入clash
+	#允许tun网卡接受流量
 	iptables -I FORWARD -o utun -j ACCEPT
-	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
-	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
-}
-stop_tun(){
-	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
 }
 start_service() {
 	getconfig
@@ -110,21 +109,11 @@ start_service() {
 	procd_set_param command $clashdir/clash -d $clashdir
 	procd_close_instance
 	#修改iptables规则使流量进入clash
-	if [[ "$redir_mod" = "Tun模式" ]];then
-		stop_tun
-		start_tun
-		mark_time
-	else
-		stop_redir
-		start_redir
-		mark_time
-	fi
+	stop_redir
+	start_tun
+	start_redir
+	mark_time
 }
 stop_service() {
-	getconfig
-	if [[ "$redir_mod" = "Tun模式" ]];then
-		stop_tun
-	else
-		stop_redir
-	fi
+	stop_redir
 }
