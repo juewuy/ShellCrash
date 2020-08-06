@@ -78,9 +78,9 @@ status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 	if [[ $status -gt 0 ]];then
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
-		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理clash内置规则"
+		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
 		host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-		echo -e "Host地址:\033[30;46m $host \033[0m端口:\033[30;46m 9999 \033[0m"
+		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
 	else
 		echo -----------------------------------------------
 		echo -e "\033[31mclash服务启动失败！请检查配置文件！\033[0m"

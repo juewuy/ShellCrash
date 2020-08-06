@@ -6,8 +6,7 @@ USE_PROCD=1
 START=99
 
 getconfig(){
-cpath=/etc/clash
-ccfg=$cpath/mark
+ccfg=$clashdir/mark
 if [ ! -f "$ccfg" ]; then
 	echo mark文件不存在，默认以Redir模式运行！
 cat >$ccfg<<EOF
@@ -15,12 +14,51 @@ cat >$ccfg<<EOF
 EOF
 	redir_mod=redir模式
 	common_ports=未开启
+	dns_mod=redir-host
 fi
 source $ccfg #加载配置文件
 #是否代理常用端口
 if [ "$common_ports" = "已开启" ];then
 	ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
 fi
+#DNS模式
+if [ "$common_ports" = "已开启" ];then
+	ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
+fi
+}
+modifyyaml(){
+##########需要变更的配置###########
+redir='redir-port: 7892'
+external='external-controller: 0.0.0.0:9999'
+if [ "$dns_mod" = "fake-ip" ];then
+dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4]}'
+else
+dns='dns: {enable: true, listen: 0.0.0.0:1053, enhanced-mode: redir-host, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4]}'
+fi
+if [ "$redir_mod" = "Tun模式" ];then
+tun='tun: {enable: true, stack: system}'
+else
+tun='tun: {enable: false}'
+fi 
+exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
+###################################
+	#预删除需要添加的项目
+	sed -i '/^redir-port:*/'d $clashdir/config.yaml
+	sed -i '/^external-controller:*/'d $clashdir/config.yaml
+	sed -i '/^dns:*/'d $clashdir/config.yaml
+	sed -i '/^tun:*/'d $clashdir/config.yaml
+	sed -i '/^experimental:*/'d $clashdir/config.yaml
+	#添加配置
+	sed -i "2a$redir" $clashdir/config.yaml
+	sed -i "6a$external" $clashdir/config.yaml
+	sed -i "7a$dns" $clashdir/config.yaml
+	sed -i "8a$tun" $clashdir/config.yaml
+	sed -i "9a$exper" $clashdir/config.yaml
+	if [ "$skip_cert" != "未开启" ];then
+	sed -i "10,99s/sni: \S*/\1skip-cert-verify: true}/" $clashdir/config.yaml  #跳过trojan本地证书验证
+	sed -i '10,99s/}}/}, skip-cert-verify: true}/' $clashdir/config.yaml  #跳过v2+ssl本地证书验证
+	fi
+	sed -i '/rules:/a \ - DOMAIN-SUFFIX,clash.razord.top,🎯 全球直连' $clashdir/config.yaml
 }
 mark_time(){
 start_time=`date +%s`
@@ -63,12 +101,13 @@ stop_tun(){
 }
 start_service() {
 	getconfig
+	modifyyaml
     #创建clash后台进程
 	procd_open_instance
 	procd_set_param respawn
 	procd_set_param stderr 1
 	procd_set_param stdout 1
-	procd_set_param command $cpath/clash -d $cpath
+	procd_set_param command $clashdir/clash -d $clashdir
 	procd_close_instance
 	#修改iptables规则使流量进入clash
 	if [[ "$redir_mod" = "Tun模式" ]];then

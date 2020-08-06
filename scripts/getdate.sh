@@ -51,7 +51,7 @@ read -p "是否更换后端地址后重试？[1/0] > " res
 	fi
 	server_link=$(($server_link + 1))
 	#echo $server_link
-    sed -i "5i\server_link=$server_link" $ccfg
+    sed -i "1i\server_link=$server_link" $ccfg
 	getyaml
   fi
 exit;
