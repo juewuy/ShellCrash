@@ -8,6 +8,7 @@ echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
 getconfig(){
+clashdir=/etc/clash
 #版本号
 clashfm=0.8.0
 #更新服务器地址

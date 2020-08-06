@@ -6,6 +6,7 @@ USE_PROCD=1
 START=99
 
 getconfig(){
+clashdir=/etc/clash
 ccfg=$clashdir/mark
 if [ ! -f "$ccfg" ]; then
 	echo mark文件不存在，默认以Redir模式运行！
