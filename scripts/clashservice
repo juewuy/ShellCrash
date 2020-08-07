@@ -6,16 +6,17 @@ USE_PROCD=1
 START=99
 
 getconfig(){
-clashdir=/etc/clash
 ccfg=$clashdir/mark
 if [ ! -f "$ccfg" ]; then
 	echo mark文件不存在，默认以Redir模式运行！
 cat >$ccfg<<EOF
 #标识clash运行状态的文件，不明勿动！
 EOF
+	#指定一些默认状态
 	redir_mod=redir模式
 	common_ports=未开启
 	dns_mod=redir-host
+	modify_yaml=未开启
 fi
 source $ccfg #加载配置文件
 #是否代理常用端口
@@ -29,7 +30,11 @@ fi
 }
 modifyyaml(){
 ##########需要变更的配置###########
+mix='mixed-port: 7890'
 redir='redir-port: 7892'
+lan='allow-lan: true'
+mode='mode: Rule'
+log='log-level: info'
 ipv6='ipv6: true'
 external='external-controller: 0.0.0.0:9999'
 if [ "$dns_mod" = "fake-ip" ];then
@@ -45,24 +50,26 @@ fi
 exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 ###################################
 	#预删除需要添加的项目
-	sed -i '/^redir-port:*/'d $clashdir/config.yaml
-	sed -i '/^ipv6: true:*/'d $clashdir/config.yaml
-	sed -i '/^external-controller:*/'d $clashdir/config.yaml
-	sed -i '/^dns:*/'d $clashdir/config.yaml
-	sed -i '/^tun:*/'d $clashdir/config.yaml
-	sed -i '/^experimental:*/'d $clashdir/config.yaml
+	i=$(grep  -n  "^proxies:" $clashdir/config.yaml | head -1 | cut -d ":" -f 1)
+	i=$(($i-1))
+	sed -i '1,'$i'd' $clashdir/config.yaml
 	#添加配置
-	sed -i "2a$redir" $clashdir/config.yaml
+	sed -i "1i$mix" $clashdir/config.yaml
+	sed -i "1a$redir" $clashdir/config.yaml
+	sed -i "2a$lan" $clashdir/config.yaml
+	sed -i "3a$mode" $clashdir/config.yaml
+	sed -i "4a$log" $clashdir/config.yaml
 	sed -i "5a$ipv6" $clashdir/config.yaml
 	sed -i "6a$external" $clashdir/config.yaml
 	sed -i "7a$dns" $clashdir/config.yaml
 	sed -i "8a$tun" $clashdir/config.yaml
 	sed -i "9a$exper" $clashdir/config.yaml
+	#跳过本地tls证书验证
 	if [ "$skip_cert" != "未开启" ];then
 	sed -i "10,99s/sni: \S*/\1skip-cert-verify: true}/" $clashdir/config.yaml  #跳过trojan本地证书验证
 	sed -i '10,99s/}}/}, skip-cert-verify: true}/' $clashdir/config.yaml  #跳过v2+ssl本地证书验证
 	fi
-	sed -i '/rules:/a \ - DOMAIN-SUFFIX,clash.razord.top,🎯 全球直连' $clashdir/config.yaml
+	#sed -i '/rules:/a \ - DOMAIN-SUFFIX,clash.razord.top,🎯 全球直连' $clashdir/config.yaml
 }
 mark_time(){
 start_time=`date +%s`
@@ -101,7 +108,10 @@ start_tun(){
 }
 start_service() {
 	getconfig
+	#使用内置规则强行覆盖config配置文件
+	if [ "$modify_yaml" = "未开启" ];then
 	modifyyaml
+	fi
     #创建clash后台进程
 	procd_open_instance
 	procd_set_param respawn
