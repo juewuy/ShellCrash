@@ -6,6 +6,8 @@ USE_PROCD=1
 START=99
 
 getconfig(){
+#开机加载环境变量保证找到文件路径
+source /etc/profile > /dev/null 2>&1
 ccfg=$clashdir/mark
 if [ ! -f "$ccfg" ]; then
 	echo mark文件不存在，默认以Redir模式运行！
