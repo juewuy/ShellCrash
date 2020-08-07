@@ -332,8 +332,73 @@ result=$(curl -w %{http_code} -kLo /tmp/clash.new $corelink)
 			
 }
 getgeo(){
-echo 未完成，敬请期待！！！！
+echo -----------------------------------------------
+echo -e "\033[32m感谢Alecthw大神提供的优质GeoIP数据库！！！\033[0m"
+echo -----------------------------------------------
+echo -e "\033[33m请选择下载源：\033[0m"
+echo -e " 1 我的个人服务器"
+echo -e " 2 Alecthw大神提供的服务器"
+echo -e " 0 返回上级菜单"
+read -p "请输入对应数字 > " num
+	if [[ $num == 0 ]]; then
+		update
+	elif [[ $num == 1 ]]; then
+		geolink="$update_url/bin/Country.mmdb"
+		echo $geolink
+	elif [[ $num == 2 ]]; then
+		geolink="http://www.ideame.top/mmdb/Country.mmdb"
+	else
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+		update
+		exit;
+	fi
+	echo -----------------------------------------------
+	echo 正在从服务器获取数据库文件…………
+	result=$(curl -w %{http_code} -kLo $clashdir/Country.mmdb $geolink)
+	if [ "$result" != "200" ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m文件下载失败！\033[0m"
+		echo -----------------------------------------------
+		getgeo
+	else
+		echo -----------------------------------------------
+		echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
+			update
+	fi
 update
 }
-
+getdb(){
+host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+echo -----------------------------------------------
+echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
+echo -----------------------------------------------
+echo -e "\033[32m打开管理面板的速度更快且更稳定"
+echo -e "\033[33m需要占用约500kb的本地空间(目录：/www/clash)\033[0m"
+echo -e "\033[36m可以使用\033[32;4mhttp://$host/clash\033[0;36m访问面板\033[0m"
+echo -----------------------------------------------
+read -p "是否安装/更新安装本地面板？[1/0] > " res
+	if [ "$res" = '1' ]; then
+		dblink="$update_url/bin/clashdb.tar.gz"
+		echo -----------------------------------------------
+		echo 正在连接服务器获取安装文件…………
+		result=$(curl -w %{http_code} -kLo /tmp/clashdb.tar.gz $dblink)
+		if [ "$result" != "200" ];then
+			echo -----------------------------------------------
+			echo -e "\033[31m文件下载失败！\033[0m"
+			echo -----------------------------------------------
+			getdb
+		else
+			echo -e "\033[33m下载成功，正在解压文件！\033[0m"
+			mkdir -p /www/clash > /dev/null
+			tar -zxvf '/tmp/clashdb.tar.gz' -C /www/clash > /dev/null
+			[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
+			echo -e "\033[32m面板安装成功！"
+			echo -----------------------------------------------
+			echo -e "\033[36m请使用\033[32;4mhttp://$host/clash\033[0;36m访问面板\033[0m"
+			rm -rf /tmp/clashdb.tar.gz
+			update
+		fi
+	fi		
+update
+}
 

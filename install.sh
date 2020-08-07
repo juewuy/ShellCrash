@@ -12,7 +12,7 @@ result=$(curl -w %{http_code} -skLo /tmp/clashversion $url/bin/version)
 [ "$result" != "200" ] && echo "无法连接到服务器！" && exit 1
 source /tmp/clashversion
 echo -----------------------------------------------
-echo -e "最新版本为：\033[32m $versionsh \033[0m"
+echo -e "~~~~版本：\033[32m$versionsh\033[0m"
 echo -----------------------------------------------
 echo -e "\033[44m使用中如遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo -e "\033[37m目前仅支持小米AX系列3款路由器"

@@ -9,7 +9,7 @@ echo "***********************************************"
 
 getconfig(){
 #版本号
-versionsh_l=0.8.3
+versionsh_l=0.8.4
 #更新服务器地址
 update_url="https://juewuy.xyz/clash"
 #文件路径
@@ -65,9 +65,17 @@ echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"
 fi
 #安装clash核心
 if [ ! -f $clashdir/clash ];then
+echo -----------------------------------------------
 echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
 source $clashdir/getdate.sh
 getcore
+fi
+#安装GeoIP数据库
+if [ ! -f $clashdir/Country.mmdb ];then
+echo -----------------------------------------------
+echo -e "\033[31m没有找到GeoIP数据库文件，请先下载数据库！\033[0m"
+source $clashdir/getdate.sh
+getgeo
 fi
 }
 clashstart(){
@@ -76,10 +84,11 @@ clashstart(){
 sleep 1
 status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 	if [[ $status -gt 0 ]];then
+		host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 		echo -----------------------------------------------
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-		host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+		echo -e "也可以前往更新菜单安装本地Dashboard面板，连接更稳定！！！"
 		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
 	else
 		echo -----------------------------------------------
@@ -397,15 +406,16 @@ exit;
 update(){
 echo -----------------------------------------------
 echo -e "\033[33m欢迎使用更新功能：\033[0m"
+echo -----------------------------------------------
 echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
 echo -e "感谢：\033[32mClashR \033[0m作者\033[36m BROBIRD\033[0m 项目地址：\033[32mhttps://github.com/BROBIRD/clash\033[0m"
-echo -e "感谢：\033[32mtun2socks \033[0m作者\033[36m eycorsican\033[0m 项目地址：\033[32mhttps://github.com/eycorsican/go-tun2socks\033[0m"
 echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
 echo -----------------------------------------------
-echo -e " 1 更新管理脚本"
-echo -e " 2 更新\替换clash核心文件"
-echo -e " 3 更新GeoIP数据库（施工中）"
-echo -e " 9 卸载clash"
+echo -e " 1 更新\033[36m管理脚本\033[0m"
+echo -e " 2 切换\033[33mclash核心\033[0m"
+echo -e " 3 更新\033[32mGeoIP数据库\033[0m"
+echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+echo -e " 9 \033[31m卸载\033[34mClash for Miwfi\033[0m"
 echo -e " 0 返回上级菜单" 
 read -p "请输入对应数字 > " num
 if [[ $num -le 9 ]] > /dev/null 2>&1; then 
@@ -424,6 +434,10 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	source $clashdir/getdate.sh
 	getgeo
 	
+  elif [[ $num == 4 ]]; then	
+	source $clashdir/getdate.sh
+	getdb
+	
   elif [[ $num == 9 ]]; then
     read -p "确认卸载clash？（警告：该操作不可逆！）[1/0] " res
 	if [ "$res" = '1' ]; then
@@ -431,6 +445,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
     /etc/init.d/clash stop
     rm -rf $clashdir
     rm -rf /etc/init.d/clash
+	rm -rf /www/clash
     rm -rf $csh
 	sed -i '/alias clash=*/'d /etc/profile
 	sed -i '/export clashdir=*/'d /etc/profile
@@ -458,8 +473,8 @@ echo -e " 3 \033[31m停止\033[0mclash服务"
 echo -e " 4 $auto1"
 echo -e " 5 设置定时任务（施工中）"
 echo -e " 6 导入\033[32m节点/订阅\033[0m链接"
-echo -e " 8 \033[36m测试菜单\033[0m"
-echo -e " 9 \033[32m检查更新\033[0m"
+echo -e " 8 \033[35m测试菜单\033[0m"
+echo -e " 9 \033[36m更新/卸载\033[0m"
 echo -e " 0 \033[0m退出脚本\033[0m"
 read -p "请输入对应数字 > " num
 if [[ $num -le 9 ]] > /dev/null 2>&1; then 
@@ -517,17 +532,18 @@ echo -e "\033[36m正在施工中，敬请期待！\033[0m"
   elif [[ $num == 8 ]]; then
 	echo -----------------------------------------------
 	echo -e "\033[31m这里是测试命令菜单\033[0m"
-	echo 1 不能正常运行时，手动运行clash查看报错信息：
-	echo 2 查看系统53端口占用 
-	echo 3 测试ssl加密（aes-128-gcm）跑分
-	echo 4 查看iptables端口转发详情
-	echo 5 查看config.yaml前40行
-	echo 6 测试代理服务器连通性
-	echo 0 返回上级目录！
+	echo " 1 查看clash运行时的报错信息"
+	echo " 2 查看系统DNS端口(:53)占用 "
+	echo " 3 测试ssl加密（aes-128-gcm）跑分"
+	echo " 4 查看iptables端口转发详情"
+	echo " 5 查看config.yaml前40行"
+	echo " 6 测试代理服务器连通性（google.tw)"
+	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num
 	if [[ $num == 0 ]]; then
 		clashsh
 	elif [[ $num == 1 ]]; then
+		etc/init.d/clash stop
 		echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
 		$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
 		echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
