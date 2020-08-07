@@ -33,7 +33,7 @@ echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
 echo -e "\033[36m-----------------------------------------------"
 echo -e "|                                             |"
 echo -e "|         需要一点时间，请耐心等待！          |"
-echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出033[36m        |"
+echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出\033[36m        |"
 echo -e "-----------------------------------------------\033[0m"
 #获取在线yaml文件
 yamlnew=$yaml.new
@@ -63,7 +63,9 @@ if [ "$result" != "200" ];then
 else
 	if cat $yamlnew | grep ', server:' >/dev/null;then
 		#替换文件
-		mv $yaml $yaml.bak
+		if [ -f $yaml ];then
+			mv $yaml $yaml.bak
+		fi
 		mv $yamlnew $yaml
 		echo 配置文件已生成！正在重启clash使其生效！
 		#重启clash服务
@@ -219,7 +221,7 @@ result=$(curl -w %{http_code} -skLo /tmp/clashversion $update_url/bin/version)
 [ "$result" != "200" ] && echo "无法连接到服务器！" && exit 1
 source /tmp/clashversion
 echo -----------------------------------------------
-echo -e "当前脚本版本为：\033[33m $clashfm \033[0m"
+echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
 echo -e "最新脚本版本为：\033[32m $versionsh \033[0m"
 echo -----------------------------------------------
 read -p "是否更新脚本？[1/0] > " res

@@ -111,7 +111,7 @@ start_tun(){
 start_service() {
 	getconfig
 	#使用内置规则强行覆盖config配置文件
-	if [ "$modify_yaml" = "未开启" ];then
+	if [ "$modify_yaml" != "已开启" ];then
 	modifyyaml
 	fi
     #创建clash后台进程
