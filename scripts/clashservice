@@ -19,6 +19,7 @@ EOF
 	common_ports=未开启
 	dns_mod=redir-host
 	modify_yaml=未开启
+	ipv6_support=未开启
 fi
 source $ccfg #加载配置文件
 #是否代理常用端口
@@ -30,21 +31,25 @@ if [ "$common_ports" = "已开启" ];then
 	ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
 fi
 }
-modifyyaml(){
+modify_yaml(){
 ##########需要变更的配置###########
 mix='mixed-port: 7890'
 redir='redir-port: 7892'
 lan='allow-lan: true'
 mode='mode: Rule'
 log='log-level: info'
+if [ "$ipv6_support" = "已开启" ];then
 ipv6='ipv6: true'
+else
+ipv6='ipv6: false'
+fi
 external='external-controller: 0.0.0.0:9999'
 if [ "$dns_mod" = "fake-ip" ];then
 dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4]}'
 else
 dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:1053, enhanced-mode: redir-host, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4]}'
 fi
-if [ "$redir_mod" = "Tun模式" ];then
+if [ "$redir_mod" != "Redir模式" ];then
 tun='tun: {enable: true, stack: system}'
 else
 tun='tun: {enable: false}'
@@ -74,9 +79,9 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#sed -i '/rules:/a \ - DOMAIN-SUFFIX,clash.razord.top,🎯 全球直连' $clashdir/config.yaml
 }
 mark_time(){
-start_time=`date +%s`
-sed -i '/start_time*/'d $ccfg
-sed -i "3i\start_time=$start_time" $ccfg
+	start_time=`date +%s`
+	sed -i '/start_time*/'d $ccfg
+	sed -i "3i\start_time=$start_time" $ccfg
 }
 start_redir(){
 	#修改iptables规则使流量进入clash
@@ -91,28 +96,35 @@ start_redir(){
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
-	#ip6tables -t nat -A PREROUTING -p tcp $ports-j REDIRECT --to-ports 7892
-	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
-	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
+	if [ "$ipv6_support" = "已开启" ];then
+		ip6tables -t nat -N clashv6
+		ip6tables -t nat -A clashv6 -p tcp $ports-j REDIRECT --to-ports 7892
+		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
+	fi
 }
-stop_redir(){
+stop_iptables(){
     #重置iptables规则
 	iptables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
 	iptables -t nat -F clash > /dev/null 2>&1
 	iptables -t nat -X clash > /dev/null 2>&1
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-	#ip6tables -t nat -A PREROUTING -p tcp $ports-j REDIRECT --to-ports 7892 > /dev/null 2>&1
 	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 > /dev/null 2>&1
+	ip6tables -t nat -F clashv6 > /dev/null 2>&1
+	ip6tables -t nat -X clashv6 > /dev/null 2>&1
 }
-start_tun(){
+start_dns(){
 	#允许tun网卡接受流量
 	iptables -I FORWARD -o utun -j ACCEPT
+	#设置dns转发
+	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
+	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
 }
 start_service() {
 	getconfig
 	#使用内置规则强行覆盖config配置文件
 	if [ "$modify_yaml" != "已开启" ];then
-	modifyyaml
+	modify_yaml
 	fi
     #创建clash后台进程
 	procd_open_instance
@@ -122,11 +134,13 @@ start_service() {
 	procd_set_param command $clashdir/clash -d $clashdir
 	procd_close_instance
 	#修改iptables规则使流量进入clash
-	stop_redir
-	start_tun
+	stop_iptables
+	start_dns
+	if [ "$redir_mod" != "Tun模式" ];then
 	start_redir
+	fi
 	mark_time
 }
 stop_service() {
-	stop_redir
+	stop_iptables
 }
