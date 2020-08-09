@@ -13,6 +13,10 @@ versionsh_l=0.8.5
 #更新服务器地址
 update_url="https://juewuy.xyz/clash"
 #文件路径
+if [ -z $clashdir ];then
+clashdir=$(dirname $(readlink -f "$0"))
+echo "export clashdir=\"$clashdir\"" >> /etc/profile
+fi
 ccfg=$clashdir/mark
 yaml=$clashdir/config.yaml
 #检查标识文件
