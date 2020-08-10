@@ -240,12 +240,12 @@ if [ "$res" = '1' ]; then
 	#解压
 	echo -----------------------------------------------
 	echo 开始解压文件！
-	mkdir -p $dir/clash > /dev/null
-	tar -zxvf '/tmp/clashfm.tar.gz' -C $dir/clash/ > /dev/null
+	mkdir -p $clashdir > /dev/null
+	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir > /dev/null
 	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 	#初始化文件目录
-	mv $dir/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
-	chmod  777 $dir/clash/clash  #授予权限
+	mv $clashdir/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
+	chmod  777 $clashdir/clash  #授予权限
 	chmod  777 /etc/init.d/clash #授予权限
 
 	#删除临时文件
