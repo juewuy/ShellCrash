@@ -241,7 +241,7 @@ if [ "$res" = '1' ]; then
 	echo -----------------------------------------------
 	echo 开始解压文件！
 	mkdir -p $clashdir > /dev/null
-	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir > /dev/null
+	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/ > /dev/null
 	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 	#初始化文件目录
 	mv $clashdir/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
@@ -356,7 +356,7 @@ echo -e "\033[30;46m感谢Alecthw大神提供的优质GeoIP数据库！！！\03
 echo -----------------------------------------------
 echo -e "\033[33m请选择下载源：\033[0m"
 echo -e " 1 默认源：$update_url"
-echo -e " 2 Alecthw大神提供的服务器"
+echo -e " 2 Alecthw大神的Github(需开启clash服务)"
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 	if	[ -z $num ]; then 
@@ -369,7 +369,7 @@ read -p "请输入对应数字 > " num
 		geolink="$update_url/bin/Country.mmdb"
 		#echo $geolink
 	elif [[ $num == 2 ]]; then
-		geolink="http://www.ideame.top/mmdb/Country.mmdb"
+		geolink="-x 127.0.0.1:7890 https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/release/Country.mmdb"
 	else
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		update
@@ -446,7 +446,7 @@ echo -----------------------------------------------
 echo -e " 1 CDN源(感谢\033[4;32mwww.jsdelivr.com\033[0m，推荐)"
 echo -e " 2 Github源(不稳定，不推荐)"
 echo -e " 3 Github源+clash代理(需开启clash服务，推荐)"
-echo -e " 4 自定义输入"
+echo -e " 4 自定义输入(请务必确保路径正确)"
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 if	[ -z $num ]; then 
@@ -464,6 +464,11 @@ elif [[ $num == 3 ]]; then
 elif [[ $num == 4 ]]; then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	read -p "请输入个人源路径 > " update_url
+	if [ -n $update_url ];then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m取消输入，返回上级菜单！\033[0m"
+		update
+	fi
 else
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
