@@ -3,9 +3,9 @@
 
 getconfig(){
 #版本号
-versionsh_l=0.8.7
+versionsh_l=0.8.6
 #服务器地址
-if [ -z $update_url ]; then
+if [ ! -n "$update_url" ] && [ ! -z "$update_url" ]; then
 	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/
 fi
 #文件路径
