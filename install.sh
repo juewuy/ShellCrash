@@ -7,7 +7,7 @@ echo "**             Clash for Miwifi              **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
-url="https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi"
+url="https://juewuy.xyz/clash/"
 result=$(curl -w %{http_code} -skLo /tmp/clashversion $url/bin/version)
 [ "$result" != "200" ] && echo "无法连接到服务器！" && exit 1
 source /tmp/clashversion
