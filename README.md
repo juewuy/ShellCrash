@@ -42,7 +42,7 @@
 一键安装：
 --
 ```Shell
-sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/install.sh)" && source /etc/profile &> /dev/null
+sh -c "$(curl -kfsSl https://juewuy.xyz/clash/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 交流反馈：
