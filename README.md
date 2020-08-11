@@ -36,8 +36,8 @@
 
 使用依赖：
 --
-~请确认路由器或设备已经开启SSH并获取root权限，小米AX系列可参考：https://www.right.com.cn/forum/thread-4032490-1-1.html 开启<br>
-~SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等，请自行安装使用<br>
+~路由器或设备已经开启SSH并获取root权限<br>
+~SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等<br>
 
 **一键安装**
 ```Shell
