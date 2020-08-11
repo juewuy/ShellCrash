@@ -39,7 +39,7 @@
 ~路由器或设备已经开启SSH并获取root权限<br>
 ~SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等<br>
 
-一键安装
+一键安装：
 --
 ```Shell
 sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/install.sh)" && source /etc/profile &> /dev/null
@@ -62,6 +62,7 @@ ToDo：
 ~~增加更新功能~~<br>
 ~~修复redir-host DNS以及IPV6支持~~<br>
 ~增加定时功能<br>
+
 感谢：
 --
 ~https://lancellc.gitbook.io/clash/start-clash/clash-tun-mode<br>
