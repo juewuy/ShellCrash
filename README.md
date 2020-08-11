@@ -1,6 +1,7 @@
 # clash-for-Miwifi
 在小米AX3600/AX1800/AX5等路由器上使用clash做透明代理
 =====
+
 功能简介：
 --
 ~支持小米AX系列路由器设备使用clash做透明代理，更多的设备支持可以前往TG群报名参与测试<br>
@@ -10,6 +11,7 @@
 ~支持多种模式切换，支持在线更新<br>
 ~支持部署内置的管理面板<br>
 ~更多功能可在使用中发掘<br>
+
 更新日志：
 --
 * v0.8.7<br>
@@ -31,22 +33,27 @@
 ~更新在线下载GeoIP数据库功能<br>
 ~更新在线下载及部署Dashboard面板功能<br>
 ~UI小幅度优化<br>
+
 使用依赖：
 --
 ~路由器或设备已经开启SSH并获取root权限<br>
 ~SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等<br>
+
 一键安装
 --
 ```Shell
 sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/install.sh)" && source /etc/profile &> /dev/null
 ```
+
 问题反馈：
 --
 ### https://t.me/clashfm 
+
 已知问题：
 --
 ~Tun模式下clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
 ~Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致，暂时无解，外服游戏用户建议使用Tun模式<br>
+
 ToDo：
 --
 ~~增加订阅功能~~<br>
