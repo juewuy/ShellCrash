@@ -3,7 +3,7 @@
 
 getconfig(){
 #版本号
-versionsh_l=0.8.7
+versionsh_l=0.9.0
 #服务器地址
 if [ -z $update_url ]; then
 	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/
@@ -120,7 +120,6 @@ echo -e " 3 选取\033[33m代理规则\033[0m模版"
 echo -e " 4 选择配置生成服务器"
 echo -e " 5 \033[36m还原\033[0m配置文件"
 echo -e " 6 \033[32m手动更新\033[0m订阅"
-echo -e " 7 设置自动更新（未完成）"
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 if [ -z $num ];then
@@ -529,28 +528,41 @@ clashcron(){
 
 	setcron(){
 	echo -----------------------------------------------
-	echo -e " 输入  1-7  对应\033[36m每周相应天\033[0m运行"
-	echo -e " 输入   8   设为\033[36m每天定时\033[0m运行"
-	echo -e " 输入 1,3,6 代表\033[36m每周1,3,6\033[0m运行(注意小写逗号分隔)"
+	echo -e " 正在设置：\033[32m$cronname\033[0m定时任务"
+	echo -e " 输入  1-7  对应\033[33m每周相应天\033[0m运行"
+	echo -e " 输入   8   设为\033[33m每天定时\033[0m运行"
+	echo -e " 输入 1,3,6 代表\033[36m每周1,3,6\033[0m运行(注意用小写逗号分隔)"
+	echo -e " 输入   9   \033[31m删除定时任务\033[0m"
 	echo -e " 输入   0   返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z $num ]; then 
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
-		setcron
+		clashcron
 	elif [[ $num == 0 ]]; then
+		clashcron
+	elif [[ $num == 9 ]]; then
+		sed -i /$cronname/d $cronpath
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
 		clashcron
 	elif [[ $num == 8 ]]; then	
 		week='*'
+		week1=每天
 		echo 已设为每天定时运行！
 	else
 		week=$num	
+		week1=每周$week
 		echo 已设为每周 $num 运行！
 	fi
 	#设置具体时间
 	echo -----------------------------------------------
-	read -p "请输入小时（0-24） > " num
+	read -p "请输入小时（0-23） > " num
 	if [ -z $num ]; then 
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+		setcron
+	elif [ $num -gt 23 ] || [ $num -lt 0 ]; then 
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		setcron
@@ -563,22 +575,51 @@ clashcron(){
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		setcron
+	elif [ $num -gt 60 ] || [ $num -lt 0 ]; then 
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+		setcron
 	else	
 		min=$num
 	fi
 	echo -----------------------------------------------
-	echo 设定为：每周$week的$hour点$min，$cronname
-	read -p  "是否确认添加？(1/0) > " res
-		
+	echo 将在$week1的$hour点$min分$cronname（旧的任务会被覆盖）
+	read -p  "是否确认添加定时任务？(1/0) > " res
+		if [ "$res" = '1' ]; then
+			sed -i /$cronname/d $cronpath
+			echo "$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname" >> $cronpath
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m定时任务已添加！！！\033[0m"
+		fi
+		clashcron
 	}
+	checkcron(){
+	if [ -d /etc/crontabs/ ]; then 
+		cronpath="/etc/crontabs/root"
+	elif [ -d /var/spool/cron/ ]; then
+		cronpath="/var/spool/cron/root"
+	elif [ -d /var/spool/cron/crontabs/ ]; then
+		cronpath="/var/spool/cron/crontabs/root"
+	else
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo "找不到定时任务文件,无法添加定时任务！"
+		clashsh
+	fi
+
+	}
+#定时任务菜单
+checkcron #检测定时任务文件
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用定时任务功能：\033[0m"
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo -----------------------------------------------
-echo -e " 1 设置\033[36m定时重启\033[0mclash服务"
-echo -e " 2 设置\033[36m定时关闭\033[0mclash服务"
-echo -e " 3 设置\033[36m定时开启\033[0mclash服务"
-echo -e " 4 设置\033[36m定时更新\033[0m订阅链接"
+echo  -e "\033[33m当前已经添加的定时任务有：\033[36m"
+crontab -l | egrep -o '#.*' 
+echo -e "\033[0m"-----------------------------------------------
+echo -e " 1 设置\033[33m定时重启\033[0mclash服务"
+echo -e " 2 设置\033[31m定时停止\033[0mclash服务"
+echo -e " 3 设置\033[32m定时开启\033[0mclash服务"
+echo -e " 4 设置\033[33m定时更新\033[0m订阅链接(实验性，可能不稳定)"
 echo -e " 0 返回上级菜单" 
 read -p "请输入对应数字 > " num
 if [ -z $num ]; then 
@@ -592,13 +633,24 @@ elif [[ $num == 0 ]]; then
 elif [[ $num == 1 ]]; then	
 	cronname=重启clash服务
 	cronset='/etc/init.d/clash restart'
+	setcron
+elif [[ $num == 2 ]]; then	
+	cronname=停止clash服务
+	cronset='/etc/init.d/clash stop'
+	setcron
+elif [[ $num == 3 ]]; then	
+	cronname=开启clash服务
+	cronset='/etc/init.d/clash start'
+	setcron
+elif [[ $num == 4 ]]; then	
+	cronname=更新订阅链接
+	cronset="source /etc/profile && source $clashdir/getdate.sh && getyaml"
+	setcron	
 	
-	
-
-
-
-
-
+else
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[31m请输入正确的数字！\033[0m"
+	clashsh
 fi
 }
 
@@ -610,7 +662,7 @@ echo -e " 1 \033[32m启动/重启\033[0mclash服务"
 echo -e " 2 clash\033[33m高级设置\033[0m"
 echo -e " 3 \033[31m停止\033[0mclash服务"
 echo -e " 4 $auto1"
-echo -e " 5 设置定时任务（施工中）"
+echo -e " 5 设置定时任务"
 echo -e " 6 导入\033[32m节点/订阅\033[0m链接"
 echo -e " 8 \033[35m测试菜单\033[0m"
 echo -e " 9 \033[36m更新/卸载\033[0m"
@@ -656,14 +708,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		clashsh
 
 	elif [[ $num == 5 ]]; then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m正在施工中，敬请期待！\033[0m"
-		echo -e "\033[32m正在施工中，敬请期待！\033[0m"
-		echo -e "\033[33m正在施工中，敬请期待！\033[0m"
-		echo -e "\033[34m正在施工中，敬请期待！\033[0m"
-		echo -e "\033[35m正在施工中，敬请期待！\033[0m"
-		echo -e "\033[36m正在施工中，敬请期待！\033[0m"
-		clashsh
+		clashcron
     
 	elif [[ $num == 6 ]]; then
 		clashlink
@@ -688,7 +733,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		elif [[ $num == 0 ]]; then
 			clashsh
 		elif [[ $num == 1 ]]; then
-			etc/init.d/clash stop
+			/etc/init.d/clash stop
 			echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
 			$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
 			echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"

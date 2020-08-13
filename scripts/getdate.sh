@@ -2,6 +2,7 @@
 # Copyright (C) Juewuy
 
 getyaml(){
+ccfg=$clashdir/mark
 source $ccfg
 #前后端订阅服务器地址索引，可在此处添加！
 Server=`sed -n ""$server_link"p"<<EOF
@@ -36,6 +37,7 @@ echo -e "|         需要一点时间，请耐心等待！          |"
 echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出\033[36m        |"
 echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
 #获取在线yaml文件
+yaml=$clashdir/config.yaml
 yamlnew=$yaml.new
 rm -rf $yamlnew > /dev/null 2>&1
 result=$(curl -w %{http_code} -kLo $yamlnew $Https)
@@ -58,7 +60,7 @@ if [ "$result" != "200" ];then
 			sed -i "1i\server_link=$server_link" $ccfg
 			getyaml
 		fi
-		exit;
+		#exit;
 	fi
 else
 	if cat $yamlnew | grep ', server:' >/dev/null;then
@@ -103,9 +105,9 @@ else
 		echo -e "\033[33m请检查如上配置文件信息:\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	fi
-	exit;
+	#exit;
 fi
-exit
+#exit
 }
 getlink(){
 #设置输入循环
