@@ -20,6 +20,9 @@ https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_On
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoAuto.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_NoAuto.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
 EOF`
 #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 if [ -z $Https ];then
@@ -81,8 +84,8 @@ else
 			host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 			echo -e "Host地址:\033[30;46m $host \033[0m;端口:\033[30;46m 9999 \033[0m"
 			#将用户链接写入mark
-			sed -i '/Https=*/'d $ccfg
-			sed -i "7i\Https=\'$Https\'" $ccfg
+			#sed -i '/Https=*/'d $ccfg
+			#sed -i "7i\Https=\'$Https\'" $ccfg
 			clashsh
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -269,9 +272,15 @@ if [ ! -f $clashdir/clash ]; then
 	clashcore=没有安装核心！
 	clashv=''
 fi
-
-cpucore=armv7
 clashcore_n=$clashcore
+#获取设备处理器架构
+cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
+[ -n "$(echo $cpucore | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
+[ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
+[ -n "$(echo $cpucore | grep -E "linux.*armv5.*")" ] && cpucore="armv5"
+[ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
+[ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
+###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
 echo -e "\033[32m请选择需要下载的核心版本！\033[0m"
@@ -445,7 +454,7 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m您可以在此处切换在线更新时使用的资源地址\033[0m"
 echo -e "当前源：\033[4;32m$update_url\033[0m"
 echo -----------------------------------------------
-echo -e " 1 CDN源(感谢\033[4;32mwww.jsdelivr.com\033[0m，推荐)"
+echo -e " 1 CDN源(可能有一定的同步延迟)"
 echo -e " 2 Github源(不稳定，不推荐)"
 echo -e " 3 Github源+clash代理(需开启clash服务，推荐)"
 echo -e " 4 自定义输入(请务必确保路径正确)"

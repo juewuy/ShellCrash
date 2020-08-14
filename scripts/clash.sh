@@ -3,13 +3,13 @@
 
 getconfig(){
 #版本号
-versionsh_l=0.9.0
+#versionsh_l=0.9.0
 #服务器地址
-if [ -z $update_url ]; then
+if [ -z "$update_url" ]; then
 	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/
 fi
 #文件路径
-if [ -z $clashdir ];then
+if [ -z "$clashdir" ];then
 clashdir=$(dirname $(readlink -f "$0"))
 echo "export clashdir=\"$clashdir\"" >> /etc/profile
 fi
@@ -32,7 +32,7 @@ else
 	auto1="\033[36m允许\033[0mclash开机启动"
 fi
 #获取运行模式
-if [ ! -n "$redir_mod" ]; then
+if [ -z "$redir_mod" ]; then
 	sed -i "2i\redir_mod=Redir模式" $ccfg
 	redir_mod=Redir模式
 fi
@@ -91,8 +91,8 @@ status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-		echo -e "也可以前往更新菜单安装本地Dashboard面板，连接更稳定！！！"
-		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+		echo -e "Host地址:\036[33m $host \033[0m 端口:\033[36m 9999 \033[0m"
+		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31mclash服务启动失败！请检查配置文件！\033[0m"
@@ -100,13 +100,13 @@ status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 }
 clashlink(){
 #获取订阅规则
-if [ ! -n "$rule_link" ]; then
+if [ -z "$rule_link" ]; then
 	sed -i '/rule_link=*/'d $ccfg
 	sed -i "4i\rule_link=1" $ccfg
 	rule_link=1
 fi
 #获取后端服务器地址
-if [ ! -n "$server_link" ]; then
+if [ -z "$server_link" ]; then
 	sed -i '/server_link=*/'d $ccfg
 	sed -i "5i\server_link=1" $ccfg
 	server_link=1
@@ -122,7 +122,7 @@ echo -e " 5 \033[36m还原\033[0m配置文件"
 echo -e " 6 \033[32m手动更新\033[0m订阅"
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
-if [ -z $num ];then
+if [ -z "$num" ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 	clashsh
@@ -166,9 +166,12 @@ elif [[ $num == 3 ]];then
 	echo 3 ACL4SSR通用版去广告加强
 	echo 4 ACL4SSR精简版去广告加强
 	echo 5 ACL4SSR通用版无去广告
+	echo 6 ACL4SSR通用版无自动测速
+	echo 7 ACL4SSR精简版无自动测速
+	echo 8 ACL4SSR超重度奈飞全量
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-		if [ -z $num ];then
+		if [ -z "$num" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		clashlink
@@ -194,7 +197,7 @@ elif [[ $num == 4 ]];then
 	echo 7 subconvert.dreamcloud.pw
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-    if [ -z $num ];then
+    if [ -z "$num" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		clashlink
@@ -230,7 +233,7 @@ elif [[ $num == 5 ]];then
 	fi
 	clashsh
 elif [[ $num == 6 ]];then
-	if [ ! -n "$Url" ];then
+	if [ -z "$Url" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo 没有找到你的订阅链接！请先输入链接！
 		clashlink
@@ -257,19 +260,19 @@ fi
 }
 clashadv(){
 #获取设置默认显示
-if [ ! -n "$skip_cert" ]; then
+if [ -z "$skip_cert" ]; then
 	skip_cert=已开启
 fi
-if [ ! -n "$common_ports" ]; then
+if [ -z "$common_ports" ]; then
 	common_ports=未开启
 fi
-if [ ! -n "$dns_mod" ]; then
+if [ -z "$dns_mod" ]; then
 	dns_mod=redir_host
 fi
-if [ ! -n "$modify_yaml" ]; then
+if [ -z "$modify_yaml" ]; then
 	modify_yaml=未开启
 fi
-if [ ! -n "$ipv6_support" ]; then
+if [ -z "$ipv6_support" ]; then
 	ipv6_support=未开启
 fi
 #
@@ -306,7 +309,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo "              不推荐使用redir-host"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
-		if [ -z $num ]; then
+		if [ -z "$num" ]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
 			clashadv
@@ -353,7 +356,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo "                   不支持Tun模式"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
-		if [ -z $num ]; then
+		if [ -z "$num" ]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
 			clashadv
@@ -535,7 +538,7 @@ clashcron(){
 	echo -e " 输入   9   \033[31m删除定时任务\033[0m"
 	echo -e " 输入   0   返回上级菜单"
 	read -p "请输入对应数字 > " num
-	if [ -z $num ]; then 
+	if [ -z "$num" ]; then 
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		clashcron
@@ -558,7 +561,7 @@ clashcron(){
 	#设置具体时间
 	echo -----------------------------------------------
 	read -p "请输入小时（0-23） > " num
-	if [ -z $num ]; then 
+	if [ -z "$num" ]; then 
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		setcron
@@ -571,7 +574,7 @@ clashcron(){
 	fi
 	echo -----------------------------------------------
 	read -p "请输入分钟（0-60） > " num
-	if [ -z $num ]; then 
+	if [ -z "$num" ]; then 
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		setcron
@@ -622,7 +625,7 @@ echo -e " 3 设置\033[32m定时开启\033[0mclash服务"
 echo -e " 4 设置\033[33m定时更新\033[0m订阅链接(实验性，可能不稳定)"
 echo -e " 0 返回上级菜单" 
 read -p "请输入对应数字 > " num
-if [ -z $num ]; then 
+if [ -z "$num" ]; then 
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 	clashsh
@@ -726,7 +729,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo " 6 测试代理服务器连通性（google.tw)"
 		echo " 0 返回上级目录！"
 		read -p "请输入对应数字 > " num
-		if [ -z $num ]; then
+		if [ -z "$num" ]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
 			clashsh
