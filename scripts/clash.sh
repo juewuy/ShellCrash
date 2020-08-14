@@ -91,7 +91,7 @@ status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-		echo -e "Host地址:\036[33m $host \033[0m 端口:\033[36m 9999 \033[0m"
+		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
 		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
