@@ -59,7 +59,7 @@ fi
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo 开始解压文件！
 mkdir -p $dir/clash > /dev/null
-tar -zxvf '/tmp/clashfm.tar.gz' -C $dir/clash/ > /dev/null
+tar -zxvf '/tmp/clashfm.tar.gz' -C $dir/clash/
 [ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 #初始化文件目录
 mv $dir/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
