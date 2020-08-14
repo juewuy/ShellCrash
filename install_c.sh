@@ -7,7 +7,7 @@ echo "**             Clash for Miwifi              **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
-url="https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/"
+url="https://juewuy.xyz/clash/"
 result=$(curl -w %{http_code} -skLo /tmp/clashversion $url/bin/version)
 [ "$result" != "200" ] && echo "无法连接到服务器！" && exit 1
 source /tmp/clashversion
@@ -63,10 +63,9 @@ tar -zxvf '/tmp/clashfm.tar.gz' -C $dir/clash/
 [ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 #初始化文件目录
 mv $dir/clash/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
-chmod  777 $dir/clash/clash  #授予权限
 chmod  777 /etc/init.d/clash #授予权限
 if [ ! -f "$dir/clash/mark" ]; then
-cat >$ccfg<<EOF
+cat >$dir/clash/mark<<EOF
 #标识clash运行状态的文件，不明勿动！
 EOF
 fi
