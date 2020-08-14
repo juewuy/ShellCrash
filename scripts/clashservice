@@ -112,14 +112,14 @@ start_redir(){
 stop_iptables(){
     #重置iptables规则
 	iptables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
-	iptables -t nat -D PREROUTING -p tcp -j clash_dns > /dev/null 2>&1
+	iptables -t nat -D PREROUTING -p udp -j clash_dns > /dev/null 2>&1
 	iptables -t nat -F clash > /dev/null 2>&1
 	iptables -t nat -X clash > /dev/null 2>&1
 	iptables -t nat -F clash_dns > /dev/null 2>&1
 	iptables -t nat -X clash_dns > /dev/null 2>&1
 	#重置ipv6规则
 	ip6tables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
-	ip6tables -t nat -D PREROUTING -p tcp -j clash_dns > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p udp -j clash_dns > /dev/null 2>&1
 	ip6tables -t nat -F clash > /dev/null 2>&1
 	ip6tables -t nat -X clash > /dev/null 2>&1
 	ip6tables -t nat -F clash_dns > /dev/null 2>&1

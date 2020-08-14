@@ -2,8 +2,6 @@
 # Copyright (C) Juewuy
 
 getconfig(){
-#版本号
-#versionsh_l=0.9.0
 #服务器地址
 if [ -z "$update_url" ]; then
 	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/
@@ -831,6 +829,8 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			iptables  -t nat  -L PREROUTING --line-numbers
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			iptables  -t nat  -L clash --line-numbers
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			iptables  -t nat  -L clash_dns --line-numbers
 			exit;
 		elif [[ $num == 5 ]]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
