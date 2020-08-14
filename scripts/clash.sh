@@ -23,6 +23,8 @@ if [ ! -f "$ccfg" ]; then
 EOF
 fi
 source $ccfg
+#检查mac地址记录
+[ ! -f "$clashdir/mac" ] && touch $clashdir/mac
 #获取自启状态
 if [ -f /etc/rc.d/*clash ]; then 
 	auto="\033[32m已设置开机启动！\033[0m"
@@ -275,6 +277,11 @@ fi
 if [ -z "$ipv6_support" ]; then
 	ipv6_support=未开启
 fi
+if [ -z "$(cat $clashdir/mac)" ]; then
+	mac_return=未开启
+else
+	mac_return=已启用
+fi
 #
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用高级模式菜单：\033[0m"
@@ -286,6 +293,7 @@ echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————
 echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于屏蔽P2P流量"
 echo -e " 5 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
 echo -e " 6 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
+echo -e " 7 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
 echo -e " 9 \033[32m重启\033[0mclash服务"
 echo -e " 0 返回上级菜单 \033[0m"
 read -p "请输入对应数字 > " num
@@ -442,7 +450,74 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			ipv6_support=未开启
 		fi
 		clashadv  
+
+	elif [[ $num == 7 ]]; then	
 	
+		add_mac(){
+			echo -----------------------------------------------
+			echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
+			cat /tmp/dhcp.leases | awk '{print " "NR" "$3,$2,$4}'
+			echo -e "\033[0m 0 或回车 结束添加"
+			read -p "请输入对应序号 > " num
+			if [ -z "$num" ]; then
+				clashadv
+			elif [ $num -le 0 ]; then
+				clashadv
+			elif [ $num -le $(cat /tmp/dhcp.leases | awk 'END{print NR}') ]; then
+				macadd=$(cat /tmp/dhcp.leases | awk '{print $2}' | sed -n "$num"p)
+				if [ -z $(cat $clashdir/mac | grep -E "$macadd") ];then
+					echo $macadd >> $clashdir/mac
+					echo -----------------------------------------------
+					echo 已添加的mac地址：
+					cat $clashdir/mac
+				else
+					echo -----------------------------------------------
+					echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
+				fi
+			else
+				echo -----------------------------------------------
+				echo -e "\033[31m输入有误，请重新输入！\033[0m"
+			fi
+			add_mac
+		}
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[33m请在此添加或移除设备\033[0m"
+		if [ -n "$(cat $clashdir/mac)" ]; then
+			echo -e "当前已过滤设备为：\033[36m"
+			for mac in $(cat $clashdir/mac); do
+				cat /tmp/dhcp.leases | awk '{print $3,$2,$4}' | grep $mac
+			done
+			echo -e "\033[0m-----------------------------------------------"
+		fi
+		echo -e " 1 \033[31m清空列表\033[0m"
+		echo -e " 2 \033[32m添加设备\033[0m"
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num
+		if [ -z "$num" ]; then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m请输入正确的数字！\033[0m"
+			clashadv
+		elif [[ $num == 0 ]]; then
+			clashadv
+		elif [[ $num == 1 ]]; then
+			:>$clashdir/mac
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m设备列表已清空！\033[0m"
+			sleep 1
+			clashadv
+		elif [[ $num == 2 ]]; then	
+			add_mac
+			
+		else
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m请输入正确的数字！\033[0m"
+			clashadv
+		fi
+		
+
+
+		clashadv 
+		
 	elif [[ $num == 9 ]]; then	
 		if [ $status -gt 0 ];then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -755,6 +830,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			iptables  -t nat  -L PREROUTING --line-numbers
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			iptables  -t nat  -L clash --line-numbers
 			exit;
 		elif [[ $num == 5 ]]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

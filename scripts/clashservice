@@ -94,31 +94,55 @@ start_redir(){
 	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
+	for mac in $(cat $clashdir/mac); do
+		iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
+	done
+	
 	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	if [ "$ipv6_support" = "已开启" ];then
-		ip6tables -t nat -N clashv6
-		ip6tables -t nat -A clashv6 -p tcp $ports-j REDIRECT --to-ports 7892
-		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
+		ip6tables -t nat -N clash
+		for mac in $(cat $clashdir/mac); do
+			ip6tables -t nat -A clash -m mac --mac-source $mac -j RETURN
+		done
+		ip6tables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
+		ip6tables -t nat -A PREROUTING -p tcp -j clash
 	fi
 }
 stop_iptables(){
     #重置iptables规则
 	iptables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
+	iptables -t nat -D PREROUTING -p tcp -j clash_dns > /dev/null 2>&1
 	iptables -t nat -F clash > /dev/null 2>&1
 	iptables -t nat -X clash > /dev/null 2>&1
-	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 > /dev/null 2>&1
-	ip6tables -t nat -F clashv6 > /dev/null 2>&1
-	ip6tables -t nat -X clashv6 > /dev/null 2>&1
+	iptables -t nat -F clash_dns > /dev/null 2>&1
+	iptables -t nat -X clash_dns > /dev/null 2>&1
+	#重置ipv6规则
+	ip6tables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p tcp -j clash_dns > /dev/null 2>&1
+	ip6tables -t nat -F clash > /dev/null 2>&1
+	ip6tables -t nat -X clash > /dev/null 2>&1
+	ip6tables -t nat -F clash_dns > /dev/null 2>&1
+	ip6tables -t nat -X clash_dns > /dev/null 2>&1
 }
 start_dns(){
 	#允许tun网卡接受流量
 	iptables -I FORWARD -o utun -j ACCEPT
+	ip6tables -I FORWARD -o utun -j ACCEPT
 	#设置dns转发
-	iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
-	ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to 1053
+	iptables -t nat -N clash_dns
+	for mac in $(cat $clashdir/mac); do
+		iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
+	done
+	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053
+	iptables -t nat -A PREROUTING -p udp -j clash_dns
+	#ipv6DNS
+	ip6tables -t nat -N clash_dns
+	for mac in $(cat $clashdir/mac); do
+		ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
+	done
+	ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053
+	ip6tables -t nat -A PREROUTING -p udp -j clash_dns
 }
 start_service() {
 	getconfig
