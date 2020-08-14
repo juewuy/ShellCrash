@@ -250,10 +250,9 @@ if [ "$res" = '1' ]; then
 	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 	#初始化文件目录
 	mv $clashdir/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
+	chmod  777 $clashdir/clash  #授予权限
 	chmod  777 /etc/init.d/clash #授予权限
-	#写入版本号
-	sed -i '/versionsh_l=*/'d $ccfg
-	sed -i "1i\versionsh_l=$versionsh" $ccfg
+
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf /tmp/clashversion

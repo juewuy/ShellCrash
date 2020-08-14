@@ -171,19 +171,21 @@ elif [[ $num == 3 ]];then
 	echo 8 ACL4SSR超重度奈飞全量
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-		if [ -z "$num" ];then
+	if [ -z "$num" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		clashlink
-		else
-			#将对应标记值写入mark
-			sed -i '/rule_link*/'d $ccfg
-			sed -i "4i\rule_link="$num"" $ccfg	
-			rule_link=$num
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	  
-			echo -e "\033[32m设置成功！返回上级菜单！\033[0m"
-			clashlink
-		fi
+	elif [[ "$num" == 0 ]];then
+		clashlink
+	else
+		#将对应标记值写入mark
+		sed -i '/rule_link*/'d $ccfg
+		sed -i "4i\rule_link="$num"" $ccfg	
+		rule_link=$num
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	  
+		echo -e "\033[32m设置成功！返回上级菜单！\033[0m"
+		clashlink
+	fi
 elif [[ $num == 4 ]];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
@@ -201,10 +203,9 @@ elif [[ $num == 4 ]];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		clashlink
-	else
-		if [[ $num == 0 ]];then
+	elif [[ "$num" == 0 ]];then
 		clashlink
-		fi
+	else
 		#将对应标记值写入mark
 		sed -i '/server_link*/'d $ccfg
 		sed -i "4i\server_link="$num"" $ccfg	
@@ -729,7 +730,6 @@ else
 	clashsh
 fi
 }
-
 clashsh(){
 #############################
 getconfig
