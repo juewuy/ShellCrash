@@ -469,7 +469,7 @@ if	[ -z $num ]; then
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 	update
 elif [[ $num == 1 ]]; then
-	update_url="https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi"
+	update_url="https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi@latest"
 elif [[ $num == 9 ]]; then
 	update_url="https://juewuy.xyz/clash"
 elif [[ $num == 2 ]]; then

@@ -4,7 +4,7 @@
 getconfig(){
 #服务器地址
 if [ -z "$update_url" ]; then
-	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi
+	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi@latest
 fi
 #文件路径
 if [ -z "$clashdir" ];then
