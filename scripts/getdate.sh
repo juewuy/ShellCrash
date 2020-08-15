@@ -26,6 +26,7 @@ https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_On
 EOF`
 #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 if [ -z $Https ];then
+	echo $Url
 	Https="https://$Server/sub?target=clashr&new_name=true&url=$Url&insert=false&config=$Config"
 	markhttp=1
 fi
@@ -55,12 +56,13 @@ if [ "$result" != "200" ];then
 		read -p "是否更换后端地址后重试？[1/0] > " res
 		if [ "$res" = '1' ]; then
 			sed -i '/server_link=*/'d $ccfg
-			if [ "$server_link" = '7' ]; then
+			if [[ $server_link == 7 ]]; then
 				server_link=0
 			fi
 			server_link=$(($server_link + 1))
-			#echo $server_link
+			echo $server_link
 			sed -i "1i\server_link=$server_link" $ccfg
+			Https=""
 			getyaml
 		fi
 		#exit;
@@ -72,20 +74,20 @@ else
 			mv $yaml $yaml.bak
 		fi
 		mv $yamlnew $yaml
-		echo 配置文件已生成！正在重启clash使其生效！
+		echo 配置文件已生成！正在启动clash使其生效！
 		#重启clash服务
-		/etc/init.d/clash restart
+		/etc/init.d/clash stop > /dev/null 2>&1
+		/etc/init.d/clash start
 		sleep 1
 		status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 		if [[ $status -gt 0 ]];then
+			host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[32mclash服务已启动！\033[0m"
-			echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理clash内置规则"
-			host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-			echo -e "Host地址:\033[30;46m $host \033[0m;端口:\033[30;46m 9999 \033[0m"
-			#将用户链接写入mark
-			#sed -i '/Https=*/'d $ccfg
-			#sed -i "7i\Https=\'$Https\'" $ccfg
+			echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
+			echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+			echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+			sleep 1
 			clashsh
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,9 +95,11 @@ else
 				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
 				mv $yaml.bak $yaml
 				/etc/init.d/clash start
+				sleep 1
 				clashsh
 			else
 				echo -e "\033[31mclash服务启动失败！请利用测试菜单排查问题！\033[0m"
+				sleep 1
 				clashsh
 			fi
 		fi
@@ -153,6 +157,7 @@ do
 				sed -i '/Url=*/'d $ccfg
 				sed -i '/Https=*/'d $ccfg
 				sed -i "6i\Url=\'$Url\'" $ccfg
+				Https=""
 				#获取在线yaml文件
 				getyaml
 			fi
@@ -278,7 +283,7 @@ clashcore_n=$clashcore
 cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cpucore | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
 [ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
-[ -n "$(echo $cpucore | grep -E "linux.*armv5.*")" ] && cpucore="armv5"
+[ -n "$(echo $cpucore | grep -E "linux.*armv.*")" ] && cpucore="armv5"
 [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
 ###
@@ -398,9 +403,7 @@ read -p "请输入对应数字 > " num
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
-			update
 	fi
-update
 }
 getdb(){
 host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)

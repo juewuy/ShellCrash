@@ -4,7 +4,7 @@
 getconfig(){
 #服务器地址
 if [ -z "$update_url" ]; then
-	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/
+	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi
 fi
 #文件路径
 if [ -z "$clashdir" ];then
@@ -79,13 +79,23 @@ if [ ! -f $clashdir/Country.mmdb ];then
 	echo -e "\033[31m没有找到GeoIP数据库文件，请先下载数据库！\033[0m"
 	source $clashdir/getdate.sh
 	getgeo
+	clashstart
 fi
 }
 clashstart(){
-
-/etc/init.d/clash start
-sleep 1
-status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
+	if [ ! -f "$yaml" ];then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m没有找到配置文件，请先导入节点/订阅链接！\033[0m"
+		clashlink
+	fi
+	if [ $status -gt 0 ];then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		/etc/init.d/clash stop > /dev/null 2>&1
+		echo -e "\033[31mClash服务已停止！\033[0m"
+	fi
+		/etc/init.d/clash start
+		sleep 1
+		status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 	if [[ $status -gt 0 ]];then
 		host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,9 +103,11 @@ status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
 		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
 		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31mclash服务启动失败！请检查配置文件！\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	fi
 }
 clashlink(){
@@ -566,6 +578,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	elif [[ $num == 3 ]]; then	
 		source $clashdir/getdate.sh
 		getgeo
+		update
 	
 	elif [[ $num == 4 ]]; then	
 		source $clashdir/getdate.sh
@@ -749,18 +762,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		exit;
   
 	elif [[ $num == 1 ]]; then
-		if [ ! -f "$yaml" ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m没有找到配置文件，请先导入节点/订阅链接！\033[0m"
-			clashlink
-		fi
-		if [ $status -gt 0 ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			/etc/init.d/clash stop > /dev/null 2>&1
-			echo -e "\033[31mClash服务已停止！\033[0m"
-		fi
+
 		clashstart
-		clashsh
+		exit;
   
 	elif [[ $num == 2 ]]; then
 		clashadv
