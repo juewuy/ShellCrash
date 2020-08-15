@@ -52,4 +52,4 @@ ToDo：
 
 请喝杯茶：
 --
- ![](https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/others/qrcodevx.png)
+ ![](https://juewuy.xyz/clash/others/qrcodevx.png)
