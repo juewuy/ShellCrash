@@ -50,4 +50,6 @@ ToDo：
 ~https://h-cheung.gitlab.io/post/使用_clash_和路由表实现透明代理<br>
 ~https://www.right.com.cn/forum/thread-4042741-1-1.html<br>
 
-
+请喝杯茶：
+--
+ ![](https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi/others/qrcodevx.png)
