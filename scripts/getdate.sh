@@ -443,7 +443,11 @@ if [ "$res" = '1' ]; then
 		mkdir -p /www/clash > /dev/null
 		tar -zxvf '/tmp/clashdb.tar.gz' -C /www/clash > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
-		echo -e "\033[32m面板安装成功！"
+		#修改默认host和端口
+		sed -i "s/127.0.0.1/$host/g" /www/clash/js/*.js
+		sed -i "s/9090/9999/g" /www/clash/js/*.js
+		#
+		echo -e "\033[32m面板安装成功！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[36m请使用\033[32;4mhttp://$host/clash\033[0;36m访问面板\033[0m"
 		rm -rf /tmp/clashdb.tar.gz

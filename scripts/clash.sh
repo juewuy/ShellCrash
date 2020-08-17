@@ -59,12 +59,12 @@ fi
 #输出状态
 
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[30;46m欢迎使用Clash for Miwifi！\033[0m"
+echo -e "\033[30;46m欢迎使用Clash for Miwifi！\033[0m      版本：$versionsh_l"
 echo -e "Clash服务"$run"，"$auto""
 if [ $status -gt 0 ];then
 	echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
 fi
-echo -e "我的博客：\033[36;4mjuewuy.xyz\033[0m，交流反馈群：\033[36;4mt.me/clashfm\033[0m"
+echo -e "博客：\033[36;4mhttps://juewuy.xyz\033[0m，TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
 echo -----------------------------------------------
 #安装clash核心
 if [ ! -f $clashdir/clash ];then
@@ -93,19 +93,18 @@ clashstart(){
 		/etc/init.d/clash stop > /dev/null 2>&1
 		echo -e "\033[31mClash服务已停止！\033[0m"
 	fi
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		/etc/init.d/clash start
 		sleep 1
 		status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 	if [[ $status -gt 0 ]];then
 		host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[32mclash服务已启动！\033[0m"
 		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
 		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
 		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	else
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31mclash服务启动失败！请检查配置文件！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	fi

@@ -3,7 +3,7 @@
 # Copyright (C) 2007 OpenWrt.org
 
 USE_PROCD=1
-START=99
+START=92
 
 getconfig(){
 #开机加载环境变量保证找到文件路径
@@ -30,6 +30,10 @@ fi
 if [ "$common_ports" = "已开启" ];then
 	ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
 fi
+#检测系统端口占用
+for portx in 1053 7890 7892 9999 ;do
+	[ -n "$(netstat -ntulp |grep $portx|grep -v clash)" ] && echo -e "检测到端口：\033[30;47m $portx \033[0m被占用！clash无法启动！" && exit;
+done
 }
 modify_yaml(){
 ##########需要变更的配置###########
