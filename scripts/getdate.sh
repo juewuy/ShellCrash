@@ -291,13 +291,13 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
 echo -e "\033[32m请选择需要下载的核心版本！\033[0m"
 echo -----------------------------------------------
-echo "1 clash：     运行稳定，内存占用小"
-echo "(官方正式版)  不支持SSR，不支持Tun模式"
+echo "1 clash：     稳定，内存占用小，推荐！"
+echo "(官方正式版)  不支持chacha20加密，不支持Tun模式"
 echo
-echo "2 clashr：    稳定，内存占用小，支持SSR"
+echo "2 clashr：    内存占用小，支持chacha20加密"
 echo "(clashR修改版)不支持Tun模式"
 echo
-echo "3 clashpre：  支持SSR，支持Tun模式"
+echo "3 clashpre：  支持Tun模式"
 echo "(高级预览版)  内存占用高，不支持chacha20加密"
 echo -----------------------------------------------
 echo 0 返回上级菜单 
