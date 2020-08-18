@@ -16,23 +16,16 @@ cat >$ccfg<<EOF
 EOF
 	#指定一些默认状态
 	redir_mod=redir模式
-	common_ports=未开启
-	dns_mod=redir-host
 	modify_yaml=未开启
-	ipv6_support=未开启
 fi
 source $ccfg #加载配置文件
 #是否代理常用端口
 if [ "$common_ports" = "已开启" ];then
 	ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
 fi
-#DNS模式
-if [ "$common_ports" = "已开启" ];then
-	ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
-fi
 #检测系统端口占用
 for portx in 1053 7890 7892 9999 ;do
-	[ -n "$(netstat -ntulp |grep $portx|grep -v clash)" ] && echo -e "检测到端口：\033[30;47m $portx \033[0m被占用！clash无法启动！" && exit;
+	[ -n "$(netstat -ntulp |grep :$portx|grep -v clash)" ] && echo -e "检测到端口：\033[30;47m $portx \033[0m被以下进程占用！clash无法启动！" && echo $(netstat -ntulp |grep :$portx) && exit;
 done
 }
 modify_yaml(){
@@ -50,8 +43,10 @@ fi
 external='external-controller: 0.0.0.0:9999'
 if [ "$dns_mod" = "fake-ip" ];then
 dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4]}'
+elif [ "$dns_over" = "已开启" ];then
+dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:1053, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5], fallback: [1.0.0.1, 8.8.4.4]}'
 else
-dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:1053, enhanced-mode: redir-host, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4]}'
+dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:1053, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4]}'
 fi
 if [ "$redir_mod" != "Redir模式" ];then
 tun='tun: {enable: true, stack: system}'
@@ -80,7 +75,6 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	sed -i "10,99s/sni: \S*/\1skip-cert-verify: true}/" $clashdir/config.yaml  #跳过trojan本地证书验证
 	sed -i '10,99s/}}/}, skip-cert-verify: true}/' $clashdir/config.yaml  #跳过v2+ssl本地证书验证
 	fi
-	#sed -i '/rules:/a \ - DOMAIN-SUFFIX,clash.razord.top,🎯 全球直连' $clashdir/config.yaml
 }
 mark_time(){
 	start_time=`date +%s`

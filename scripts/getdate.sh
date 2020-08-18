@@ -125,13 +125,13 @@ do
 	echo -e "\033[44m 遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 	echo -----------------------------------------------
 	echo -e "支持批量导入\033[30;46m Http/Https/Clash \033[0m等格式的订阅链接"
-	echo -e "支持批量导入\033[30;42m Vmess/SSR/SS/Trojan/Sock5 \033[0m等格式的节点链接"
-	echo -e "\033[31m使用SSR节点请务必使用支持SSR的clash核心！\033[0m"
-	echo -e "多个较短的链接可以用\033[30;47m | \033[0m分隔以一次性输入"
-	echo -e "多个较长的链接请尽量分多次输入，可支持多达\033[30;47m 99 \033[0;36m次输入"
-	echo -e "\033[32m直接输入回车以结束输入并开始导入链接！\033[0m"
+	echo -e "以及\033[30;42m Vmess/SSR/SS/Trojan/Sock5 \033[0m等格式的节点链接"
 	echo -----------------------------------------------
-	echo -e "\033[33m 0 返回上级目录！\033[0m"
+	echo -e "多个较短的链接可以用\033[30;47m | \033[0m号分隔以一次性输入"
+	echo -e "多个较长的链接可分次输入，支持多达\033[30;47m 99 \033[0m次输入"
+	echo -----------------------------------------------
+	echo -e "回车 \033[32m完成输入\033[0m并开始导入链接！"
+	echo -e " 0   \033[33m取消输入\033[0m并返回上级目录！"
 	echo -----------------------------------------------
 	read -p "请输入第"$i"个链接 > " url
 	test=$(echo $url | grep "://")
@@ -440,6 +440,10 @@ if [ "$res" = '1' ]; then
 		getdb
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
+		if cat /proc/mounts | grep -q www ;then
+			echo 检测到/www为只读，正在重新挂载！
+			mount -o remount -rw /www
+		fi
 		mkdir -p /www/clash > /dev/null
 		tar -zxvf '/tmp/clashdb.tar.gz' -C /www/clash > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 

@@ -14,7 +14,7 @@ fi
 ccfg=$clashdir/mark
 yaml=$clashdir/config.yaml
 #检查标识文件
-if [ ! -f "$ccfg" ]; then
+if [ ! -f $ccfg ]; then
 	echo mark文件不存在，正在创建！
 	cat >$ccfg<<EOF
 #标识clash运行状态的文件，不明勿动！
@@ -22,9 +22,9 @@ EOF
 fi
 source $ccfg
 #检查mac地址记录
-[ ! -f "$clashdir/mac" ] && touch $clashdir/mac
+[ ! -f $clashdir/mac ] && touch $clashdir/mac
 #获取自启状态
-if [ -f /etc/rc.d/*clash ]; then 
+if [ -f /etc/rc.d/*clash ];then
 	auto="\033[32m已设置开机启动！\033[0m"
 	auto1="\033[36m禁用\033[0mclash开机启动"
 else
@@ -32,7 +32,7 @@ else
 	auto1="\033[36m允许\033[0mclash开机启动"
 fi
 #获取运行模式
-if [ -z "$redir_mod" ]; then
+if [ -z "$redir_mod" ];then
 	sed -i "2i\redir_mod=Redir模式" $ccfg
 	redir_mod=Redir模式
 fi
@@ -272,21 +272,12 @@ fi
 }
 clashadv(){
 #获取设置默认显示
-if [ -z "$skip_cert" ]; then
-	skip_cert=已开启
-fi
-if [ -z "$common_ports" ]; then
-	common_ports=未开启
-fi
-if [ -z "$dns_mod" ]; then
-	dns_mod=redir_host
-fi
-if [ -z "$modify_yaml" ]; then
-	modify_yaml=未开启
-fi
-if [ -z "$ipv6_support" ]; then
-	ipv6_support=未开启
-fi
+[ -z "$skip_cert" ] && skip_cert=已开启
+[ -z "$common_ports" ] && common_ports=未开启
+[ -z "$dns_mod" ] && dns_mod=redir_host
+[ -z "$modify_yaml" ] && modify_yaml=未开启
+[ -z "$ipv6_support" ] && ipv6_support=未开启
+[ -z "$dns_over" ] && dns_over=未开启
 if [ -z "$(cat $clashdir/mac)" ]; then
 	mac_return=未开启
 else
@@ -304,6 +295,7 @@ echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ———�
 echo -e " 5 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
 echo -e " 6 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
 echo -e " 7 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
+echo -e " 8 不使用本地DNS服务：	\033[36m$dns_over\033[0m   ————防止redir-host模式的dns污染"
 echo -e " 9 \033[32m重启\033[0mclash服务"
 echo -e " 0 返回上级菜单 \033[0m"
 read -p "请输入对应数字 > " num
@@ -406,7 +398,6 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
 			skip_cert=已开启
 		else
-			/etc/init.d/clash enable
 			sed -i "1i\skip_cert=未开启" $ccfg
 			echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
 			skip_cert=未开启
@@ -421,7 +412,6 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m已设为仅代理（22,53,587,465,995,993,143,80,443）等常用端口！！\033[0m"
 			common_ports=已开启
 		else
-			/etc/init.d/clash enable
 			sed -i "1i\common_ports=未开启" $ccfg
 			echo -e "\033[33m已设为代理全部端口！！\033[0m"
 			common_ports=未开启
@@ -438,7 +428,6 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m！！！必然会导致上不了网！！!\033[0m"
 			modify_yaml=已开启
 		else
-			/etc/init.d/clash enable
 			sed -i "1i\modify_yaml=未开启" $ccfg
 			echo -e "\033[32m已设为使用脚本内置规则管理config.yaml配置文件！！\033[0m"
 			modify_yaml=未开启
@@ -454,7 +443,6 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "Clash对ipv6的支持并不友好，如不能使用请静等修复！"
 			ipv6_support=已开启
 		else
-			/etc/init.d/clash enable
 			sed -i "1i\ipv6_support=未开启" $ccfg
 			echo -e "\033[32m已禁用对ipv6协议的支持！！\033[0m"
 			ipv6_support=未开启
@@ -524,16 +512,27 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			clashadv
 		fi
 		
-
+	elif [[ $num == 8 ]]; then	
+		sed -i '/dns_over*/'d $ccfg
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ "$dns_over" = "未开启" ] > /dev/null 2>&1; then 
+			sed -i "1i\dns_over=已开启" $ccfg
+			echo -e "\033[33m已设置DNS为不走本地dnsmasq服务器！\033[0m"
+			echo -e "可能会对浏览速度产生一定影响，介意勿用！"
+			dns_over=已开启
+		else
+			/etc/init.d/clash enable
+			sed -i "1i\dns_over=未开启" $ccfg
+			echo -e "\033[32m已设置DNS通过本地dnsmasq服务器！\033[0m"
+			echo -e "redir-host模式下部分网站可能会被运营商dns污染导致无法打开"
+			dns_over=未开启
+		fi
+		clashadv  
 
 		clashadv 
 		
 	elif [[ $num == 9 ]]; then	
-		if [ $status -gt 0 ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			/etc/init.d/clash stop
-			echo -e "\033[31mClash服务已停止！\033[0m"
-		fi
+		[ $status -gt 0 ] && /etc/init.d/clash stop
 		clashstart
 		clashsh
 	else
