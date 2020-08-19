@@ -51,7 +51,9 @@ if [ "$result" != "200" ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo
 	if [ -z $markhttp ];then
-		exit;
+		echo 请尝试使用导入节点/链接功能！
+		getlink
+		
 	else
 		read -p "是否更换后端地址后重试？[1/0] > " res
 		if [ "$res" = '1' ]; then
@@ -69,6 +71,24 @@ if [ "$result" != "200" ];then
 	fi
 else
 	if cat $yamlnew | grep ', server:' >/dev/null;then
+		#检测旧格式
+		if cat $yamlnew | grep '^proxy:' >/dev/null;then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m已经停止对旧格式配置文件的支持！！！\033[0m"
+			echo -e "请使用新格式或者使用\033[32m导入节点/订阅\033[0m功能！"
+			sleep 2
+			clashlink
+		fi
+		#检测不支持的加密协议
+		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
+			if [ "$clashcore" = "clash" -o "$clashcore" = "clashpre" ];then
+				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -e "\033[31m当前核心：$clashcore不支持chacha20加密！！！\033[0m"
+				echo -e "请更换使用clashR核心！！！"
+				sleep 2
+				getcore
+			fi
+		fi
 		#替换文件
 		if [ -f $yaml ];then
 			mv $yaml $yaml.bak
@@ -98,9 +118,9 @@ else
 				sleep 1
 				clashsh
 			else
-				echo -e "\033[31mclash服务启动失败！请利用测试菜单排查问题！\033[0m"
-				sleep 1
-				clashsh
+				echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
+				$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
+				exit;
 			fi
 		fi
 	else
@@ -192,10 +212,10 @@ fi
 } 
 getlink2(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[44m 遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+echo -e "\033[30;47m 此功能不明勿用，出问题自行解决！\033[0m"
 echo -----------------------------------------------
-echo -e "\033[33m仅支持导入可直接在clash中使用的完整订阅链接"
-echo -e "\033[36m非完整链接请使用【导入节点/订阅链接】功能"
+echo -e "\033[33m仅限导入完整clash链接！！！"
+echo -e "\033[36m导入后如无法运行，请使用【导入节点/订阅链接】功能"
 echo -e "\033[31m注意如节点使用了chacha20加密协议，需将核心更新为clashr核心\033[0m"
 echo -----------------------------------------------
 echo -e "\033[33m0 返回上级目录！\033[0m"
