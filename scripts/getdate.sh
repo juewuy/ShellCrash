@@ -72,7 +72,7 @@ if [ "$result" != "200" ];then
 else
 	if cat $yamlnew | grep ', server:' >/dev/null;then
 		#检测旧格式
-		if cat $yamlnew | grep '^proxy:' >/dev/null;then
+		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m已经停止对旧格式配置文件的支持！！！\033[0m"
 			echo -e "请使用新格式或者使用\033[32m导入节点/订阅\033[0m功能！"
