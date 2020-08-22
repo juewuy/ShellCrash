@@ -33,6 +33,7 @@ else
 ipv6='ipv6: false'
 fi
 external='external-controller: 0.0.0.0:9999'
+external_ui='external-ui: ui'
 if [ "$dns_mod" = "fake-ip" ];then
 dns='dns: {enable: true, listen: 0.0.0.0:1053, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4]}'
 elif [ "$dns_over" = "已开启" ];then
@@ -59,9 +60,10 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	sed -i "4a$log" $clashdir/config.yaml
 	sed -i "5a$ipv6" $clashdir/config.yaml
 	sed -i "6a$external" $clashdir/config.yaml
-	sed -i "7a$dns" $clashdir/config.yaml
-	sed -i "8a$tun" $clashdir/config.yaml
-	sed -i "9a$exper" $clashdir/config.yaml
+	sed -i "7a$external_ui" $clashdir/config.yaml
+	sed -i "8a$dns" $clashdir/config.yaml
+	sed -i "9a$tun" $clashdir/config.yaml
+	sed -i "10a$exper" $clashdir/config.yaml
 	#跳过本地tls证书验证
 	if [ "$skip_cert" != "未开启" ];then
 	sed -i "10,99s/sni: \S*/\1skip-cert-verify: true}/" $clashdir/config.yaml  #跳过trojan本地证书验证

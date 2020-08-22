@@ -425,12 +425,27 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
 echo -----------------------------------------------
 echo -e "\033[32m打开管理面板的速度更快且更稳定"
-echo -e "\033[33m需要占用约500kb的本地空间(目录：/www/clash)\033[0m"
-echo -e "\033[36m可以使用\033[32;4mhttp://$host/clash\033[0;36m访问面板\033[0m"
+echo -e "\033[33m需要占用约500kb的本地空间\033[0m"
 echo -----------------------------------------------
-read -p "是否安装本地面板？[1/0] > " res
-if [ "$res" = '1' ]; then
-	if [ -d /www/clash ];then
+echo " 1 在/www/clash目录安装(http://$host/clash，可能安装失败！)"
+echo " 2 在$clashdir/ui目录安装(http://$host:9999/ui，推荐！)"
+echo -----------------------------------------------
+echo " 0 返回上级菜单！"
+read -p "请输入对应数字 > " num
+
+if [ -z "$num" ];then
+	update
+elif [ "$num" = '1' ]; then
+	dbdir=/www/clash
+	hostdir=':9999/ui'
+elif [ "$num" = '2' ]; then
+	dbdir=$clashdir/ui
+	hostdir='/clash'
+else
+	update
+fi
+	#下载及安装
+	if [ -d /www/clash -o -d $clashdir/ui ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -439,6 +454,7 @@ if [ "$res" = '1' ]; then
 			update
 		elif [ "$res" = 1 ]; then
 			rm -rf /www/clash
+			rm -rf $clashdir/ui
 		else
 			update
 		fi
@@ -454,25 +470,20 @@ if [ "$res" = '1' ]; then
 		getdb
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
-		if cat /proc/mounts | grep -q www ;then
-			echo 检测到/www为只读，正在重新挂载！
-			mount -o remount -w /www
-		fi
-		chmod 755 /www
-		mkdir -p /www/clash > /dev/null
-		tar -zxvf '/tmp/clashdb.tar.gz' -C /www/clash > /dev/null
+		mkdir -p $dbdir > /dev/null
+		tar -zxvf '/tmp/clashdb.tar.gz' -C $dbdir > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 		#修改默认host和端口
-		sed -i "s/127.0.0.1/$host/g" /www/clash/js/*.js
-		sed -i "s/9090/9999/g" /www/clash/js/*.js
+		sed -i "s/127.0.0.1/$host/g" $dbdir/js/*.js
+		sed -i "s/9090/9999/g" $dbdir/js/*.js
 		#
 		echo -e "\033[32m面板安装成功！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[36m请使用\033[32;4mhttp://$host/clash\033[0;36m访问面板\033[0m"
+		echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0;36m访问面板\033[0m"
 		rm -rf /tmp/clashdb.tar.gz
 		update
 	fi
-fi		
+	
 update
 }
 setserver(){
