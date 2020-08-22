@@ -428,7 +428,7 @@ echo -e "\033[32m打开管理面板的速度更快且更稳定"
 echo -e "\033[33m需要占用约500kb的本地空间\033[0m"
 echo -----------------------------------------------
 echo " 1 在/www/clash目录安装(http://$host/clash，可能安装失败！)"
-echo " 2 在$clashdir/ui目录安装(http://$host:9999/ui，推荐！)"
+echo " 2 在$clashdir/ui目录安装(http://$host:9999/ui，安装后需重启clash)"
 echo -----------------------------------------------
 echo " 0 返回上级菜单！"
 read -p "请输入对应数字 > " num
@@ -437,10 +437,10 @@ if [ -z "$num" ];then
 	update
 elif [ "$num" = '1' ]; then
 	dbdir=/www/clash
-	hostdir=':9999/ui'
+	hostdir='/clash\033[0;36m访问面板'
 elif [ "$num" = '2' ]; then
 	dbdir=$clashdir/ui
-	hostdir='/clash'
+	hostdir=':9999/ui\033[0;36m访问面板(需重启clash服务！)'
 else
 	update
 fi
@@ -479,7 +479,7 @@ fi
 		#
 		echo -e "\033[32m面板安装成功！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0;36m访问面板\033[0m"
+		echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0m"
 		rm -rf /tmp/clashdb.tar.gz
 		update
 	fi
