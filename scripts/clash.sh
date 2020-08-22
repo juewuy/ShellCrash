@@ -117,7 +117,11 @@ clashstart(){
 	fi
 	sleep 1
 	status=`ps |grep -w 'clash -d'|grep -v grep`
-	[ -z "$status" ] && echo -e "\033[31mclash启动失败！\033[0m" && exit
+	if [ -z "$status" ];then
+		echo -e "\033[31mclash启动失败！\033[0m" 
+		sed -i /start_old=*/d $ccfg
+		exit
+	fi
 	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
@@ -542,7 +546,7 @@ echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
 echo -e " 2 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
-echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————如正常方式无法启动"
+echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————切换时会停止clash服务"
 echo -----------------------------------------------
 echo -e " 9 \033[32m重启\033[0mclash服务"
 echo -e " 0 返回上级菜单 \033[0m"
@@ -592,14 +596,14 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			sed -i "1i\start_old=已开启" $ccfg
 			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
 			echo -e "\033[36m此模式兼容性更好但无法禁用开机启动！！\033[0m"
-			clashstop
-			echo -e "已停止clash服务，请手动启动服务！"
 			start_old=已开启
+			/etc/init.d/clash stop > /dev/null 2>&1
 			sleep 2
 		else
 			sed -i "1i\start_old=未开启" $ccfg
 			echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
 			start_old=未开启
+			source $clashdir/start.sh && stop_old
 		fi
 		clashadv  
 
