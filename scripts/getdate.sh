@@ -94,18 +94,32 @@ else
 		mv $yamlnew $yaml
 		echo 配置文件已生成！正在启动clash使其生效！
 		#重启clash服务
-		/etc/init.d/clash stop > /dev/null 2>&1
-		/etc/init.d/clash start
+		if [ $status -gt 0 ];then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			killall -9 clash &> /dev/null
+			echo -e "\033[31mClash服务已停止！\033[0m"
+		fi
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ "$start_old" = "已开启" ];then
+			source $clashdir/start.sh && start_old
+		else
+			/etc/init.d/clash start
+			sleep 1
+			status=`ps |grep -w 'clash -d'|grep -v grep`
+			if [ -z "$status" ];then
+				echo -e "\033[31mclash启动失败！尝试使用保守方式启动！\033[0m"
+				source $clashdir/start.sh && start_old
+			fi
+		fi
 		sleep 1
 		status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
 		if [[ $status -gt 0 ]];then
 			host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[32mclash服务已启动！\033[0m"
 			echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
 			echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
 			echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-			sleep 1
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			clashsh
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

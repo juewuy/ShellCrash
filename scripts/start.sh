@@ -70,7 +70,8 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	sed -i "10a$exper" $clashdir/config.yaml
 	#跳过本地tls证书验证
 	if [ "$skip_cert" != "未开启" ];then
-	sed -i "10,99s/sni: */\1skip-cert-verify: true}/" $clashdir/config.yaml  #跳过trojan本地证书验证
+	#sed -i '10,99s/sni: \S*}/\1skip-cert-verify: true}/' $clashdir/config.yaml  #跳过trojan本地证书验证
+	sed -i '10,99s/sni: .*}/\1skip-cert-verify: true}/' $clashdir/config.yaml  #跳过trojan本地证书验证
 	sed -i '10,99s/}}/}, skip-cert-verify: true}/' $clashdir/config.yaml  #跳过v2+ssl本地证书验证
 	fi
 }

@@ -106,6 +106,13 @@ clashstart(){
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	if [ "$start_old" = "已开启" ];then
 		source $clashdir/start.sh && start_old
+		sleep 1
+		status=`ps |grep -w 'clash -d'|grep -v grep`
+		if [ -z "$status" ];then
+			echo -e "\033[31mclash启动失败！\033[0m" 
+			sed -i /start_old=*/d $ccfg
+			exit
+		fi
 	else
 		/etc/init.d/clash start
 		sleep 1
@@ -113,15 +120,16 @@ clashstart(){
 		if [ -z "$status" ];then
 			echo -e "\033[31mclash启动失败！尝试使用保守方式启动！\033[0m"
 			source $clashdir/start.sh && start_old
+			sleep 1
+			status=`ps |grep -w 'clash -d'|grep -v grep`
+			if [ -z "$status" ];then
+				echo -e "\033[31mclash启动失败！\033[0m" 
+				sed -i /start_old=*/d $ccfg
+				exit
+			fi
 		fi
 	fi
-	sleep 1
-	status=`ps |grep -w 'clash -d'|grep -v grep`
-	if [ -z "$status" ];then
-		echo -e "\033[31mclash启动失败！\033[0m" 
-		sed -i /start_old=*/d $ccfg
-		exit
-	fi
+
 	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
@@ -561,9 +569,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if [ "$modify_yaml" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\modify_yaml=已开启" $ccfg
-			echo -e "\033[33m已设为使用用户完成自定义配置文件！！"
-			echo -e "\033[0m不明白原理的用户切勿随意开启此选项"
-			echo -e "\033[33m！！！必然会导致上不了网！！!\033[0m"
+			echo -e "\033[33m已设为使用用户完全自定义的配置文件！！"
+			echo -e "\033[36m不明白原理的用户切勿随意开启此选项"
+			echo -e "\033[31m！！！必然会导致上不了网！！!\033[0m"
 			modify_yaml=已开启
 			sleep 3
 		else
@@ -613,7 +621,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		clashsh
 	else
 		echo -e "\033[31m暂未支持的选项！\033[0m"
-		clashadv
+		clashsh
 	fi
 else
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
