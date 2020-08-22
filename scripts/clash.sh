@@ -82,6 +82,13 @@ if [ ! -f $clashdir/Country.mmdb ];then
 	clashstart
 fi
 }
+clashstop(){
+	if [ "$start_old" = "已开启" ];then
+		source $clashdir/start.sh && stop_old
+	else
+		/etc/init.d/clash stop > /dev/null 2>&1
+	fi
+}
 clashstart(){
 	if [ ! -f "$yaml" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,24 +97,30 @@ clashstart(){
 	fi
 	if [ $status -gt 0 ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		/etc/init.d/clash stop > /dev/null 2>&1
+		clashstop
 		echo -e "\033[31mClash服务已停止！\033[0m"
 	fi
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	if [ "$start_old" = "已开启" ];then
+		source $clashdir/start.sh && start_old
+	else
 		/etc/init.d/clash start
 		sleep 1
-		status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
-	if [[ $status -gt 0 ]];then
-		host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-		echo -e "\033[32mclash服务已启动！\033[0m"
-		echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
-		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	else
-		echo -e "\033[31mclash服务启动失败！请检查配置文件！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		status=`ps |grep -w 'clash -d'|grep -v grep`
+		if [ -z "$status" ];then
+			echo -e "\033[31mclash启动失败！尝试使用保守方式启动！\033[0m"
+			source $clashdir/start.sh && start_old
+		fi
 	fi
+	sleep 1
+	status=`ps |grep -w 'clash -d'|grep -v grep`
+	[ -z "$status" ] && echo -e "\033[31mclash启动失败！\033[0m" && exit
+	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	echo -e "\033[32mclash服务已启动！\033[0m"
+	echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
+	echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+	echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 }
 clashlink(){
 #获取订阅规则
@@ -270,13 +283,11 @@ else
 	exit;
 fi
 }
-clashadv(){
+clashcfg(){
 #获取设置默认显示
 [ -z "$skip_cert" ] && skip_cert=已开启
 [ -z "$common_ports" ] && common_ports=未开启
 [ -z "$dns_mod" ] && dns_mod=redir_host
-[ -z "$modify_yaml" ] && modify_yaml=未开启
-[ -z "$ipv6_support" ] && ipv6_support=未开启
 [ -z "$dns_over" ] && dns_over=未开启
 if [ -z "$(cat $clashdir/mac)" ]; then
 	mac_return=未开启
@@ -285,17 +296,15 @@ else
 fi
 #
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[30;47m欢迎使用高级模式菜单：\033[0m"
-echo -e "\033[33m修改配置后请手动重启clash服务！\033[0m"
+echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
+echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 切换Clash运行模式: 	\033[36m$redir_mod\033[0m"
 echo -e " 2 切换DNS运行模式：	\033[36m$dns_mod\033[0m"
 echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
 echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于屏蔽P2P流量"
-echo -e " 5 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
-echo -e " 6 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
-echo -e " 7 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
-echo -e " 8 不使用本地DNS服务：	\033[36m$dns_over\033[0m   ————防止redir-host模式的dns污染"
+echo -e " 5 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
+echo -e " 6 不使用本地DNS服务：	\033[36m$dns_over\033[0m   ————防止redir-host模式的dns污染"
 echo -e " 9 \033[32m重启\033[0mclash服务"
 echo -e " 0 返回上级菜单 \033[0m"
 read -p "请输入对应数字 > " num
@@ -322,16 +331,16 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ -z "$num" ]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashadv
+			clashcfg
 		elif [[ $num == 0 ]]; then
-			clashadv
+			clashcfg
 		elif [[ $num == 1 ]]; then
 			redir_mod=Redir模式
 		elif [[ $num == 2 ]]; then
 			if [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
 				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
-				clashadv
+				clashcfg
 			fi
 			redir_mod=Tun模式
 			dns_mod=fake-ip
@@ -339,13 +348,13 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			if [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
 				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
-				clashadv
+				clashcfg
 			fi
 			redir_mod=混合模式		
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashadv
+			clashcfg
 		fi
 		sed -i '/redir_mod*/'d $ccfg
 		sed -i "1i\redir_mod=$redir_mod" $ccfg
@@ -353,7 +362,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		sed -i "1i\dns_mod=$dns_mod" $ccfg
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
 		echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
-		clashadv
+		clashcfg
 	  
 	elif [[ $num == 2 ]]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -369,9 +378,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ -z "$num" ]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashadv
+			clashcfg
 		elif [[ $num == 0 ]]; then
-			clashadv
+			clashcfg
 		elif [[ $num == 1 ]]; then
 			dns_mod=fake-ip
 		elif [[ $num == 2 ]]; then
@@ -380,7 +389,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashadv
+			clashcfg
 		fi
 		sed -i '/dns_mod*/'d $ccfg
 		sed -i "1i\dns_mod=$dns_mod" $ccfg
@@ -388,7 +397,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		sed -i "1i\redir_mod=$redir_mod" $ccfg
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
 		echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-		clashadv
+		clashcfg
 	
 	elif [[ $num == 3 ]]; then	
 		sed -i '/skip_cert*/'d $ccfg
@@ -402,7 +411,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
 			skip_cert=未开启
 		fi
-		clashadv
+		clashcfg
 	
 	elif [[ $num == 4 ]]; then	
 		sed -i '/common_ports*/'d $ccfg
@@ -416,40 +425,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m已设为代理全部端口！！\033[0m"
 			common_ports=未开启
 		fi
-		clashadv  
-	
-	elif [[ $num == 5 ]]; then	
-		sed -i '/modify_yaml*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		if [ "$modify_yaml" = "未开启" ] > /dev/null 2>&1; then 
-			sed -i "1i\modify_yaml=已开启" $ccfg
-			echo -e "\033[33m已设为使用用户完成自定义配置文件！！"
-			echo -e "\033[0m不明白原理的用户切勿随意开启此选项"
-			echo -e "\033[33m！！！必然会导致上不了网！！!\033[0m"
-			modify_yaml=已开启
-		else
-			sed -i "1i\modify_yaml=未开启" $ccfg
-			echo -e "\033[32m已设为使用脚本内置规则管理config.yaml配置文件！！\033[0m"
-			modify_yaml=未开启
-		fi
-		clashadv  
-		
-	elif [[ $num == 6 ]]; then	
-		sed -i '/ipv6_support*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		if [ "$ipv6_support" = "未开启" ] > /dev/null 2>&1; then 
-			sed -i "1i\ipv6_support=已开启" $ccfg
-			echo -e "\033[33m已开启对ipv6协议的支持！！\033[0m"
-			echo -e "Clash对ipv6的支持并不友好，如不能使用请静等修复！"
-			ipv6_support=已开启
-		else
-			sed -i "1i\ipv6_support=未开启" $ccfg
-			echo -e "\033[32m已禁用对ipv6协议的支持！！\033[0m"
-			ipv6_support=未开启
-		fi
-		clashadv  
+		clashcfg  
 
-	elif [[ $num == 7 ]]; then	
+	elif [[ $num == 5 ]]; then	
 	
 		add_mac(){
 			echo -----------------------------------------------
@@ -458,9 +436,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[0m 0 或回车 结束添加"
 			read -p "请输入对应序号 > " num
 			if [ -z "$num" ]; then
-				clashadv
+				clashcfg
 			elif [ $num -le 0 ]; then
-				clashadv
+				clashcfg
 			elif [ $num -le $(cat /tmp/dhcp.leases | awk 'END{print NR}') ]; then
 				macadd=$(cat /tmp/dhcp.leases | awk '{print $2}' | sed -n "$num"p)
 				if [ -z $(cat $clashdir/mac | grep -E "$macadd") ];then
@@ -494,25 +472,25 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ -z "$num" ]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashadv
+			clashcfg
 		elif [[ $num == 0 ]]; then
-			clashadv
+			clashcfg
 		elif [[ $num == 1 ]]; then
 			:>$clashdir/mac
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m设备列表已清空！\033[0m"
 			sleep 1
-			clashadv
+			clashcfg
 		elif [[ $num == 2 ]]; then	
 			add_mac
 			
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashadv
+			clashcfg
 		fi
 		
-	elif [[ $num == 8 ]]; then	
+	elif [[ $num == 6 ]]; then	
 		sed -i '/dns_over*/'d $ccfg
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if [ "$dns_over" = "未开启" ] > /dev/null 2>&1; then 
@@ -527,12 +505,92 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "redir-host模式下部分网站可能会被运营商dns污染导致无法打开"
 			dns_over=未开启
 		fi
-		clashadv  
-
-		clashadv 
+		clashcfg  
 		
 	elif [[ $num == 9 ]]; then	
-		[ $status -gt 0 ] && /etc/init.d/clash stop
+		clashstart
+		clashsh
+	else
+		echo -e "\033[31m暂未支持的选项！\033[0m"
+		clashcfg
+	fi
+else
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[31m请输入正确的数字！\033[0m"
+	clashsh
+fi
+exit;
+}
+clashadv(){
+#获取设置默认显示
+[ -z "$modify_yaml" ] && modify_yaml=未开启
+[ -z "$ipv6_support" ] && ipv6_support=未开启
+[ -z "$start_old" ] && start_old=未开启
+#
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
+echo -e "\033[33m如您不是很了解clash的运行机制，请勿更改！\033[0m"
+echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
+echo -----------------------------------------------
+echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
+echo -e " 2 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
+echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————如正常方式无法启动"
+echo -e " 9 \033[32m重启\033[0mclash服务"
+echo -e " 0 返回上级菜单 \033[0m"
+read -p "请输入对应数字 > " num
+if [[ $num -le 9 ]] > /dev/null 2>&1; then 
+	if [[ $num == 0 ]]; then
+		clashsh  
+	
+	elif [[ $num == 1 ]]; then	
+		sed -i '/modify_yaml*/'d $ccfg
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ "$modify_yaml" = "未开启" ] > /dev/null 2>&1; then 
+			sed -i "1i\modify_yaml=已开启" $ccfg
+			echo -e "\033[33m已设为使用用户完成自定义配置文件！！"
+			echo -e "\033[0m不明白原理的用户切勿随意开启此选项"
+			echo -e "\033[33m！！！必然会导致上不了网！！!\033[0m"
+			modify_yaml=已开启
+		else
+			sed -i "1i\modify_yaml=未开启" $ccfg
+			echo -e "\033[32m已设为使用脚本内置规则管理config.yaml配置文件！！\033[0m"
+			modify_yaml=未开启
+		fi
+		clashadv  
+		
+	elif [[ $num == 2 ]]; then	
+		sed -i '/ipv6_support*/'d $ccfg
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ "$ipv6_support" = "未开启" ] > /dev/null 2>&1; then 
+			sed -i "1i\ipv6_support=已开启" $ccfg
+			echo -e "\033[33m已开启对ipv6协议的支持！！\033[0m"
+			echo -e "Clash对ipv6的支持并不友好，如不能使用请静等修复！"
+			ipv6_support=已开启
+		else
+			sed -i "1i\ipv6_support=未开启" $ccfg
+			echo -e "\033[32m已禁用对ipv6协议的支持！！\033[0m"
+			ipv6_support=未开启
+		fi
+		clashadv  
+		
+	elif [[ $num == 3 ]]; then	
+		sed -i '/start_old*/'d $ccfg
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
+			sed -i "1i\start_old=已开启" $ccfg
+			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
+			clashstop
+			echo -e "已停止clash服务，请手动启动服务！"
+			start_old=已开启
+		else
+			sed -i "1i\start_old=未开启" $ccfg
+			echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
+			start_old=未开启
+		fi
+		clashadv  
+
+		
+	elif [[ $num == 9 ]]; then	
 		clashstart
 		clashsh
 	else
@@ -746,11 +804,12 @@ clashsh(){
 getconfig
 #############################
 echo -e " 1 \033[32m启动/重启\033[0mclash服务"
-echo -e " 2 clash\033[33m高级设置\033[0m"
+echo -e " 2 clash\033[33m功能设置\033[0m"
 echo -e " 3 \033[31m停止\033[0mclash服务"
 echo -e " 4 $auto1"
 echo -e " 5 设置\033[33m定时任务\033[0m"
 echo -e " 6 导入\033[32m节点/订阅\033[0m链接"
+echo -e " 7 clash\033[31m进阶设置\033[0m"
 echo -e " 8 \033[35m测试菜单\033[0m"
 echo -e " 9 \033[36m更新/卸载\033[0m"
 echo -e " 0 \033[0m退出脚本\033[0m"
@@ -765,10 +824,10 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		exit;
   
 	elif [[ $num == 2 ]]; then
-		clashadv
+		clashcfg
 
 	elif [[ $num == 3 ]]; then
-		/etc/init.d/clash stop > /dev/null 2>&1
+		clashstop
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31mClash服务已停止！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -790,6 +849,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
     
 	elif [[ $num == 6 ]]; then
 		clashlink
+		
+	elif [[ $num == 7 ]]; then
+		clashadv
 
 	elif [[ $num == 8 ]]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

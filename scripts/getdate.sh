@@ -42,7 +42,7 @@ echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出\033[36m      
 echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
 #获取在线yaml文件
 yaml=$clashdir/config.yaml
-yamlnew=$yaml.new
+yamlnew=/tmp/config.yaml
 rm -rf $yamlnew > /dev/null 2>&1
 result=$(curl -w %{http_code} -kLo $yamlnew $Https)
 if [ "$result" != "200" ];then
@@ -90,9 +90,7 @@ else
 			fi
 		fi
 		#替换文件
-		if [ -f $yaml ];then
-			mv $yaml $yaml.bak
-		fi
+		[ -f $yaml ] && mv $yaml $yaml.bak
 		mv $yamlnew $yaml
 		echo 配置文件已生成！正在启动clash使其生效！
 		#重启clash服务
@@ -306,6 +304,7 @@ cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cpucore | grep -E "linux.*armv.*")" ] && cpucore="armv5"
 [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
+[ -n "$(echo $cpucore | grep -E "linux.*amd64.*")" ] && cpucore="386"
 ###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
@@ -389,32 +388,19 @@ fi
 }
 getgeo(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[30;46m感谢Alecthw大神提供的优质GeoIP数据库！！！\033[0m"
+echo -e "\033[33m正在检查更新！\033[0m"
+result=$(curl -w %{http_code} -skLo /tmp/clashversion $update_url/bin/version)
+[ "$result" != "200" ] && echo "检查更新失败！" && exit 1
+source /tmp/clashversion
 echo -----------------------------------------------
-echo -e "\033[33m请选择下载源：\033[0m"
-echo -e " 1 默认源：$update_url"
-echo -e " 2 Alecthw大神的Github(需开启clash服务)"
-echo -e " 0 返回上级菜单"
-read -p "请输入对应数字 > " num
-	if	[ -z $num ]; then 
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
-		update
-	elif [[ $num == 0 ]]; then
-		update
-	elif [[ $num == 1 ]]; then
-		geolink="$update_url/bin/Country.mmdb"
-		#echo $geolink
-	elif [[ $num == 2 ]]; then
-		geolink="-x 127.0.0.1:7890 https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/release/Country.mmdb"
-	else
-		echo -e "\033[31m请输入正确的数字！\033[0m"
-		update
-		exit;
-	fi
+echo -e "当前脚本版本为：\033[33m $Geo_v \033[0m"
+echo -e "最新脚本版本为：\033[32m $GeoIP_v \033[0m"
+echo -----------------------------------------------
+read -p "是否更新数据库文件？[1/0] > " res
+if [ "$res" = '1' ]; then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo 正在从服务器获取数据库文件…………
-	result=$(curl -w %{http_code} -kLo $clashdir/Country.mmdb $geolink)
+	result=$(curl -w %{http_code} -kLo /tmp/Country.mmdb $update_url/bin/Country.mmdb)
 	if [ "$result" != "200" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -423,7 +409,15 @@ read -p "请输入对应数字 > " num
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
+		mv /tmp/Country.mmdb $clashdir/Country.mmdb
+		sed -i '/Geo_v=*/'d $ccfg
+		sed -i "1i\Geo_v=$GeoIP_v" $ccfg
+		rm -rf /tmp/clashversion
+		clashsh
 	fi
+else
+clashsh
+fi
 }
 getdb(){
 host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
