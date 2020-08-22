@@ -17,6 +17,10 @@
 ~路由器或设备已经开启SSH并获取root权限<br>
 ~SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等<br>
 
+更新日志：
+--
+https://github.com/juewuy/clash-for-Miwifi/releases
+
 一键安装：
 --
 ```Shell
