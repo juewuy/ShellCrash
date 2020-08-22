@@ -40,10 +40,10 @@ if [ -z "$redir_mod" ];then
 	redir_mod=Redir模式
 fi
 #获取运行状态
-status=`ps |grep -w 'clash -d'|grep -v grep|wc -l`
+status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|wc -l`
 if [[ $status -gt 0 ]];then
 	run="\033[32m正在运行（$redir_mod）\033[0m"
-	uid=`ps |grep -w 'clash -d'|grep -v grep|awk '{print $1}'`
+	uid=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|awk '{print $1}'`
 	VmRSS=`cat /proc/$uid/status|grep -w VmRSS|awk '{print $2,$3}'`
 	#获取运行时长
 	if [ -n "$start_time" ]; then 
@@ -86,11 +86,8 @@ if [ ! -f $clashdir/Country.mmdb ];then
 fi
 }
 clashstop(){
-	if [ "$start_old" = "已开启" ];then
-		source $clashdir/start.sh && stop_old
-	else
-		/etc/init.d/clash stop > /dev/null 2>&1
-	fi
+	source $clashdir/start.sh && stop_old
+	/etc/init.d/clash stop > /dev/null 2>&1
 }
 clashstart(){
 	if [ ! -f "$yaml" ];then
@@ -107,7 +104,7 @@ clashstart(){
 	if [ "$start_old" = "已开启" ];then
 		source $clashdir/start.sh && start_old
 		sleep 1
-		status=`ps |grep -w 'clash -d'|grep -v grep`
+		status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
 		if [ -z "$status" ];then
 			echo -e "\033[31mclash启动失败！\033[0m" 
 			sed -i /start_old=*/d $ccfg
@@ -116,12 +113,12 @@ clashstart(){
 	else
 		/etc/init.d/clash start
 		sleep 1
-		status=`ps |grep -w 'clash -d'|grep -v grep`
+		status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
 		if [ -z "$status" ];then
 			echo -e "\033[31mclash启动失败！尝试使用保守方式启动！\033[0m"
 			source $clashdir/start.sh && start_old
 			sleep 1
-			status=`ps |grep -w 'clash -d'|grep -v grep`
+			status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
 			if [ -z "$status" ];then
 				echo -e "\033[31mclash启动失败！\033[0m" 
 				sed -i /start_old=*/d $ccfg

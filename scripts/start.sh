@@ -143,7 +143,7 @@ start_dns(){
 }
 daemon_old(){
 	#守护进程状态
-	status=$(ps |grep -w 'clash -d'|grep -v grep)
+	status=$(ps |grep -w 'clash'|grep -v grep|grep -v clash.sh)
 	[ -z $status ] && $clashdir/clash -d $clashdir && mark_time
 }
 checkcron(){
