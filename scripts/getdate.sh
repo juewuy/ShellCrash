@@ -456,8 +456,9 @@ if [ "$res" = '1' ]; then
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		if cat /proc/mounts | grep -q www ;then
 			echo 检测到/www为只读，正在重新挂载！
-			mount -o remount -rw /www
+			mount -o remount -w /www
 		fi
+		chmod 755 /www
 		mkdir -p /www/clash > /dev/null
 		tar -zxvf '/tmp/clashdb.tar.gz' -C /www/clash > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 

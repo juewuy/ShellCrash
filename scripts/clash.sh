@@ -24,7 +24,10 @@ source $ccfg
 #检查mac地址记录
 [ ! -f $clashdir/mac ] && touch $clashdir/mac
 #获取自启状态
-if [ -f /etc/rc.d/*clash ];then
+if [ "$start_old" = "已开启" ];then
+	auto="\033[33m已设置保守模式！\033[0m"
+	auto1="\033[36m设为\033[0m常规模式启动"
+elif [ -f /etc/rc.d/*clash ];then
 	auto="\033[32m已设置开机启动！\033[0m"
 	auto1="\033[36m禁用\033[0mclash开机启动"
 else
@@ -144,6 +147,7 @@ echo -e " 3 选取\033[33m代理规则\033[0m模版"
 echo -e " 4 选择配置生成服务器"
 echo -e " 5 \033[36m还原\033[0m配置文件"
 echo -e " 6 \033[32m手动更新\033[0m订阅"
+echo -----------------------------------------------
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 if [ -z "$num" ];then
@@ -193,6 +197,7 @@ elif [[ $num == 3 ]];then
 	echo 6 ACL4SSR通用版无自动测速
 	echo 7 ACL4SSR精简版无自动测速
 	echo 8 ACL4SSR超重度奈飞全量
+	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ];then
@@ -221,6 +226,7 @@ elif [[ $num == 4 ]];then
 	echo 5 api.wcc.best
 	echo 6 skapi.cool
 	echo 7 subconvert.dreamcloud.pw
+	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
     if [ -z "$num" ];then
@@ -305,8 +311,10 @@ echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————
 echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于屏蔽P2P流量"
 echo -e " 5 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
 echo -e " 6 不使用本地DNS服务：	\033[36m$dns_over\033[0m   ————防止redir-host模式的dns污染"
+echo -----------------------------------------------
 echo -e " 9 \033[32m重启\033[0mclash服务"
 echo -e " 0 返回上级菜单 \033[0m"
+echo -----------------------------------------------
 read -p "请输入对应数字 > " num
 if [[ $num -le 9 ]] > /dev/null 2>&1; then 
 	if [[ $num == 0 ]]; then
@@ -535,8 +543,10 @@ echo -----------------------------------------------
 echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
 echo -e " 2 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————如正常方式无法启动"
+echo -----------------------------------------------
 echo -e " 9 \033[32m重启\033[0mclash服务"
 echo -e " 0 返回上级菜单 \033[0m"
+echo -----------------------------------------------
 read -p "请输入对应数字 > " num
 if [[ $num -le 9 ]] > /dev/null 2>&1; then 
 	if [[ $num == 0 ]]; then
@@ -551,6 +561,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[0m不明白原理的用户切勿随意开启此选项"
 			echo -e "\033[33m！！！必然会导致上不了网！！!\033[0m"
 			modify_yaml=已开启
+			sleep 3
 		else
 			sed -i "1i\modify_yaml=未开启" $ccfg
 			echo -e "\033[32m已设为使用脚本内置规则管理config.yaml配置文件！！\033[0m"
@@ -566,6 +577,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m已开启对ipv6协议的支持！！\033[0m"
 			echo -e "Clash对ipv6的支持并不友好，如不能使用请静等修复！"
 			ipv6_support=已开启
+			sleep 2
 		else
 			sed -i "1i\ipv6_support=未开启" $ccfg
 			echo -e "\033[32m已禁用对ipv6协议的支持！！\033[0m"
@@ -579,9 +591,11 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\start_old=已开启" $ccfg
 			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
+			echo -e "\033[36m此模式兼容性更好但无法禁用开机启动！！\033[0m"
 			clashstop
 			echo -e "已停止clash服务，请手动启动服务！"
 			start_old=已开启
+			sleep 2
 		else
 			sed -i "1i\start_old=未开启" $ccfg
 			echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
@@ -615,9 +629,11 @@ echo -e " 1 更新\033[36m管理脚本\033[0m"
 echo -e " 2 切换\033[33mclash核心\033[0m"
 echo -e " 3 更新\033[32mGeoIP数据库\033[0m"
 echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+echo -----------------------------------------------
 echo -e " 8 切换\033[36m安装源\033[0m地址"
 echo -e " 9 \033[31m卸载\033[34mClash for Miwfi\033[0m"
 echo -e " 0 返回上级菜单" 
+echo -----------------------------------------------
 read -p "请输入对应数字 > " num
 if [[ $num -le 9 ]] > /dev/null 2>&1; then 
 	if [[ $num == 0 ]]; then
@@ -678,8 +694,10 @@ clashcron(){
 	echo -e " 输入  1-7  对应\033[33m每周相应天\033[0m运行"
 	echo -e " 输入   8   设为\033[33m每天定时\033[0m运行"
 	echo -e " 输入 1,3,6 代表\033[36m每周1,3,6\033[0m运行(注意用小写逗号分隔)"
+	echo -----------------------------------------------
 	echo -e " 输入   9   \033[31m删除定时任务\033[0m"
 	echo -e " 输入   0   返回上级菜单"
+	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -766,6 +784,7 @@ echo -e " 1 设置\033[33m定时重启\033[0mclash服务"
 echo -e " 2 设置\033[31m定时停止\033[0mclash服务"
 echo -e " 3 设置\033[32m定时开启\033[0mclash服务"
 echo -e " 4 设置\033[33m定时更新\033[0m订阅链接(实验性，可能不稳定)"
+echo -----------------------------------------------
 echo -e " 0 返回上级菜单" 
 read -p "请输入对应数字 > " num
 if [ -z "$num" ]; then 
@@ -812,6 +831,7 @@ echo -e " 6 导入\033[32m节点/订阅\033[0m链接"
 echo -e " 7 clash\033[31m进阶设置\033[0m"
 echo -e " 8 \033[35m测试菜单\033[0m"
 echo -e " 9 \033[36m更新/卸载\033[0m"
+echo -----------------------------------------------
 echo -e " 0 \033[0m退出脚本\033[0m"
 read -p "请输入对应数字 > " num
 if [[ $num -le 9 ]] > /dev/null 2>&1; then 
@@ -835,7 +855,12 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 
 	elif [[ $num == 4 ]]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		if [ -f /etc/rc.d/*clash ]; then
+		if [ "$start_old" = "已开启" ];then
+			sed -i "/start_old*/d" $ccfg
+			sed -i "1i\start_old=未开启" $ccfg
+			echo -e "\033[32m已设为使用默认方式启动clash服务！！\033[0m"
+			start_old=未开启
+		elif [ -f /etc/rc.d/*clash ]; then
 			/etc/init.d/clash disable
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
 		else
@@ -864,6 +889,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo " 4 查看iptables端口转发详情"
 		echo " 5 查看config.yaml前40行"
 		echo " 6 测试代理服务器连通性（google.tw)"
+		echo -----------------------------------------------
 		echo " 0 返回上级目录！"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then

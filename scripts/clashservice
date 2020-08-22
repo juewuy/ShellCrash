@@ -21,7 +21,6 @@ start_service() {
 	procd_set_param stdout 1
 	procd_set_param command $clashdir/clash -d $clashdir
 	procd_close_instance
-	echo $ccfg
 	#修改iptables规则使流量进入clash
 	stop_iptables
 	start_dns
