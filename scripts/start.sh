@@ -69,10 +69,10 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	sed -i "9a$tun" $clashdir/config.yaml
 	sed -i "10a$exper" $clashdir/config.yaml
 	#跳过本地tls证书验证
-	if [ "$skip_cert" != "未开启" ];then
-	#sed -i '10,99s/sni: \S*}/\1skip-cert-verify: true}/' $clashdir/config.yaml  #跳过trojan本地证书验证
-	sed -i '10,99s/sni: .*}/\1skip-cert-verify: true}/' $clashdir/config.yaml  #跳过trojan本地证书验证
-	sed -i '10,99s/}}/}, skip-cert-verify: true}/' $clashdir/config.yaml  #跳过v2+ssl本地证书验证
+	if [ "$skip_cert" = "已开启" ];then
+	sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $clashdir/config.yaml
+	else
+	sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $clashdir/config.yaml
 	fi
 }
 mark_time(){
@@ -186,4 +186,24 @@ stop_old(){
 	#结束进程
 	killall -9 clash &> /dev/null
 	stop_iptables
+}
+start(){
+	getconfig
+	if [ "$start_old" ="已开启" ];then
+		start_old
+	else
+		/etc/init.d/clash start
+	fi
+}
+stop(){
+	getconfig
+	if [ "$start_old" ="已开启" ];then
+		stop_old
+	else
+		/etc/init.d/clash stop
+	fi
+}
+restart(){
+	stop
+	start
 }

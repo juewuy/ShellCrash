@@ -152,10 +152,11 @@ echo -e "\033[30;47m 欢迎使用订阅功能！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 导入\033[36m节点/订阅\033[0m链接"
 echo -e " 2 使用完整clash规则链接"
-echo -e " 3 选取\033[33m代理规则\033[0m模版"
-echo -e " 4 选择配置生成服务器"
-echo -e " 5 \033[36m还原\033[0m配置文件"
-echo -e " 6 \033[32m手动更新\033[0m订阅"
+echo -e " 3 添加/修改\033[32m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
+echo -e " 4 选取\033[33m配置规则\033[0m模版"
+echo -e " 5 选择在线生成服务器"
+echo -e " 6 \033[36m还原\033[0m配置文件"
+echo -e " 7 \033[32m手动更新\033[0m订阅"
 echo -----------------------------------------------
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
@@ -194,66 +195,23 @@ elif [[ $num == 2 ]];then
 	fi
 	source $clashdir/getdate.sh
 	getlink2
+	
 elif [[ $num == 3 ]];then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
-	echo 当前使用规则为：$rule_link
-	echo 1 ACL4SSR默认通用版（推荐）
-	echo 2 ACL4SSR精简全能版（推荐）
-	echo 3 ACL4SSR通用版去广告加强
-	echo 4 ACL4SSR精简版去广告加强
-	echo 5 ACL4SSR通用版无去广告
-	echo 6 ACL4SSR通用版无自动测速
-	echo 7 ACL4SSR精简版无自动测速
-	echo 8 ACL4SSR超重度奈飞全量
-	echo -----------------------------------------------
-	echo 0 返回上级菜单
-	read -p "请输入对应数字 > " num
-	if [ -z "$num" ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
-		clashlink
-	elif [[ "$num" == 0 ]];then
-		clashlink
-	else
-		#将对应标记值写入mark
-		sed -i '/rule_link*/'d $ccfg
-		sed -i "4i\rule_link="$num"" $ccfg	
-		rule_link=$num
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	  
-		echo -e "\033[32m设置成功！返回上级菜单！\033[0m"
-		clashlink
-	fi
+	source $clashdir/getdate.sh
+	linkfilter
+	clashlink
+	
 elif [[ $num == 4 ]];then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
-	echo 当前使用后端为：$server_link
-	echo 1 subconverter-web.now.sh
-	echo 2 subconverter.herokuapp.com
-	echo 3 subcon.py6.pw
-	echo 4 api.dler.io
-	echo 5 api.wcc.best
-	echo 6 skapi.cool
-	echo 7 subconvert.dreamcloud.pw
-	echo -----------------------------------------------
-	echo 0 返回上级菜单
-	read -p "请输入对应数字 > " num
-    if [ -z "$num" ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
-		clashlink
-	elif [[ "$num" == 0 ]];then
-		clashlink
-	else
-		#将对应标记值写入mark
-		sed -i '/server_link*/'d $ccfg
-		sed -i "4i\server_link="$num"" $ccfg	
-		server_link=$num
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	  
-		echo -e "\033[32m设置成功！返回上级菜单！\033[0m"
-		clashlink
-	fi
+	source $clashdir/getdate.sh
+	linkconfig
+	clashlink
+	
 elif [[ $num == 5 ]];then
+	source $clashdir/getdate.sh
+	linkserver
+	clashlink
+	
+elif [[ $num == 6 ]];then
 	yamlbak=$yaml.bak
 	if [ ! -f "$yaml".bak ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -272,8 +230,9 @@ elif [[ $num == 5 ]];then
 		fi
 	fi
 	clashsh
-elif [[ $num == 6 ]];then
-	if [ -z "$Url" ];then
+	
+elif [[ $num == 7 ]];then
+	if [ -z "$Url" -a -z "$Https" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo 没有找到你的订阅链接！请先输入链接！
 		clashlink
@@ -288,7 +247,7 @@ elif [[ $num == 6 ]];then
 			source $clashdir/getdate.sh
 			getyaml
 		fi
-			clashlink
+		clashlink
 	fi
 elif [[ $num == 0 ]];then
 	clashsh
@@ -300,7 +259,7 @@ fi
 }
 clashcfg(){
 #获取设置默认显示
-[ -z "$skip_cert" ] && skip_cert=已开启
+[ -z "$skip_cert" ] && skip_cert=未开启
 [ -z "$common_ports" ] && common_ports=未开启
 [ -z "$dns_mod" ] && dns_mod=redir_host
 [ -z "$dns_over" ] && dns_over=未开启
@@ -804,17 +763,17 @@ if [ -z "$num" ]; then
 elif [[ $num == 0 ]]; then
 	clashsh
 	
-elif [[ $num == 1 ]]; then	
+elif [[ $num == 1 ]]; then
 	cronname=重启clash服务
-	cronset='/etc/init.d/clash restart'
+	cronset='source /etc/profile && source $clashdir/start.sh && restart'
 	setcron
-elif [[ $num == 2 ]]; then	
+elif [[ $num == 2 ]]; then
 	cronname=停止clash服务
-	cronset='/etc/init.d/clash stop'
+	cronset='source /etc/profile && source $clashdir/start.sh && stop'
 	setcron
-elif [[ $num == 3 ]]; then	
+elif [[ $num == 3 ]]; then
 	cronname=开启clash服务
-	cronset='/etc/init.d/clash start'
+	cronset='source /etc/profile && source $clashdir/start.sh && start'
 	setcron
 elif [[ $num == 4 ]]; then	
 	cronname=更新订阅链接

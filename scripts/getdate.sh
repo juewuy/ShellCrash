@@ -12,7 +12,6 @@ subcon.py6.pw
 api.dler.io
 api.wcc.best
 skapi.cool
-subconvert.dreamcloud.pw
 EOF`
 Config=`sed -n ""$rule_link"p"<<EOF
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini
@@ -23,11 +22,12 @@ https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_On
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoAuto.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_NoAuto.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_AdblockPlus.ini
 EOF`
 #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 if [ -z $Https ];then
-	echo $Url
-	Https="https://$Server/sub?target=clashr&new_name=true&url=$Url&insert=false&config=$Config"
+	#echo $Url
+	Https="https://$Server/sub?target=clashr&insert=true&new_name=true&scv=true&exclude=$exclude&url=$Url&config=$Config"
 	markhttp=1
 fi
 #
@@ -58,7 +58,7 @@ if [ "$result" != "200" ];then
 		read -p "是否更换后端地址后重试？[1/0] > " res
 		if [ "$res" = '1' ]; then
 			sed -i '/server_link=*/'d $ccfg
-			if [[ $server_link == 7 ]]; then
+			if [[ $server_link -ge 6 ]]; then
 				server_link=0
 			fi
 			server_link=$(($server_link + 1))
@@ -70,6 +70,7 @@ if [ "$result" != "200" ];then
 		#exit;
 	fi
 else
+	Https=""
 	if cat $yamlnew | grep ', server:' >/dev/null;then
 		#检测旧格式
 		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
@@ -152,6 +153,130 @@ else
 fi
 #exit
 }
+linkconfig(){
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+echo 当前使用规则为：$rule_link
+echo 1 ACL4SSR默认通用版
+echo 2 ACL4SSR精简全能版（推荐）
+echo 3 ACL4SSR通用版+去广告加强
+echo 4 ACL4SSR精简版+去广告加强
+echo 5 ACL4SSR通用版无去广告
+echo 6 ACL4SSR通用版无自动测速
+echo 7 ACL4SSR精简版无自动测速
+echo 8 ACL4SSR全分组+奈飞（慎用）
+echo 9 ACL4SSR全分组+去广告（慎用）
+echo -----------------------------------------------
+echo 0 返回上级菜单
+read -p "请输入对应数字 > " num
+if [ -z "$num" ] || [[ $num -gt 9 ]];then
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[31m请输入正确的数字！\033[0m"
+elif [[ "$num" = 0 ]];then
+	echo 
+elif [[ $num -le 9 ]];then
+	#将对应标记值写入mark
+	sed -i '/rule_link*/'d $ccfg
+	sed -i "4i\rule_link="$num"" $ccfg	
+	rule_link=$num
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	  
+	echo -e "\033[32m设置成功！返回上级菜单\033[0m"
+fi
+}
+linkserver(){
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+echo 当前使用后端为：$server_link
+echo 1 subconverter-web.now.sh
+echo 2 subconverter.herokuapp.com
+echo 3 subcon.py6.pw
+echo 4 api.dler.io
+echo 5 api.wcc.best
+echo 6 skapi.cool
+echo -----------------------------------------------
+echo 0 返回上级菜单
+read -p "请输入对应数字 > " num
+if [ -z "$num" ] || [[ $num -gt 6 ]];then
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[31m请输入正确的数字！\033[0m"
+elif [[ "$num" = 0 ]];then
+	echo
+elif [[ $num -le 6 ]];then
+	#将对应标记值写入mark
+	sed -i '/server_link*/'d $ccfg
+	sed -i "4i\server_link="$num"" $ccfg	
+	server_link=$num
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	  
+	echo -e "\033[32m设置成功！返回上级菜单\033[0m"
+fi
+}
+linkfilter(){
+[ -z "$exclude" ] && exclude="未设置"
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+echo -e "\033[33m当前过滤关键字：\033[47;30m$exclude\033[0m"
+echo -----------------------------------------------
+echo -e "\033[36m匹配关键字的节点会在导入时被屏蔽\033[0m"
+echo -e "多个关键字可以用\033[30;47m | \033[0m号分隔"
+echo -e "\033[32m支持正则表达式\033[0m，特殊符号请使用\033[30;47m \ \033[0m号转义"
+echo -----------------------------------------------
+echo -e " 000   \033[31m删除\033[0m关键字"
+echo -e " 回车  取消输入并返回上级菜单"
+echo -----------------------------------------------
+read -p "请输入关键字 > " exclude
+if [ -z "$exclude" ]; then
+	linkset
+elif [ "$exclude" = '000' ]; then
+	echo -----------------------------------------------
+	exclude=''
+	echo -e "\033[31m 已删除节点过滤关键字！！！\033[0m"
+fi
+sed -i '/exclude=*/'d $ccfg
+sed -i "1i\exclude=\'$exclude\'" $ccfg
+linkset
+}
+linkset(){
+if [ -n $Url ];then
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[47;30m请检查输入的链接是否正确：\033[0m"
+	echo -e "\033[32;4m$Url\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 \033[32m生成配置文件（原文件将被备份）\033[0m"
+	echo -e " 2 \033[36m添加/修改节点过滤关键字 \033[47;30m$exclude\033[0m"
+	echo -e " 3 \033[33m选取配置规则模版\033[0m"
+	echo -e " 4 \033[0m选取在线生成服务器\033[0m"
+	echo -e " 0 \033[31m取消导入\033[0m并返回上级菜单"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then
+		clashlink
+	elif [ "$num" = '0' ]; then
+		clashlink
+	elif [ "$num" = '1' ]; then
+		#将用户链接写入mark
+		sed -i '/Url=*/'d $ccfg
+		sed -i '/Https=*/'d $ccfg
+		sed -i "6i\Url=\'$Url\'" $ccfg
+		Https=""
+		#获取在线yaml文件
+		getyaml
+	elif [ "$num" = '2' ]; then
+		linkfilter
+		linkset
+	elif [ "$num" = '3' ]; then
+		linkconfig
+		linkset
+	elif [ "$num" = '4' ]; then
+		linkserver
+		linkset
+	else
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+		linkset
+	fi
+	clashlink
+fi
+}
 getlink(){
 #设置输入循环
 i=1
@@ -167,7 +292,7 @@ do
 	echo -e "多个较长的链接可分次输入，支持多达\033[30;47m 99 \033[0m次输入"
 	echo -----------------------------------------------
 	echo -e "回车 \033[32m完成输入\033[0m并开始导入链接！"
-	echo -e " 0   \033[33m取消输入\033[0m并返回上级目录！"
+	echo -e " 0   \033[33m取消输入\033[0m并返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入第"$i"个链接 > " url
 	test=$(echo $url | grep "://")
@@ -183,22 +308,7 @@ do
 		fi
 		i=$(($i+1))
 	elif [ -z $url ];then
-		if [ -n $Url ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e 请检查输入的链接是否正确：
-			echo -e "\033[4m$Url\033[0m"
-			read -p "确认导入配置文件？原配置文件将被更名为config.yaml.bak![1/0] > " res
-			if [ "$res" = '1' ]; then
-				#将用户链接写入mark
-				sed -i '/Url=*/'d $ccfg
-				sed -i '/Https=*/'d $ccfg
-				sed -i "6i\Url=\'$Url\'" $ccfg
-				Https=""
-				#获取在线yaml文件
-				getyaml
-			fi
-			clashlink
-		fi
+		linkset
 	elif [[ $url == 0 ]];then
 		clashlink
 	else
@@ -210,21 +320,7 @@ done
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo 输入太多啦，可能会导致订阅失败！
 echo "多个较短的链接请尽量用“|”分隔以一次性输入！"
-echo -e "请检查输入的链接是否正确：\033[4m$Url\033[0m"
-read -p "确认导入配置文件？原配置文件将被更名为config.bak![1/0] > " res
-if [ "$res" = '1' ]; then
-	#将用户链接写入mark
-	sed -i '/Url=*/'d $ccfg
-	sed -i '/Https=*/'d $ccfg
-	sed -i "6i\Url=\'$Url\'" $ccfg
-	#获取在线yaml文件
-	getyaml
-else
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo 操作已取消！返回上级菜单！
-	clashlink
-fi
-	clashlink
+clashlink
 } 
 getlink2(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -234,7 +330,7 @@ echo -e "\033[33m仅限导入完整clash链接！！！"
 echo -e "\033[36m导入后如无法运行，请使用【导入节点/订阅链接】功能"
 echo -e "\033[31m注意如节点使用了chacha20加密协议，需将核心更新为clashr核心\033[0m"
 echo -----------------------------------------------
-echo -e "\033[33m0 返回上级目录！\033[0m"
+echo -e "\033[33m0 返回上级菜单\033[0m"
 echo -----------------------------------------------
 read -p "请输入完整链接 > " Https
 test=$(echo $Https | grep "://")
@@ -448,7 +544,7 @@ echo -----------------------------------------------
 echo " 1 在/www/clash目录安装(http://$host/clash，可能安装失败！)"
 echo " 2 在$clashdir/ui目录安装(http://$host:9999/ui，安装后需重启clash)"
 echo -----------------------------------------------
-echo " 0 返回上级菜单！"
+echo " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 
 if [ -z "$num" ];then
@@ -533,7 +629,7 @@ elif [[ $num == 4 ]]; then
 	read -p "请输入个人源路径 > " update_url
 	if [ -n $update_url ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m取消输入，返回上级菜单！\033[0m"
+		echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 		update
 	fi
 else
