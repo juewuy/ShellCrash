@@ -218,7 +218,7 @@ echo -e "\033[33m当前过滤关键字：\033[47;30m$exclude\033[0m"
 echo -----------------------------------------------
 echo -e "\033[36m匹配关键字的节点会在导入时被屏蔽\033[0m"
 echo -e "多个关键字可以用\033[30;47m | \033[0m号分隔"
-echo -e "\033[32m支持正则表达式\033[0m，特殊符号请使用\033[30;47m \ \033[0m号转义"
+echo -e "\033[32m支持正则表达式\033[0m，特殊符号请先用URLEncode转换"
 echo -----------------------------------------------
 echo -e " 000   \033[31m删除\033[0m关键字"
 echo -e " 回车  取消输入并返回上级菜单"
@@ -231,8 +231,9 @@ elif [ "$exclude" = '000' ]; then
 	exclude=''
 	echo -e "\033[31m 已删除节点过滤关键字！！！\033[0m"
 fi
+exclude=\'$exclude\'
 sed -i '/exclude=*/'d $ccfg
-sed -i "1i\exclude=\'$exclude\'" $ccfg
+sed -i "1i\exclude=$exclude" $ccfg
 linkset
 }
 linkset(){
