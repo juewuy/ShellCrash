@@ -7,16 +7,15 @@ echo "**             Clash for Miwifi              **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
-url="https://juewuy.xyz/clash/"
+url="https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi@latest"
 result=$(curl -w %{http_code} -skLo /tmp/clashversion $url/bin/version)
 [ "$result" != "200" ] && echo "无法连接到服务器！" && exit 1
 source /tmp/clashversion
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "~~~~版本：\033[32m$versionsh\033[0m"
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[44m使用中如遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
-echo -e "\033[37m目前仅支持小米AX系列3款路由器"
-echo -e "\033[44m其余型号可到TG群报名参与测试\033[0m"
+echo -e "\033[37m支持各种基于openwrt的路由器设备"
+echo -e "\033[33m有限支持debian、centos等Linux系统\033[0m"
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[32m 1 在默认目录(/etc)安装Clash for Miwifi"
 echo -e "\033[33m 2 手动设置安装目录（不明勿用！）"
@@ -81,6 +80,7 @@ rm -rf /tmp/clashfm.tar.gz
 #提示
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo clash for Miwifi 已经安装成功!
-echo -e "\033[33m直接输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[33m输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

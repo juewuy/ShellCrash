@@ -414,9 +414,9 @@ fi
 clashcore_n=$clashcore
 #获取设备处理器架构
 cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
+[ -n "$(echo $cpucore | grep -E "linux.*armv.*")" ] && cpucore="armv5"
 [ -n "$(echo $cpucore | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
 [ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
-[ -n "$(echo $cpucore | grep -E "linux.*armv.*")" ] && cpucore="armv5"
 [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
 [ -n "$(echo $cpucore | grep -E "linux.*amd64.*")" ] && cpucore="386"

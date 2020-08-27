@@ -3,17 +3,12 @@
 
 getconfig(){
 #服务器地址
-if [ -z "$update_url" ]; then
-	update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi@latest
-fi
+[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi@latest
 #文件路径
-if [ -z "$clashdir" ];then
-clashdir=$(dirname $(readlink -f "$0"))
-echo "export clashdir=\"$clashdir\"" >> /etc/profile
-fi
+[ -z "$clashdir" ] && clashdir=$(dirname $(readlink -f "$0")) && echo "export clashdir=\"$clashdir\"" >> /etc/profile
 ccfg=$clashdir/mark
 yaml=$clashdir/config.yaml
-#检查标识文件
+#检查/读取标识文件
 if [ ! -f $ccfg ]; then
 	echo mark文件不存在，正在创建！
 	cat >$ccfg<<EOF
@@ -69,14 +64,14 @@ if [ $status -gt 0 ];then
 fi
 echo -e "博客：\033[36;4mhttps://juewuy.xyz\033[0m，TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
 echo -----------------------------------------------
-#安装clash核心
+#检查clash核心
 if [ ! -f $clashdir/clash ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
 	source $clashdir/getdate.sh
 	getcore
 fi
-#安装GeoIP数据库
+#检查GeoIP数据库
 if [ ! -f $clashdir/Country.mmdb ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m没有找到GeoIP数据库文件，请先下载数据库！\033[0m"
@@ -590,7 +585,6 @@ update(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
-echo -e "感谢：\033[32mClashR \033[0m作者\033[36m BROBIRD\033[0m 项目地址：\033[32mhttps://github.com/BROBIRD/clash\033[0m"
 echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 更新\033[36m管理脚本\033[0m"
@@ -906,6 +900,15 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 				echo -e "\033[31m连接超时！请重试或检查节点配置！\033[0m"
 			fi
 			clashsh
+			
+		elif [[ $num == 7 ]]; then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			for PID in $(ps|awk '{print $1}');do
+				[ -f "/proc/$PID/status" ] && vmrss=$(cat /proc/$PID/status|grep -w VmRSS|awk '{print $2}') 
+				[ -n "$vmrss" ] && echo $vmrss	$(cat /proc/$PID/status|grep -w Name|awk '{print $2}')
+			done
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			exit;
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
