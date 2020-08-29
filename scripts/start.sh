@@ -125,7 +125,7 @@ stop_iptables(){
 start_dns(){
 	#允许tun网卡接受流量
 	iptables -I FORWARD -o utun -j ACCEPT
-	ip6tables -I FORWARD -o utun -j ACCEPT
+	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	for mac in $(cat $clashdir/mac); do
@@ -134,12 +134,12 @@ start_dns(){
 	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053
 	iptables -t nat -A PREROUTING -p udp -j clash_dns
 	#ipv6DNS
-	ip6tables -t nat -N clash_dns
+	ip6tables -t nat -N clash_dns > /dev/null 2>&1
 	for mac in $(cat $clashdir/mac); do
-		ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
+		ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
 	done
-	ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053
-	ip6tables -t nat -A PREROUTING -p udp -j clash_dns
+	ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+	ip6tables -t nat -A PREROUTING -p udp -j clash_dns > /dev/null 2>&1
 }
 daemon_old(){
 	#守护进程状态

@@ -110,13 +110,19 @@ clashstart(){
 		sleep 1
 		status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
 		if [ -z "$status" ];then
-			echo -e "\033[31mclash启动失败！尝试使用保守方式启动！\033[0m"
-			source $clashdir/start.sh && start_old
-			sleep 1
-			status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
-			if [ -z "$status" ];then
-				echo -e "\033[31mclash启动失败！\033[0m" 
-				sed -i /start_old=*/d $ccfg
+			echo -e "\033[31mclash启动失败！\033[0m"
+			read -p "是否尝试使用保守方式启动？[1/0] > " res
+			if [ "$res" = '1' ]; then
+				source $clashdir/start.sh && start_old
+				sleep 1
+				status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
+				if [ -z "$status" ];then
+					echo -e "\033[31mclash启动失败！\033[0m" 
+					sed -i /start_old=*/d $ccfg
+					exit
+				fi
+			else
+				echo -e "\033[33m操作取消！\033[0m"
 				exit
 			fi
 		fi
@@ -844,6 +850,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 		echo -e "\033[33m如遇问题尽量运行相应命令后截图发群\033[0m"
+		echo -e "磁盘占用/所在目录：$(du -h $clashdir)"
 		echo -----------------------------------------------
 		echo " 1 查看clash运行时的报错信息"
 		echo " 2 查看系统DNS端口(:53)占用 "
@@ -861,15 +868,17 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		elif [[ $num == 0 ]]; then
 			clashsh
 		elif [[ $num == 1 ]]; then
-			/etc/init.d/clash stop
-			echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
+			clashstop
+			echo -----------------------------------------------
 			$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
+			echo -----------------------------------------------
 			echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
 			exit;
 		elif [[ $num == 2 ]]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			netstat -ntulp |grep 53
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
 			exit;
 		elif [[ $num == 3 ]]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

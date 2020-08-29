@@ -119,7 +119,9 @@ else
 			if [[ $status -gt 0 ]];then
 				start_over
 			else
-				echo -e "\033[31mclash服务启动失败！尝试使用保守方式启动！\033[0m"
+				echo -e "\033[31mclash服务启动失败！\033[0m"
+				echo -e "\033[33m5秒后尝试使用保守方式启动！（使用ctrl+c退出！）\033[0m"
+				echo 5&&sleep 1&&echo 4&&sleep 1&&echo 3&&sleep 1&&echo 2&&sleep 1&&echo 1&&sleep 1
 				source $clashdir/start.sh && start_old
 				sleep 1
 				status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|wc -l`
@@ -218,7 +220,7 @@ echo -e "\033[33m当前过滤关键字：\033[47;30m$exclude\033[0m"
 echo -----------------------------------------------
 echo -e "\033[36m匹配关键字的节点会在导入时被屏蔽\033[0m"
 echo -e "多个关键字可以用\033[30;47m | \033[0m号分隔"
-echo -e "\033[32m支持正则表达式\033[0m，特殊符号请先用URLEncode转换"
+echo -e "\033[32m支持正则表达式\033[0m，特殊符号请使用\033[30;47m \ \033[0m号转义"
 echo -----------------------------------------------
 echo -e " 000   \033[31m删除\033[0m关键字"
 echo -e " 回车  取消输入并返回上级菜单"
@@ -231,9 +233,8 @@ elif [ "$exclude" = '000' ]; then
 	exclude=''
 	echo -e "\033[31m 已删除节点过滤关键字！！！\033[0m"
 fi
-exclude=\'$exclude\'
 sed -i '/exclude=*/'d $ccfg
-sed -i "1i\exclude=$exclude" $ccfg
+sed -i "1i\exclude=\'$exclude\'" $ccfg
 linkset
 }
 linkset(){
@@ -327,7 +328,8 @@ getlink2(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m 此功能不明勿用，出问题自行解决！\033[0m"
 echo -----------------------------------------------
-echo -e "\033[33m仅限导入完整clash链接！！！"
+echo -e "\033[33m仅限导入完整clash链接！！！\033[0m"
+echo -e "可以使用\033[32m https://acl4ssr.netlify.app \033[0m在线转换"
 echo -e "\033[36m导入后如无法运行，请使用【导入节点/订阅链接】功能"
 echo -e "\033[31m注意如节点使用了chacha20加密协议，需将核心更新为clashr核心\033[0m"
 echo -----------------------------------------------
