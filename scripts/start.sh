@@ -167,8 +167,8 @@ start_old(){
 	$clashdir/clash -d $clashdir> /dev/null &
 	#修改iptables规则使流量进入clash
 	stop_iptables
-	start_dns
-	[ "$redir_mod" != "Tun模式" ] && start_redir
+	[ "$redir_mod" != "纯净模式" ] && start_dns
+	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 	#标记启动时间
 	mark_time
 	#创建守护进程

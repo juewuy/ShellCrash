@@ -263,7 +263,7 @@ clashcfg(){
 [ -z "$skip_cert" ] && skip_cert=未开启
 [ -z "$common_ports" ] && common_ports=未开启
 [ -z "$dns_mod" ] && dns_mod=redir_host
-[ -z "$dns_over" ] && dns_over=未开启
+[ -z "$dns_over" ] && dns_over=已开启
 if [ -z "$(cat $clashdir/mac)" ]; then
 	mac_return=未开启
 else
@@ -303,6 +303,8 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo " 3 混合模式： 仅使用Tun转发UPD流量"
 		echo "              CPU和内存占用较高"
 		echo "              不推荐使用redir-host"
+		echo " 4 纯净模式： 不设置iptables静态路由"
+		echo "              必须手动配置http/sock5代理"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
 		if [ -z "$num" ]; then
@@ -327,7 +329,20 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
 				clashcfg
 			fi
-			redir_mod=混合模式		
+			redir_mod=混合模式	
+		elif [[ $num == 4 ]]; then
+			redir_mod=纯净模式	
+			host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)			
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[32m已经设置为纯净模式！\033[0m"
+			echo -e "\033[33m当前模式必须手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
+			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m7890\033[0m"
+			echo -e "\033[31m也可以使用PAC自动代理文件，具体使用方法请自行搜索\033[0m"
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			read -p "是否配置自动代理PAC文件(1/0) > " res
+				if [ "$res" = 1 ]; then
+					source $clashdir/getdate.sh && catpac
+				fi
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"
@@ -513,6 +528,7 @@ echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用�
 echo -e " 2 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————切换时会停止clash服务"
 echo -----------------------------------------------
+echo -e " 8 \033[31m重置\033[0m配置文件"
 echo -e " 9 \033[32m重启\033[0mclash服务"
 echo -e " 0 返回上级菜单 \033[0m"
 echo -----------------------------------------------
@@ -571,7 +587,17 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			source $clashdir/start.sh && stop_old
 		fi
 		clashadv  
-
+		
+	elif [[ $num == 8 ]]; then	
+		read -p "确认重置配置文件？(1/0) > " res
+		if [ "$res" = "1" ];then
+			echo "versionsh_l=$versionsh_l" > $ccfg
+			echo "start_time=$start_time" >> $ccfg
+			echo "#标识clash运行状态的文件，不明勿动！" >> $ccfg
+			echo -e "\033[33m配置文件已重置，请重新运行脚本！\033[0m"
+			exit
+		fi
+		clashadv
 		
 	elif [[ $num == 9 ]]; then	
 		clashstart
@@ -597,6 +623,7 @@ echo -e " 1 更新\033[36m管理脚本\033[0m"
 echo -e " 2 切换\033[33mclash核心\033[0m"
 echo -e " 3 更新\033[32mGeoIP数据库\033[0m"
 echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+echo -e " 5 生成本地PAC文件(需先安装本地面板)"
 echo -----------------------------------------------
 echo -e " 8 切换\033[36m安装源\033[0m地址"
 echo -e " 9 \033[31m卸载\033[34mClash for Miwfi\033[0m"
@@ -623,6 +650,11 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	elif [[ $num == 4 ]]; then	
 		source $clashdir/getdate.sh
 		getdb
+		
+	elif [[ $num == 5 ]]; then	
+		source $clashdir/getdate.sh
+		catpac
+		update
 		
 	elif [[ $num == 8 ]]; then	
 		source $clashdir/getdate.sh
@@ -850,7 +882,8 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 		echo -e "\033[33m如遇问题尽量运行相应命令后截图发群\033[0m"
-		echo -e "磁盘占用/所在目录：$(du -h $clashdir)"
+		echo -e "磁盘占用/所在目录："
+		du -h $clashdir
 		echo -----------------------------------------------
 		echo " 1 查看clash运行时的报错信息"
 		echo " 2 查看系统DNS端口(:53)占用 "

@@ -247,6 +247,8 @@ if [ -n $Url ];then
 	echo -e " 2 \033[36m添加/修改节点过滤关键字 \033[47;30m$exclude\033[0m"
 	echo -e " 3 \033[33m选取配置规则模版\033[0m"
 	echo -e " 4 \033[0m选取在线生成服务器\033[0m"
+	echo -e " 5 \033[0m跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
+	echo -----------------------------------------------
 	echo -e " 0 \033[31m取消导入\033[0m并返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -270,6 +272,19 @@ if [ -n $Url ];then
 		linkset
 	elif [ "$num" = '4' ]; then
 		linkserver
+		linkset
+	elif [ "$num" = '5' ]; then
+		sed -i '/skip_cert*/'d $ccfg
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ "$skip_cert" = "未开启" ] > /dev/null 2>&1; then 
+			sed -i "1i\skip_cert=已开启" $ccfg
+			#echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
+			skip_cert=已开启
+		else
+			sed -i "1i\skip_cert=未开启" $ccfg
+			#echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
+			skip_cert=未开启
+		fi
 		linkset
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -602,6 +617,37 @@ fi
 	fi
 	
 update
+}
+catpac(){
+#检测目录
+[ ! -d /www/clash -a ! -d $clashdir/ui ]&&echo 未检测到本地Dashboard面板，请先安装面板！&&sleep 1&&getdb
+host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+[ -d /www/clash ]&&dir="/www/clash"&&pac=http://$host/clash/pac
+[ -d $clashdir/ui ]&&dir="$clashdir/ui"&&pac=http://$host:9999/ui/pac
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[30;47m生成用于设备WIFI或浏览器的自动PAC代理文件\033[0m"
+echo -e "\033[33m非纯净模式不推荐使用此功能\033[0m"
+[ -f $dir/pac ]&&echo -e "PAC地址：\033[32m$pac\033[0m"
+echo -----------------------------------------------
+echo -e " 1 生成PAC文件"
+echo -e " 2 清除PAC文件"
+echo -----------------------------------------------
+echo -e " 0 返回上级菜单"
+read -p "请输入对应数字 > " num
+	if [ "$num" = '1' ]; then
+		echo 'function FindProxyForURL(url, host) {' > $dir/pac
+		echo "    return \"SOCKS5 $host:7890; PROXY $host:7890; DIRECT\";" >> $dir/pac
+		echo '}' >> $dir/pac
+		echo -e "\033[33mPAC文件已生成！\033[0m"
+		echo -e "PAC地址：\033[32m$pac\033[0m"
+		echo "使用教程：https://baike.baidu.com/item/PAC/16292100"
+		sleep 2
+	elif [[ $num == 2 ]]; then
+		rm -rf $dir/pac
+		echo -----------------------------------------------
+		echo -e "\033[33mPAC文件已清除！\033[0m"
+		sleep 1
+	fi
 }
 setserver(){
 
