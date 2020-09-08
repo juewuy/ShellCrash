@@ -636,7 +636,7 @@ echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 	if [ "$num" = '1' ]; then
 		echo 'function FindProxyForURL(url, host) {' > $dir/pac
-		echo "    return \"SOCKS5 $host:7890; PROXY $host:7890; DIRECT\";" >> $dir/pac
+		echo "    return \"SOCKS $host:7890; PROXY $host:7890; DIRECT;\"" >> $dir/pac
 		echo '}' >> $dir/pac
 		echo -e "\033[33mPAC文件已生成！\033[0m"
 		echo -e "PAC地址：\033[32m$pac\033[0m"
