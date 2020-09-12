@@ -17,7 +17,7 @@
 ~使用SSH连接工具（如putty，JuiceSSH，mac终端）登陆路由器或设备的SSH管理界面<br>
 ~在SSH界面执行如下安装命令，并按照提示安装clash管理脚本<br>
 ```Shell
-sh -c "$(curl -kfsSl https://juewuy.xyz/clash/install.sh)" && source /etc/profile &> /dev/null
+sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest/install.sh)" && source /etc/profile &> /dev/null
 ```
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 ```Shell
