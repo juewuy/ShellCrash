@@ -5,11 +5,11 @@
 功能简介：
 --
 ~通过管理脚本在shell环境下便捷使用[clash](https://github.com/Dreamacro/clash)<br>
-~支持在shell环境下管理[clash](https://github.com/Dreamacro/clash)各项功能<br>
+~支持在shell环境下管理[clash各种功能](https://lancellc.gitbook.io/clash)<br>
 ~支持批量导入SS/SSR/v2ray/trojan节点链接及各种订阅链接<br>
 ~支持使用/安装网页面板管理规则组<br>
-~支持透明代理/纯净模式等多种模式切换<br>
-~支持在线更新管理脚本<br>
+~支持局域网透明代理/纯净模式等多种模式切换<br>
+~支持在线更新<br>
 
 使用方式：
 --
