@@ -1,4 +1,4 @@
-# clash-for-Miwifi
+# shellclash（原clash for Miwifi）
 在shell环境下一键部署及管理[clash](https://github.com/Dreamacro/clash)
 =====
 
