@@ -1,5 +1,5 @@
 # clash-for-Miwifi
-在shell环境上一键部署及管理clash
+在shell环境下一键部署及管理clash
 =====
 
 功能简介：
