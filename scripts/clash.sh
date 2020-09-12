@@ -3,7 +3,7 @@
 
 getconfig(){
 #服务器地址
-[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi@latest
+[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest
 #文件路径
 [ -z "$clashdir" ] && clashdir=$(dirname $(readlink -f "$0")) && echo "export clashdir=\"$clashdir\"" >> /etc/profile
 ccfg=$clashdir/mark

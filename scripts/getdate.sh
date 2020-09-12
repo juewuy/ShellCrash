@@ -525,8 +525,8 @@ result=$(curl -w %{http_code} -skLo /tmp/clashversion $update_url/bin/version)
 [ "$result" != "200" ] && echo "检查更新失败！" && exit 1
 source /tmp/clashversion
 echo -----------------------------------------------
-echo -e "当前脚本版本为：\033[33m $Geo_v \033[0m"
-echo -e "最新脚本版本为：\033[32m $GeoIP_v \033[0m"
+echo -e "当前GeoIP版本为：\033[33m $Geo_v \033[0m"
+echo -e "最新GeoIP版本为：\033[32m $GeoIP_v \033[0m"
 echo -----------------------------------------------
 read -p "是否更新数据库文件？[1/0] > " res
 if [ "$res" = '1' ]; then
@@ -666,13 +666,13 @@ if	[ -z $num ]; then
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 	update
 elif [[ $num == 1 ]]; then
-	update_url="https://cdn.jsdelivr.net/gh/juewuy/clash-for-Miwifi@latest"
+	update_url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest"
 elif [[ $num == 9 ]]; then
 	update_url="https://juewuy.xyz/clash"
 elif [[ $num == 2 ]]; then
-	update_url="https://raw.githubusercontent.com/juewuy/clash-for-Miwifi/master"
+	update_url="https://raw.githubusercontent.com/juewuy/ShellClash/master"
 elif [[ $num == 3 ]]; then
-	update_url="-x 127.0.0.1:7890 https://raw.githubusercontent.com/juewuy/clash-for-Miwifi/master"
+	update_url="-x 127.0.0.1:7890 https://raw.githubusercontent.com/juewuy/ShellClash/master"
 elif [[ $num == 4 ]]; then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	read -p "请输入个人源路径 > " update_url

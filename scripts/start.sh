@@ -83,7 +83,7 @@ mark_time(){
 start_redir(){
 	#修改iptables规则使流量进入clash
 	iptables -t nat -N clash
-	#iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
+	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
 	iptables -t nat -A clash -d 10.0.0.0/8 -j RETURN
 	iptables -t nat -A clash -d 127.0.0.0/8 -j RETURN
 	iptables -t nat -A clash -d 169.254.0.0/16 -j RETURN
