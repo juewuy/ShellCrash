@@ -1,31 +1,39 @@
 # clash-for-Miwifi
-在小米等基于openwrt系统的路由器上使用clash做透明代理
+在shell环境上一键部署及管理clash
 =====
 
 功能简介：
 --
-~支持小米全系列路由器设备使用clash做透明代理，理论支持各种基于openwrt框架的路由器系统<br>
-~支持SS、SSR、v2ray、trojan、sock5等协议<br>
-~支持批量导入节点链接及订阅链接<br>
-~支持使用网页面板管理规则组<br>
-~支持多种模式切换，支持在线更新<br>
-~支持部署内置的管理面板<br>
-~更多功能可在使用中发掘<br>
+~通过管理脚本在shell环境下便捷使用[clash](https://github.com/Dreamacro/clash)<br>
+~支持在shell环境下管理[clash](https://github.com/Dreamacro/clash)各项功能<br>
+~支持批量导入SS/SSR/v2ray/trojan节点链接及各种订阅链接<br>
+~支持使用/安装网页面板管理规则组<br>
+~支持透明代理/纯净模式等多种模式切换<br>
+~支持在线更新管理脚本<br>
 
-使用依赖：
+使用方式：
 --
-~路由器或设备已经开启SSH并获取root权限<br>
-~SSH连接工具，例如putty，bitvise，JuiceSSH（支持安卓手机）等<br>
+~确认路由器或设备已经开启SSH并获取root权限<br>
+~使用SSH连接工具（如putty，JuiceSSH，mac终端）登陆路由器或设备的SSH管理界面<br>
+~在SSH界面执行如下安装命令，并按照提示安装clash管理脚本<br>
+```Shell
+sh -c "$(curl -kfsSl https://juewuy.xyz/clash/install.sh)" && source /etc/profile &> /dev/null
+```
+~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
+```Shell
+clash
+```
+
+设备支持：
+--
+~支持小米/红米全系使用官方系统或官方开发版系统的路由器设备（ac2100系列除外）<br>
+~支持所有基于openwrt或使用openwrt二次开发的路由器设备<br>
+~兼容各种运行标准Linux系统（如debian、centos等发行版系统）的设备<br>
+~不兼容的Linux设备或CPU架构请提issue（提供设备名称及运行uname -a返回的设备核心信息）或前往TG群反馈<br>
 
 更新日志：
 --
 https://github.com/juewuy/clash-for-Miwifi/releases
-
-一键安装：
---
-```Shell
-sh -c "$(curl -kfsSl https://juewuy.xyz/clash/install.sh)" && source /etc/profile &> /dev/null
-```
 
 交流反馈：
 --
@@ -34,26 +42,9 @@ sh -c "$(curl -kfsSl https://juewuy.xyz/clash/install.sh)" && source /etc/profil
 已知问题：
 --
 ~Tun模式下clash服务可能会和小米路由器内置的tx网游加速器冲突，请谨慎同时使用<br>
-~Redir模式无法转发udp流量，外服游戏可能会受影响，此功能是由官方系统阉割了Tproxy导致，暂时无解，外服游戏用户建议使用Tun模式<br>
+~Redir模式暂不支持转发udp流量，外服游戏可能会受影响，外服游戏用户建议使用Tun模式<br>
+~部分设备长时间使用会出现内存占用偏高，此为golang内存回收不及时导致，可以通过屏蔽p2p流量及设置每日定时重启核心以缓解<br>
 
-ToDo：
+友情推广：
 --
-~~增加订阅功能~~<br>
-~~添加一键安装脚本~~<br>
-~~增加屏蔽P2P流量功能~~<br>
-~~增加更新功能~~<br>
-~~修复redir-host DNS以及IPV6支持~~<br>
-~~增加定时功能~~<br>
-~~增加屏蔽局域网设备~~<br>
-~~增加更多设备支持~~<br>
-
-感谢：
---
-~https://lancellc.gitbook.io/clash/start-clash/clash-tun-mode<br>
-~https://comzyh.gitbook.io/clash/<br>
-~https://h-cheung.gitlab.io/post/使用_clash_和路由表实现透明代理<br>
-~https://www.right.com.cn/forum/thread-4042741-1-1.html<br>
-
-请喝杯茶：
---
- ![](https://juewuy.xyz/clash/others/qrcodevx.png)
+https://dler.best/auth/register?affid=89698
