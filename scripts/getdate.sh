@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright (C) Juewuy
 
 getyaml(){
@@ -146,7 +146,7 @@ else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[33m获取到了配置文件，但格式似乎不对！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		sed -n '1,20p' $yamlnew
+		sed -n '1,30p' $yamlnew
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[33m请检查如上配置文件信息:\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -433,6 +433,7 @@ clashcore_n=$clashcore
 cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cpucore | grep -E "linux.*armv.*")" ] && cpucore="armv5"
 [ -n "$(echo $cpucore | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
+[ -n "$(echo $cpucore | grep -E "linux.*armv8.*")" ] && cpucore="armv8"
 [ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
 [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"

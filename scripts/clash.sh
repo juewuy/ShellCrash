@@ -1,4 +1,4 @@
- #!/bin/sh
+#!/bin/bash
 # Copyright (C) Juewuy
 
 getconfig(){
@@ -57,12 +57,12 @@ fi
 #输出状态
 
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[30;46m欢迎使用Clash for Miwifi！\033[0m      版本：$versionsh_l"
+echo -e "\033[30;46m欢迎使用ShellClash！\033[0m      版本：$versionsh_l"
 echo -e "Clash服务"$run"，"$auto""
 if [ $status -gt 0 ];then
 	echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
 fi
-echo -e "博客：\033[36;4mhttps://juewuy.xyz\033[0m，TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
+echo -e "TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
 echo -----------------------------------------------
 #检查clash核心
 if [ ! -f $clashdir/clash ];then
@@ -130,10 +130,16 @@ clashstart(){
 
 	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	echo -e "\033[32mclash服务已启动！\033[0m"
-	echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-	echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
-	echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	if [ -d /www/clash ];then
+		echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
+	elif [ -d $clashdir/ui  ];then
+		echo -e "请使用\033[30;47m http://$host:9999/ui \033[0m管理内置规则"
+	else
+		echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
+		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	fi
 }
 clashlink(){
 #获取订阅规则
@@ -154,7 +160,7 @@ echo -----------------------------------------------
 echo -e " 1 导入\033[36m节点/订阅\033[0m链接"
 echo -e " 2 使用完整clash规则链接"
 echo -e " 3 添加/修改\033[32m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
-echo -e " 4 选取\033[33m配置规则\033[0m模版"
+echo -e " 4 选取\033[33mclash配置规则\033[0m模版"
 echo -e " 5 选择在线生成服务器"
 echo -e " 6 \033[36m还原\033[0m配置文件"
 echo -e " 7 \033[32m手动更新\033[0m订阅"
@@ -260,8 +266,8 @@ fi
 }
 clashcfg(){
 #获取设置默认显示
-[ -z "$skip_cert" ] && skip_cert=未开启
-[ -z "$common_ports" ] && common_ports=未开启
+[ -z "$skip_cert" ] && skip_cert=已开启
+[ -z "$common_ports" ] && common_ports=已开启
 [ -z "$dns_mod" ] && dns_mod=redir_host
 [ -z "$dns_over" ] && dns_over=已开启
 if [ -z "$(cat $clashdir/mac)" ]; then
@@ -617,6 +623,7 @@ update(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
+echo -e "感谢：\033[32malecthw大神提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
 echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 更新\033[36m管理脚本\033[0m"
