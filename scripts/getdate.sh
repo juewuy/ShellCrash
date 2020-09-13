@@ -437,7 +437,7 @@ cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
 [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
-[ -n "$(echo $cpucore | grep -E "linux.*amd64.*")" ] && cpucore="386"
+[ -n "$(echo $cpucore | grep -E "linux.*amd64.*")" ] && cpucore="amd64"
 ###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
