@@ -22,7 +22,7 @@ sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest/instal
 ```
 其他Linux系统输入：
 ```Shell
-bash -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest/install.sh)" && source /etc/profile &> /dev/null
+bash -c "$(curl -kfsSl https://juewuy.xyz/clash/install.sh)" && source /etc/profile &> /dev/null
 ```
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 ```Shell
