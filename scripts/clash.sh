@@ -620,11 +620,18 @@ fi
 exit;
 }
 update(){
+if [ -z "$release_new" ];then
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[33m正在检查更新！\033[0m"
+	release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+	[ -z "$release_new" ] && release_new=$(curl -kfsSL $update_url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
+	[ -z "$release_new" ] && echo "检查更新失败！"
+fi
+[ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ] && update_url=$update_url@$release_new
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
-echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
-echo -e "感谢：\033[32malecthw大神提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
-echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
+[ -n "$release_new" ] && echo -e "当前ShellClash版本：\033[33m $versionsh_l \033[0m"
+[ -n "$release_new" ] && echo -e "最新ShellClash版本：\033[32m $release_new \033[0m"
 echo -----------------------------------------------
 echo -e " 1 更新\033[36m管理脚本\033[0m"
 echo -e " 2 切换\033[33mclash核心\033[0m"
@@ -632,7 +639,8 @@ echo -e " 3 更新\033[32mGeoIP数据库\033[0m"
 echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 echo -e " 5 生成本地PAC文件(需先安装本地面板)"
 echo -----------------------------------------------
-echo -e " 8 切换\033[36m安装源\033[0m地址"
+echo -e " 7 切换\033[36m安装源\033[0m地址"
+echo -e " 8 鸣谢"
 echo -e " 9 \033[31m卸载\033[34mClash for Miwfi\033[0m"
 echo -e " 0 返回上级菜单" 
 echo -----------------------------------------------
@@ -662,10 +670,17 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		source $clashdir/getdate.sh
 		catpac
 		update
-		
-	elif [[ $num == 8 ]]; then	
+
+	elif [[ $num == 7 ]]; then	
 		source $clashdir/getdate.sh
 		setserver
+		
+	elif [[ $num == 8 ]]; then		
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
+		echo -e "感谢：\033[32malecthw大神提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
+		echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
+		update	
 		
 	elif [[ $num == 9 ]]; then
 		read -p "确认卸载clash？（警告：该操作不可逆！）[1/0] " res
@@ -765,13 +780,10 @@ clashcron(){
 		clashcron
 	}
 	checkcron(){
-	if [ -d /etc/crontabs/ ]; then 
-		cronpath="/etc/crontabs/root"
-	elif [ -d /var/spool/cron/ ]; then
-		cronpath="/var/spool/cron/root"
-	elif [ -d /var/spool/cron/crontabs/ ]; then
-		cronpath="/var/spool/cron/crontabs/root"
-	else
+	[ -d /etc/crontabs/ ]&&cronpath="/etc/crontabs/root"
+	[ -d /var/spool/cron/ ]&&cronpath="/var/spool/cron/root"
+	[ -d /var/spool/cron/crontabs/ ]&&cronpath="/var/spool/cron/crontabs/root"
+	if [ -z $cronpath ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo "找不到定时任务文件,无法添加定时任务！"
 		clashsh
@@ -784,8 +796,8 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用定时任务功能：\033[0m"
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo -----------------------------------------------
-echo  -e "\033[33m当前已经添加的定时任务有：\033[36m"
-crontab -l | egrep -o '#.*' 
+echo  -e "\033[33m已添加的定时任务：\033[36m"
+cat $cronpath | egrep -o ' #.*' 
 echo -e "\033[0m"-----------------------------------------------
 echo -e " 1 设置\033[33m定时重启\033[0mclash服务"
 echo -e " 2 设置\033[31m定时停止\033[0mclash服务"

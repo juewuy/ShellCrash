@@ -77,8 +77,8 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 }
 mark_time(){
 	start_time=`date +%s`
-	sed -i '/start_time*/'d $ccfg
-	sed -i "3i\start_time=$start_time" $ccfg
+	sed -i '/start_time*/'d $clashdir/mark
+	sed -i "3i\start_time=$start_time" $clashdir/mark
 }
 start_redir(){
 	#修改iptables规则使流量进入clash
@@ -144,19 +144,20 @@ start_dns(){
 daemon_old(){
 	#守护进程状态
 	status=$(ps |grep -w 'clash'|grep -v grep|grep -v clash.sh)
-	[ -z $status ] && $clashdir/clash -d $clashdir && mark_time
+	if [ -z $status ];then
+	$clashdir/clash -d $clashdir> /dev/null &
+	mark_time
+	fi
 }
 checkcron(){
-if [ -d /etc/crontabs/ ]; then 
-	cronpath="/etc/crontabs/root"
-elif [ -d /var/spool/cron/ ]; then
-	cronpath="/var/spool/cron/root"
-elif [ -d /var/spool/cron/crontabs/ ]; then
-	cronpath="/var/spool/cron/crontabs/root"
-else
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo "找不到定时任务文件,无法添加定时任务！"
-fi
+	[ -d /etc/crontabs/ ]&&cronpath="/etc/crontabs/root"
+	[ -d /var/spool/cron/ ]&&cronpath="/var/spool/cron/root"
+	[ -d /var/spool/cron/crontabs/ ]&&cronpath="/var/spool/cron/crontabs/root"
+	if [ -z $cronpath ];then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo "找不到定时任务文件,无法添加定时任务！"
+		clashsh
+	fi
 }
 start_old(){
 	#读取配置文件

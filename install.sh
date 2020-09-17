@@ -6,15 +6,15 @@ echo "**                 欢迎使用                  **"
 echo "**                ShellClash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
-url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest"
-result=$(curl -w %{http_code} -skLo /tmp/clashversion $url/bin/version)
-[ "$result" != "200" ] && echo "无法连接到服务器！" && exit 1
-source /tmp/clashversion
-echo -e "~~~~版本：\033[32m$versionsh\033[0m"
+url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
+release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+[ -z "$release_new" ] && release_new=$(curl -kfsSL $url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
+[ -z "$release_new" ] && echo "无法连接服务器！" && exit
+echo -e "最新版本：\033[32m$release_new\033[0m"
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[44m如遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo -e "\033[37m支持各种基于openwrt的路由器设备"
-echo -e "\033[33m有限支持debian、centos等Linux系统\033[0m"
+echo -e "\033[33m有限兼容debian、centos等Linux系统\033[0m"
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[32m 1 在默认目录(/etc)安装ShellClash"
 echo -e "\033[33m 2 手动设置安装目录（不明勿用！）"
@@ -45,7 +45,7 @@ fi
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo 开始从服务器获取安装文件！
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-tarurl=$url/bin/clashfm.tar.gz
+tarurl=$url@release_new/bin/clashfm.tar.gz
 if command -v curl &> /dev/null; then
 	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
 else $result

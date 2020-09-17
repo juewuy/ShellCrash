@@ -378,14 +378,9 @@ else
 fi
 }
 getsh(){
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[33m正在检查更新！\033[0m"
-result=$(curl -w %{http_code} -skLo /tmp/clashversion $update_url/bin/version)
-[ "$result" != "200" ] && echo "检查更新失败！" && exit 1
-source /tmp/clashversion
 echo -----------------------------------------------
 echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
-echo -e "最新脚本版本为：\033[32m $versionsh \033[0m"
+echo -e "最新脚本版本为：\033[32m $release_new \033[0m"
 echo -----------------------------------------------
 read -p "是否更新脚本？[1/0] > " res
 if [ "$res" = '1' ]; then
@@ -393,7 +388,7 @@ if [ "$res" = '1' ]; then
 		echo 正在获取更新文件
 		result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $update_url/bin/clashfm.tar.gz)
 	else $result
-		wget-ssl -q --no-check-certificate --tries=1 --timeout=10 -O /tmp/clashfm.tar.gz $tarurl
+		wget-ssl -q --no-check-certificate --tries=1 --timeout=10 -O /tmp/clashfm.tar.gz $update_url/bin/clashfm.tar.gz
 		[ $? -eq 0 ] && result="200"
 	fi
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
@@ -418,7 +413,7 @@ if [ "$res" = '1' ]; then
 	echo -----------------------------------------------
 	exit;
 else
-clashsh
+update
 fi
 }
 getcore(){
@@ -522,6 +517,7 @@ fi
 getgeo(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[33m正在检查更新！\033[0m"
+echo $update_url
 result=$(curl -w %{http_code} -skLo /tmp/clashversion $update_url/bin/version)
 [ "$result" != "200" ] && echo "检查更新失败！" && exit 1
 source /tmp/clashversion
@@ -656,9 +652,9 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m您可以在此处切换在线更新时使用的资源地址\033[0m"
 echo -e "当前源：\033[4;32m$update_url\033[0m"
 echo -----------------------------------------------
-echo -e " 1 CDN源(可能有一定的同步延迟)"
-echo -e " 2 Github源(不稳定，不推荐)"
-echo -e " 3 Github源+clash代理(需开启clash服务，推荐)"
+echo -e " 1 Github源(使用host指定IP)"
+echo -e " 2 CDN源(版本同步较慢)"
+echo -e " 3 Github源+clash代理(需开启clash服务)"
 echo -e " 4 自定义输入(请务必确保路径正确)"
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
@@ -667,13 +663,11 @@ if	[ -z $num ]; then
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 	update
 elif [[ $num == 1 ]]; then
-	update_url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest"
-elif [[ $num == 9 ]]; then
-	update_url="https://juewuy.xyz/clash"
+	update_url='--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master'
 elif [[ $num == 2 ]]; then
-	update_url="https://raw.githubusercontent.com/juewuy/ShellClash/master"
+	update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash' 
 elif [[ $num == 3 ]]; then
-	update_url="-x 127.0.0.1:7890 https://raw.githubusercontent.com/juewuy/ShellClash/master"
+	update_url='-x 127.0.0.1:7890 https://raw.githubusercontent.com/juewuy/ShellClash/master'
 elif [[ $num == 4 ]]; then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	read -p "请输入个人源路径 > " update_url
@@ -682,6 +676,8 @@ elif [[ $num == 4 ]]; then
 		echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 		update
 	fi
+elif [[ $num == 9 ]]; then
+	update_url='https://juewuy.xyz/clash'
 else
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
