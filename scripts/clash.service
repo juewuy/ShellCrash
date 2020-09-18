@@ -1,0 +1,15 @@
+[Unit]
+Description=clash
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/etc/clash/clash -d /etc/clash
+ExecStartPost=/etc/clash/start.sh afstart
+Restart=on-failure
+RestartSec=3s
+
+
+[Install]
+WantedBy=multi-user.target
