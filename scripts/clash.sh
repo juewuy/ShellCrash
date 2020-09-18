@@ -1,9 +1,31 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright (C) Juewuy
 
 getconfig(){
+#系统类型
+systype=$(cat /proc/version | grep -io openwrt)
+if [ -n "$systype" ];then
+	ps_type=ps
+	sh_type=sh
+	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	if [ -f /etc/rc.d/*clash ];then
+		autostart=enable_rc
+	else
+		autostart=disable_rc
+	fi
+else
+	ps_type='ps aux'
+	sh_type=bash
+	host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g')
+	[ -z $host ] && host=127.0.0.1
+	if [ -n "$(systemctl list-unit-files clash.service | grep -o enable)" ];then
+		autostart=enable_sys
+	else
+		autostart=disable_sys
+	fi
+fi
 #服务器地址
-[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@latest
+[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
 #文件路径
 [ -z "$clashdir" ] && clashdir=$(dirname $(readlink -f "$0")) && echo "export clashdir=\"$clashdir\"" >> /etc/profile
 ccfg=$clashdir/mark
@@ -22,7 +44,7 @@ source $ccfg
 if [ "$start_old" = "已开启" ];then
 	auto="\033[33m已设置保守模式！\033[0m"
 	auto1="\033[36m设为\033[0m常规模式启动"
-elif [ -f /etc/rc.d/*clash ];then
+elif [ "$autostart" = "enable_rc" -o "$autostart" = "enable_sys" ]; then
 	auto="\033[32m已设置开机启动！\033[0m"
 	auto1="\033[36m禁用\033[0mclash开机启动"
 else
@@ -35,11 +57,10 @@ if [ -z "$redir_mod" ];then
 	redir_mod=Redir模式
 fi
 #获取运行状态
-status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|wc -l`
-if [[ $status -gt 0 ]];then
+PID=$(pidof clash)
+if [ -n "$PID" ];then
 	run="\033[32m正在运行（$redir_mod）\033[0m"
-	uid=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|awk '{print $1}'`
-	VmRSS=`cat /proc/$uid/status|grep -w VmRSS|awk '{print $2,$3}'`
+	VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 	#获取运行时长
 	if [ -n "$start_time" ]; then 
 		time=$((`date +%s`-$start_time))
@@ -59,7 +80,7 @@ fi
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;46m欢迎使用ShellClash！\033[0m      版本：$versionsh_l"
 echo -e "Clash服务"$run"，"$auto""
-if [ $status -gt 0 ];then
+if [ -n "$PID" ];then
 	echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
 fi
 echo -e "TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
@@ -80,55 +101,26 @@ if [ ! -f $clashdir/Country.mmdb ];then
 	clashstart
 fi
 }
-clashstop(){
-	source $clashdir/start.sh && stop_old
-	/etc/init.d/clash stop > /dev/null 2>&1
-}
 clashstart(){
 	if [ ! -f "$yaml" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m没有找到配置文件，请先导入节点/订阅链接！\033[0m"
 		clashlink
 	fi
-	if [ $status -gt 0 ];then
+	if [ -n "$PID" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		clashstop
+		$sh_type $clashdir/start.sh stop
 		echo -e "\033[31mClash服务已停止！\033[0m"
 	fi
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	if [ "$start_old" = "已开启" ];then
-		source $clashdir/start.sh && start_old
-		sleep 1
-		status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
-		if [ -z "$status" ];then
-			echo -e "\033[31mclash启动失败！\033[0m" 
-			sed -i /start_old=*/d $ccfg
-			exit
-		fi
-	else
-		/etc/init.d/clash start
-		sleep 1
-		status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
-		if [ -z "$status" ];then
-			echo -e "\033[31mclash启动失败！\033[0m"
-			read -p "是否尝试使用保守方式启动？[1/0] > " res
-			if [ "$res" = '1' ]; then
-				source $clashdir/start.sh && start_old
-				sleep 1
-				status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh`
-				if [ -z "$status" ];then
-					echo -e "\033[31mclash启动失败！\033[0m" 
-					sed -i /start_old=*/d $ccfg
-					exit
-				fi
-			else
-				echo -e "\033[33m操作取消！\033[0m"
-				exit
-			fi
-		fi
+	$sh_type $clashdir/start.sh start
+	sleep 1
+	status=`$ps_type |grep -w 'clash'|grep -v grep|grep -v clash.sh`
+	if [ -z "$status" ];then
+		echo -e "\033[31mclash启动失败！\033[0m" 
+		exit
 	fi
 
-	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -d /www/clash ];then
 		echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
@@ -337,8 +329,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			fi
 			redir_mod=混合模式	
 		elif [[ $num == 4 ]]; then
-			redir_mod=纯净模式	
-			host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)			
+			redir_mod=纯净模式			
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[32m已经设置为纯净模式！\033[0m"
 			echo -e "\033[33m当前模式必须手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
@@ -584,13 +575,13 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
 			echo -e "\033[36m此模式兼容性更好但无法禁用开机启动！！\033[0m"
 			start_old=已开启
-			/etc/init.d/clash stop > /dev/null 2>&1
+			$sh_type $clashdir/start.sh stop > /dev/null 2>&1
 			sleep 2
 		else
 			sed -i "1i\start_old=未开启" $ccfg
 			echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
 			start_old=未开启
-			source $clashdir/start.sh && stop_old
+			$sh_type $clashdir/start.sh stop > /dev/null 2>&1
 		fi
 		clashadv  
 		
@@ -689,11 +680,15 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			/etc/init.d/clash stop
 			rm -rf $clashdir
 			rm -rf /etc/init.d/clash
+			rm -rf /etc/systemd/system/clash.service
+			rm -rf /usr/lib/systemd/system/clash.service
 			rm -rf /www/clash
 			rm -rf $csh
 			sed -i '/alias clash=*/'d /etc/profile
 			sed -i '/export clashdir=*/'d /etc/profile
+			source /etc/profile > /dev/null 2>&1
 			echo 已卸载clash相关文件！
+			exit
 		fi
 		echo -e "\033[31m操作已取消！\033[0m"
 		exit;
@@ -816,19 +811,19 @@ elif [[ $num == 0 ]]; then
 	
 elif [[ $num == 1 ]]; then
 	cronname=重启clash服务
-	cronset='source /etc/profile && source $clashdir/start.sh && restart'
+	cronset="$clashdir/start.sh restart"
 	setcron
 elif [[ $num == 2 ]]; then
 	cronname=停止clash服务
-	cronset='source /etc/profile && source $clashdir/start.sh && stop'
+	cronset="$clashdir/start.sh stop"
 	setcron
 elif [[ $num == 3 ]]; then
 	cronname=开启clash服务
-	cronset='source /etc/profile && source $clashdir/start.sh && start'
+	cronset="$clashdir/start.sh start"
 	setcron
 elif [[ $num == 4 ]]; then	
 	cronname=更新订阅链接
-	cronset="source /etc/profile && source $clashdir/getdate.sh && getyaml"
+	cronset="$clashdir/start.sh getyaml"
 	setcron	
 	
 else
@@ -866,7 +861,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		clashcfg
 
 	elif [[ $num == 3 ]]; then
-		clashstop
+		$sh_type $clashdir/start.sh stop
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31mClash服务已停止！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -879,12 +874,20 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			sed -i "1i\start_old=未开启" $ccfg
 			echo -e "\033[32m已设为使用默认方式启动clash服务！！\033[0m"
 			start_old=未开启
-		elif [ -f /etc/rc.d/*clash ]; then
+		elif [ "$autostart" = "enable_rc" ]; then
 			/etc/init.d/clash disable
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
-		else
+		elif [ "$autostart" = "disable_rc" ]; then
 			/etc/init.d/clash enable
 			echo -e "\033[32m已设置Clash开机启动！\033[0m"
+		elif [ "$autostart" = "enable_sys" ]; then
+			systemctl disable clash.service
+			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
+		elif [ "$autostart" = "disable_sys" ]; then
+			systemctl enable clash.service
+			echo -e "\033[32m已设置Clash开机启动！\033[0m"
+		else
+			echo -e "\033[32m当前系统不支持设置开启启动！\033[0m"
 		fi
 		clashsh
 
@@ -920,7 +923,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		elif [[ $num == 0 ]]; then
 			clashsh
 		elif [[ $num == 1 ]]; then
-			clashstop
+			$sh_type $clashdir/start.sh stop
 			echo -----------------------------------------------
 			$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
 			echo -----------------------------------------------
@@ -964,7 +967,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			
 		elif [[ $num == 7 ]]; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			for PID in $(ps|awk '{print $1}');do
+			for PID in $($ps_type|awk '{print $1}');do
 				[ -f "/proc/$PID/status" ] && vmrss=$(cat /proc/$PID/status|grep -w VmRSS|awk '{print $2}') 
 				[ -n "$vmrss" ] && echo $vmrss	$(cat /proc/$PID/status|grep -w Name|awk '{print $2}')
 			done

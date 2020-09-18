@@ -1,7 +1,9 @@
- #!/bin/sh
+#!/bin/sh
 # Copyright (C) Juewuy
 
 getconfig(){
+#加载环境变量
+[ -z "$clashdir" ] && source /etc/profile > /dev/null 2>&1
 ccfg=$clashdir/mark
 if [ ! -f "$ccfg" ]; then
 	echo mark文件不存在，默认以Redir模式运行！
@@ -19,6 +21,137 @@ source $ccfg #加载配置文件
 for portx in 1053 7890 7892 9999 ;do
 	[ -n "$(netstat -ntulp |grep :$portx|grep -v clash)" ] && echo -e "检测到端口：\033[30;47m $portx \033[0m被以下进程占用！clash无法启动！" && echo $(netstat -ntulp |grep :$portx) && exit;
 done
+}
+getyaml(){
+#前后端订阅服务器地址索引，可在此处添加！
+Server=`sed -n ""$server_link"p"<<EOF
+subconverter-web.now.sh
+subconverter.herokuapp.com
+subcon.py6.pw
+api.dler.io
+api.wcc.best
+skapi.cool
+EOF`
+Config=`sed -n ""$rule_link"p"<<EOF
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiMode.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoAuto.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_NoAuto.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_AdblockPlus.ini
+EOF`
+#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
+if [ -z $Https ];then
+	#echo $Url
+	Https="https://$Server/sub?target=clashr&insert=true&new_name=true&scv=true&exclude=$exclude&url=$Url&config=$Config"
+	markhttp=1
+fi
+#
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo 正在连接服务器获取配置文件…………链接地址为：
+echo -e "\033[4;32m$Https\033[0m"
+echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
+echo -e "\033[36m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo -e "|                                             |"
+echo -e "|         需要一点时间，请耐心等待！          |"
+echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出\033[36m        |"
+echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
+#获取在线yaml文件
+yaml=$clashdir/config.yaml
+yamlnew=/tmp/config.yaml
+rm -rf $yamlnew > /dev/null 2>&1
+result=$(curl -w %{http_code} -kLo $yamlnew $Https)
+if [ "$result" != "200" ];then
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[31m配置文件获取失败！\033[0m"
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo
+	if [ -z $markhttp ];then
+		echo 请尝试使用导入节点/链接功能！
+		getlink
+		
+	else
+		read -p "是否更换后端地址后重试？[1/0] > " res
+		if [ "$res" = '1' ]; then
+			sed -i '/server_link=*/'d $ccfg
+			if [[ $server_link -ge 6 ]]; then
+				server_link=0
+			fi
+			server_link=$(($server_link + 1))
+			echo $server_link
+			sed -i "1i\server_link=$server_link" $ccfg
+			Https=""
+			getyaml
+		fi
+		#exit;
+	fi
+else
+	Https=""
+	if cat $yamlnew | grep ', server:' >/dev/null;then
+		#检测旧格式
+		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m已经停止对旧格式配置文件的支持！！！\033[0m"
+			echo -e "请使用新格式或者使用\033[32m导入节点/订阅\033[0m功能！"
+			sleep 2
+			clashlink
+		fi
+		#检测不支持的加密协议
+		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
+			if [ "$clashcore" = "clash" -o "$clashcore" = "clashpre" ];then
+				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -e "\033[31m当前核心：$clashcore不支持chacha20加密！！！\033[0m"
+				echo -e "请更换使用clashR核心！！！"
+				sleep 2
+				getcore
+			fi
+		fi
+		#替换文件
+		[ -f $yaml ] && mv $yaml $yaml.bak
+		mv $yamlnew $yaml
+		echo 配置文件已生成！正在启动clash使其生效！
+		#重启clash服务
+		$0 stop
+		start_over(){
+			echo -e "\033[32mclash服务已启动！\033[0m"
+			echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
+			echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+			echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		}
+		$0 start
+		sleep 1
+		PID=$(pidof clash)
+		if [ -n "$PID" ];then
+			start_over
+		else
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			if [ -f $yaml.bak ];then
+				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
+				mv $yaml.bak $yaml
+				$0 start
+				sleep 1
+			else
+				echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
+				$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
+				exit;
+			fi
+		fi
+	else
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[33m获取到了配置文件，但格式似乎不对！\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		sed -n '1,30p' $yamlnew
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[33m请检查如上配置文件信息:\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	fi
+	#exit;
+fi
+#exit
 }
 modify_yaml(){
 ##########需要变更的配置###########
@@ -78,7 +211,7 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 mark_time(){
 	start_time=`date +%s`
 	sed -i '/start_time*/'d $clashdir/mark
-	sed -i "3i\start_time=$start_time" $clashdir/mark
+	sed -i "1i\start_time=$start_time" $clashdir/mark
 }
 start_redir(){
 	#修改iptables规则使流量进入clash
@@ -144,6 +277,7 @@ start_dns(){
 daemon_old(){
 	#守护进程状态
 	status=$(ps |grep -w 'clash'|grep -v grep|grep -v clash.sh)
+	[ -z $status ] && status=$(ps aux |grep -w 'clash'|grep -v grep|grep -v clash.sh)
 	if [ -z $status ];then
 	$clashdir/clash -d $clashdir> /dev/null &
 	mark_time
@@ -159,52 +293,58 @@ checkcron(){
 		clashsh
 	fi
 }
-start_old(){
+afstart(){
 	#读取配置文件
 	getconfig
-	#使用内置规则强行覆盖config配置文件
-	[ "$modify_yaml" != "已开启" ] && modify_yaml
-    #创建clash后台进程
-	$clashdir/clash -d $clashdir> /dev/null &
 	#修改iptables规则使流量进入clash
 	stop_iptables
 	[ "$redir_mod" != "纯净模式" ] && start_dns
 	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 	#标记启动时间
 	mark_time
-	#创建守护进程
-	checkcron
-	sed -i /start.sh/d $cronpath
-	echo "*/1 * * * * source /etc/profile && source $clashdir/start.sh && daemon_old >/dev/null 2>&1" >> $cronpath
-	#设定启动方式
-	sed -i /start_old=*/d $ccfg
-	sed -i "1i\start_old=已开启" $ccfg	
 }
-stop_old(){
-	#删除守护
-	checkcron
-	sed -i /start.sh/d $cronpath
-	#结束进程
-	killall -9 clash &> /dev/null
-	stop_iptables
-}
-start(){
-	getconfig
-	if [ "$start_old" ="已开启" ];then
-		start_old
-	else
-		/etc/init.d/clash start
-	fi
-}
-stop(){
-	getconfig
-	if [ "$start_old" ="已开启" ];then
-		stop_old
-	else
-		/etc/init.d/clash stop
-	fi
-}
-restart(){
-	stop
-	start
-}
+
+case "$1" in
+
+afstart)
+		afstart
+	;;
+start)		
+		#读取配置文件
+		getconfig
+		#使用内置规则强行覆盖config配置文件
+		[ "$modify_yaml" != "已开启" ] && modify_yaml
+		#使用不同方式启动clash服务
+		if [ "$start_old" = "已开启" ];then
+			$clashdir/clash -d $clashdir> /dev/null &
+			afstart
+		elif [ -f /etc/rc.common ];then
+			/etc/init.d/clash start
+		else
+			systemctl start clash.service
+		fi
+	;;
+stop)	
+		#删除守护
+		checkcron
+		sed -i /start.sh/d $cronpath
+		#多种方式结束进程
+		if [ -f /etc/rc.common ];then
+			/etc/init.d/clash stop &> /dev/null
+		else
+			systemctl stop clash.service &> /dev/null
+		fi
+		killall -9 clash &> /dev/null
+		#清理iptables
+		stop_iptables
+        ;;
+restart)
+        $0 stop
+        $0 start
+        ;;
+getyaml)	
+		getconfig
+		getyaml
+		;;
+esac
+exit 0

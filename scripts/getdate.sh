@@ -1,160 +1,6 @@
 #!/bin/bash
 # Copyright (C) Juewuy
 
-getyaml(){
-ccfg=$clashdir/mark
-source $ccfg
-#前后端订阅服务器地址索引，可在此处添加！
-Server=`sed -n ""$server_link"p"<<EOF
-subconverter-web.now.sh
-subconverter.herokuapp.com
-subcon.py6.pw
-api.dler.io
-api.wcc.best
-skapi.cool
-EOF`
-Config=`sed -n ""$rule_link"p"<<EOF
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiMode.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoAuto.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_NoAuto.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_AdblockPlus.ini
-EOF`
-#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
-if [ -z $Https ];then
-	#echo $Url
-	Https="https://$Server/sub?target=clashr&insert=true&new_name=true&scv=true&exclude=$exclude&url=$Url&config=$Config"
-	markhttp=1
-fi
-#
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo 正在连接服务器获取配置文件…………链接地址为：
-echo -e "\033[4;32m$Https\033[0m"
-echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
-echo -e "\033[36m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo -e "|                                             |"
-echo -e "|         需要一点时间，请耐心等待！          |"
-echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出\033[36m        |"
-echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
-#获取在线yaml文件
-yaml=$clashdir/config.yaml
-yamlnew=/tmp/config.yaml
-rm -rf $yamlnew > /dev/null 2>&1
-result=$(curl -w %{http_code} -kLo $yamlnew $Https)
-if [ "$result" != "200" ];then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[31m配置文件获取失败！\033[0m"
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo
-	if [ -z $markhttp ];then
-		echo 请尝试使用导入节点/链接功能！
-		getlink
-		
-	else
-		read -p "是否更换后端地址后重试？[1/0] > " res
-		if [ "$res" = '1' ]; then
-			sed -i '/server_link=*/'d $ccfg
-			if [[ $server_link -ge 6 ]]; then
-				server_link=0
-			fi
-			server_link=$(($server_link + 1))
-			echo $server_link
-			sed -i "1i\server_link=$server_link" $ccfg
-			Https=""
-			getyaml
-		fi
-		#exit;
-	fi
-else
-	Https=""
-	if cat $yamlnew | grep ', server:' >/dev/null;then
-		#检测旧格式
-		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m已经停止对旧格式配置文件的支持！！！\033[0m"
-			echo -e "请使用新格式或者使用\033[32m导入节点/订阅\033[0m功能！"
-			sleep 2
-			clashlink
-		fi
-		#检测不支持的加密协议
-		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
-			if [ "$clashcore" = "clash" -o "$clashcore" = "clashpre" ];then
-				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-				echo -e "\033[31m当前核心：$clashcore不支持chacha20加密！！！\033[0m"
-				echo -e "请更换使用clashR核心！！！"
-				sleep 2
-				getcore
-			fi
-		fi
-		#替换文件
-		[ -f $yaml ] && mv $yaml $yaml.bak
-		mv $yamlnew $yaml
-		echo 配置文件已生成！正在启动clash使其生效！
-		#重启clash服务
-		killall -9 clash &> /dev/null
-		start_over(){
-			host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-			echo -e "\033[32mclash服务已启动！\033[0m"
-			echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-			echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
-			echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			clashsh
-		}
-		if [ "$start_old" = "已开启" ];then
-			source $clashdir/start.sh && start_old
-			sleep 1
-			status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|wc -l`
-			if [[ $status -gt 0 ]];then
-			start_over
-			fi
-		else
-			/etc/init.d/clash start
-			sleep 1
-			status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|wc -l`
-			if [[ $status -gt 0 ]];then
-				start_over
-			else
-				echo -e "\033[31mclash服务启动失败！\033[0m"
-				echo -e "\033[33m5秒后尝试使用保守方式启动！（使用ctrl+c退出！）\033[0m"
-				echo 5&&sleep 1&&echo 4&&sleep 1&&echo 3&&sleep 1&&echo 2&&sleep 1&&echo 1&&sleep 1
-				source $clashdir/start.sh && start_old
-				sleep 1
-				status=`ps |grep -w 'clash'|grep -v grep|grep -v clash.sh|wc -l`
-				if [[ $status -gt 0 ]];then
-					start_over
-				fi
-			fi
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if [ -f $yaml.bak ];then
-				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
-				mv $yaml.bak $yaml
-				/etc/init.d/clash start
-				sleep 1
-				clashsh
-			else
-				echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
-				$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
-				exit;
-			fi
-		fi
-	else
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[33m获取到了配置文件，但格式似乎不对！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		sed -n '1,30p' $yamlnew
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[33m请检查如上配置文件信息:\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	fi
-	#exit;
-fi
-#exit
-}
 linkconfig(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
@@ -263,7 +109,7 @@ if [ -n $Url ];then
 		sed -i "6i\Url=\'$Url\'" $ccfg
 		Https=""
 		#获取在线yaml文件
-		getyaml
+		$sh_type $clashdir/start.sh getyaml
 	elif [ "$num" = '2' ]; then
 		linkfilter
 		linkset
@@ -366,7 +212,7 @@ if [ -n $Https ];then
 				sed -i '/Https=*/'d $ccfg
 				sed -i "6i\Https=\'$Https\'" $ccfg
 				#获取在线yaml文件
-				getyaml
+				$sh_type $clashdir/start.sh getyaml
 			fi
 			clashlink
 	fi
@@ -398,12 +244,22 @@ if [ "$res" = '1' ]; then
 	mkdir -p $clashdir > /dev/null
 	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/ > /dev/null
 	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
-	#初始化文件目录
-	mv $clashdir/clashservice /etc/init.d/clash #将clash服务文件移动到系统目录
-	chmod  777 /etc/init.d/clash #授予权限
+	#判断系统类型写入不同的启动文件
+	if [ -n "$(cat /proc/version | grep -i openwrt)" ];then
+		mv $dir/clash/clashservice /etc/init.d/clash #将rc服务文件移动到系统目录
+		chmod  777 /etc/init.d/clash #授予权限
+		rm -rf $dir/clash/clash.service 
+	else
+		[ -d /etc/systemd/system ] && sysdir=/etc/systemd/system
+		[ -d /usr/lib/systemd/system/ ] && sysdir=/usr/lib/systemd/system/ 
+		mv $dir/clash/clash.service $sysdir/clash.service #将service服务文件移动到系统目录
+		sed -i "s%/etc/clash%${dir}/clash%g" $sysdir/clash.service
+		rm -rf $dir/clash/clashservice
+		rm -rf /etc/init.d/clash
+	fi
 	#写入版本号
 	sed -i '/versionsh_l=*/'d $ccfg
-	sed -i "1i\versionsh_l=$versionsh" $ccfg
+	sed -i "1i\versionsh_l=$release_new" $ccfg
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf /tmp/clashversion
@@ -433,6 +289,7 @@ cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
 [ -n "$(echo $cpucore | grep -E "linux.*amd64.*")" ] && cpucore="amd64"
+[ -n "$(echo $cpucore | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
 ###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
@@ -549,7 +406,7 @@ clashsh
 fi
 }
 getdb(){
-host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+#host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
 echo -----------------------------------------------
@@ -618,7 +475,7 @@ update
 catpac(){
 #检测目录
 [ ! -d /www/clash -a ! -d $clashdir/ui ]&&echo 未检测到本地Dashboard面板，请先安装面板！&&sleep 1&&getdb
-host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+#host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 [ -d /www/clash ]&&dir="/www/clash"&&pac=http://$host/clash/pac
 [ -d $clashdir/ui ]&&dir="$clashdir/ui"&&pac=http://$host:9999/ui/pac
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -677,7 +534,7 @@ elif [[ $num == 4 ]]; then
 		update
 	fi
 elif [[ $num == 9 ]]; then
-	update_url='https://juewuy.xyz/clash'
+	update_url='http://127.0.0.1:8080/clash-for-Miwifi'
 else
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
