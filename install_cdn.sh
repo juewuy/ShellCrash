@@ -79,7 +79,7 @@ cat >$dir/clash/mark<<EOF
 EOF
 fi
 #修饰文件及版本号
-shtype=sh && [ -n $(ls -l /bin/sh|grep -o dash) ] && shtype=bash
+shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
 sed -i "s%#!/bin/sh%#!/bin/$shtype%g" $dir/clash/start.sh
 chmod  777 $dir/clash/start.sh
 sed -i '/versionsh_l=*/'d $dir/clash/mark
