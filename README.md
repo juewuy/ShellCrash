@@ -18,11 +18,11 @@
 ~在SSH界面执行如下安装命令，并按照提示安装clash管理脚本<br>
 openwrt输入：
 ```Shell
-sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" && source /etc/profile &> /dev/null
+sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install_c.sh)" && source /etc/profile &> /dev/null
 ```
 其他Linux系统输入：
 ```Shell
-bash -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" && source /etc/profile &> /dev/null
+bash -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install_c.sh)" && source /etc/profile &> /dev/null
 ```
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 ```Shell
