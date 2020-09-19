@@ -7,8 +7,7 @@ echo "**                ShellClash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
-url="http://127.0.0.1:8080/clash-for-Miwifi/"
-#release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 [ -z "$release_new" ] && release_new=$(curl -kfsSL $url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && echo "无法连接服务器！" && exit
 echo -e "最新版本：\033[32m$release_new\033[0m"
@@ -46,8 +45,7 @@ fi
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo 开始从服务器获取安装文件！
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#tarurl=$url@$release_new/bin/clashfm.tar.gz
-tarurl=$url/bin/clashfm.tar.gz
+tarurl=$url@$release_new/bin/clashfm.tar.gz
 if command -v curl &> /dev/null; then
 	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
 else $result
@@ -81,7 +79,7 @@ cat >$dir/clash/mark<<EOF
 EOF
 fi
 #修饰文件及版本号
-shtype=sh && [ -n $(ls -l /bin/sh|grep -o dash) ] && shtype=bash
+shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
 sed -i "s%#!/bin/sh%#!/bin/$shtype%g" $dir/clash/start.sh
 chmod  777 $dir/clash/start.sh
 sed -i '/versionsh_l=*/'d $dir/clash/mark
