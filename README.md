@@ -22,7 +22,7 @@ sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 http
 ```
 或者
 ```Shell
-sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash/install_cdn.sh)" && source /etc/profile &> /dev/null
+sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
 ```
 Debian/CenOS/Armbian等默认使用dash的Linux系统：
 ```Shell
@@ -30,7 +30,7 @@ bash -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 ht
 ```
 或者
 ```Shell
-bash -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash/install_cdn.sh)" && source /etc/profile &> /dev/null
+bash -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
 ```
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 ```Shell
