@@ -5,8 +5,6 @@ getconfig(){
 #系统类型
 systype=$(cat /proc/version | grep -io openwrt)
 if [ -n "$systype" ];then
-	ps_type=ps
-	sh_type=sh
 	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	if [ -f /etc/rc.d/*clash ];then
 		autostart=enable_rc
@@ -14,8 +12,7 @@ if [ -n "$systype" ];then
 		autostart=disable_rc
 	fi
 else
-	ps_type='ps aux'
-	sh_type=bash
+	cron_user='root '
 	host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g')
 	[ -z $host ] && host=127.0.0.1
 	if [ -n "$(systemctl list-unit-files clash.service | grep -o enable)" ];then
@@ -109,14 +106,14 @@ clashstart(){
 	fi
 	if [ -n "$PID" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		$sh_type $clashdir/start.sh stop
+		$clashdir/start.sh stop
 		echo -e "\033[31mClash服务已停止！\033[0m"
 	fi
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	$sh_type $clashdir/start.sh start
+	$clashdir/start.sh start
 	sleep 1
-	status=`$ps_type |grep -w 'clash'|grep -v grep|grep -v clash.sh`
-	if [ -z "$status" ];then
+	PID=$(pidof clash)
+	if [ -z "$PID" ];then
 		echo -e "\033[31mclash启动失败！\033[0m" 
 		exit
 	fi
@@ -359,7 +356,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
 		echo " 1 fake-ip模式：   响应速度更快"
-		echo "                   但可能和部分软件有冲突"
+		echo "                   不兼容部分软件"
 		echo " 2 redir_host模式：使用稳定，兼容性好"
 		echo "                   不支持Tun模式"
 		echo " 0 返回上级菜单"
@@ -515,6 +512,7 @@ clashadv(){
 [ -z "$modify_yaml" ] && modify_yaml=未开启
 [ -z "$ipv6_support" ] && ipv6_support=未开启
 [ -z "$start_old" ] && start_old=未开启
+[ -z "$local_proxy" ] && local_proxy=未开启
 #
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
@@ -522,8 +520,9 @@ echo -e "\033[33m如您不是很了解clash的运行机制，请勿更改！\033
 echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
-echo -e " 2 启用ipv6支持:     	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
+echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————切换时会停止clash服务"
+echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m   ————配置本机代理环境变量"
 echo -----------------------------------------------
 echo -e " 8 \033[31m重置\033[0m配置文件"
 echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -575,15 +574,35 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
 			echo -e "\033[36m此模式兼容性更好但无法禁用开机启动！！\033[0m"
 			start_old=已开启
-			$sh_type $clashdir/start.sh stop > /dev/null 2>&1
+			$clashdir/start.sh stop > /dev/null 2>&1
 			sleep 2
 		else
 			sed -i "1i\start_old=未开启" $ccfg
 			echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
 			start_old=未开启
-			$sh_type $clashdir/start.sh stop > /dev/null 2>&1
+			$clashdir/start.sh stop > /dev/null 2>&1
 		fi
 		clashadv  
+		
+	elif [[ $num == 4 ]]; then	
+		sed -i '/local_proxy*/'d $ccfg
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
+			sed -i "1i\local_proxy=已开启" $ccfg
+			local_proxy=已开启
+			echo 'export http_proxy=http://127.0.0.1:7890' >> /etc/profile
+			echo 'export https_proxy=http://127.0.0.1:7890' >> /etc/profile
+			echo -e "\033[32m已经将代理参数写入环境变量~\033[0m"
+			echo -e "\033[36m如未生效，请重新登录或者重启设备！\033[0m"
+			sleep 1
+		else
+			sed -i "1i\local_proxy=未开启" $ccfg
+			echo -e "\033[33m已经将代理参数从环境变量移除！！\033[0m"
+			local_proxy=未开启
+			sed -i '/http*_proxy/'d /etc/profile
+		fi
+		source /etc/profile > /dev/null 2>&1
+		clashadv 		
 		
 	elif [[ $num == 8 ]]; then	
 		read -p "确认重置配置文件？(1/0) > " res
@@ -768,7 +787,7 @@ clashcron(){
 	read -p  "是否确认添加定时任务？(1/0) > " res
 		if [ "$res" = '1' ]; then
 			sed -i /$cronname/d $cronpath
-			echo "$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname" >> $cronpath
+			echo "$min $hour * * $week $cron_user$cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname" >> $cronpath
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m定时任务已添加！！！\033[0m"
 		fi
@@ -861,7 +880,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		clashcfg
 
 	elif [[ $num == 3 ]]; then
-		$sh_type $clashdir/start.sh stop
+		$clashdir/start.sh stop
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31mClash服务已停止！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -881,10 +900,10 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			/etc/init.d/clash enable
 			echo -e "\033[32m已设置Clash开机启动！\033[0m"
 		elif [ "$autostart" = "enable_sys" ]; then
-			systemctl disable clash.service
+			systemctl disable clash.service > /dev/null 2>&1
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
 		elif [ "$autostart" = "disable_sys" ]; then
-			systemctl enable clash.service
+			systemctl enable clash.service > /dev/null 2>&1
 			echo -e "\033[32m已设置Clash开机启动！\033[0m"
 		else
 			echo -e "\033[32m当前系统不支持设置开启启动！\033[0m"
@@ -923,7 +942,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		elif [[ $num == 0 ]]; then
 			clashsh
 		elif [[ $num == 1 ]]; then
-			$sh_type $clashdir/start.sh stop
+			$clashdir/start.sh stop
 			echo -----------------------------------------------
 			$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
 			echo -----------------------------------------------
@@ -964,15 +983,6 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 				echo -e "\033[31m连接超时！请重试或检查节点配置！\033[0m"
 			fi
 			clashsh
-			
-		elif [[ $num == 7 ]]; then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			for PID in $($ps_type|awk '{print $1}');do
-				[ -f "/proc/$PID/status" ] && vmrss=$(cat /proc/$PID/status|grep -w VmRSS|awk '{print $2}') 
-				[ -n "$vmrss" ] && echo $vmrss	$(cat /proc/$PID/status|grep -w Name|awk '{print $2}')
-			done
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			exit;
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m请输入正确的数字！\033[0m"

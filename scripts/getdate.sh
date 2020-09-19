@@ -109,7 +109,7 @@ if [ -n $Url ];then
 		sed -i "6i\Url=\'$Url\'" $ccfg
 		Https=""
 		#获取在线yaml文件
-		$sh_type $clashdir/start.sh getyaml
+		$clashdir/start.sh getyaml
 	elif [ "$num" = '2' ]; then
 		linkfilter
 		linkset
@@ -212,7 +212,7 @@ if [ -n $Https ];then
 				sed -i '/Https=*/'d $ccfg
 				sed -i "6i\Https=\'$Https\'" $ccfg
 				#获取在线yaml文件
-				$sh_type $clashdir/start.sh getyaml
+				$clashdir/start.sh getyaml
 			fi
 			clashlink
 	fi

@@ -214,7 +214,7 @@ mark_time(){
 	sed -i "1i\start_time=$start_time" $clashdir/mark
 }
 start_redir(){
-	#修改iptables规则使流量进入clash
+	#流量过滤规则
 	iptables -t nat -N clash
 	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
 	iptables -t nat -A clash -d 10.0.0.0/8 -j RETURN
@@ -227,9 +227,10 @@ start_redir(){
 	for mac in $(cat $clashdir/mac); do
 		iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 	done
-	
+	#设置防火墙流量转发
 	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
 	iptables -t nat -A PREROUTING -p tcp -j clash
+	#设置ipv6转发
 	if [ "$ipv6_support" = "已开启" ];then
 		ip6tables -t nat -N clash
 		for mac in $(cat $clashdir/mac); do
@@ -266,20 +267,22 @@ start_dns(){
 	done
 	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053
 	iptables -t nat -A PREROUTING -p udp -j clash_dns
+
 	#ipv6DNS
-	ip6tables -t nat -N clash_dns > /dev/null 2>&1
-	for mac in $(cat $clashdir/mac); do
-		ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
-	done
-	ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-	ip6tables -t nat -A PREROUTING -p udp -j clash_dns > /dev/null 2>&1
+	if [ "$ipv6_support" = "已开启" ];then
+		ip6tables -t nat -N clash_dns > /dev/null 2>&1
+		for mac in $(cat $clashdir/mac); do
+			ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
+		done
+		ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+		ip6tables -t nat -A PREROUTING -p udp -j clash_dns > /dev/null 2>&1
+	fi
 }
 daemon_old(){
 	#守护进程状态
-	status=$(ps |grep -w 'clash'|grep -v grep|grep -v clash.sh)
-	[ -z $status ] && status=$(ps aux |grep -w 'clash'|grep -v grep|grep -v clash.sh)
-	if [ -z $status ];then
-	$clashdir/clash -d $clashdir> /dev/null &
+	PID=$(pidof clash)
+	if [ -z "$PID" ];then
+	$clashdir/clash -d $clashdir > /dev/null &
 	mark_time
 	fi
 }
@@ -316,7 +319,7 @@ start)
 		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
-			$clashdir/clash -d $clashdir> /dev/null &
+			$clashdir/clash -d $clashdir >/dev/null 2>&1 &
 			afstart
 		elif [ -f /etc/rc.common ];then
 			/etc/init.d/clash start
@@ -327,14 +330,14 @@ start)
 stop)	
 		#删除守护
 		checkcron
-		sed -i /start.sh/d $cronpath
+		sed -i /start.sh/d $cronpath >/dev/null 2>&1
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
-			/etc/init.d/clash stop &> /dev/null
+			/etc/init.d/clash stop >/dev/null 2>&1
 		else
-			systemctl stop clash.service &> /dev/null
+			systemctl stop clash.service >/dev/null 2>&1
 		fi
-		killall -9 clash &> /dev/null
+		killall -9 clash >/dev/null 2>&1
 		#清理iptables
 		stop_iptables
         ;;
