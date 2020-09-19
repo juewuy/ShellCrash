@@ -240,8 +240,7 @@ elif [[ $num == 7 ]];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		read -p "确认更新配置文件？[1/0] > " res
 		if [ "$res" = '1' ]; then
-			source $clashdir/getdate.sh
-			getyaml
+			$clashdir/start.sh getyaml
 		fi
 		clashlink
 	fi
@@ -591,15 +590,18 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			sed -i "1i\local_proxy=已开启" $ccfg
 			local_proxy=已开启
 			echo 'export http_proxy=http://127.0.0.1:7890' >> /etc/profile
-			echo 'export https_proxy=http://127.0.0.1:7890' >> /etc/profile
+			echo 'export https_proxy=$http_proxy' >> /etc/profile
+			echo 'export HTTP_PROXY=$http_proxy' >> /etc/profile
+			echo 'export HTTPS_PROXY=$http_proxy' >> /etc/profile
 			echo -e "\033[32m已经将代理参数写入环境变量~\033[0m"
 			echo -e "\033[36m如未生效，请重新登录或者重启设备！\033[0m"
 			sleep 1
 		else
 			sed -i "1i\local_proxy=未开启" $ccfg
+			sed -i '/http*_proxy/'d /etc/profile
+			sed -i '/HTTP*_PROXY/'d /etc/profile
 			echo -e "\033[33m已经将代理参数从环境变量移除！！\033[0m"
 			local_proxy=未开启
-			sed -i '/http*_proxy/'d /etc/profile
 		fi
 		source /etc/profile > /dev/null 2>&1
 		clashadv 		
