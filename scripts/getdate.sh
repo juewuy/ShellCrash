@@ -246,18 +246,21 @@ if [ "$res" = '1' ]; then
 	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 	#判断系统类型写入不同的启动文件
 	if [ -n "$(cat /proc/version | grep -i openwrt)" ];then
-		mv $dir/clash/clashservice /etc/init.d/clash #将rc服务文件移动到系统目录
+		mv $clashdir/clashservice /etc/init.d/clash #将rc服务文件移动到系统目录
 		chmod  777 /etc/init.d/clash #授予权限
-		rm -rf $dir/clash/clash.service 
+		rm -rf $clashdir/clash.service 
 	else
 		[ -d /etc/systemd/system ] && sysdir=/etc/systemd/system
 		[ -d /usr/lib/systemd/system/ ] && sysdir=/usr/lib/systemd/system/ 
-		mv $dir/clash/clash.service $sysdir/clash.service #将service服务文件移动到系统目录
-		sed -i "s%/etc/clash%${dir}/clash%g" $sysdir/clash.service
-		rm -rf $dir/clash/clashservice
+		mv $clashdir/clash.service $sysdir/clash.service #将service服务文件移动到系统目录
+		sed -i "s%/etc/clash%${clashdir}%g" $sysdir/clash.service
+		rm -rf $clashdir/clashservice
 		rm -rf /etc/init.d/clash
 	fi
-	#写入版本号
+	#修饰文件及版本号
+	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
+	sed -i "s%#!/bin/sh%#!/bin/$shtype%g" $clashdir/start.sh
+	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $ccfg
 	sed -i "1i\versionsh_l=$release_new" $ccfg
 	#删除临时文件
