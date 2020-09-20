@@ -635,11 +635,13 @@ update(){
 if [ -z "$release_new" ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[33m正在检查更新！\033[0m"
-	release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
+		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+		update_url=$update_url@$release_new
+	fi
 	[ -z "$release_new" ] && release_new=$(curl -kfsSL $update_url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
 	[ -z "$release_new" ] && echo "检查更新失败！"
 fi
-[ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ] && update_url=$update_url@$release_new
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 [ -n "$release_new" ] && echo -e "当前ShellClash版本：\033[33m $versionsh_l \033[0m"

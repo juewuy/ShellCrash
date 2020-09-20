@@ -513,7 +513,7 @@ echo -e "\033[30;47m您可以在此处切换在线更新时使用的资源地址
 echo -e "当前源：\033[4;32m$update_url\033[0m"
 echo -----------------------------------------------
 echo -e " 1 Github源(使用host指定IP)"
-echo -e " 2 CDN源(版本同步较慢)"
+echo -e " 2 CDN源(仅同步最新release版本)"
 echo -e " 3 Github源+clash代理(需开启clash服务)"
 echo -e " 4 自定义输入(请务必确保路径正确)"
 echo -e " 0 返回上级菜单"
