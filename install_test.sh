@@ -80,6 +80,7 @@ else
 	if [ -n "$sysdir" ];then
 		mv $dir/clash/clash.service $sysdir/clash.service #将service服务文件移动到系统目录
 		sed -i "s%/etc/clash%${dir}/clash%g" $sysdir/clash.service
+		rm -rf /etc/init.d/clash
 	else
 		#设为保守模式
 		sed -i '/start_old=*/'d $dir/clash/mark
@@ -100,8 +101,7 @@ echo "export clashdir=\"$dir/clash\"" >> /etc/profile #设置clash路径环境�
 #删除临时文件
 rm -rf /tmp/clashfm.tar.gz 
 rm -rf $dir/clash/clashservice
-rm -rf $dir/clash/clash.service 
-rm -rf /etc/init.d/clash
+rm -rf $dir/clash/clash.service
 #提示
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo ShellClash 已经安装成功!
