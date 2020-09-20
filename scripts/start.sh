@@ -270,6 +270,7 @@ start_dns(){
 		iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
 	done
 	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053
+	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to 1053
 	iptables -t nat -A PREROUTING -p udp -j clash_dns
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
@@ -355,6 +356,9 @@ restart)
 getyaml)	
 		getconfig
 		getyaml
+		;;
+daemon_old)
+		daemon_old
 		;;
 esac
 exit 0
