@@ -245,17 +245,20 @@ if [ "$res" = '1' ]; then
 	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/ > /dev/null
 	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 	#判断系统类型写入不同的启动文件
-	if [ -n "$(cat /proc/version | grep -i openwrt)" ];then
+	if [ -f /etc/rc.common ];then
 		mv $clashdir/clashservice /etc/init.d/clash #将rc服务文件移动到系统目录
 		chmod  777 /etc/init.d/clash #授予权限
-		rm -rf $clashdir/clash.service 
 	else
 		[ -d /etc/systemd/system ] && sysdir=/etc/systemd/system
 		[ -d /usr/lib/systemd/system/ ] && sysdir=/usr/lib/systemd/system/ 
-		mv $clashdir/clash.service $sysdir/clash.service #将service服务文件移动到系统目录
-		sed -i "s%/etc/clash%${clashdir}%g" $sysdir/clash.service
-		rm -rf $clashdir/clashservice
-		rm -rf /etc/init.d/clash
+		if [ -n "$sysdir" ];then
+			mv $clashdir/clash.service $sysdir/clash.service #将service服务文件移动到系统目录
+			sed -i "s%/etc/clash%${dir}/clash%g" $sysdir/clash.service
+		else
+			#设为保守模式
+			sed -i '/start_old=*/'d $clashdir/mark
+			sed -i "1i\start_old=已开启" $clashdir/mark
+		fi
 	fi
 	#修饰文件及版本号
 	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
