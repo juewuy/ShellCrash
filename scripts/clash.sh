@@ -3,23 +3,12 @@
 
 getconfig(){
 #系统类型
-systype=$(cat /proc/version | grep -io openwrt)
-if [ -n "$systype" ];then
+if [ -f /bin/opkg ];then
 	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	if [ -f /etc/rc.d/*clash ];then
-		autostart=enable_rc
-	else
-		autostart=disable_rc
-	fi
 else
 	cron_user='root '
 	host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g')
 	[ -z $host ] && host=127.0.0.1
-	if [ -n "$(systemctl list-unit-files clash.service | grep -o enable)" ];then
-		autostart=enable_sys
-	else
-		autostart=disable_sys
-	fi
 fi
 #服务器地址
 [ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
@@ -37,7 +26,20 @@ fi
 source $ccfg
 #检查mac地址记录
 [ ! -f $clashdir/mac ] && touch $clashdir/mac
-#获取自启状态
+#开机自启相关
+if [ -f /etc/rc.common ];then
+	if [ -f /etc/rc.d/*clash ];then
+		autostart=enable_rc
+	else
+		autostart=disable_rc
+	fi
+else
+	if [ -n "$(systemctl list-unit-files clash.service | grep -o enable)" ];then
+		autostart=enable_sys
+	else
+		autostart=disable_sys
+	fi
+fi
 if [ "$start_old" = "已开启" ];then
 	auto="\033[33m已设置保守模式！\033[0m"
 	auto1="\033[36m设为\033[0m常规模式启动"
