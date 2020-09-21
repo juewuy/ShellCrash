@@ -302,13 +302,10 @@ echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
 echo -e "\033[32m请选择需要下载的核心版本！\033[0m"
 echo -----------------------------------------------
 echo "1 clash：     稳定，内存占用小，推荐！"
-echo "(官方正式版)  不支持chacha20加密，不支持Tun模式"
+echo "(官方正式版)  不支持Tun模式"
 echo
-echo "2 clashr：    内存占用小，支持chacha20加密"
-echo "(clashR修改版)不支持Tun模式"
-echo
-echo "3 clashpre：  支持Tun模式"
-echo "(高级预览版)  内存占用高，不支持chacha20加密"
+echo "2 clashpre：  支持Tun模式、混合模式"
+echo "(高级预览版)  内存占用更高"
 echo -----------------------------------------------
 echo 0 返回上级菜单 
 read -p "请输入对应数字 > " num
@@ -321,9 +318,9 @@ read -p "请输入对应数字 > " num
 	elif [[ $num == 1 ]]; then
 		clashcore=clash
 	elif [[ $num == 2 ]]; then
-		clashcore=clashr
-	elif [[ $num == 3 ]]; then
 		clashcore=clashpre
+	elif [[ $num == 3 ]]; then
+		clashcore=clashr
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
