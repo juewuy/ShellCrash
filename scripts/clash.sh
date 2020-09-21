@@ -694,25 +694,25 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 	elif [[ $num == 8 ]]; then		
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
-		echo -e "感谢：\033[32malecthw大神提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
+		echo -e "感谢：\033[32msubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
+		echo -e "感谢：\033[32malecthw提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
 		echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
-		update	
+		update
 		
 	elif [[ $num == 9 ]]; then
 		read -p "确认卸载clash？（警告：该操作不可逆！）[1/0] " res
 		if [ "$res" = '1' ]; then
-			/etc/init.d/clash disable
-			/etc/init.d/clash stop
+			$clashdir/start.sh stop
 			rm -rf $clashdir
 			rm -rf /etc/init.d/clash
 			rm -rf /etc/systemd/system/clash.service
 			rm -rf /usr/lib/systemd/system/clash.service
 			rm -rf /www/clash
-			rm -rf $csh
 			sed -i '/alias clash=*/'d /etc/profile
 			sed -i '/export clashdir=*/'d /etc/profile
 			source /etc/profile > /dev/null 2>&1
-			echo 已卸载clash相关文件！
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo 已卸载clash相关文件！有缘再会！
 			exit
 		fi
 		echo -e "\033[31m操作已取消！\033[0m"

@@ -198,7 +198,7 @@ exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#预删除需要添加的项目
 	i=$(grep  -n  "^proxies:" $clashdir/config.yaml | head -1 | cut -d ":" -f 1)
 	i=$(($i-1))
-	sed -i '1,'$i'd' $clashdir/config.yaml
+	sed -i "1,${i}d" $clashdir/config.yaml
 	#添加配置
 	sed -i "1i$mix" $clashdir/config.yaml
 	sed -i "1a$redir" $clashdir/config.yaml
@@ -304,12 +304,7 @@ checkcron(){
 }
 daemon(){
 	checkcron
-	echo '*/1 * * * * test -z "$(pidof clash)"  &&  /etc/init.d/clash start #clash守护进程' >> $cronpath
-	chmod 600 $cronpath
-}
-daemon_old(){
-	checkcron
-	echo '*/1 * * * * test -z "$(pidof clash)"  &&  '"$clashdir/clash -d $clashdir >/dev/null 2>&1 & #clash守护进程" >> $cronpath
+	echo '*/1 * * * * test -z "$(pidof clash)"  &&  /etc/init.d/clash restart #clash守护进程' >> $cronpath
 	chmod 600 $cronpath
 }
 afstart(){
@@ -336,7 +331,7 @@ start)
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			$clashdir/clash -d $clashdir >/dev/null 2>&1 &
-			daemon_old
+			daemon
 			afstart
 		elif [ -f /etc/rc.common ];then
 			/etc/init.d/clash start
@@ -347,7 +342,7 @@ start)
 stop)	
 		#删除守护
 		checkcron
-		sed -i /clash守护进程/d $cronpath
+		sed -i /clash守护进程/d $cronpath >/dev/null 2>&1
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1

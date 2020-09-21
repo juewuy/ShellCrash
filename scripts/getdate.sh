@@ -223,39 +223,33 @@ else
 	echo -e "\033[31m请输入正确的链接地址！！！\033[0m"
 fi
 }
-getsh(){
-echo -----------------------------------------------
-echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
-echo -e "最新脚本版本为：\033[32m $release_new \033[0m"
-echo -----------------------------------------------
-read -p "是否更新脚本？[1/0] > " res
-if [ "$res" = '1' ]; then
-	if command -v curl &> /dev/null; then
-		echo 正在获取更新文件
-		result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $update_url/bin/clashfm.tar.gz)
-	else $result
-		wget-ssl -q --no-check-certificate --tries=1 --timeout=10 -O /tmp/clashfm.tar.gz $update_url/bin/clashfm.tar.gz
-		[ $? -eq 0 ] && result="200"
-	fi
+gettar(){
+	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
 	#解压
-	echo -----------------------------------------------
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo 开始解压文件！
 	mkdir -p $clashdir > /dev/null
-	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/ > /dev/null
+	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
 	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
+	#初始化文件目录
+	[ -f "$clashdir/mark" ] || echo '#标识clash运行状态的文件，不明勿动！' > $clashdir/mark
 	#判断系统类型写入不同的启动文件
 	if [ -f /etc/rc.common ];then
-		mv $clashdir/clashservice /etc/init.d/clash #将rc服务文件移动到系统目录
-		chmod  777 /etc/init.d/clash #授予权限
+			#设为init.d方式启动
+			mv $clashdir/clashservice /etc/init.d/clash
+			chmod  777 /etc/init.d/clash
 	else
 		[ -d /etc/systemd/system ] && sysdir=/etc/systemd/system
 		[ -d /usr/lib/systemd/system/ ] && sysdir=/usr/lib/systemd/system/ 
 		if [ -n "$sysdir" ];then
-			mv $clashdir/clash.service $sysdir/clash.service #将service服务文件移动到系统目录
-			sed -i "s%/etc/clash%${dir}/clash%g" $sysdir/clash.service
+			#设为systemd方式启动
+			mv $clashdir/clash.service $sysdir/clash.service
+			sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service
+			systemctl daemon-reload
+			rm -rf /etc/init.d/clash
 		else
-			#设为保守模式
+			#设为保守模式启动
 			sed -i '/start_old=*/'d $clashdir/mark
 			sed -i "1i\start_old=已开启" $clashdir/mark
 		fi
@@ -264,18 +258,35 @@ if [ "$res" = '1' ]; then
 	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
 	sed -i "s%#!/bin/sh%#!/bin/$shtype%g" $clashdir/start.sh
 	chmod  777 $clashdir/start.sh
-	sed -i '/versionsh_l=*/'d $ccfg
-	sed -i "1i\versionsh_l=$release_new" $ccfg
+	sed -i '/versionsh_l=*/'d $clashdir/mark
+	sed -i "1i\versionsh_l=$release_new" $clashdir/mark
+	#设置环境变量
+	sed -i '/alias clash=*/'d /etc/profile
+	echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> /etc/profile #设置快捷命令环境变量
+	sed -i '/export clashdir=*/'d /etc/profile
+	echo "export clashdir=\"$clashdir\"" >> /etc/profile #设置clash路径环境变量
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
-	rm -rf /tmp/clashversion
+	rm -rf $clashdir/clashservice
+	rm -rf $clashdir/clash.service
+}
+getsh(){
+echo -----------------------------------------------
+echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
+echo -e "最新脚本版本为：\033[32m $release_new \033[0m"
+echo -----------------------------------------------
+read -p "是否更新脚本？[1/0] > " res
+if [ "$res" = '1' ]; then
+	tarurl=$update_url/bin/clashfm.tar.gz
+	#下载更新
+	gettar
 	#提示
 	echo -----------------------------------------------
 	echo -e "\033[32m管理脚本更新成功!\033[0m"
 	echo -----------------------------------------------
 	exit;
-else
-update
+	else
+	update
 fi
 }
 getcore(){
