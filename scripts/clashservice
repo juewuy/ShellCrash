@@ -5,29 +5,28 @@ START=92
 SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1
 USE_PROCD=1
-
+DIR=$(cat /etc/profile|grep clashdir|awk -F "\"" '{print $2}')
 
 start_service() {
-	clashdir=$(cat /etc/profile|grep clashdir|awk -F "\"" '{print $2}')
 	#使用procd创建clash后台进程
 	procd_open_instance
 	procd_set_param respawn
 	procd_set_param stderr 1
 	procd_set_param stdout 1
-	procd_set_param command $clashdir/clash -d $clashdir
+	procd_set_param command $DIR/clash -d $DIR
 	procd_close_instance
 	#其他设置
-	$clashdir/start.sh afstart
+	$DIR/start.sh afstart
 }
 
 start() {
 	if [ -z "$(pidof procd)" ];then
-		clashdir=$(cat /etc/profile|grep clashdir|awk -F "\"" '{print $2}')
 		#创建后台进程
-		service_start  $clashdir/clash -d $clashdir
-		#$clashdir/start.sh deamon
+		service_start  $DIR/clash -d $DIR
+		#设置守护进程
+		$DIR/start.sh deamon
 		#其他设置
-		$clashdir/start.sh afstart
+		$DIR/start.sh afstart
 	else
 		start_service
 	fi

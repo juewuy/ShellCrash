@@ -117,28 +117,38 @@ else
 		$0 stop
 		start_over(){
 			echo -e "\033[32mclash服务已启动！\033[0m"
-			echo -e "可以使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-			echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
-			echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			if [ -d /www/clash ];then
+				echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
+			elif [ -d $clashdir/ui  ];then
+				echo -e "请使用\033[30;47m http://$host:9999/ui \033[0m管理内置规则"
+			else
+				echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
+				echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+				echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			fi
 		}
 		$0 start
 		sleep 1
-		PID=$(pidof clash)
-		if [ -n "$PID" ];then
+		if pidof clash >/dev/null;then
 			start_over
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if [ -f $yaml.bak ];then
-				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
+				$clashdir/start.sh stop
 				mv $yaml.bak $yaml
 				$0 start
+				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
 				sleep 1
-			else
-				echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
-				$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
+				if pidof clash >/dev/null;then
+					start_over
 				exit;
+				fi
 			fi
+			echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
+			$clashdir/start.sh stop
+			$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
+			exit;
 		fi
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -286,23 +296,21 @@ start_dns(){
 		ip6tables -t nat -A PREROUTING -p udp -j clash_dns > /dev/null 2>&1
 	fi
 }
-daemon_old(){
-	#守护进程状态
-	PID=$(pidof clash)
-	if [ -z "$PID" ];then
-	$clashdir/clash -d $clashdir > /dev/null &
-	mark_time
-	fi
-}
 checkcron(){
 	[ -d /etc/crontabs/ ]&&cronpath="/etc/crontabs/root"
 	[ -d /var/spool/cron/ ]&&cronpath="/var/spool/cron/root"
 	[ -d /var/spool/cron/crontabs/ ]&&cronpath="/var/spool/cron/crontabs/root"
-	if [ -z $cronpath ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo "找不到定时任务文件,无法添加定时任务！"
-		clashsh
-	fi
+	[ -z $cronpath ]&&echo "找不到定时任务文件,无法添加定时任务！"
+}
+daemon(){
+	checkcron
+	echo '*/1 * * * * test -z "$(pidof clash)"  &&  /etc/init.d/clash start #clash守护进程' >> $cronpath
+	chmod 600 $cronpath
+}
+daemon_old(){
+	checkcron
+	echo '*/1 * * * * test -z "$(pidof clash)"  &&  '"$clashdir/clash -d $clashdir >/dev/null 2>&1 & #clash守护进程" >> $cronpath
+	chmod 600 $cronpath
 }
 afstart(){
 	#读取配置文件
@@ -328,6 +336,7 @@ start)
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			$clashdir/clash -d $clashdir >/dev/null 2>&1 &
+			daemon_old
 			afstart
 		elif [ -f /etc/rc.common ];then
 			/etc/init.d/clash start
@@ -338,7 +347,7 @@ start)
 stop)	
 		#删除守护
 		checkcron
-		sed -i /start.sh/d $cronpath >/dev/null 2>&1
+		sed -i /clash守护进程/d $cronpath
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1
@@ -357,8 +366,8 @@ getyaml)
 		getconfig
 		getyaml
 		;;
-daemon_old)
-		daemon_old
+daemon)	
+		daemon
 		;;
 esac
 exit 0

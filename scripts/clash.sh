@@ -6,7 +6,6 @@ getconfig(){
 if [ -f /bin/opkg ];then
 	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 else
-	cron_user='root '
 	host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g')
 	[ -z $host ] && host=127.0.0.1
 fi
@@ -115,7 +114,8 @@ clashstart(){
 	$clashdir/start.sh start
 	sleep 1
 	PID=$(pidof clash)
-	if [ -z "$PID" ];then
+	if [ -z "$PID" ];then 
+		$clashdir/start.sh stop
 		echo -e "\033[31mclash启动失败！\033[0m" 
 		exit
 	fi
@@ -793,9 +793,10 @@ clashcron(){
 	read -p  "是否确认添加定时任务？(1/0) > " res
 		if [ "$res" = '1' ]; then
 			sed -i /$cronname/d $cronpath
-			echo "$min $hour * * $week $cron_user$cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname" >> $cronpath
+			echo "$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname" >> $cronpath
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m定时任务已添加！！！\033[0m"
+			chmod 600 $cronpath #修改权限
 		fi
 		clashcron
 	}
