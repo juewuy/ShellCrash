@@ -22,7 +22,6 @@
 ~确认路由器或设备已经开启SSH并获取root权限<br>
 ~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或设备的SSH管理界面，并切换到root用户<br>
 ~在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
-OpenWrt系统：
 
 ```Shell
 sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" && source /etc/profile &> /dev/null
@@ -31,14 +30,12 @@ sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 http
 ```Shell
 sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
 ```
-Debian/CenOS/Armbian等默认使用dash的Linux系统：
-```Shell
-bash -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" && source /etc/profile &> /dev/null
-```
-或者
-```Shell
+Debian/CenOS/Armbian等Linux系统如果默认使用dash，请使用
+
+```sh
 bash -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
 ```
+
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 
 ```Shell
