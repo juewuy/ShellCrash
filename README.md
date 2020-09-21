@@ -30,12 +30,6 @@ sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 http
 ```Shell
 sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
 ```
-Debian/CenOS/Armbian等Linux系统如果默认使用dash，请使用
-
-```sh
-bash -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
-```
-
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 
 ```Shell
