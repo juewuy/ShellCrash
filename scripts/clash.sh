@@ -16,12 +16,7 @@ fi
 ccfg=$clashdir/mark
 yaml=$clashdir/config.yaml
 #检查/读取标识文件
-if [ ! -f $ccfg ]; then
-	echo mark文件不存在，正在创建！
-	cat >$ccfg<<EOF
-#标识clash运行状态的文件，不明勿动！
-EOF
-fi
+[ ! -f $ccfg ]&& echo '#标识clash运行状态的文件，不明勿动！' >> $ccfg
 source $ccfg
 #检查mac地址记录
 [ ! -f $clashdir/mac ] && touch $clashdir/mac
@@ -99,6 +94,19 @@ if [ ! -f $clashdir/Country.mmdb ];then
 	clashstart
 fi
 }
+start_over(){
+	echo -e "\033[32mclash服务已启动！\033[0m"
+	if [ -d /www/clash ];then
+		echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
+	elif [ -d $clashdir/ui  ];then
+		echo -e "请使用\033[30;47m http://$host:9999/ui \033[0m管理内置规则"
+	else
+		echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
+		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	fi
+}
 clashstart(){
 	if [ ! -f "$yaml" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,18 +127,7 @@ clashstart(){
 		echo -e "\033[31mclash启动失败！\033[0m" 
 		exit
 	fi
-
-	echo -e "\033[32mclash服务已启动！\033[0m"
-	if [ -d /www/clash ];then
-		echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
-	elif [ -d $clashdir/ui  ];then
-		echo -e "请使用\033[30;47m http://$host:9999/ui \033[0m管理内置规则"
-	else
-		echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
-		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	fi
+	start_over
 }
 clashlink(){
 #获取订阅规则
@@ -242,7 +239,8 @@ elif [[ $num == 7 ]];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		read -p "确认更新配置文件？[1/0] > " res
 		if [ "$res" = '1' ]; then
-			$clashdir/start.sh getyaml
+			source $clashdir/start.sh
+			getyaml
 		fi
 		clashlink
 	fi
@@ -657,7 +655,7 @@ echo -e " 5 生成本地PAC文件(需先安装本地面板)"
 echo -----------------------------------------------
 echo -e " 7 切换\033[36m安装源\033[0m地址"
 echo -e " 8 鸣谢"
-echo -e " 9 \033[31m卸载\033[34mClash for Miwfi\033[0m"
+echo -e " 9 \033[31m卸载\033[34mShellClash\033[0m"
 echo -e " 0 返回上级菜单" 
 echo -----------------------------------------------
 read -p "请输入对应数字 > " num
@@ -700,7 +698,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		update
 		
 	elif [[ $num == 9 ]]; then
-		read -p "确认卸载clash？（警告：该操作不可逆！）[1/0] " res
+		read -p "确认卸载ShellClash？（警告：该操作不可逆！）[1/0] " res
 		if [ "$res" = '1' ]; then
 			$clashdir/start.sh stop
 			rm -rf $clashdir
@@ -710,9 +708,11 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			rm -rf /www/clash
 			sed -i '/alias clash=*/'d /etc/profile
 			sed -i '/export clashdir=*/'d /etc/profile
+			sed -i '/http*_proxy/'d /etc/profile
+			sed -i '/HTTP*_PROXY/'d /etc/profile
 			source /etc/profile > /dev/null 2>&1
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo 已卸载clash相关文件！有缘再会！
+			echo 已卸载ShellClash相关文件！有缘再会！
 			exit
 		fi
 		echo -e "\033[31m操作已取消！\033[0m"
@@ -823,7 +823,7 @@ echo -e "\033[0m"-----------------------------------------------
 echo -e " 1 设置\033[33m定时重启\033[0mclash服务"
 echo -e " 2 设置\033[31m定时停止\033[0mclash服务"
 echo -e " 3 设置\033[32m定时开启\033[0mclash服务"
-echo -e " 4 设置\033[33m定时更新\033[0m订阅链接(实验性，可能不稳定)"
+echo -e " 4 设置\033[33m定时更新\033[0m订阅并重启服务"
 echo -----------------------------------------------
 echo -e " 0 返回上级菜单" 
 read -p "请输入对应数字 > " num
@@ -951,7 +951,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		elif [[ $num == 1 ]]; then
 			$clashdir/start.sh stop
 			echo -----------------------------------------------
-			$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
+			$clashdir/clash -t -d $clashdir 
 			echo -----------------------------------------------
 			echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
 			exit;

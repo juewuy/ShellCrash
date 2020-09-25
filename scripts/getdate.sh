@@ -109,7 +109,8 @@ if [ -n $Url ];then
 		sed -i "6i\Url=\'$Url\'" $ccfg
 		Https=""
 		#获取在线yaml文件
-		$clashdir/start.sh getyaml
+		source $clashdir/start.sh
+		getyaml
 	elif [ "$num" = '2' ]; then
 		linkfilter
 		linkset
@@ -192,7 +193,6 @@ echo -----------------------------------------------
 echo -e "\033[33m仅限导入完整clash链接！！！\033[0m"
 echo -e "可以使用\033[32m https://acl4ssr.netlify.app \033[0m在线转换"
 echo -e "\033[36m导入后如无法运行，请使用【导入节点/订阅链接】功能"
-echo -e "\033[31m注意如节点使用了chacha20加密协议，需将核心更新为clashr核心\033[0m"
 echo -----------------------------------------------
 echo -e "\033[33m0 返回上级菜单\033[0m"
 echo -----------------------------------------------
@@ -305,7 +305,6 @@ cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
 [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
-[ -n "$(echo $cpucore | grep -E "linux.*amd64.*")" ] && cpucore="amd64"
 [ -n "$(echo $cpucore | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
 ###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

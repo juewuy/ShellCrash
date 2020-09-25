@@ -115,19 +115,6 @@ else
 		echo 配置文件已生成！正在启动clash使其生效！
 		#重启clash服务
 		$0 stop
-		start_over(){
-			echo -e "\033[32mclash服务已启动！\033[0m"
-			if [ -d /www/clash ];then
-				echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
-			elif [ -d $clashdir/ui  ];then
-				echo -e "请使用\033[30;47m http://$host:9999/ui \033[0m管理内置规则"
-			else
-				echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-				echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
-				echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			fi
-		}
 		$0 start
 		sleep 1
 		if pidof clash >/dev/null;then
@@ -146,8 +133,8 @@ else
 				fi
 			fi
 			echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
-			$clashdir/start.sh stop
-			$clashdir/clash -d $clashdir & { sleep 3 ; kill $! & }
+			$0 stop
+			$clashdir/clash -t -d $clashdir
 			exit;
 		fi
 	else
@@ -287,14 +274,12 @@ start_dns(){
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
 
 	#ipv6DNS
-	if [ "$ipv6_support" = "已开启" ];then
-		ip6tables -t nat -N clash_dns > /dev/null 2>&1
-		for mac in $(cat $clashdir/mac); do
-			ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
-		done
-		ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-		ip6tables -t nat -A PREROUTING -p udp -j clash_dns > /dev/null 2>&1
-	fi
+	ip6tables -t nat -N clash_dns > /dev/null 2>&1
+	for mac in $(cat $clashdir/mac); do
+		ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
+	done
+	ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+	ip6tables -t nat -A PREROUTING -p udp -j clash_dns > /dev/null 2>&1
 }
 checkcron(){
 	[ -d /etc/crontabs/ ]&&cronpath="/etc/crontabs/root"
@@ -365,4 +350,4 @@ daemon)
 		daemon
 		;;
 esac
-exit 0
+#exit 0
