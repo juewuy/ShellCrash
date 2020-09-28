@@ -309,7 +309,7 @@ cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cputype | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
 if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
 	cpucore="mipsle-softfloat"
-	[ -n "$(uname -a | grep -E "*M2100*")" ] && cpucore="mipsle-hardfloat"
+	[ -n "$(uname -a | grep -E "M2100")" ] && cpucore="mipsle-hardfloat"
 fi
 ###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
