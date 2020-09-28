@@ -85,6 +85,7 @@ linkset
 }
 linkset(){
 if [ -n $Url ];then
+	[ -z "$skip_cert" ] && skip_cert=已开启
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[47;30m请检查输入的链接是否正确：\033[0m"
 	echo -e "\033[32;4m$Url\033[0m"
@@ -93,7 +94,7 @@ if [ -n $Url ];then
 	echo -e " 2 \033[36m添加/修改节点过滤关键字 \033[47;30m$exclude\033[0m"
 	echo -e " 3 \033[33m选取配置规则模版\033[0m"
 	echo -e " 4 \033[0m选取在线生成服务器\033[0m"
-	echo -e " 5 \033[0m跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
+	echo -e " 5 \033[0m跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————自建tls节点务必开启"
 	echo -----------------------------------------------
 	echo -e " 0 \033[31m取消导入\033[0m并返回上级菜单"
 	echo -----------------------------------------------
@@ -150,7 +151,8 @@ do
 	echo -e "\033[44m 遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 	echo -----------------------------------------------
 	echo -e "支持批量导入\033[30;46m Http/Https/Clash \033[0m等格式的订阅链接"
-	echo -e "以及\033[30;42m Vmess/SSR/SS/Trojan/Sock5 \033[0m等格式的节点链接"
+	echo -e "以及\033[30;42m Vmess/SSR/SS/Trojan \033[0m等格式的节点链接"
+	echo -e "自建Trojan节点链接格式为：trojan://密码@host地址:443"
 	echo -----------------------------------------------
 	echo -e "多个较短的链接可以用\033[30;47m | \033[0m号分隔以一次性输入"
 	echo -e "多个较长的链接可分次输入，支持多达\033[30;47m 99 \033[0m次输入"
@@ -303,9 +305,12 @@ cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cpucore | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
 [ -n "$(echo $cpucore | grep -E "linux.*armv8.*")" ] && cpucore="armv8"
 [ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
-[ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ] && cpucore="mipsle-softfloat"
 [ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
 [ -n "$(echo $cpucore | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
+if [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ];then
+	cpucore="mipsle-softfloat"
+	[ -n "$(uname -a | grep -E "*M2100*")" ] && cpucore="mipsle-hardfloat"
+fi
 ###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"

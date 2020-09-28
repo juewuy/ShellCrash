@@ -5,16 +5,18 @@ getconfig(){
 #加载环境变量
 [ -z "$clashdir" ] && source /etc/profile > /dev/null 2>&1
 ccfg=$clashdir/mark
-if [ ! -f "$ccfg" ]; then
-	echo mark文件不存在，默认以Redir模式运行！
-cat >$ccfg<<EOF
-#标识clash运行状态的文件，不明勿动！
-EOF
-	#指定一些默认状态
-	redir_mod=redir模式
-	modify_yaml=未开启
-fi
-source $ccfg #加载配置文件
+#检查/读取标识文件
+[ ! -f $ccfg ]&& echo '#标识clash运行状态的文件，不明勿动！' >> $ccfg
+source $ccfg
+#默认设置
+[ -z "$skip_cert" ] && skip_cert=已开启
+[ -z "$common_ports" ] && common_ports=已开启
+[ -z "$dns_mod" ] && dns_mod=redir_host
+[ -z "$dns_over" ] && dns_over=已开启
+[ -z "$modify_yaml" ] && modify_yaml=未开启
+[ -z "$ipv6_support" ] && ipv6_support=未开启
+[ -z "$start_old" ] && start_old=未开启
+[ -z "$local_proxy" ] && local_proxy=未开启
 #是否代理常用端口
 [ "$common_ports" = "已开启" ] && ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
 #检测系统端口占用
