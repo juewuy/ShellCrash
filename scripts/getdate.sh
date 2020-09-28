@@ -300,14 +300,14 @@ if [ ! -f $clashdir/clash ]; then
 fi
 clashcore_n=$clashcore
 #获取设备处理器架构
-cpucore=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
-[ -n "$(echo $cpucore | grep -E "linux.*armv.*")" ] && cpucore="armv5"
-[ -n "$(echo $cpucore | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
-[ -n "$(echo $cpucore | grep -E "linux.*armv8.*")" ] && cpucore="armv8"
-[ -n "$(echo $cpucore | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
-[ -n "$(echo $cpucore | grep -E "linux.*x86.*")" ] && cpucore="386"
-[ -n "$(echo $cpucore | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
-if [ -n "$(echo $cpucore | grep -E "linux.*mips.*")" ];then
+cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
+[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
+[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
+[ -n "$(echo $cputype | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
+[ -n "$(echo $cputype | grep -E "linux.*armv8.*")" ] && cpucore="armv8"
+[ -n "$(echo $cputype | grep -E "linux.*x86.*")" ] && cpucore="386"
+[ -n "$(echo $cputype | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
+if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
 	cpucore="mipsle-softfloat"
 	[ -n "$(uname -a | grep -E "*M2100*")" ] && cpucore="mipsle-hardfloat"
 fi
