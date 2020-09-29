@@ -35,15 +35,19 @@ api.wcc.best
 skapi.cool
 EOF`
 Config=`sed -n ""$rule_link"p"<<EOF
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiMode.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoAuto.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_NoAuto.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_AdblockPlus.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_pro.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_backtocn.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/dlercloud_lige_platinum.ini
+https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/basic.ini
+https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/netease.ini
 EOF`
 #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 if [ -z $Https ];then
@@ -105,8 +109,7 @@ else
 		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
 			if [ "$clashcore" = "clash" -o "$clashcore" = "clashpre" ];then
 				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-				echo -e "\033[31m当前核心：$clashcore不支持chacha20加密！！！\033[0m"
-				echo -e "请更换使用clashR核心！！！"
+				echo -e "\033[31m不支持chacha20加密，请更换节点加密协议！！！\033[0m"
 				sleep 2
 				getcore
 			fi
@@ -119,9 +122,7 @@ else
 		$0 stop
 		$0 start
 		sleep 1
-		if pidof clash >/dev/null;then
-			start_over
-		else
+		if [ -z $(pidof clash) ];then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if [ -f $yaml.bak ];then
 				$clashdir/start.sh stop
@@ -129,10 +130,7 @@ else
 				$0 start
 				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
 				sleep 1
-				if pidof clash >/dev/null;then
-					start_over
-				exit;
-				fi
+				[ -n $(pidof clash) ] && exit;
 			fi
 			echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
 			$0 stop
@@ -147,10 +145,9 @@ else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[33m请检查如上配置文件信息:\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		exit;
 	fi
-	#exit;
 fi
-#exit
 }
 modify_yaml(){
 ##########需要变更的配置###########

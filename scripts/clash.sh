@@ -10,7 +10,7 @@ else
 	[ -z $host ] && host=127.0.0.1
 fi
 #服务器地址
-[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
+[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master
 #文件路径
 [ -z "$clashdir" ] && clashdir=$(dirname $(readlink -f "$0")) && echo "export clashdir=\"$clashdir\"" >> /etc/profile
 ccfg=$clashdir/mark
@@ -132,13 +132,11 @@ clashstart(){
 clashlink(){
 #获取订阅规则
 if [ -z "$rule_link" ]; then
-	sed -i '/rule_link=*/'d $ccfg
 	sed -i "4i\rule_link=1" $ccfg
 	rule_link=1
 fi
 #获取后端服务器地址
 if [ -z "$server_link" ]; then
-	sed -i '/server_link=*/'d $ccfg
 	sed -i "5i\server_link=1" $ccfg
 	server_link=1
 fi
@@ -146,7 +144,7 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m 欢迎使用订阅功能！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 导入\033[36m节点/订阅\033[0m链接"
-echo -e " 2 使用完整clash规则链接"
+echo -e " 2 导入完整clash链接"
 echo -e " 3 添加/修改\033[32m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
 echo -e " 4 选取\033[33mclash配置规则\033[0m模版"
 echo -e " 5 选择在线生成服务器"
@@ -239,8 +237,9 @@ elif [[ $num == 7 ]];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		read -p "确认更新配置文件？[1/0] > " res
 		if [ "$res" = '1' ]; then
-			source $clashdir/start.sh
-			getyaml
+			$clashdir/start.sh getyaml
+			start_over
+			exit;
 		fi
 		clashlink
 	fi
@@ -636,10 +635,10 @@ if [ -z "$release_new" ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[33m正在检查更新！\033[0m"
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 --connect-timeout 3 -m 3 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 		update_url=$update_url@$release_new
 	fi
-	[ -z "$release_new" ] && release_new=$(curl -kfsSL $update_url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
+	[ -z "$release_new" ] && release_new=$(curl -kfsSL --connect-timeout 3 -m 3 $update_url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
 	[ -z "$release_new" ] && echo "检查更新失败！"
 fi
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

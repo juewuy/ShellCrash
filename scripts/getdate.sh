@@ -5,24 +5,28 @@ linkconfig(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo 当前使用规则为：$rule_link
-echo 1 ACL4SSR默认通用版
-echo 2 ACL4SSR精简全能版（推荐）
-echo 3 ACL4SSR通用版+去广告加强
-echo 4 ACL4SSR精简版+去广告加强
-echo 5 ACL4SSR通用版无去广告
-echo 6 ACL4SSR通用版无自动测速
-echo 7 ACL4SSR精简版无自动测速
-echo 8 ACL4SSR全分组+奈飞（慎用）
-echo 9 ACL4SSR全分组+去广告（慎用）
+echo 1	ACL4SSR通用版无去广告（推荐）
+echo 2	ACL4SSR精简全能版（推荐）
+echo 3	ACL4SSR通用版+去广告加强
+echo 4	ACL4SSR精简版+去广告加强
+echo 5	ACL4SSR重度全分组+奈飞分流
+echo 6	ACL4SSR重度全分组+去广告加强
+echo 7	洞主规则精简版（推荐）
+echo 8	洞主规则重度完整版
+echo 9	神机规则高级版
+echo 10	神机规则-回国专用
+echo 11	李哥规则-墙洞专用
+echo 12	基础规则-仅Geoip CN+Final
+echo 13	网易云解锁-仅规则分组
 echo -----------------------------------------------
 echo 0 返回上级菜单
 read -p "请输入对应数字 > " num
-if [ -z "$num" ] || [[ $num -gt 9 ]];then
+if [ -z "$num" ] || [[ $num -gt 13 ]];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 elif [[ "$num" = 0 ]];then
 	echo 
-elif [[ $num -le 9 ]];then
+elif [[ $num -le 13 ]];then
 	#将对应标记值写入mark
 	sed -i '/rule_link*/'d $ccfg
 	sed -i "4i\rule_link="$num"" $ccfg	
@@ -110,8 +114,9 @@ if [ -n $Url ];then
 		sed -i "6i\Url=\'$Url\'" $ccfg
 		Https=""
 		#获取在线yaml文件
-		source $clashdir/start.sh
-		getyaml
+		$clashdir/start.sh getyaml
+		start_over
+		exit;
 	elif [ "$num" = '2' ]; then
 		linkfilter
 		linkset
@@ -190,7 +195,7 @@ clashlink
 } 
 getlink2(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[30;47m 此功能不明勿用，出问题自行解决！\033[0m"
+echo -e "\033[30;47m 此功能不明勿用！\033[0m"
 echo -----------------------------------------------
 echo -e "\033[33m仅限导入完整clash链接！！！\033[0m"
 echo -e "可以使用\033[32m https://acl4ssr.netlify.app \033[0m在线转换"
@@ -215,6 +220,8 @@ if [ -n $Https ];then
 				sed -i "6i\Https=\'$Https\'" $ccfg
 				#获取在线yaml文件
 				$clashdir/start.sh getyaml
+				start_over
+				exit;
 			fi
 			clashlink
 	fi
@@ -540,7 +547,7 @@ if	[ -z $num ]; then
 elif [[ $num == 1 ]]; then
 	update_url='--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master'
 elif [[ $num == 2 ]]; then
-	update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash' 
+	update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
 elif [[ $num == 3 ]]; then
 	update_url='-x 127.0.0.1:7890 https://raw.githubusercontent.com/juewuy/ShellClash/master'
 elif [[ $num == 4 ]]; then
