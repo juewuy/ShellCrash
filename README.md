@@ -53,4 +53,4 @@ https://github.com/juewuy/ShellClash/releases
 
 友情推广：
 --
-https://dler.best/auth/register?affid=89698
+[顶级8K专线机场-墙洞](https://dler.best/auth/register?affid=89698)
