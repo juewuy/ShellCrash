@@ -570,5 +570,6 @@ sed -i '/update_url*/'d $ccfg
 sed -i "1i\update_url=\'$update_url\'" $ccfg
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[32m源地址更新成功！\033[0m"
+release_new=""
 update
 }

@@ -634,7 +634,7 @@ update(){
 if [ -z "$release_new" ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[33m正在检查更新！\033[0m"
-	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
+	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master" ];then
 		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 --connect-timeout 3 -m 3 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 		update_url=$update_url@$release_new
 	fi
