@@ -19,10 +19,6 @@ source $ccfg
 [ -z "$local_proxy" ] && local_proxy=未开启
 #是否代理常用端口
 [ "$common_ports" = "已开启" ] && ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
-#检测系统端口占用
-for portx in 1053 7890 7892 9999 ;do
-	[ -n "$(netstat -ntulp |grep :$portx|grep -v clash)" ] && echo -e "检测到端口：\033[30;47m $portx \033[0m被以下进程占用！clash无法启动！" && echo $(netstat -ntulp |grep :$portx) && exit;
-done
 }
 getyaml(){
 #前后端订阅服务器地址索引，可在此处添加！
@@ -73,11 +69,11 @@ result=$(curl -w %{http_code} -kLo $yamlnew $Https)
 if [ "$result" != "200" ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m配置文件获取失败！\033[0m"
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo
 	if [ -z $markhttp ];then
-		echo 请尝试使用导入节点/链接功能！
-		getlink
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m请尝试使用【导入节点/链接】功能！\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		exit 1
 		
 	else
 		read -p "是否更换后端地址后重试？[1/0] > " res
@@ -92,60 +88,58 @@ if [ "$result" != "200" ];then
 			Https=""
 			getyaml
 		fi
-		#exit;
 	fi
 else
 	Https=""
-	if cat $yamlnew | grep ', server:' >/dev/null;then
-		#检测旧格式
-		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m已经停止对旧格式配置文件的支持！！！\033[0m"
-			echo -e "请使用新格式或者使用\033[32m导入节点/订阅\033[0m功能！"
-			sleep 2
-			clashlink
-		fi
-		#检测不支持的加密协议
-		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
-			if [ "$clashcore" = "clash" -o "$clashcore" = "clashpre" ];then
-				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-				echo -e "\033[31m不支持chacha20加密，请更换节点加密协议！！！\033[0m"
-				sleep 2
-				getcore
-			fi
-		fi
-		#替换文件
-		[ -f $yaml ] && mv $yaml $yaml.bak
-		mv $yamlnew $yaml
-		echo 配置文件已生成！正在启动clash使其生效！
-		#重启clash服务
-		$0 stop
-		$0 start
-		sleep 1
-		if [ -z $(pidof clash) ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if [ -f $yaml.bak ];then
-				$clashdir/start.sh stop
-				mv $yaml.bak $yaml
-				$0 start
-				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
-				sleep 1
-				[ -n $(pidof clash) ] && exit;
-			fi
-			echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
-			$0 stop
-			$clashdir/clash -t -d $clashdir
-			exit;
-		fi
-	else
+	#检测节点
+	if [ -z "$(cat $yamlnew | grep ', server:')" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[33m获取到了配置文件，但格式似乎不对！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		sed -n '1,30p' $yamlnew
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[33m请检查如上配置文件信息:\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		exit;
+		exit 1
+	fi
+	#检测旧格式
+	if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m已经停止对旧格式配置文件的支持！！！\033[0m"
+		echo -e "请使用新格式或者使用【导入节点/链接】功能！"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		exit 1
+	fi
+	#检测不支持的加密协议
+	if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m不支持chacha20加密，请更换节点加密协议！！！\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		exit 1
+	fi
+	#替换文件
+	[ -f $yaml ] && mv $yaml $yaml.bak
+	mv $yamlnew $yaml
+	echo 配置文件已生成！正在启动clash使其生效！
+	#重启clash服务
+	$0 stop
+	$0 start
+	sleep 1
+	if [ -z $(pidof clash) ];then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if [ -f $yaml.bak ];then
+			$clashdir/start.sh stop
+			mv $yaml.bak $yaml
+			$0 start
+			echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
+			sleep 1
+			[ -n $(pidof clash) ] && exit 0
+		fi
+		echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
+		$0 stop
+		$clashdir/clash -t -d $clashdir
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		exit 1
 	fi
 fi
 }
@@ -228,12 +222,12 @@ start_redir(){
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	#设置ipv6转发
 	if [ "$ipv6_support" = "已开启" ];then
-		ip6tables -t nat -N clash
+		ip6tables -t nat -N clashv6
 		for mac in $(cat $clashdir/mac); do
-			ip6tables -t nat -A clash -m mac --mac-source $mac -j RETURN
+			ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
 		done
-		ip6tables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
-		ip6tables -t nat -A PREROUTING -p tcp -j clash
+		ip6tables -t nat -A clashv6 -p tcp $ports-j REDIRECT --to-ports 7892
+		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
 	fi
 }
 stop_iptables(){
@@ -242,24 +236,26 @@ stop_iptables(){
 	iptables -t nat -D PREROUTING -p udp -j clash_dns > /dev/null 2>&1
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash_dns > /dev/null 2>&1
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash_dns > /dev/null 2>&1
-	
 	iptables -t nat -F clash > /dev/null 2>&1
 	iptables -t nat -X clash > /dev/null 2>&1
 	iptables -t nat -F clash_dns > /dev/null 2>&1
 	iptables -t nat -X clash_dns > /dev/null 2>&1
-
+	iptables -D FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	#重置ipv6规则
-	ip6tables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
-	ip6tables -t nat -D PREROUTING -p udp -j clash_dns > /dev/null 2>&1
-	ip6tables -t nat -F clash > /dev/null 2>&1
-	ip6tables -t nat -X clash > /dev/null 2>&1
-	ip6tables -t nat -F clash_dns > /dev/null 2>&1
-	ip6tables -t nat -X clash_dns > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
+	ip6tables -t nat -F clashv6 > /dev/null 2>&1
+	ip6tables -t nat -X clashv6 > /dev/null 2>&1
+	ip6tables -t nat -F clashv6_dns > /dev/null 2>&1
+	ip6tables -t nat -X clashv6_dns > /dev/null 2>&1
+	ip6tables -D FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 }
 start_dns(){
 	#允许tun网卡接受流量
-	iptables -I FORWARD -o utun -j ACCEPT
-	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
+		iptables -I FORWARD -o utun -j ACCEPT
+		[ "$ipv6_support" = "已开启" ] && ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	fi
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	for mac in $(cat $clashdir/mac); do
@@ -271,14 +267,13 @@ start_dns(){
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
-
 	#ipv6DNS
-	ip6tables -t nat -N clash_dns > /dev/null 2>&1
+	ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 	for mac in $(cat $clashdir/mac); do
-		ip6tables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
+		ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
 	done
-	ip6tables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-	ip6tables -t nat -A PREROUTING -p udp -j clash_dns > /dev/null 2>&1
+	ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
+	ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
 }
 checkcron(){
 	[ -d /etc/crontabs/ ]&&cronpath="/etc/crontabs/root"
@@ -310,6 +305,10 @@ afstart)
 start)		
 		#读取配置文件
 		getconfig
+		#检测系统端口占用
+		for portx in 1053 7890 7892 9999 ;do
+			[ -n "$(netstat -ntul |grep :$portx)" ] && echo "检测到端口【$portx】被以下进程占用！clash无法启动！" && echo $(netstat -ntulp |grep :$portx) && exit 1
+		done
 		#使用内置规则强行覆盖config配置文件
 		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
@@ -349,4 +348,3 @@ daemon)
 		daemon
 		;;
 esac
-#exit 0

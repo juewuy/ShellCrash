@@ -95,6 +95,7 @@ if [ ! -f $clashdir/Country.mmdb ];then
 fi
 }
 start_over(){
+	[ $? -eq 1 ] && exit
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -d /www/clash ];then
 		echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
@@ -227,10 +228,10 @@ elif [[ $num == 6 ]];then
 elif [[ $num == 7 ]];then
 	if [ -z "$Url" -a -z "$Https" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo 没有找到你的订阅链接！请先输入链接！
+		echo -e "\033[31m没有找到你的订阅链接！请先输入链接！\033[0m"
+		sleep 2
 		clashlink
 	else
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[33m当前系统记录的订阅链接为：\033[0m"
 		echo -e "\033[4;32m$Url\033[0m"
@@ -572,13 +573,13 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
 			echo -e "\033[36m此模式兼容性更好但无法禁用开机启动！！\033[0m"
 			start_old=已开启
-			$clashdir/start.sh stop > /dev/null 2>&1
+			$clashdir/start.sh stop
 			sleep 2
 		else
 			sed -i "1i\start_old=未开启" $ccfg
 			echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
 			start_old=未开启
-			$clashdir/start.sh stop > /dev/null 2>&1
+			$clashdir/start.sh stop
 		fi
 		clashadv  
 		
