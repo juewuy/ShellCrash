@@ -355,9 +355,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
 		echo " 1 fake-ip模式：   响应速度更快"
-		echo "                   不兼容部分软件"
-		echo " 2 redir_host模式：使用稳定，兼容性好"
-		echo "                   不支持Tun模式"
+		echo "                   可能与某些局域网设备有冲突"
+		echo " 2 redir_host模式：兼容性更好"
+		echo "                   不支持Tun模式，可能存在DNS污染"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
@@ -519,7 +519,7 @@ echo -e "\033[33m如您不是很了解clash的运行机制，请勿更改！\033
 echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 echo -----------------------------------------------
 echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
-echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m   ————实验性且不兼容Fake_ip"
+echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m   ————实验性功能，可能不可用"
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————切换时会停止clash服务"
 echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m   ————配置本机代理环境变量"
 echo -----------------------------------------------
