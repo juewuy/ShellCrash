@@ -300,7 +300,7 @@ if [ "$res" = '1' ]; then
 fi
 }
 getcore(){
-source $ccfg
+#source $ccfg
 #获取核心及版本信息
 if [ ! -f $clashdir/clash ]; then
 	clashcore=没有安装核心！
@@ -325,7 +325,7 @@ echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
 echo -e "\033[32m请选择需要下载的核心版本！\033[0m"
 echo -----------------------------------------------
 echo "1 clash：     稳定，内存占用小，推荐！"
-echo "(官方正式版)  不支持Tun模式"
+echo "(官方正式版)  不支持Tun模式、混合模式"
 echo
 echo "2 clashpre：  支持Tun模式、混合模式"
 echo "(高级预览版)  内存占用更高"
@@ -400,7 +400,7 @@ fi
 getgeo(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[33m正在检查更新！\033[0m"
-echo $update_url
+#echo $update_url
 result=$(curl -w %{http_code} -skLo /tmp/clashversion $update_url/bin/version)
 [ "$result" != "200" ] && echo "检查更新失败！" && exit 1
 source /tmp/clashversion
@@ -535,8 +535,8 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m您可以在此处切换在线更新时使用的资源地址\033[0m"
 echo -e "当前源：\033[4;32m$update_url\033[0m"
 echo -----------------------------------------------
-echo -e " 1 Github源(使用host指定IP)"
-echo -e " 2 CDN源(仅同步最新release版本)"
+echo -e " 1 Github源(直连美国服务器)"
+echo -e " 2 Jsdelivr-CDN源(仅同步最新release版本)"
 echo -e " 3 Github源+clash代理(需开启clash服务)"
 echo -e " 4 自定义输入(请务必确保路径正确)"
 echo -e " 0 返回上级菜单"
@@ -548,7 +548,7 @@ if	[ -z $num ]; then
 elif [[ $num == 1 ]]; then
 	update_url='--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master'
 elif [[ $num == 2 ]]; then
-	update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
+	update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
 elif [[ $num == 3 ]]; then
 	update_url='-x 127.0.0.1:7890 https://raw.githubusercontent.com/juewuy/ShellClash/master'
 elif [[ $num == 4 ]]; then
