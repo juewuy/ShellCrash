@@ -97,7 +97,7 @@ fi
 #检查GeoIP数据库
 if [ ! -f $clashdir/Country.mmdb ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[31m没有找到GeoIP数据库文件，请先下载数据库！\033[0m"
+	echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
 	checkupdate
 	source $clashdir/getdate.sh
 	getgeo
@@ -749,13 +749,9 @@ checkupdate
 [ "$clashcore" = "clash" ] && clash_n=$clash_v || clash_n=$clashpre_v
 echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 echo -----------------------------------------------
-echo -e "ShellClash	本地版本：\033[33m$versionsh_l	\033[0m在线版本：\033[32m$versionsh\033[0m"
-echo -e "Geoip数据库	本地版本：\033[33m$Geo_v	\033[0m在线版本：\033[32m$GeoIP_v\033[0m"
-echo -e "$clashcore核心	本地版本：\033[33m$clashv	\033[0m在线版本：\033[32m$clash_n\033[0m"
-echo -----------------------------------------------
-echo -e " 1 更新\033[36m管理脚本\033[0m"
-echo -e " 2 切换\033[33mclash核心\033[0m"
-echo -e " 3 更新\033[32mGeoIP数据库\033[0m"
+echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh\033[0m"
+echo -e " 2 切换\033[33mclash核心 	\033[33m$clashv\033[0m > \033[32m$clash_n\033[0m"
+echo -e " 3 更新\033[32mGeoIP数据库	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 echo -e " 5 生成本地PAC文件(需先安装本地面板)"
 echo -----------------------------------------------

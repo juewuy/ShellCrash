@@ -336,13 +336,13 @@ read -p "请输入对应数字 > " num
 		update
 	elif [[ $num == 1 ]]; then
 		clashcore=clash
-		version=$claversionsh_l
+		version=$clash_v
 	elif [[ $num == 2 ]]; then
 		clashcore=clashpre
 		version=$clashpre_v
 	elif [[ $num == 3 ]]; then
 		clashcore=clashr
-		version='1.0(已停止更新)'
+		version='已停止更新'
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
@@ -351,42 +351,33 @@ read -p "请输入对应数字 > " num
 #生成链接
 corelink="$update_url/bin/$clashcore/clash-linux-$cpucore"
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "当前clash核心：\033[0m $clashcore_n \033[33m$clashv\033[0m"
-echo -e "最新clash核心：\033[32m $clashcore \033[36m$version\033[0m"
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-read -p "是否更新？[1/0] > " res
-if [ "$res" = '1' ]; then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo 正在连接服务器获取clash核心文件…………链接地址为：
-	echo -e "\033[4;32m$corelink\033[0m"
-	echo 如无法正常下载可以手动复制到浏览器下载核心文件！
-	echo -e "\033[36m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	echo -e "|                                             |"
-	echo -e "|         需要一点时间，请耐心等待！          |"
-	echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出        |"
-	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
-	#获取在线clash核心文件
-	result=$(curl -w %{http_code} -kLo /tmp/clash.new $corelink)
-	if [ "$result" != "200" ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m核心文件下载失败！\033[0m"
-		echo -----------------------------------------------
-		getcore
-	else
-		echo -e "\033[32m$clashcore核心下载成功，正在替换！\033[0m"
-		mv /tmp/clash.new $clashdir/clash
-		chmod  777 $clashdir/clash  #授予权限
-		sed -i '/clashcore=*/'d $ccfg
-		sed -i "1i\clashcore=$clashcore" $ccfg
-		sed -i '/clashv=*/'d $ccfg
-		sed -i "1i\clashv=$version" $ccfg
-		rm -rf /tmp/clashversion
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[32m$clashcore核心替换成功，请手动启动clash服务！\033[0m"
-		clashsh
-	fi	
+echo 正在连接服务器获取clash核心文件…………链接地址为：
+echo -e "\033[4;32m$corelink\033[0m"
+echo 如无法正常下载可以手动复制到浏览器下载核心文件！
+echo -e "\033[36m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo -e "|                                             |"
+echo -e "|         需要一点时间，请耐心等待！          |"
+echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出        |"
+echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
+#获取在线clash核心文件
+result=$(curl -w %{http_code} -kLo /tmp/clash.new $corelink)
+if [ "$result" != "200" ];then
+	echo -----------------------------------------------
+	echo -e "\033[31m核心文件下载失败！\033[0m"
+	echo -----------------------------------------------
+	getcore
 else
-getcore
+	echo -e "\033[32m$clashcore核心下载成功，正在替换！\033[0m"
+	mv /tmp/clash.new $clashdir/clash
+	chmod  777 $clashdir/clash  #授予权限
+	sed -i '/clashcore=*/'d $ccfg
+	sed -i "1i\clashcore=$clashcore" $ccfg
+	sed -i '/clashv=*/'d $ccfg
+	sed -i "1i\clashv=$version" $ccfg
+	rm -rf /tmp/clashversion
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[32m$clashcore核心替换成功，请手动启动clash服务！\033[0m"
+	clashsh
 fi			
 }
 getgeo(){
