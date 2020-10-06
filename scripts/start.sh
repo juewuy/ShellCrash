@@ -17,6 +17,10 @@ source $ccfg
 [ -z "$ipv6_support" ] && ipv6_support=未开启
 [ -z "$start_old" ] && start_old=未开启
 [ -z "$local_proxy" ] && local_proxy=未开启
+[ -z "$mix_port" ] && mix_port=7890
+[ -z "$redir_port" ] && redir_port=7892
+[ -z "$db_port" ] && db_port=9999
+[ -z "$dns_port" ] && dns_port=1053
 #是否代理常用端口
 [ "$common_ports" = "已开启" ] && ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
 }
@@ -145,57 +149,47 @@ fi
 }
 modify_yaml(){
 ##########需要变更的配置###########
-mix='mixed-port: 7890'
-redir='redir-port: 7892'
 lan='allow-lan: true'
 mode='mode: Rule'
 log='log-level: info'
-if [ "$ipv6_support" = "已开启" ];then
-ipv6='ipv6: true'
-else
-ipv6='ipv6: false'
-fi
-external='external-controller: 0.0.0.0:9999'
-if [ -d $clashdir/ui ];then
-external_ui='external-ui: ui'
-else
-external_ui='external-ui:'
-fi
-if [ "$dns_mod" = "fake-ip" ];then
-dns='dns: {enable: true, listen: 0.0.0.0:1053, use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
-elif [ "$dns_over" = "已开启" ];then
-dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:1053, use-hosts: true, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5], fallback: [1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
-else
-dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:1053, use-hosts: true, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
-fi
-if [ "$redir_mod" != "Redir模式" ];then
-tun='tun: {enable: true, stack: system}'
-else
-tun='tun: {enable: false}'
-fi
+[ "$ipv6_support" = "已开启" ] && ipv6='ipv6: true' || ipv6='ipv6: false'
+external="external-controller: 0.0.0.0:$db_port"
+[ -d $clashdir/ui ] && db_ui=ui
+[ "$redir_mod" != "Redir模式" ] && tun='tun: {enable: true, stack: system}' || tun='tun: {enable: false}'
 exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
+#dns配置
+if [ "$dns_mod" = "fake-ip" ];then
+	dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
+elif [ "$dns_over" = "已开启" ];then
+	dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5], fallback: [1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
+else
+	dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
+fi
+
 ###################################
+	yaml=$clashdir/config.yaml
 	#预删除需要添加的项目
 	i=$(grep  -n  "^proxies:" $clashdir/config.yaml | head -1 | cut -d ":" -f 1)
 	i=$(($i-1))
-	sed -i "1,${i}d" $clashdir/config.yaml
+	sed -i "1,${i}d" $yaml
 	#添加配置
-	sed -i "1i$mix" $clashdir/config.yaml
-	sed -i "1a$redir" $clashdir/config.yaml
-	sed -i "2a$lan" $clashdir/config.yaml
-	sed -i "3a$mode" $clashdir/config.yaml
-	sed -i "4a$log" $clashdir/config.yaml
-	sed -i "5a$ipv6" $clashdir/config.yaml
-	sed -i "6a$external" $clashdir/config.yaml
-	sed -i "7a$external_ui" $clashdir/config.yaml
-	sed -i "8a$dns" $clashdir/config.yaml
-	sed -i "9a$tun" $clashdir/config.yaml
-	sed -i "10a$exper" $clashdir/config.yaml
+	sed -i "1imixed-port:\ $mix_port" $yaml
+	sed -i "1aredir-port:\ $redir_port" $yaml
+	sed -i "2a$lan" $yaml
+	sed -i "3a$mode" $yaml
+	sed -i "4a$log" $yaml
+	sed -i "5a$ipv6" $yaml
+	sed -i "6aexternal-controller:\ :$db_port" $yaml
+	sed -i "7aexternal-ui:\ $db_ui" $yaml
+	sed -i "8asecret:\ $secret" $yaml
+	sed -i "9a$dns" $yaml
+	sed -i "10a$tun" $yaml
+	sed -i "11a$exper" $yaml
 	#跳过本地tls证书验证
 	if [ "$skip_cert" = "已开启" ];then
-	sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $clashdir/config.yaml
+	sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $yaml
 	else
-	sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $clashdir/config.yaml
+	sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $yaml
 	fi
 }
 mark_time(){
@@ -218,7 +212,7 @@ start_redir(){
 		iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 	done
 	#设置防火墙流量转发
-	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports 7892
+	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports $redir_port
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	#设置ipv6转发
 	if [ "$ipv6_support" = "已开启" ];then
@@ -226,7 +220,7 @@ start_redir(){
 		for mac in $(cat $clashdir/mac); do
 			ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
 		done
-		ip6tables -t nat -A clashv6 -p tcp $ports-j REDIRECT --to-ports 7892
+		ip6tables -t nat -A clashv6 -p tcp $ports-j REDIRECT --to-ports $redir_port
 		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
 	fi
 }
@@ -261,30 +255,33 @@ start_dns(){
 	for mac in $(cat $clashdir/mac); do
 		iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
 	done
-	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to 1053
-	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to 1053
+	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
+	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
 	iptables -t nat -A PREROUTING -p udp -j clash_dns
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
 	#ipv6DNS
-	ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
-	for mac in $(cat $clashdir/mac); do
-		ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
-	done
-	ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to 1053 > /dev/null 2>&1
-	ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
-}
-checkcron(){
-	[ -d /etc/crontabs/ ]&&cronpath="/etc/crontabs/root"
-	[ -d /var/spool/cron/ ]&&cronpath="/var/spool/cron/root"
-	[ -d /var/spool/cron/crontabs/ ]&&cronpath="/var/spool/cron/crontabs/root"
-	[ -z $cronpath ]&&echo "找不到定时任务文件,无法添加定时任务！"
+	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'not exist')
+	if [ -z "ip6_nat" ];then
+		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
+		for mac in $(cat $clashdir/mac); do
+			ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
+		done
+		ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port > /dev/null 2>&1
+		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
+	else
+		 ip6tables -I INPUT -p tcp --dport 53 -j DROP
+	fi
 }
 daemon(){
-	checkcron
-	echo '*/1 * * * * test -z "$(pidof clash)"  &&  /etc/init.d/clash restart #clash守护进程' >> $cronpath
-	chmod 600 $cronpath
+	if [ -n "$cronpath" ];then
+		echo '*/1 * * * * test -z "$(pidof clash)"  &&  /etc/init.d/clash restart #clash保守模式守护进程' >> $cronpath
+		chmod 600 $cronpath
+	else
+		echo 找不到定时任务配置文件，无法添加守护进程！
+		echo 请进入定时任务菜单手动指定系统定时任务文件路径！！！
+	fi
 }
 afstart(){
 	#读取配置文件
@@ -305,10 +302,6 @@ afstart)
 start)		
 		#读取配置文件
 		getconfig
-		#检测系统端口占用
-		for portx in 1053 7890 7892 9999 ;do
-			[ -n "$(netstat -ntul |grep :$portx)" ] && echo "检测到端口【$portx】被以下进程占用！clash无法启动！" && echo $(netstat -ntulp |grep :$portx) && exit 1
-		done
 		#使用内置规则强行覆盖config配置文件
 		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
@@ -323,9 +316,10 @@ start)
 		fi
 	;;
 stop)	
-		#删除守护
-		checkcron
-		sed -i /clash守护进程/d $cronpath >/dev/null 2>&1
+		#读取配置文件
+		getconfig
+		#删除守护进程
+		sed -i /clash保守模式守护进程/d $cronpath >/dev/null 2>&1
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1

@@ -307,9 +307,8 @@ clashcore_n=$clashcore
 #获取设备处理器架构
 cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 [ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
-[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && cpucore="armv7"
-[ -n "$(echo $cputype | grep -E "linux.*aarch64.*")" ] && cpucore="armv8"
-[ -n "$(echo $cputype | grep -E "linux.*armv8.*")" ] && cpucore="armv8"
+[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && cpucore="armv7"
+[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="armv8"
 [ -n "$(echo $cputype | grep -E "linux.*x86.*")" ] && cpucore="386"
 [ -n "$(echo $cputype | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
 if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
@@ -337,10 +336,13 @@ read -p "请输入对应数字 > " num
 		update
 	elif [[ $num == 1 ]]; then
 		clashcore=clash
+		version=$claversionsh_l
 	elif [[ $num == 2 ]]; then
 		clashcore=clashpre
+		version=$clashpre_v
 	elif [[ $num == 3 ]]; then
 		clashcore=clashr
+		version='1.0(已停止更新)'
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
@@ -348,13 +350,6 @@ read -p "请输入对应数字 > " num
 	fi
 #生成链接
 corelink="$update_url/bin/$clashcore/clash-linux-$cpucore"
-versionlink="$update_url/bin/$clashcore/version"
-#检测版本
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[33m正在检查更新！\033[0m"
-result=$(curl -w %{http_code} -skLo /tmp/clashversion $versionlink)
-[ "$result" != "200" ] && echo "检查更新失败！" && exit 1
-source /tmp/clashversion
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "当前clash核心：\033[0m $clashcore_n \033[33m$clashv\033[0m"
 echo -e "最新clash核心：\033[32m $clashcore \033[36m$version\033[0m"
@@ -395,12 +390,6 @@ getcore
 fi			
 }
 getgeo(){
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[33m正在检查更新！\033[0m"
-#echo $update_url
-result=$(curl -w %{http_code} -skLo /tmp/clashversion $update_url/bin/version)
-[ "$result" != "200" ] && echo "检查更新失败！" && exit 1
-source /tmp/clashversion
 echo -----------------------------------------------
 echo -e "当前GeoIP版本为：\033[33m $Geo_v \033[0m"
 echo -e "最新GeoIP版本为：\033[32m $GeoIP_v \033[0m"
@@ -436,8 +425,8 @@ echo -----------------------------------------------
 echo -e "\033[32m打开管理面板的速度更快且更稳定"
 echo -e "\033[33m需要占用约500kb的本地空间\033[0m"
 echo -----------------------------------------------
-echo " 1 在/www/clash目录安装(http://$host/clash，可能安装失败！)"
-echo " 2 在$clashdir/ui目录安装(http://$host:9999/ui，安装后需重启clash)"
+echo -e " 1 在$clashdir/ui目录安装（推荐！）\033[33m安装后需重启clash服务！！！\033[0m"
+echo " 2 在/www/clash目录安装(依赖路由器自带的Nginx服务，可能安装失败！)"
 echo -----------------------------------------------
 echo " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
@@ -445,11 +434,11 @@ read -p "请输入对应数字 > " num
 if [ -z "$num" ];then
 	update
 elif [ "$num" = '1' ]; then
+	dbdir=$clashdir/ui
+	hostdir=":$db_port/ui\033[0;36m访问面板(需重启clash服务！)"
+elif [ "$num" = '2' ]; then
 	dbdir=/www/clash
 	hostdir='/clash\033[0;36m访问面板'
-elif [ "$num" = '2' ]; then
-	dbdir=$clashdir/ui
-	hostdir=':9999/ui\033[0;36m访问面板(需重启clash服务！)'
 else
 	update
 fi
@@ -483,8 +472,8 @@ fi
 		tar -zxvf '/tmp/clashdb.tar.gz' -C $dbdir > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 		#修改默认host和端口
-		sed -i "s/127.0.0.1/$host/g" $dbdir/js/*.js
-		sed -i "s/9090/9999/g" $dbdir/js/*.js
+		sed -i "s/127.0.0.1/${host}/g" $dbdir/js/*.js
+		sed -i "s/9090/${db_port}/g" $dbdir/js/*.js
 		#
 		echo -e "\033[32m面板安装成功！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -500,7 +489,7 @@ catpac(){
 [ ! -d /www/clash -a ! -d $clashdir/ui ]&&echo 未检测到本地Dashboard面板，请先安装面板！&&sleep 1&&getdb
 #host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 [ -d /www/clash ]&&dir="/www/clash"&&pac=http://$host/clash/pac
-[ -d $clashdir/ui ]&&dir="$clashdir/ui"&&pac=http://$host:9999/ui/pac
+[ -d $clashdir/ui ]&&dir="$clashdir/ui"&&pac=http://$host:$db_port/ui/pac
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[30;47m生成用于设备WIFI或浏览器的自动PAC代理文件\033[0m"
 echo -e "\033[33m非纯净模式不推荐使用此功能\033[0m"
@@ -513,7 +502,7 @@ echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 	if [ "$num" = '1' ]; then
 		echo 'function FindProxyForURL(url, host) {' > $dir/pac
-		echo "    return \"SOCKS $host:7890; PROXY $host:7890; DIRECT;\"" >> $dir/pac
+		echo "    return \"SOCKS $host:$mix_port; PROXY $host:$mix_port; DIRECT;\"" >> $dir/pac
 		echo '}' >> $dir/pac
 		echo -e "\033[33mPAC文件已生成！\033[0m"
 		echo -e "PAC地址：\033[32m$pac\033[0m"
@@ -547,11 +536,11 @@ elif [[ $num == 1 ]]; then
 elif [[ $num == 2 ]]; then
 	update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
 elif [[ $num == 3 ]]; then
-	update_url='-x 127.0.0.1:7890 https://raw.githubusercontent.com/juewuy/ShellClash/master'
+	update_url='-x 127.0.0.1:'$mix_port' https://raw.githubusercontent.com/juewuy/ShellClash/master'
 elif [[ $num == 4 ]]; then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	read -p "请输入个人源路径 > " update_url
-	if [ -n $update_url ];then
+	if [ -z "$update_url" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 		update

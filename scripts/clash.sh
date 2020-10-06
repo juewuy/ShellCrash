@@ -6,8 +6,8 @@ getconfig(){
 if [ -f /bin/opkg ];then
 	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 else
-	host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g')
-	[ -z $host ] && host=127.0.0.1
+	host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g'|head -n 1)
+	[ -z "$host" ] && host=127.0.0.1
 fi
 #服务器地址
 [ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
@@ -28,7 +28,7 @@ if [ -f /etc/rc.common ];then
 		autostart=disable_rc
 	fi
 else
-	if [ -n "$(systemctl list-unit-files clash.service | grep -o enable)" ];then
+	if [ -n "$(systemctl list-unit-files clash.service 2>&1 | grep -o enable)" ];then
 		autostart=enable_sys
 	else
 		autostart=disable_sys
@@ -44,6 +44,12 @@ else
 	auto="\033[31m未设置开机启动！\033[0m"
 	auto1="\033[36m允许\033[0mclash开机启动"
 fi
+#获取默认端口
+[ -z "$mix_port" ] && mix_port=7890
+[ -z "$redir_port" ] && redir_port=7892
+[ -z "$db_port" ] && db_port=9999
+[ -z "$dns_port" ] && dns_port=1053
+[ -z "$secret" ] && secret=未设置
 #获取运行模式
 if [ -z "$redir_mod" ];then
 	sed -i "2i\redir_mod=Redir模式" $ccfg
@@ -63,15 +69,17 @@ if [ -n "$PID" ];then
 		else
 			day=""
 		fi
-		time=`date -u -d @${time} +"%-H小时%-M分%-S秒"`
+		time=`date -u -d @${time} +%H小时%M分%S秒`
 	fi
 else
 	run="\033[31m没有运行（$redir_mod）\033[0m"
+	#检测系统端口占用
+	checkport
 fi
 #输出状态
 
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[30;46m欢迎使用ShellClash！\033[0m      版本：$versionsh_l"
+echo -e "\033[30;46m欢迎使用ShellClash！\033[0m		版本：$versionsh_l"
 echo -e "Clash服务"$run"，"$auto""
 if [ -n "$PID" ];then
 	echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
@@ -82,6 +90,7 @@ echo -----------------------------------------------
 if [ ! -f $clashdir/clash ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
+	checkupdate
 	source $clashdir/getdate.sh
 	getcore
 fi
@@ -89,9 +98,17 @@ fi
 if [ ! -f $clashdir/Country.mmdb ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m没有找到GeoIP数据库文件，请先下载数据库！\033[0m"
+	checkupdate
 	source $clashdir/getdate.sh
 	getgeo
-	clashstart
+fi
+#检查定时任务配置文件
+if [ -z "$cronpath" ];then
+	[ -d /etc/crontabs/ ] && cronpath="/etc/crontabs/root"
+	[ -d /var/spool/cron/ ] && cronpath="/var/spool/cron/root"
+	[ -d /var/spool/cron/crontabs/ ] && cronpath="/var/spool/cron/crontabs/root"
+	[ -d /etc/storage/cron/crontabs ] && cronpath="/etc/storage/cron/crontabs/admin"
+	[ -n "$cronpath" ] && sed -i "1i\cronpath=\'$cronpath\'" $ccfg
 fi
 }
 start_over(){
@@ -100,13 +117,92 @@ start_over(){
 	if [ -d /www/clash ];then
 		echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
 	elif [ -d $clashdir/ui  ];then
-		echo -e "请使用\033[30;47m http://$host:9999/ui \033[0m管理内置规则"
+		echo -e "请使用\033[30;47m http://$host:$db_port/ui \033[0m管理内置规则"
 	else
 		echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
-		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m 9999 \033[0m"
+		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m $db_port \033[0m"
 		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	fi
+}
+setport(){
+	inputport(){
+		read -p "请输入端口号(1000-65535) > " portx
+		if [ -z "$portx" ]; then
+			setport
+		elif [ $portx -gt 65535 -o $portx -le 999 ]; then
+			echo -e "\033[31m输入错误！请输入正确的数值(1000-65535)！\033[0m"
+			inputport
+		elif [ -n "$(echo $mix_port$redir_port$dns_port$db_port|grep $portx)" ]; then
+			echo -e "\033[31m输入错误！请不要输入重复的端口！\033[0m"
+			inputport
+		elif [ -n "$(netstat -ntul |grep :$portx)" ];then
+			echo -e "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
+			inputport
+		else
+			sed -i "/$xport*/"d $ccfg
+			sed -i "1i$xport=$portx" $ccfg
+			echo -e "\033[32m设置成功！！！\033[0m"
+			setport
+		fi
+	}
+	source $ccfg
+	if [ -n "$(pidof clash)" ];then
+		echo -----------------------------------------------
+		echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
+		read -p "是否停止clash服务？(1/0) > " res
+		if [ "$res" = "1" ];then
+			$clashdir/start.sh stop
+		else
+			clashsh
+		fi
+	fi
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e " 1 修改Http/Sock5端口：\033[36m$mix_port\033[0m"
+	echo -e " 2 修改静态路由端口：\033[36m$redir_port\033[0m"
+	echo -e " 3 修改DNS监听端口：\033[36m$dns_port\033[0m"
+	echo -e " 4 修改面板访问端口：\033[36m$db_port\033[0m"
+	echo -e " 5 修改面板访问密码：\033[36m$secret\033[0m"
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then 
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+	elif [[ $num == 1 ]]; then
+		xport=mix_port
+		inputport
+	elif [[ $num == 2 ]]; then
+		xport=redir_port
+		inputport
+	elif [[ $num == 3 ]]; then
+		xport=dns_port
+		inputport
+	elif [[ $num == 4 ]]; then
+		xport=db_port
+		inputport
+	elif [[ $num == 5 ]]; then
+		read -p "请输入面板访问密码 > " secret
+		if [ -n "$secret" ]; then
+			sed -i "/secret*/"d $ccfg
+			sed -i "1i\secret=$secret" $ccfg
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi
+		setport
+	fi	
+}
+checkport(){
+	for portx in $dns_port $mix_port $redir_port $db_port ;do
+		if [ -n "$(netstat -ntul |grep :$portx)" ];then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "检测到端口【$portx】被以下进程占用！clash可能无法正常启动！\033[33m"
+			echo $(netstat -ntulp | grep :$portx | head -n 1)
+			echo -e "\033[0m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+			echo -e "\033[36m请修改默认端口配置！\033[0m"
+			setport
+			source $ccfg
+			checkport
+		fi
+	done
 }
 clashstart(){
 	if [ ! -f "$yaml" ];then
@@ -329,7 +425,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[32m已经设置为纯净模式！\033[0m"
 			echo -e "\033[33m当前模式必须手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
-			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m7890\033[0m"
+			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m$mix_port\033[0m"
 			echo -e "\033[31m也可以使用PAC自动代理文件，具体使用方法请自行搜索\033[0m"
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			read -p "是否配置自动代理PAC文件(1/0) > " res
@@ -518,10 +614,11 @@ echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 echo -e "\033[33m如您不是很了解clash的运行机制，请勿更改！\033[0m"
 echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 echo -----------------------------------------------
-echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m   ————用于使用自定义配置"
-echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m   ————实验性功能，可能不可用"
-echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m   ————切换时会停止clash服务"
-echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m   ————配置本机代理环境变量"
+echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m	————用于使用自定义配置"
+echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不可用"
+echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
+echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m	————配置本机代理环境变量"
+echo -e " 5 手动指定clash运行端口"
 echo -----------------------------------------------
 echo -e " 8 \033[31m重置\033[0m配置文件"
 echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -589,7 +686,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\local_proxy=已开启" $ccfg
 			local_proxy=已开启
-			echo 'export http_proxy=http://127.0.0.1:7890' >> /etc/profile
+			echo 'export http_proxy=http://127.0.0.1:'"$mix_port" >> /etc/profile
 			echo 'export https_proxy=$http_proxy' >> /etc/profile
 			echo 'export HTTP_PROXY=$http_proxy' >> /etc/profile
 			echo 'export HTTPS_PROXY=$http_proxy' >> /etc/profile
@@ -605,6 +702,9 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		fi
 		source /etc/profile > /dev/null 2>&1
 		clashadv 		
+	elif [[ $num == 5 ]]; then
+		setport
+		clashadv
 		
 	elif [[ $num == 8 ]]; then	
 		read -p "确认重置配置文件？(1/0) > " res
@@ -631,21 +731,27 @@ else
 fi
 exit;
 }
-update(){
+checkupdate(){
 if [ -z "$release_new" ];then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[33m正在检查更新！\033[0m"
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 --connect-timeout 3 -m 3 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 --connect-timeout 5 -m 5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 		update_url=$update_url@$release_new
 	fi
-	[ -z "$release_new" ] && release_new=$(curl -kfsSL --connect-timeout 3 -m 3 $update_url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
-	[ -z "$release_new" ] && echo "检查更新失败！"
+	curl -skL --connect-timeout 5 -m 5  $update_url/bin/version > /tmp/clashversion
+	source /tmp/clashversion
+	[ -z "$release_new" ] && release_new=$versionsh
 fi
+}
+update(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[33m正在检查更新！\033[0m"
+checkupdate
+[ "$clashcore" = "clash" ] && clash_n=$clash_v || clash_n=$clashpre_v
 echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
-[ -n "$release_new" ] && echo -e "当前ShellClash版本：\033[33m $versionsh_l \033[0m"
-[ -n "$release_new" ] && echo -e "最新ShellClash版本：\033[32m $release_new \033[0m"
+echo -----------------------------------------------
+echo -e "ShellClash	本地版本：\033[33m$versionsh_l	\033[0m在线版本：\033[32m$versionsh\033[0m"
+echo -e "Geoip数据库	本地版本：\033[33m$Geo_v	\033[0m在线版本：\033[32m$GeoIP_v\033[0m"
+echo -e "$clashcore核心	本地版本：\033[33m$clashv	\033[0m在线版本：\033[32m$clash_n\033[0m"
 echo -----------------------------------------------
 echo -e " 1 更新\033[36m管理脚本\033[0m"
 echo -e " 2 切换\033[33mclash核心\033[0m"
@@ -801,15 +907,23 @@ clashcron(){
 		clashcron
 	}
 	checkcron(){
-	[ -d /etc/crontabs/ ]&&cronpath="/etc/crontabs/root"
-	[ -d /var/spool/cron/ ]&&cronpath="/var/spool/cron/root"
-	[ -d /var/spool/cron/crontabs/ ]&&cronpath="/var/spool/cron/crontabs/root"
-	if [ -z $cronpath ];then
+	if [ -z "$cronpath" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo "找不到定时任务文件,无法添加定时任务！"
-		clashsh
+		echo -e "\033[33m找不到定时任务配置文件，无法添加添加定时任务！"
+		echo -e "\033[0m请手动指定定时任务配置文件，文件位置可以通过【crontab -e】命令查看\033[0m"
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		read -p "请输入crontab文件路径(输入回车返回主菜单) > " path
+		if [ -z "$path" ];then
+			clashsh
+		elif [ -f $path ];then
+			cronpath=$path
+			sed -i '/cronpath*/'d $ccfg
+			sed -i "1i\cronpath=\'$cronpath\'" $ccfg
+		else
+			echo -e "\033[33m输入的路径不正确，请重新输入！\033[0m"
+			checkcron
+		fi
 	fi
-
 	}
 #定时任务菜单
 checkcron #检测定时任务文件
@@ -818,7 +932,7 @@ echo -e "\033[30;47m欢迎使用定时任务功能：\033[0m"
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo -----------------------------------------------
 echo  -e "\033[33m已添加的定时任务：\033[36m"
-cat $cronpath | egrep -o ' #.*' 
+cat $cronpath | grep -oE ' #.*' 
 echo -e "\033[0m"-----------------------------------------------
 echo -e " 1 设置\033[33m定时重启\033[0mclash服务"
 echo -e " 2 设置\033[31m定时停止\033[0mclash服务"
@@ -866,7 +980,7 @@ echo -e " 1 \033[32m启动/重启\033[0mclash服务"
 echo -e " 2 clash\033[33m功能设置\033[0m"
 echo -e " 3 \033[31m停止\033[0mclash服务"
 echo -e " 4 $auto1"
-echo -e " 5 设置\033[33m定时任务\033[0m"
+echo -e " 5 设置\033[33m定时任务\033[0m$cronoff"
 echo -e " 6 导入\033[32m配置文件\033[0m"
 echo -e " 7 clash\033[31m进阶设置\033[0m"
 echo -e " 8 \033[35m测试菜单\033[0m"
@@ -981,7 +1095,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			exit;
 		elif [[ $num == 6 ]]; then
 			echo 注意：测试结果不保证一定准确！
-			delay=`curl -kx 127.0.0.1:7890 -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
+			delay=`curl -kx 127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
 			delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if [ `echo ${#delay}` -gt 1 ];then

@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 echo='echo -e' && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && echo=echo
-test=0
+test=1
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
@@ -14,6 +14,7 @@ url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
 if [ $test -ge 1 ];then 
 	url="--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master"
 	[ $test -ge 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
+	[ $test -ge 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else
 	release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')	#检查版本
 fi
@@ -25,7 +26,7 @@ gettar(){
 	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
 	#解压
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo 开始解压文件！
 	mkdir -p $clashdir > /dev/null
 	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
@@ -68,17 +69,24 @@ gettar(){
 	rm -rf $clashdir/clashservice
 	rm -rf $clashdir/clash.service
 }
-#输出
-$echo "最新版本：\033[32m$release_new\033[0m"
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$echo "\033[44m如遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
-$echo "\033[37m支持各种基于openwrt的路由器设备"
-$echo "\033[33m支持Debian、Centos等标准Linux系统\033[0m"
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#下载及安装
+install(){
+echo -----------------------------------------------
+echo 开始从服务器获取安装文件！
+echo -----------------------------------------------
+gettar
+echo -----------------------------------------------
+echo ShellClash 已经安装成功!
+echo -----------------------------------------------
+$echo "\033[33m输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
+echo -----------------------------------------------
+}
+setdir(){		
+echo -----------------------------------------------		
 $echo "\033[32m 1 在默认目录(/etc)安装"
 $echo "\033[33m 2 手动设置安装目录"
 $echo "\033[0m 0 退出安装"
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -----------------------------------------------
 read -p "请输入相应数字 > " num
 #设置目录
 if [ -z $num ];then
@@ -87,29 +95,46 @@ if [ -z $num ];then
 elif [ "$num" = "1" ];then
 	dir=/etc
 elif [ "$num" = "2" ];then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo '可用路径 剩余空间:'
 	df -h | awk '{print $6,$2}'| sed 1d 
 	echo '路径是必须带 / 的格式，写入虚拟内存(/tmp,/sys,..)的文件会在重启后消失！！！'
 	read -p "请输入自定义路径 > " dir
-	if [ -z $dir ];then
-		echo 路径错误！已取消安装！
+	if [ -z "$dir" ];then
+		$echo "\033[31m路径错误！已取消安装！\033[0m"
 		exit;
 	fi
 else
-	echo 安装已取消
+	echo 安装已取消！！！
 	exit;
 fi
 clashdir=$dir/clash
-#输出
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo 开始从服务器获取安装文件！
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#下载及安装
-gettar
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo ShellClash 已经安装成功!
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$echo "\033[33m输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
-echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+install
+}
 
+#输出
+$echo "最新版本：\033[32m$release_new\033[0m"
+echo -----------------------------------------------
+$echo "\033[44m如遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+$echo "\033[37m支持各种基于openwrt的路由器设备"
+$echo "\033[33m支持Debian、Centos等标准Linux系统\033[0m"
+
+if [ -n "$clashdir" ];then
+	echo -----------------------------------------------
+	$echo "检测到旧的安装目录\033[36m$clashdir\033[0m，是否覆盖安装？"
+	$echo "\033[32m覆盖安装时不会移除配置文件！\033[0m"
+	read -p "覆盖安装/卸载旧版本？(1/0) > " res
+	if [ "$res" = "1" ];then
+		install
+	elif [ "$res" = "0" ];then
+		rm -rf $clashdir
+		echo -----------------------------------------------
+		$echo "\033[31m 旧版本文件已卸载！\033[0m"
+		setdir
+	else
+		$echo "\033[31m输入错误！已取消安装！\033[0m"
+		exit;
+	fi
+else
+	setdir
+fi
