@@ -38,22 +38,22 @@ fi
 linkserver(){
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+echo -e "\033[36m 感谢 https://github.com/tindy2013/subconverter \033[0m"
 echo 当前使用后端为：$server_link
-echo 1 subconverter-web.now.sh
+echo 1 subcon.dlj.tf
 echo 2 subconverter.herokuapp.com
 echo 3 subcon.py6.pw
 echo 4 api.dler.io
 echo 5 api.wcc.best
-echo 6 skapi.cool
 echo -----------------------------------------------
 echo 0 返回上级菜单
 read -p "请输入对应数字 > " num
-if [ -z "$num" ] || [[ $num -gt 6 ]];then
+if [ -z "$num" ] || [[ $num -gt 5 ]];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 elif [[ "$num" = 0 ]];then
 	echo
-elif [[ $num -le 6 ]];then
+elif [[ $num -le 5 ]];then
 	#将对应标记值写入mark
 	sed -i '/server_link*/'d $ccfg
 	sed -i "4i\server_link="$num"" $ccfg	
@@ -88,7 +88,7 @@ sed -i "1i\exclude=\'$exclude\'" $ccfg
 linkset
 }
 linkset(){
-if [ -n $Url ];then
+if [ -n "$Url" ];then
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[47;30m请检查输入的链接是否正确：\033[0m"
@@ -174,7 +174,7 @@ do
 			Url="$Url"\|"$url"
 		fi
 		i=$(($i+1))
-	elif [ -z $url ];then
+	elif [ -z "$url" ];then
 		[ -n "$Url" ] && linkset
 	elif [[ $url == 0 ]];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,32 +202,30 @@ echo -----------------------------------------------
 echo -e "\033[33m0 返回上级菜单\033[0m"
 echo -----------------------------------------------
 read -p "请输入完整链接 > " Https
-test=$(echo $Https | grep "://")
+test=$(echo $Https | grep -iE "http.*://" )
 Https=`echo ${Https/\ \(*\)/''}`   #删除恶心的超链接内容
-#Https=`echo ${Https//\&/\%26}`   #将分隔符 & 替换成Httpscode：%26
-if [ -n $Https ];then
-	if [ -n $test ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e 请检查输入的链接是否正确：
-		echo -e "\033[4m$Https\033[0m"
-		read -p "确认导入配置文件？原配置文件将被更名为config.yaml.bak![1/0] > " res
-			if [ "$res" = '1' ]; then
-				#将用户链接写入mark
-				sed -i '/Url=*/'d $ccfg
-				sed -i '/Https=*/'d $ccfg
-				sed -i "6i\Https=\'$Https\'" $ccfg
-				#获取在线yaml文件
-				$clashdir/start.sh getyaml
-				start_over
-				exit;
-			fi
-			clashlink
-	fi
+if [ -n "$Https" -a -n "$test" ];then
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e 请检查输入的链接是否正确：
+	echo -e "\033[4m$Https\033[0m"
+	read -p "确认导入配置文件？原配置文件将被更名为config.yaml.bak![1/0] > " res
+		if [ "$res" = '1' ]; then
+			#将用户链接写入mark
+			sed -i '/Url=*/'d $ccfg
+			sed -i '/Https=*/'d $ccfg
+			sed -i "6i\Https=\'$Https\'" $ccfg
+			#获取在线yaml文件
+			$clashdir/start.sh getyaml
+			start_over
+			exit;
+		fi
 elif [[ $Https == 0 ]];then
 	clashlink
 else
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[31m请输入正确的链接地址！！！\033[0m"
+	echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
+	echo -e "\033[33m链接地址必须是http或者https开头的形式\033[0m"
+	clashlink
 fi
 }
 gettar(){
@@ -328,7 +326,7 @@ echo "(高级预览版)  内存占用更高"
 echo -----------------------------------------------
 echo 0 返回上级菜单 
 read -p "请输入对应数字 > " num
-	if [ -z $num ]; then
+	if [ -z "$num" ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		update
@@ -518,7 +516,7 @@ echo -e " 3 Github源+clash代理(需开启clash服务)"
 echo -e " 4 自定义输入(请务必确保路径正确)"
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
-if	[ -z $num ]; then 
+if	[ -z "$num" ]; then 
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 	update

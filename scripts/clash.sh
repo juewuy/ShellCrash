@@ -522,7 +522,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 				clashcfg
 			elif [ $num -le $(cat /tmp/dhcp.leases | awk 'END{print NR}') ]; then
 				macadd=$(cat /tmp/dhcp.leases | awk '{print $2}' | sed -n "$num"p)
-				if [ -z $(cat $clashdir/mac | grep -E "$macadd") ];then
+				if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
 					echo $macadd >> $clashdir/mac
 					echo -----------------------------------------------
 					echo 已添加的mac地址：

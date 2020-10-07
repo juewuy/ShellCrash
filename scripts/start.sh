@@ -27,12 +27,11 @@ source $ccfg
 getyaml(){
 #前后端订阅服务器地址索引，可在此处添加！
 Server=`sed -n ""$server_link"p"<<EOF
-subconverter-web.now.sh
+subcon.dlj.tf
 subconverter.herokuapp.com
 subcon.py6.pw
 api.dler.io
 api.wcc.best
-skapi.cool
 EOF`
 Config=`sed -n ""$rule_link"p"<<EOF
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
@@ -50,7 +49,7 @@ https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/
 https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/netease.ini
 EOF`
 #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
-if [ -z $Https ];then
+if [ -z "$Https" ];then
 	#echo $Url
 	Https="https://$Server/sub?target=clashr&insert=true&new_name=true&scv=true&exclude=$exclude&url=$Url&config=$Config"
 	markhttp=1
@@ -73,7 +72,7 @@ result=$(curl -w %{http_code} -kLo $yamlnew $Https)
 if [ "$result" != "200" ];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m配置文件获取失败！\033[0m"
-	if [ -z $markhttp ];then
+	if [ -z "$markhttp" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m请尝试使用【导入节点/链接】功能！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,9 +95,9 @@ if [ "$result" != "200" ];then
 else
 	Https=""
 	#检测节点
-	if [ -z "$(cat $yamlnew | grep ', server:')" ];then
+	if [ -z "$(cat $yamlnew | grep 'server:' | grep -v 'nameserver')" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[33m获取到了配置文件，但格式似乎不对！\033[0m"
+		echo -e "\033[33m获取到了配置文件，但似乎并不包含正确的节点信息！\033[0m"
 		echo -----------------------------------------------
 		sed -n '1,30p' $yamlnew
 		echo -----------------------------------------------
@@ -129,7 +128,7 @@ else
 	$0 stop
 	$0 start
 	sleep 1
-	if [ -z $(pidof clash) ];then
+	if [ -z "$(pidof clash)" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if [ -f $yaml.bak ];then
 			$clashdir/start.sh stop
@@ -137,7 +136,7 @@ else
 			$0 start
 			echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
 			sleep 1
-			[ -n $(pidof clash) ] && exit 0
+			[ -n "$(pidof clash)" ] && exit 0
 		fi
 		echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
 		$0 stop
