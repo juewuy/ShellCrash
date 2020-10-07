@@ -686,21 +686,18 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\local_proxy=已开启" $ccfg
 			local_proxy=已开启
-			echo 'export http_proxy=http://127.0.0.1:'"$mix_port" >> /etc/profile
-			echo 'export https_proxy=$http_proxy' >> /etc/profile
-			echo 'export HTTP_PROXY=$http_proxy' >> /etc/profile
-			echo 'export HTTPS_PROXY=$http_proxy' >> /etc/profile
+			source $clashdir/start.sh
+			set_proxy
 			echo -e "\033[32m已经将代理参数写入环境变量~\033[0m"
 			echo -e "\033[36m如未生效，请重新登录或者重启设备！\033[0m"
 			sleep 1
 		else
 			sed -i "1i\local_proxy=未开启" $ccfg
-			sed -i '/http*_proxy/'d /etc/profile
-			sed -i '/HTTP*_PROXY/'d /etc/profile
-			echo -e "\033[33m已经将代理参数从环境变量移除！！\033[0m"
 			local_proxy=未开启
+			source $clashdir/start.sh
+			unset_proxy
+			echo -e "\033[33m已经将代理参数从环境变量移除！！\033[0m"	
 		fi
-		source /etc/profile > /dev/null 2>&1
 		clashadv 		
 	elif [[ $num == 5 ]]; then
 		setport

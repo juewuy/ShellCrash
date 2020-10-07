@@ -282,6 +282,18 @@ daemon(){
 		echo 请进入定时任务菜单手动指定系统定时任务文件路径！！！
 	fi
 }
+set_proxy(){
+	echo 'export http_proxy=http://127.0.0.1:'"$mix_port" >> /etc/profile
+	echo 'export https_proxy=$http_proxy' >> /etc/profile
+	echo 'export HTTP_PROXY=$http_proxy' >> /etc/profile
+	echo 'export HTTPS_PROXY=$http_proxy' >> /etc/profile
+	source /etc/profile > /dev/null 2>&1
+}
+unset_proxy(){
+	sed -i '/http*_proxy/'d /etc/profile
+	sed -i '/HTTP*_PROXY/'d /etc/profile
+	source /etc/profile > /dev/null 2>&1
+}
 afstart(){
 	#读取配置文件
 	getconfig
@@ -291,6 +303,8 @@ afstart(){
 	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 	#标记启动时间
 	mark_time
+	#设置本机代理
+	[ "$local_proxy" = "已开启" ] && set_proxy
 }
 
 case "$1" in
@@ -328,6 +342,8 @@ stop)
 		killall -9 clash >/dev/null 2>&1
 		#清理iptables
 		stop_iptables
+		#禁用本机代理
+		[ "$local_proxy" = "已开启" ] && unset_proxy
         ;;
 restart)
         $0 stop
