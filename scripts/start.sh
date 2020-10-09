@@ -82,7 +82,7 @@ if [ "$result" != "200" ];then
 		read -p "是否更换后端地址后重试？[1/0] > " res
 		if [ "$res" = '1' ]; then
 			sed -i '/server_link=*/'d $ccfg
-			if [[ $server_link -ge 6 ]]; then
+			if [[ $server_link -ge 5 ]]; then
 				server_link=0
 			fi
 			server_link=$(($server_link + 1))
@@ -287,12 +287,10 @@ set_proxy(){
 	echo 'export https_proxy=$http_proxy' >> /etc/profile
 	echo 'export HTTP_PROXY=$http_proxy' >> /etc/profile
 	echo 'export HTTPS_PROXY=$http_proxy' >> /etc/profile
-	source /etc/profile > /dev/null 2>&1
 }
 unset_proxy(){
 	sed -i '/http*_proxy/'d /etc/profile
 	sed -i '/HTTP*_PROXY/'d /etc/profile
-	source /etc/profile > /dev/null 2>&1
 }
 afstart(){
 	#读取配置文件
@@ -305,6 +303,7 @@ afstart(){
 	mark_time
 	#设置本机代理
 	[ "$local_proxy" = "已开启" ] && set_proxy
+
 }
 
 case "$1" in
@@ -357,3 +356,5 @@ daemon)
 		daemon
 		;;
 esac
+
+exit 0
