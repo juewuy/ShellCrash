@@ -77,16 +77,19 @@ if [ "$result" != "200" ];then
 		echo -e "\033[31m请尝试使用【导入节点/链接】功能！\033[0m"
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		exit 1
-		
 	else
-		read -p "是否更换后端地址后重试？[1/0] > " res
-		if [ "$res" = '1' ]; then
+		if [ "$retry" -ge 5 ];then
+			echo -e "\033[32m无法获取配置文件，请检查链接格式以及网络连接状态！\033[0m"
+			exit 1
+		else
+			retry=$(($retry + 1))
+			echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
+			echo -e "\033[33m正在尝试第$retry次/共5次！\033[0m"
 			sed -i '/server_link=*/'d $ccfg
-			if [[ $server_link -ge 5 ]]; then
+			if [ "$server_link" -ge 5 ]; then
 				server_link=0
 			fi
 			server_link=$(($server_link + 1))
-			echo $server_link
 			sed -i "1i\server_link=$server_link" $ccfg
 			Https=""
 			getyaml
@@ -158,7 +161,7 @@ external="external-controller: 0.0.0.0:$db_port"
 exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 #dns配置
 if [ "$dns_mod" = "fake-ip" ];then
-	dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: [114.114.114.114, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
+	dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: [114.114.114.114, 223.5.5.5, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
 elif [ "$dns_over" = "已开启" ];then
 	dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5], fallback: [1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
 else
@@ -292,6 +295,39 @@ unset_proxy(){
 	sed -i '/http*_proxy/'d /etc/profile
 	sed -i '/HTTP*_PROXY/'d /etc/profile
 }
+web_save(){
+	#使用curl获取面板节点设置
+	curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > $clashdir/web_save
+}
+web_restore(){
+	#设置循环检测clash面板端口
+	i=1
+	while [ $i -lt 10 ]
+	do
+		sleep 1
+		[ -n "$(curl -s http://localhost:${db_port})" ] && i=10
+	done
+	#发送数据
+	num=$(cat $clashdir/web_save | wc -l)
+	for i in `seq $num`;
+	do
+		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' $clashdir/web_save | sed 's/ /%20/g')
+		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $clashdir/web_save)
+		curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" http://localhost:${db_port}/proxies/"${group_name}" -d "{\"name\":\"${now_name}\"}" >/dev/null
+	done
+	exit 0
+}
+web_save_auto(){
+	if [ -n "$cronpath" ];then
+		if [ -z "$(cat $cronpath | grep '保存节点配置')" ];then
+			echo '* */1 * * * test -n "$(pidof clash)"  &&  /etc/init.d/clash web_save #每小时保存节点配置' >> $cronpath
+			chmod 600 $cronpath
+		fi
+	else
+		echo 找不到定时任务配置文件，无法添加守护进程！
+		echo 请进入定时任务菜单手动指定系统定时任务文件路径！！！
+	fi
+}
 afstart(){
 	#读取配置文件
 	getconfig
@@ -303,7 +339,10 @@ afstart(){
 	mark_time
 	#设置本机代理
 	[ "$local_proxy" = "已开启" ] && set_proxy
-
+	#启用面板配置自动保存
+	web_save_auto
+	#后台还原面板配置
+	web_restore &
 }
 
 case "$1" in
@@ -319,6 +358,7 @@ start)
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			$clashdir/clash -d $clashdir >/dev/null 2>&1 &
+			sleep 1
 			daemon
 			afstart
 		elif [ -f /etc/rc.common ];then
@@ -330,8 +370,11 @@ start)
 stop)	
 		#读取配置文件
 		getconfig
-		#删除守护进程
+		#保存面板配置
+		web_save
+		#删除守护进程&面板配置自动保存
 		sed -i /clash保守模式守护进程/d $cronpath >/dev/null 2>&1
+		sed -i /面板配置自动保存/d $cronpath >/dev/null 2>&1
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1
@@ -355,6 +398,14 @@ getyaml)
 daemon)	
 		daemon
 		;;
+web_save)
+		getconfig
+		web_save
+	;;
+web_restore)
+		getconfig
+		web_restore
+	;;
 esac
 
 exit 0
