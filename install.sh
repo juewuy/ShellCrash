@@ -39,7 +39,7 @@ gettar(){
 			mv $clashdir/clashservice /etc/init.d/clash
 			chmod  777 /etc/init.d/clash
 	else
-		[ -d /etc/systemd/system ] && sysdir=/etc/systemd/system
+		[ -d /etc/systemd/system/ ] && sysdir=/etc/systemd/system/
 		[ -d /usr/lib/systemd/system/ ] && sysdir=/usr/lib/systemd/system/ 
 		if [ -n "$sysdir" ];then
 			#设为systemd方式启动

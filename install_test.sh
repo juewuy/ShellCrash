@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 echo='echo -e' && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && echo=echo
-test=1
+test=2
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
