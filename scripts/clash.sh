@@ -348,6 +348,105 @@ else
 	exit;
 fi
 }
+macfilter(){
+	add_mac(){
+		echo -----------------------------------------------
+		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
+		cat /tmp/dhcp.leases | awk '{print " "NR" "$3,$2,$4}'
+		echo -e "\033[0m 0-----------------------------------------------"
+		echo -e " 0 或回车 结束添加"
+		read -p "请输入需要添加的设备的对应序号 > " num
+		if [ -z "$num" ]||[ "$num" -le 0 ]; then
+			macfilter
+		elif [ $num -le $(cat /tmp/dhcp.leases | awk 'END{print NR}') ]; then
+			macadd=$(cat /tmp/dhcp.leases | awk '{print $2}' | sed -n "$num"p)
+			if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
+				echo $macadd >> $clashdir/mac
+				echo -----------------------------------------------
+				echo 已添加的mac地址：
+				cat $clashdir/mac
+			else
+				echo -----------------------------------------------
+				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
+			fi
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m输入有误，请重新输入！\033[0m"
+		fi
+		add_mac
+	}
+	del_mac(){
+		echo -----------------------------------------------
+		if [ -z "$(cat $clashdir/mac)" ];then
+			echo -e "\033[31m列表中没有需要移除的设备！\033[0m"
+			macfilter
+		fi
+		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[0m"
+		i=1
+		for mac in $(cat $clashdir/mac); do
+			echo -e " $i \033[32m$(cat /tmp/dhcp.leases | awk '{print $3,$2,$4}' | grep $mac)\033[0m"
+			i=$(expr $i + 1)
+		done
+		echo -----------------------------------------------
+		echo -e "\033[0m 0 或回车 结束删除"
+		read -p "请输入需要移除的设备的对应序号 > " num
+		if [ -z "$num" ]||[ "$num" -le 0 ]; then
+			macfilter
+		elif [ $num -le $(cat $clashdir/mac | wc -l) ];then
+			sed -i "${num}d" $clashdir/mac
+			echo -----------------------------------------------
+			echo -e "\033[32m对应设备已移除！\033[0m"
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m输入有误，请重新输入！\033[0m"
+		fi
+		del_mac
+	}
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[30;47m请在此添加或移除设备\033[0m"
+	if [ -n "$(cat $clashdir/mac)" ]; then
+		echo -----------------------------------------------
+		echo -e "当前已过滤设备为：\033[36m"
+		echo -e "\033[33m   设备IP       设备mac地址       设备名称\033[0m"
+		for mac in $(cat $clashdir/mac); do
+			cat /tmp/dhcp.leases | awk '{print $3,$2,$4}' | grep $mac
+		done
+		echo -----------------------------------------------
+	fi
+	echo -e " 1 \033[31m清空整个列表\033[0m"
+	echo -e " 2 \033[32m添加指定设备\033[0m"
+	echo -e " 3 \033[33m移除指定设备\033[0m"
+	echo -e " 4 \033[32m添加全部设备\033[0m(请搭配移除指定设备使用)"
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then
+		echo -----------------------------------------------
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+		clashcfg
+	elif [[ $num == 0 ]]; then
+		clashcfg
+	elif [[ $num == 1 ]]; then
+		:>$clashdir/mac
+		echo -----------------------------------------------
+		echo -e "\033[31m设备列表已清空！\033[0m"
+		macfilter
+	elif [[ $num == 2 ]]; then	
+		add_mac
+	elif [[ $num == 3 ]]; then	
+		del_mac
+	elif [[ $num == 4 ]]; then	
+		echo -----------------------------------------------		
+		cat /tmp/dhcp.leases | awk '{print $2}' > $clashdir/mac
+		echo -e "\033[32m已经将所有设备全部添加进过滤列表！\033[0m"
+		echo -e "\033[33m请搭配【移除指定设备】功能使用！\033[0m"
+		sleep 1
+		macfilter
+	else
+		echo -----------------------------------------------
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+		macfilter
+	fi
+}
 clashcfg(){
 #获取设置默认显示
 [ -z "$skip_cert" ] && skip_cert=已开启
@@ -509,67 +608,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		clashcfg  
 
 	elif [[ $num == 5 ]]; then	
-	
-		add_mac(){
-			echo -----------------------------------------------
-			echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
-			cat /tmp/dhcp.leases | awk '{print " "NR" "$3,$2,$4}'
-			echo -e "\033[0m 0 或回车 结束添加"
-			read -p "请输入对应序号 > " num
-			if [ -z "$num" ]; then
-				clashcfg
-			elif [ $num -le 0 ]; then
-				clashcfg
-			elif [ $num -le $(cat /tmp/dhcp.leases | awk 'END{print NR}') ]; then
-				macadd=$(cat /tmp/dhcp.leases | awk '{print $2}' | sed -n "$num"p)
-				if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
-					echo $macadd >> $clashdir/mac
-					echo -----------------------------------------------
-					echo 已添加的mac地址：
-					cat $clashdir/mac
-				else
-					echo -----------------------------------------------
-					echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
-				fi
-			else
-				echo -----------------------------------------------
-				echo -e "\033[31m输入有误，请重新输入！\033[0m"
-			fi
-			add_mac
-		}
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[33m请在此添加或移除设备\033[0m"
-		if [ -n "$(cat $clashdir/mac)" ]; then
-			echo -e "当前已过滤设备为：\033[36m"
-			for mac in $(cat $clashdir/mac); do
-				cat /tmp/dhcp.leases | awk '{print $3,$2,$4}' | grep $mac
-			done
-			echo -e "\033[0m-----------------------------------------------"
-		fi
-		echo -e " 1 \033[31m清空列表\033[0m"
-		echo -e " 2 \033[32m添加设备\033[0m"
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		if [ -z "$num" ]; then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashcfg
-		elif [[ $num == 0 ]]; then
-			clashcfg
-		elif [[ $num == 1 ]]; then
-			:>$clashdir/mac
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m设备列表已清空！\033[0m"
-			sleep 1
-			clashcfg
-		elif [[ $num == 2 ]]; then	
-			add_mac
-			
-		else
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashcfg
-		fi
+		macfilter
 		
 	elif [[ $num == 6 ]]; then	
 		sed -i '/dns_over*/'d $ccfg
