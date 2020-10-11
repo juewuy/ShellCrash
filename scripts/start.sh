@@ -285,16 +285,6 @@ daemon(){
 		echo 请进入定时任务菜单手动指定系统定时任务文件路径！！！
 	fi
 }
-set_proxy(){
-	echo 'export http_proxy=http://127.0.0.1:'"$mix_port" >> /etc/profile
-	echo 'export https_proxy=$http_proxy' >> /etc/profile
-	echo 'export HTTP_PROXY=$http_proxy' >> /etc/profile
-	echo 'export HTTPS_PROXY=$http_proxy' >> /etc/profile
-}
-unset_proxy(){
-	sed -i '/http*_proxy/'d /etc/profile
-	sed -i '/HTTP*_PROXY/'d /etc/profile
-}
 web_save(){
 	#使用curl获取面板节点设置
 	curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > $clashdir/web_save
@@ -338,7 +328,7 @@ afstart(){
 	#标记启动时间
 	mark_time
 	#设置本机代理
-	[ "$local_proxy" = "已开启" ] && set_proxy
+	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port
 	#启用面板配置自动保存
 	web_save_auto
 	#后台还原面板配置
@@ -385,7 +375,7 @@ stop)
 		#清理iptables
 		stop_iptables
 		#禁用本机代理
-		[ "$local_proxy" = "已开启" ] && unset_proxy
+		[ "$local_proxy" = "已开启" ] && $0 unset_proxy
         ;;
 restart)
         $0 stop
@@ -402,9 +392,13 @@ web_save)
 		getconfig
 		web_save
 	;;
-web_restore)
-		getconfig
-		web_restore
+set_proxy)
+		echo 'export all_proxy=http://127.0.0.1:'"$2" >> /etc/profile
+		echo 'export ALL_PROXY=$all_proxy' >> /etc/profile
+	;;
+unset_proxy)
+		sed -i '/all_proxy/'d /etc/profile
+		sed -i '/ALL_PROXY/'d /etc/profile
 	;;
 esac
 

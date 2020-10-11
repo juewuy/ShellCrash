@@ -725,18 +725,16 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\local_proxy=已开启" $ccfg
 			local_proxy=已开启
-			source $clashdir/start.sh
-			set_proxy
+			$clashdir/start.sh set_proxy $mix_port
 			echo -e "\033[32m已经将代理参数写入环境变量~\033[0m"
-			echo -e "\033[36m如未生效，请重新登录或者重启设备！\033[0m"
-			sleep 1
+			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
 		else
 			sed -i "1i\local_proxy=未开启" $ccfg
 			local_proxy=未开启
-			source $clashdir/start.sh
-			unset_proxy
+			$clashdir/start.sh unset_proxy
 			echo -e "\033[33m已经将代理参数从环境变量移除！！\033[0m"	
 		fi
+		sleep 1
 		clashadv 		
 	elif [[ $num == 5 ]]; then
 		setport

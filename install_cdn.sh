@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 echo='echo -e' && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && echo=echo
-test=0
+test=$1
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
@@ -10,11 +10,15 @@ echo "**                ShellClash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
+#检查root权限
+[ "$USER" != "root" ] && echo 请使用root用户执行安装！&& exit 1
+
+#检查更新
 url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
-if [ $test -ge 1 ];then 
+if [ $test -eq 1 ];then 
 	url="--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master"
-	[ $test -ge 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
-	[ $test -ge 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
+	[ $test -eq 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
+	[ $test -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else
 	release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')	#检查版本
 fi
@@ -39,7 +43,7 @@ gettar(){
 			mv $clashdir/clashservice /etc/init.d/clash
 			chmod  777 /etc/init.d/clash
 	else
-		[ -d /etc/systemd/system ] && sysdir=/etc/systemd/system
+		[ -d /etc/systemd/system/ ] && sysdir=/etc/systemd/system/
 		[ -d /usr/lib/systemd/system/ ] && sysdir=/usr/lib/systemd/system/ 
 		if [ -n "$sysdir" ];then
 			#设为systemd方式启动
