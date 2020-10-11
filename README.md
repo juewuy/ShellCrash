@@ -25,11 +25,15 @@
 ~在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
 
 ```Shell
+#Release版本-github直连
 sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" && source /etc/profile &> /dev/null
+#Release版本-jsdelivrCDN源
+sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
 ```
 或者
 ```Shell
-sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install_cdn.sh)" && source /etc/profile &> /dev/null
+#Test版本-github直连
+sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" -s 1 && source /etc/profile &> /dev/null
 ```
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 
