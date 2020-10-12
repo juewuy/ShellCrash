@@ -82,14 +82,14 @@ if [ "$result" != "200" ];then
 			echo -e "\033[32m无法获取配置文件，请检查链接格式以及网络连接状态！\033[0m"
 			exit 1
 		else
-			retry=$(($retry + 1))
+			retry=$(expr $retry + 1)
 			echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
 			echo -e "\033[33m正在尝试第$retry次/共5次！\033[0m"
 			sed -i '/server_link=*/'d $ccfg
 			if [ "$server_link" -ge 5 ]; then
 				server_link=0
 			fi
-			server_link=$(($server_link + 1))
+			server_link=$(expr $server_link + 1)
 			sed -i "1i\server_link=$server_link" $ccfg
 			Https=""
 			getyaml
@@ -172,7 +172,7 @@ fi
 	yaml=$clashdir/config.yaml
 	#预删除需要添加的项目
 	i=$(grep  -n  "^proxies:" $clashdir/config.yaml | head -1 | cut -d ":" -f 1)
-	i=$(($i-1))
+	i=$(expr $i - 1)
 	sed -i "1,${i}d" $yaml
 	#添加配置
 	sed -i "1imixed-port:\ $mix_port" $yaml

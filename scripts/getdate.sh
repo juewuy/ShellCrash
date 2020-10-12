@@ -24,7 +24,7 @@ read -p "请输入对应数字 > " num
 if [ -z "$num" ] || [[ $num -gt 13 ]];then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
-elif [[ "$num" = 0 ]];then
+elif [[ "$num" = "0" ]];then
 	echo 
 elif [[ $num -le 13 ]];then
 	#将对应标记值写入mark
@@ -161,7 +161,7 @@ do
 	echo -e " 0   \033[31m撤销输入\033[0m"
 	echo -e "回车 \033[32m完成输入\033[0m并\033[33m开始导入\033[0m配置文件！"
 	echo -----------------------------------------------
-	read -p "请输入第"$i"个链接 > " url
+	read -p "请输入第${i}个链接 > " url
 	test=$(echo $url | grep "://")
 	url=`echo ${url/\ \(*\)/''}`   #删除恶心的超链接内容
 	url=`echo ${url/*\&url\=/""}`   #将clash完整链接还原成单一链接
@@ -173,7 +173,7 @@ do
 		else
 			Url="$Url"\|"$url"
 		fi
-		i=$(($i+1))
+		i=$(expr $i + 1)
 	elif [ -z "$url" ];then
 		[ -n "$Url" ] && linkset
 	elif [[ $url == 0 ]];then

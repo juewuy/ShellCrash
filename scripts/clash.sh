@@ -22,7 +22,7 @@ source $ccfg
 [ ! -f $clashdir/mac ] && touch $clashdir/mac
 #开机自启相关
 if [ -f /etc/rc.common ];then
-	if [ -f /etc/rc.d/*clash ];then
+	if [ -n "$(find /etc/rc.d -name '*clash')" ];then
 		autostart=enable_rc
 	else
 		autostart=disable_rc
@@ -62,12 +62,13 @@ if [ -n "$PID" ];then
 	VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 	#获取运行时长
 	if [ -n "$start_time" ]; then 
-		time=$((`date +%s`-$start_time))
-		day=$(($time/86400))
-		if [[ $day != 0 ]]; then 
-			day=$day天
-		else
+		time=$(expr `date +%s` - $start_time)
+		#day=$(($time/86400))
+		day=$(expr $time / 86400)
+		if [ "$day" = "0" ]; then 
 			day=""
+		else
+			day="$day""天"
 		fi
 		time=`date -u -d @${time} +%H小时%M分%S秒`
 	fi
