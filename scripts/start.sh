@@ -273,7 +273,8 @@ start_dns(){
 		ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port > /dev/null 2>&1
 		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
 	else
-		 ip6tables -I INPUT -p tcp --dport 53 -j DROP
+		 ip6tables -I INPUT -p tcp --dport 53 -j REJECT
+		 ip6tables -I INPUT -p udp --dport 53 -j REJECT
 	fi
 }
 daemon(){
