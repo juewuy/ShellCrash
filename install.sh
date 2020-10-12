@@ -11,7 +11,7 @@ echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
 #检查root权限
-[ "$USER" != "root" ] && echo 请使用root用户执行安装！&& exit 1
+[ "$USER" != "root" ] && [ "$USER" != "admin" ] && echo 请使用root用户执行安装！&& exit 1
 
 #检查更新
 url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
