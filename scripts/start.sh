@@ -288,7 +288,13 @@ daemon(){
 }
 web_save(){
 	#使用curl获取面板节点设置
-	curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > $clashdir/web_save
+	curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save
+	#对比文件，如果有变动则写入磁盘，否则清除缓存
+	if [ "$(cat /tmp/clash_web_save)" = "$(cat $clashdir/web_save 2>/dev/null)" ];then
+		rm -rf /tmp/clash_web_save
+	else
+		mv -f /tmp/clash_web_save $clashdir/web_save
+	fi
 }
 web_restore(){
 	#设置循环检测clash面板端口
@@ -311,7 +317,7 @@ web_restore(){
 web_save_auto(){
 	if [ -n "$cronpath" ];then
 		if [ -z "$(cat $cronpath | grep '保存节点配置')" ];then
-			echo '* */1 * * * test -n "$(pidof clash)"  &&  /etc/init.d/clash web_save #每小时保存节点配置' >> $cronpath
+			echo '*/10 * * * * test -n "$(pidof clash)"  &&  /etc/init.d/clash web_save #每10分钟保存节点配置' >> $cronpath
 			chmod 600 $cronpath
 		fi
 	else
