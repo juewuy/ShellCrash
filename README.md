@@ -1,4 +1,7 @@
+
+
 # ShellClash（原Clash for Miwifi）
+
 在Shell环境下一键部署及管理[Clash](https://github.com/Dreamacro/clash)
 =====
 
@@ -22,7 +25,15 @@
 --
 ~确认路由器或设备已经开启SSH并获取root权限<br>
 ~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或设备的SSH管理界面，并切换到root用户<br>
-~在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
+~确认设备已经安装curl，如未安装，LInux设备请[参考此处](https://www.howtoing.com/install-curl-in-linux)进行安装，基于OpenWrt（小米官方系统、潘多拉、高恪等）的设备请使用如下命令安装：<br>
+
+```shell
+opkg update && opkg install curl
+```
+
+~之后在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
+
+~使用curl：<br>
 
 ```Shell
 #Release版本-github直连
