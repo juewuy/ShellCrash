@@ -47,7 +47,9 @@ sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 http
 ~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
 
 ```Shell
-clash
+clash #正常模式运行
+clash -h #脚本帮助及说明
+clash -t #测试模式运行
 ```
 
 更新日志：
