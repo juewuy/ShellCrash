@@ -193,7 +193,7 @@ setport(){
 }
 checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
-		if [ -n "$(netstat -ntul |grep :$portx)" ];then
+		if [ -n "$(netstat -ntul 2>&1 |grep :$portx)" ];then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "检测到端口【$portx】被以下进程占用！clash可能无法正常启动！\033[33m"
 			echo $(netstat -ntulp | grep :$portx | head -n 1)
@@ -239,15 +239,17 @@ if [ -z "$server_link" ]; then
 	server_link=1
 fi
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo -e "\033[30;47m 欢迎使用订阅功能！\033[0m"
+echo -e "\033[30;47m 欢迎使用导入配置文件功能！\033[0m"
 echo -----------------------------------------------
-echo -e " 1 在线导入\033[36m订阅\033[0m配置文件"
-echo -e " 2 在线导入clash配置文件"
-echo -e " 3 添加/修改\033[32m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
-echo -e " 4 选取\033[33mclash配置规则\033[0m模版"
-echo -e " 5 选择在线生成服务器"
-echo -e " 6 \033[36m还原\033[0m配置文件"
-echo -e " 7 \033[32m手动更新\033[0m订阅"
+echo -e " 1 在线导入\033[36m订阅\033[0m并生成Clash配置文件"
+echo -e " 2 在线导入\033[33mClash\033[0m配置文件"
+echo -e " 3 设置\033[31m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
+echo -e " 4 设置\033[32m节点筛选\033[0m关键字 \033[47;30m$include\033[0m"
+echo -e " 5 选取\033[33mClash配置规则\033[0m在线模版"
+echo -e " 6 选择在线生成服务器-subconverter"
+echo -e " 7 \033[36m还原\033[0m之前的配置文件"
+echo -e " 8 \033[33m手动更新\033[0m配置文件"
+echo -e " 9 设置\033[36m自动更新\033[0m配置文件"
 echo -----------------------------------------------
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
@@ -294,15 +296,20 @@ elif [[ $num == 3 ]];then
 	
 elif [[ $num == 4 ]];then
 	source $clashdir/getdate.sh
-	linkconfig
+	linkfilter2
 	clashlink
 	
 elif [[ $num == 5 ]];then
 	source $clashdir/getdate.sh
-	linkserver
+	linkconfig
 	clashlink
 	
 elif [[ $num == 6 ]];then
+	source $clashdir/getdate.sh
+	linkserver
+	clashlink
+	
+elif [[ $num == 7 ]];then
 	yamlbak=$yaml.bak
 	if [ ! -f "$yaml".bak ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -322,7 +329,7 @@ elif [[ $num == 6 ]];then
 	fi
 	clashsh
 	
-elif [[ $num == 7 ]];then
+elif [[ $num == 8 ]];then
 	if [ -z "$Url" -a -z "$Https" ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m没有找到你的订阅链接！请先输入链接！\033[0m"
@@ -341,6 +348,10 @@ elif [[ $num == 7 ]];then
 		fi
 		clashlink
 	fi
+	
+elif [[ $num == 9 ]];then
+	clashcron
+	
 elif [[ $num == 0 ]];then
 	clashsh
 else
@@ -1155,4 +1166,24 @@ else
 fi
 exit 1
 }
-clashsh
+
+[ -z "$1" ] && clashsh
+
+case "$1" in
+	-h)
+	echo -----------------------------------------
+	echo "欢迎使用ShellClash"
+	echo -----------------------------------------
+	echo "	-t 测试模式"
+	echo "	-h 帮助列表"
+	echo -----------------------------------------
+	echo "在线求助：t.me/clashfm"
+	echo "官方博客：juewuy.github.io"
+	echo "发布页面：github.com/juewuy/ShellClash"
+	echo -----------------------------------------
+	;;
+	-t)
+	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
+	$shtype -x $clashdir/clash.sh
+	;;
+esac

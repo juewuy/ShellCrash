@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 echo='echo -e' && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && echo=echo
-test=$1
+[ -z "$1" ] && test=0 || test=$1
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
@@ -15,17 +15,17 @@ echo "***********************************************"
 
 #检查更新
 url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
-if [ $test -eq 1 ];then 
+if [ "$test" -gt 0 ];then 
 	url="--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master"
-	[ $test -eq 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
-	[ $test -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
+	[ "$test" -eq 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi" && echo $url
+	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else
 	release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')	#检查版本
 fi
 [ -z "$release_new" ] && release_new=$(curl -kfsSL $url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && echo "无法连接服务器！" && exit
 tarurl=$url@$release_new/bin/clashfm.tar.gz
-[ $test -ge 1 ] && tarurl=$url/bin/clashfm.tar.gz
+[ "$test" -gt 0 ] && tarurl=$url/bin/clashfm.tar.gz
 gettar(){
 	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1

@@ -51,7 +51,7 @@ EOF`
 #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 if [ -z "$Https" ];then
 	#echo $Url
-	Https="https://$Server/sub?target=clash&insert=true&new_name=true&scv=true&exclude=$exclude&url=$Url&config=$Config"
+	Https="https://$Server/sub?target=clash&insert=true&new_name=true&scv=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 	markhttp=1
 fi
 #
@@ -339,7 +339,7 @@ afstart(){
 	#启用面板配置自动保存
 	web_save_auto
 	#后台还原面板配置
-	web_restore &
+	[ -f $clashdir/web_save ] && web_restore &
 }
 
 case "$1" in

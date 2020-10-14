@@ -68,7 +68,7 @@ echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 echo -e "\033[33m当前过滤关键字：\033[47;30m$exclude\033[0m"
 echo -----------------------------------------------
-echo -e "\033[36m匹配关键字的节点会在导入时被屏蔽\033[0m"
+echo -e "\033[33m匹配关键字的节点会在导入时被【屏蔽】！！！\033[0m"
 echo -e "多个关键字可以用\033[30;47m | \033[0m号分隔"
 echo -e "\033[32m支持正则表达式\033[0m，空格请使用\033[30;47m + \033[0m号替代"
 echo -----------------------------------------------
@@ -87,6 +87,31 @@ sed -i '/exclude=*/'d $ccfg
 sed -i "1i\exclude=\'$exclude\'" $ccfg
 linkset
 }
+linkfilter2(){
+[ -z "$include" ] && include="未设置"
+echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+echo -e "\033[33m当前筛选关键字：\033[47;30m$include\033[0m"
+echo -----------------------------------------------
+echo -e "\033[33m仅有匹配关键字的节点才会被【导入】！！！\033[0m"
+echo -e "多个关键字可以用\033[30;47m | \033[0m号分隔"
+echo -e "\033[32m支持正则表达式\033[0m，空格请使用\033[30;47m + \033[0m号替代"
+echo -----------------------------------------------
+echo -e " 000   \033[31m删除\033[0m关键字"
+echo -e " 回车  取消输入并返回上级菜单"
+echo -----------------------------------------------
+read -p "请输入关键字 > " include
+if [ -z "$include" ]; then
+	linkset
+elif [ "$include" = '000' ]; then
+	echo -----------------------------------------------
+	include=''
+	echo -e "\033[31m 已删除节点匹配关键字！！！\033[0m"
+fi
+sed -i '/include=*/'d $ccfg
+sed -i "1i\include=\'$include\'" $ccfg
+linkset
+}
 linkset(){
 if [ -n "$Url" ];then
 	[ -z "$skip_cert" ] && skip_cert=已开启
@@ -94,11 +119,12 @@ if [ -n "$Url" ];then
 	echo -e "\033[47;30m请检查输入的链接是否正确：\033[0m"
 	echo -e "\033[32;4m$Url\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 \033[32m生成配置文件（原文件将被备份）\033[0m"
-	echo -e " 2 \033[36m添加/修改节点过滤关键字 \033[47;30m$exclude\033[0m"
-	echo -e " 3 \033[33m选取配置规则模版\033[0m"
-	echo -e " 4 \033[0m选取在线生成服务器\033[0m"
-	echo -e " 5 \033[0m跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————自建tls节点务必开启"
+	echo -e " 1 \033[36m生成配置文件\033[0m（原文件将被备份）"
+	echo -e " 2 设置\033[31m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
+	echo -e " 3 设置\033[32m节点筛选\033[0m关键字 \033[47;30m$include\033[0m"
+	echo -e " 4 选取在线\033[33m配置规则模版\033[0m"
+	echo -e " 5 \033[0m选取在线生成服务器\033[0m"
+	echo -e " 6 \033[0m跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————自建tls节点务必开启"
 	echo -----------------------------------------------
 	echo -e " 0 \033[31m取消导入\033[0m并返回上级菜单"
 	echo -----------------------------------------------
@@ -121,12 +147,15 @@ if [ -n "$Url" ];then
 		linkfilter
 		linkset
 	elif [ "$num" = '3' ]; then
-		linkconfig
+		linkfilter2
 		linkset
 	elif [ "$num" = '4' ]; then
-		linkserver
+		linkconfig
 		linkset
 	elif [ "$num" = '5' ]; then
+		linkserver
+		linkset
+	elif [ "$num" = '6' ]; then
 		sed -i '/skip_cert*/'d $ccfg
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if [ "$skip_cert" = "未开启" ] > /dev/null 2>&1; then 
@@ -295,39 +324,45 @@ if [ "$res" = '1' ]; then
 fi
 }
 getcore(){
-#source $ccfg
 #获取核心及版本信息
-if [ ! -f $clashdir/clash ]; then
-	clashcore=没有安装核心！
-	clashv=''
-fi
-clashcore_n=$clashcore
+[ ! -f $clashdir/clash ] && clashcore="未安装核心"
 #获取设备处理器架构
-cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
-[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
-[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && cpucore="armv7"
-[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="armv8"
-[ -n "$(echo $cputype | grep -E "linux.*x86.*")" ] && cpucore="386"
-[ -n "$(echo $cputype | grep -E "linux.*x86_64.*")" ] && cpucore="amd64"
-if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
-	cpucore="mipsle-softfloat"
-	[ -n "$(uname -a | grep -E "M2100")" ] && cpucore="mipsle-hardfloat"
-fi
+	getcputype(){
+		cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
+		[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
+		[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && cpucore="armv7"
+		[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="armv8"
+		[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
+		[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
+		if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
+			mipstype=$(echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}') #通过判断大小端判断mips或mipsle
+			if [ "$mipstype" = "1" ];then
+				cpucore="mipsle-softfloat"
+				#[ -n "$(uname -a | grep -E "M2100")" ] && cpucore="mipsle-hardfloat"
+			else
+				cpucore="mips-softfloat"
+			fi
+		fi
+	}
 ###
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[ -z "$cpucore" ] && getcputype
 echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
-echo -e "\033[32m请选择需要下载的核心版本！\033[0m"
+echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
+echo -e "\033[33m请选择需要下载的核心版本！\033[0m"
 echo -----------------------------------------------
 echo "1 clash：     稳定，内存占用小，推荐！"
 echo "(官方正式版)  不支持Tun模式、混合模式"
 echo
 echo "2 clashpre：  支持Tun模式、混合模式"
 echo "(高级预览版)  内存占用更高"
+echo
+echo "3 手动指定处理器架构"
 echo -----------------------------------------------
 echo 0 返回上级菜单 
 read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		update
 	elif [[ $num == 0 ]]; then
@@ -339,10 +374,23 @@ read -p "请输入对应数字 > " num
 		clashcore=clashpre
 		version=$clashpre_v
 	elif [[ $num == 3 ]]; then
-		clashcore=clashr
-		version='已停止更新'
+		cpucore_list="armv5 armv7 armv8 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
+		echo -----------------------------------------------
+		echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
+		echo -e "当前可供在线下载的处理器架构为："
+		echo -e "\033[32m$cpucore_list\033[0m"
+		echo -e "如果您的CPU架构未在以上列表中，请运行【uname -a】命令,并复制好返回信息"
+		echo -e "之后前往 t.me/clashfm 群提交或 github.com/juewuy/ShellClash 提交issue"
+		echo -----------------------------------------------
+		read -p "请手动输入处理器架构 > " cpucore
+		if [ -z "$(echo $cpucore_list |grep "$cpucore")" ];then
+			echo -e "\033[31m请输入正确的处理器架构！\033[0m"
+			sleep 1
+			cpucore=""
+		fi
+		getcore
 	else
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[31m请输入正确的数字！\033[0m"
 		update
 	fi
