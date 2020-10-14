@@ -62,9 +62,9 @@ if [ -n "$PID" ];then
 	VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 	#获取运行时长
 	if [ -n "$start_time" ]; then 
-		time=$(expr `date +%s` - $start_time)
-		#day=$(($time/86400))
-		day=$(expr $time / 86400)
+		time=$((`date +%s`-start_time))
+		day=$((time/86400))
+		#day=$(expr $time / 86400)
 		if [ "$day" = "0" ]; then 
 			day=""
 		else
@@ -386,7 +386,7 @@ macfilter(){
 		i=1
 		for mac in $(cat $clashdir/mac); do
 			echo -e " $i \033[32m$(cat /tmp/dhcp.leases | awk '{print $3,$2,$4}' | grep $mac)\033[0m"
-			i=$(expr $i + 1)
+			i=$((i+1))
 		done
 		echo -----------------------------------------------
 		echo -e "\033[0m 0 或回车 结束删除"

@@ -173,7 +173,7 @@ do
 		else
 			Url="$Url"\|"$url"
 		fi
-		i=$(expr $i + 1)
+		i=$((i+1))
 	elif [ -z "$url" ];then
 		[ -n "$Url" ] && linkset
 	elif [[ $url == 0 ]];then

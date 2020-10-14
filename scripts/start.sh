@@ -82,14 +82,14 @@ if [ "$result" != "200" ];then
 			echo -e "\033[32m无法获取配置文件，请检查链接格式以及网络连接状态！\033[0m"
 			exit 1
 		else
-			retry=$(expr $retry + 1)
+			retry=$((retry+1))
 			echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
 			echo -e "\033[33m正在尝试第$retry次/共5次！\033[0m"
 			sed -i '/server_link=*/'d $ccfg
 			if [ "$server_link" -ge 5 ]; then
 				server_link=0
 			fi
-			server_link=$(expr $server_link + 1)
+			server_link=$((server_link+1))
 			sed -i "1i\server_link=$server_link" $ccfg
 			Https=""
 			getyaml
@@ -172,7 +172,7 @@ fi
 	yaml=$clashdir/config.yaml
 	#预删除需要添加的项目
 	i=$(grep  -n  "^proxies:" $clashdir/config.yaml | head -1 | cut -d ":" -f 1)
-	i=$(expr $i - 1)
+	i=$((i-1))
 	sed -i "1,${i}d" $yaml
 	#添加配置
 	sed -i "1imixed-port:\ $mix_port" $yaml
@@ -217,7 +217,7 @@ start_redir(){
 	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports $redir_port
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	#设置ipv6转发
-	if [ "$ipv6_support" = "已开启" ];then
+	if [ -n "ip6_nat" -a "$ipv6_support" = "已开启" ];then
 		ip6tables -t nat -N clashv6
 		for mac in $(cat $clashdir/mac); do
 			ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
@@ -264,8 +264,8 @@ start_dns(){
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
 	#ipv6DNS
-	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'not exist')
-	if [ -z "ip6_nat" ];then
+	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'Chain')
+	if [ -n "ip6_nat" ];then
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 		for mac in $(cat $clashdir/mac); do
 			ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
