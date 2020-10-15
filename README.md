@@ -2,14 +2,16 @@
 
 # ShellClash（原Clash for Miwifi）
 
-在Shell环境下一键部署及管理[Clash](https://github.com/Dreamacro/clash)
+在Linux系统中Shell环境下一键部署及管理[Clash](https://github.com/Dreamacro/clash)
 =====
 
 功能简介：
 --
-~通过管理脚本在Shell环境下便捷使用[Clash](https://github.com/Dreamacro/clash)<br>
+~通过管理脚本在各种版本的Linux系统中Shell环境下便捷使用[Clash](https://github.com/Dreamacro/clash)<br>
 ~支持在Shell环境下管理[Clash各种功能](https://lancellc.gitbook.io/clash)<br>
-~支持批量导入[Clash](https://github.com/Dreamacro/clash)支持的节点链接及订阅链接<br>~支持配置定时任务，以及定时更新订阅<br>~支持在线安装及使用网页面板管理规则组<br>
+~支持批量导入[Clash](https://github.com/Dreamacro/clash)支持的节点链接及订阅链接<br>
+~支持配置定时任务，以及定时更新订阅及配置文件<br>
+~支持在线安装及使用网页Dashboard面板管理规则组，且支持自动保存面板选择<br>
 ~支持局域网透明代理/纯净模式等多种模式切换<br>~支持在线更新管理脚本及升级Clash核心<br>
 
 设备支持：
@@ -17,8 +19,8 @@
 
 ~支持小米/红米全系使用官方系统或官方开发版系统的路由器设备<br>
 ~支持各种基于OpenWrt或使用OpenWrt二次定制开发的路由器设备<br>
-~支持各种运行标准Linux系统（如Debian/CenOS/Armbian等）的设备<br>~兼容Padavan固件（保守模式）、潘多拉固件<br>——————————
-~暂不支持高恪、梅林等固件<br>
+~支持各种运行Linux系统（如Debian/CenOS/Armbian等）的设备<br>~兼容Padavan固件（保守模式）、潘多拉固件<br>——————————
+~高恪、梅林等固件（需要自行安装curl以完成安装和使用）<br>
 ~更多设备支持，请提issue或前往TG群反馈（需提供设备名称及运行uname -a返回的设备核心信息）<br>
 
 使用方式：
@@ -32,8 +34,6 @@ opkg update && opkg install curl
 ```
 
 ~之后在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
-
-~使用curl：<br>
 
 ```Shell
 #Release版本-github直连
@@ -64,8 +64,7 @@ https://github.com/juewuy/ShellClash/releases
 --
 ~Tun模式下clash服务可能会和路由器内置的网游加速器冲突，请谨慎同时使用<br>
 ~Redir模式暂不支持转发udp流量，外服游戏可能会受影响，外服游戏用户建议使用Tun模式<br>
-~部分设备长时间使用会出现内存占用偏高——此为golang内存回收不及时导致，可以通过屏蔽p2p流量及设置每日定时重启核心以缓解<br>
-~节点无法连接——在【clash功能设置】中打开【跳过本地证书验证】或者升级clash核心<br>
+~部分低性能设备长时间使用会出现内存占用偏高，可以通过屏蔽p2p流量及设置每日定时重启核心以缓解<br>
 
 友情推广：
 --
