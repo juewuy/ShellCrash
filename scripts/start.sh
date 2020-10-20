@@ -160,12 +160,13 @@ external="external-controller: 0.0.0.0:$db_port"
 [ "$redir_mod" != "Redir模式" ] && tun='tun: {enable: true, stack: system}' || tun='tun: {enable: false}'
 exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 #dns配置
+[ "$dns_over" = "未开启" ] && dns_local=', 127.0.0.1:53'
+dns_nameserver='114.114.114.114, 223.5.5.5'
+dns_fallback='1.0.0.1, 8.8.4.4'
 if [ "$dns_mod" = "fake-ip" ];then
-	dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: [114.114.114.114, 223.5.5.5, 127.0.0.1:53], fallback: [tcp://1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
-elif [ "$dns_over" = "已开启" ];then
-	dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5], fallback: [1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
+	dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 else
-	dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: [114.114.114.114, 223.5.5.5, 127.0.0.1:53], fallback: [1.0.0.1, 8.8.4.4], fallback-filter: {geoip: true}}'
+	dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 fi
 
 ###################################
@@ -177,22 +178,25 @@ fi
 	#添加配置
 	sed -i "1imixed-port:\ $mix_port" $yaml
 	sed -i "1aredir-port:\ $redir_port" $yaml
-	sed -i "2a$lan" $yaml
-	sed -i "3a$mode" $yaml
-	sed -i "4a$log" $yaml
-	sed -i "5a$ipv6" $yaml
-	sed -i "6aexternal-controller:\ :$db_port" $yaml
-	sed -i "7aexternal-ui:\ $db_ui" $yaml
-	sed -i "8asecret:\ $secret" $yaml
-	sed -i "9a$dns" $yaml
+	sed -i "2aauthentication:\ \[\"$authentication\"\]" $yaml
+	sed -i "3a$lan" $yaml
+	sed -i "4a$mode" $yaml
+	sed -i "5a$log" $yaml
+	sed -i "6a$ipv6" $yaml
+	sed -i "7aexternal-controller:\ :$db_port" $yaml
+	sed -i "8aexternal-ui:\ $db_ui" $yaml
+	sed -i "9asecret:\ $secret" $yaml
 	sed -i "10a$tun" $yaml
 	sed -i "11a$exper" $yaml
+	sed -i "12a$dns" $yaml
 	#跳过本地tls证书验证
 	if [ "$skip_cert" = "已开启" ];then
 	sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $yaml
 	else
 	sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $yaml
 	fi
+	#禁止fake-ip回环流量
+	sed -i '/rules:/a \ - IP-CIDR,192.168.0.0/16,REJECT' $yaml
 }
 mark_time(){
 	start_time=`date +%s`
@@ -371,7 +375,7 @@ stop)
 		web_save
 		#删除守护进程&面板配置自动保存
 		sed -i /clash保守模式守护进程/d $cronpath >/dev/null 2>&1
-		sed -i /面板配置自动保存/d $cronpath >/dev/null 2>&1
+		sed -i /保存节点配置/d $cronpath >/dev/null 2>&1
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1

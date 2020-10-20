@@ -49,7 +49,6 @@ fi
 [ -z "$redir_port" ] && redir_port=7892
 [ -z "$db_port" ] && db_port=9999
 [ -z "$dns_port" ] && dns_port=1053
-[ -z "$secret" ] && secret=未设置
 #获取运行模式
 if [ -z "$redir_mod" ];then
 	sed -i "2i\redir_mod=Redir模式" $ccfg
@@ -148,6 +147,8 @@ setport(){
 		fi
 	}
 	source $ccfg
+	[ -z "$secret" ] && secret=未设置
+	[ -z "$authentication" ] && authentication=未设置
 	if [ -n "$(pidof clash)" ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
@@ -159,11 +160,12 @@ setport(){
 		fi
 	fi
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e " 1 修改Http/Sock5端口：\033[36m$mix_port\033[0m"
-	echo -e " 2 修改静态路由端口：\033[36m$redir_port\033[0m"
-	echo -e " 3 修改DNS监听端口：\033[36m$dns_port\033[0m"
-	echo -e " 4 修改面板访问端口：\033[36m$db_port\033[0m"
-	echo -e " 5 修改面板访问密码：\033[36m$secret\033[0m"
+	echo -e " 1 修改Http/Sock5端口：	\033[36m$mix_port\033[0m"
+	echo -e " 2 设置Http/Sock5密码：	\033[36m$authentication\033[0m"
+	echo -e " 3 修改静态路由端口：	\033[36m$redir_port\033[0m"
+	echo -e " 4 修改DNS监听端口：	\033[36m$dns_port\033[0m"
+	echo -e " 5 修改面板访问端口：	\033[36m$db_port\033[0m"
+	echo -e " 6 设置面板访问密码：	\033[36m$secret\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
@@ -173,19 +175,41 @@ setport(){
 		xport=mix_port
 		inputport
 	elif [[ $num == 2 ]]; then
+		echo -----------------------------------------------
+		echo -e "格式必须是\033[32m 用户名:密码 \033[0m的形式，注意用小写冒号分隔！"
+		echo -e "请尽量不要使用特殊符号！可能会产生未知错误！"
+		echo "输入 0 删除密码"
+		echo -----------------------------------------------
+		read -p "请输入Http/Sock5用户名及密码 > " input
+		if [ "$input" = "0" ];then
+			authentication=""
+			sed -i "/authentication*/"d $ccfg
+			echo 密码已移除！
+		else
+			authentication=$(echo $input | grep :)
+			if [ -n "$authentication" ]; then
+				sed -i "/authentication*/"d $ccfg
+				sed -i "1i\authentication=\'$authentication\'" $ccfg
+				echo -e "\033[32m设置成功！！！\033[0m"
+			else
+				echo -e "\033[31m输入有误，请重新输入！\033[0m"
+			fi
+		fi
+		setport
+	elif [[ $num == 3 ]]; then
 		xport=redir_port
 		inputport
-	elif [[ $num == 3 ]]; then
+	elif [[ $num == 4 ]]; then
 		xport=dns_port
 		inputport
-	elif [[ $num == 4 ]]; then
+	elif [[ $num == 5 ]]; then
 		xport=db_port
 		inputport
-	elif [[ $num == 5 ]]; then
-		read -p "请输入面板访问密码 > " secret
+	elif [[ $num == 6 ]]; then
+		read -p "请输入面板访问密码(输入0删除密码) > " secret
 		if [ -n "$secret" ]; then
 			sed -i "/secret*/"d $ccfg
-			sed -i "1i\secret=$secret" $ccfg
+			[ "$secret" = "0" ] && secret="" || sed -i "1i\secret=$secret" $ccfg
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		setport
@@ -669,7 +693,7 @@ echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m	————用于
 echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不可用"
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m	————配置本机代理环境变量"
-echo -e " 5 手动指定clash运行端口"
+echo -e " 5 手动指定clash运行端口及秘钥"
 echo -----------------------------------------------
 echo -e " 8 \033[31m重置\033[0m配置文件"
 echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -1137,7 +1161,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			exit;
 		elif [[ $num == 6 ]]; then
 			echo 注意：测试结果不保证一定准确！
-			delay=`curl -kx 127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
+			delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
 			delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if [ `echo ${#delay}` -gt 1 ];then
