@@ -54,19 +54,17 @@ clash -t #测试模式运行
 
 更新日志：
 --
-https://github.com/juewuy/ShellClash/releases
+### [点击查看](https://github.com/juewuy/ShellClash/releases)
 
 交流反馈：
 --
-### https://t.me/clashfm 
+### [TG讨论组](https://t.me/clashfm) 
 
-已知问题：
+相关Q&A：
 --
-~Tun模式下clash服务可能会和路由器内置的网游加速器冲突，请谨慎同时使用<br>
-~Redir模式暂不支持转发udp流量，外服游戏可能会受影响，外服游戏用户建议使用Tun模式<br>
-~部分设备长时间使用会出现内存占用偏高——此为golang内存回收不及时导致，可以通过屏蔽p2p流量及设置每日定时重启核心以缓解<br>
-~节点无法连接——在【clash功能设置】中打开【跳过本地证书验证】或者升级clash核心<br>
+
+### [详见博客](https://juewuy.github.io)
 
 友情推广：
 --
-[顶级8K专线机场-墙洞](https://dler.best/auth/register?affid=89698)
+### [顶级8K专线机场-墙洞](https://dler.best/auth/register?affid=89698)
