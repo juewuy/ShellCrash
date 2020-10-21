@@ -21,6 +21,8 @@ source $ccfg
 [ -z "$redir_port" ] && redir_port=7892
 [ -z "$db_port" ] && db_port=9999
 [ -z "$dns_port" ] && dns_port=1053
+[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
+[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 #是否代理常用端口
 [ "$common_ports" = "已开启" ] && ports='-m multiport --dports 22,53,587,465,995,993,143,80,443 '
 }
@@ -161,8 +163,6 @@ external="external-controller: 0.0.0.0:$db_port"
 exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 #dns配置
 [ "$dns_over" = "未开启" ] && dns_local=', 127.0.0.1:53'
-dns_nameserver='114.114.114.114, 223.5.5.5'
-dns_fallback='1.0.0.1, 8.8.4.4'
 if [ "$dns_mod" = "fake-ip" ];then
 	dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 else
@@ -172,9 +172,10 @@ fi
 ###################################
 	yaml=$clashdir/config.yaml
 	#预删除需要添加的项目
-	i=$(grep  -n  "^proxies:" $clashdir/config.yaml | head -1 | cut -d ":" -f 1)
-	i=$((i-1))
-	sed -i "1,${i}d" $yaml
+	a=$(grep -n "port:" $yaml | head -1 | cut -d ":" -f 1)
+	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
+	b=$((b-1))
+	sed -i "${a},${b}d" $yaml
 	#添加配置
 	sed -i "1imixed-port:\ $mix_port" $yaml
 	sed -i "1aredir-port:\ $redir_port" $yaml
@@ -191,11 +192,12 @@ fi
 	sed -i "12a$dns" $yaml
 	#跳过本地tls证书验证
 	if [ "$skip_cert" = "已开启" ];then
-	sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $yaml
+		sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $yaml
 	else
-	sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $yaml
+		sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $yaml
 	fi
 	#禁止fake-ip回环流量
+	sed -i '/192.168.0.0/'d $yaml
 	sed -i '/rules:/a \ - IP-CIDR,192.168.0.0/16,REJECT' $yaml
 }
 mark_time(){
