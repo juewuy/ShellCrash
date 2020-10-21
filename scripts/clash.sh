@@ -215,6 +215,53 @@ setport(){
 		setport
 	fi	
 }
+setdns(){
+	source $ccfg
+	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
+	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "当前基础DNS：\033[36m$dns_nameserver\033[0m"
+	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
+	echo -e "多个DNS地址请用\033[30;47m | \033[0m分隔一次性输入"
+	echo -e "\033[33m使用redir-host时，fallback组暂不支持tls或者https形式的DNS\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 修改基础DNS"
+	echo -e " 2 修改fallback_DNS"
+	echo -e " 3 重置DNS配置"
+	echo -e " 0 返回上级菜单"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then 
+		echo -----------------------------------------------
+		echo -e "\033[31m请输入正确的数字！\033[0m"
+		clashadv
+	elif [[ $num == 1 ]]; then
+		read -p "请输入新的DNS > " dns_nameserver
+		dns_nameserver=$(echo $dns_nameserver | sed 's/|/\,\ /')
+		if [ -n "$dns_nameserver" ]; then
+			sed -i "/dns_nameserver*/"d $ccfg
+			sed -i "1i\dns_nameserver=\'$dns_nameserver\'" $ccfg
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi
+	elif [[ $num == 2 ]]; then
+		read -p "请输入新的DNS > " dns_fallback
+		dns_fallback=$(echo $dns_nameserver | sed 's/|/\,\ /')
+		if [ -n "$dns_fallback" ]; then
+			sed -i "/dns_fallback*/"d $ccfg
+			sed -i "1i\dns_fallback=\'$dns_fallback\'" $ccfg
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi	
+	elif [[ $num == 3 ]]; then
+		dns_nameserver=""
+		dns_fallback=""
+		sed -i "/dns_nameserver*/"d $ccfg
+		sed -i "/dns_fallback*/"d $ccfg
+		echo -e "\033[33mDNS配置已重置！！！\033[0m"
+	else
+		clashadv
+	fi
+	setdns
+}
 checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
 		if [ -n "$(netstat -ntul 2>&1 |grep :$portx)" ];then
@@ -388,14 +435,14 @@ macfilter(){
 	add_mac(){
 		echo -----------------------------------------------
 		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
-		cat /tmp/dhcp.leases | awk '{print " "NR" "$3,$2,$4}'
+		cat $dhcpdir | awk '{print " "NR" "$3,$2,$4}'
 		echo -e "\033[0m 0-----------------------------------------------"
 		echo -e " 0 或回车 结束添加"
 		read -p "请输入需要添加的设备的对应序号 > " num
 		if [ -z "$num" ]||[ "$num" -le 0 ]; then
 			macfilter
-		elif [ $num -le $(cat /tmp/dhcp.leases | awk 'END{print NR}') ]; then
-			macadd=$(cat /tmp/dhcp.leases | awk '{print $2}' | sed -n "$num"p)
+		elif [ $num -le $(cat $dhcpdir | awk 'END{print NR}') ]; then
+			macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
 			if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
 				echo $macadd >> $clashdir/mac
 				echo -----------------------------------------------
@@ -420,7 +467,7 @@ macfilter(){
 		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[0m"
 		i=1
 		for mac in $(cat $clashdir/mac); do
-			echo -e " $i \033[32m$(cat /tmp/dhcp.leases | awk '{print $3,$2,$4}' | grep $mac)\033[0m"
+			echo -e " $i \033[32m$(cat $dhcpdir | awk '{print $3,$2,$4}' | grep $mac)\033[0m"
 			i=$((i+1))
 		done
 		echo -----------------------------------------------
@@ -439,13 +486,16 @@ macfilter(){
 		del_mac
 	}
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	[ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
+	[ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
+	[ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
 	echo -e "\033[30;47m请在此添加或移除设备\033[0m"
 	if [ -n "$(cat $clashdir/mac)" ]; then
 		echo -----------------------------------------------
 		echo -e "当前已过滤设备为：\033[36m"
 		echo -e "\033[33m   设备IP       设备mac地址       设备名称\033[0m"
 		for mac in $(cat $clashdir/mac); do
-			cat /tmp/dhcp.leases | awk '{print $3,$2,$4}' | grep $mac
+			cat $dhcpdir | awk '{print $3,$2,$4}' | grep $mac
 		done
 		echo -----------------------------------------------
 	fi
@@ -472,7 +522,7 @@ macfilter(){
 		del_mac
 	elif [[ $num == 4 ]]; then	
 		echo -----------------------------------------------		
-		cat /tmp/dhcp.leases | awk '{print $2}' > $clashdir/mac
+		cat $dhcpdir | awk '{print $2}' > $clashdir/mac
 		echo -e "\033[32m已经将所有设备全部添加进过滤列表！\033[0m"
 		echo -e "\033[33m请搭配【移除指定设备】功能使用！\033[0m"
 		sleep 1
@@ -689,11 +739,12 @@ echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 echo -e "\033[33m如您不是很了解clash的运行机制，请勿更改！\033[0m"
 echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 echo -----------------------------------------------
-echo -e " 1 不修饰config.yaml:	\033[36m$modify_yaml\033[0m	————用于使用自定义配置"
-echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不可用"
+echo -e " 1 使用自定义配置:	\033[36m$modify_yaml\033[0m	————不使用内置规则修饰config.yaml"
+echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m	————配置本机代理环境变量"
 echo -e " 5 手动指定clash运行端口及秘钥"
+echo -e " 6 手动配置内置DNS设置"
 echo -----------------------------------------------
 echo -e " 8 \033[31m重置\033[0m配置文件"
 echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -776,6 +827,10 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		setport
 		clashadv
 		
+	elif [[ $num == 6 ]]; then
+		setdns
+		clashadv
+		
 	elif [[ $num == 8 ]]; then	
 		read -p "确认重置配置文件？(1/0) > " res
 		if [ "$res" = "1" ];then
@@ -799,7 +854,6 @@ else
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 	clashsh
 fi
-exit;
 }
 checkupdate(){
 if [ -z "$release_new" ];then
