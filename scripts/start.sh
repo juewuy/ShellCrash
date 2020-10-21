@@ -279,8 +279,8 @@ start_dns(){
 		ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port > /dev/null 2>&1
 		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
 	else
-		 ip6tables -I INPUT -p tcp --dport 53 -j REJECT
-		 ip6tables -I INPUT -p udp --dport 53 -j REJECT
+		ip6tables -I INPUT -p tcp --dport 53 -j REJECT
+		ip6tables -I INPUT -p udp --dport 53 -j REJECT
 	fi
 }
 daemon(){
@@ -336,7 +336,7 @@ afstart(){
 	getconfig
 	#修改iptables规则使流量进入clash
 	stop_iptables
-	[ "$redir_mod" != "纯净模式" ] && start_dns
+	[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "true" ] && start_dns
 	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 	#标记启动时间
 	mark_time

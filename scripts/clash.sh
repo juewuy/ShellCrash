@@ -156,7 +156,7 @@ setport(){
 		if [ "$res" = "1" ];then
 			$clashdir/start.sh stop
 		else
-			clashsh
+			clashadv
 		fi
 	fi
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -217,6 +217,14 @@ setport(){
 }
 setdns(){
 	source $ccfg
+	if [ "$dns_no" = "true" ];then
+		read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
+		if [ "$res" = "1" ];then
+			sed -i "/dns_no*/"d $ccfg
+		else
+			clashadv
+		fi
+	fi
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -228,6 +236,7 @@ setdns(){
 	echo -e " 1 修改基础DNS"
 	echo -e " 2 修改fallback_DNS"
 	echo -e " 3 重置DNS配置"
+	echo -e " 4 禁用内置DNS(慎用)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -257,6 +266,13 @@ setdns(){
 		sed -i "/dns_nameserver*/"d $ccfg
 		sed -i "/dns_fallback*/"d $ccfg
 		echo -e "\033[33mDNS配置已重置！！！\033[0m"
+	elif [[ $num == 4 ]]; then
+		echo -----------------------------------------------
+		echo -e "\033[31m仅限搭配其他DNS服务(比如dnsmasq、smartDNS)时使用！\033[0m"
+		sed -i "/dns_no*/"d $ccfg
+		sed -i "1i\dns_no=true" $ccfg
+		echo -e "\033[33m已禁用内置DNS！！！\033[0m"
+		clashadv
 	else
 		clashadv
 	fi
@@ -744,7 +760,7 @@ echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m	————配置本机代理环境变量"
 echo -e " 5 手动指定clash运行端口及秘钥"
-echo -e " 6 手动配置内置DNS设置"
+echo -e " 6 手动配置内置DNS服务"
 echo -----------------------------------------------
 echo -e " 8 \033[31m重置\033[0m配置文件"
 echo -e " 9 \033[32m重启\033[0mclash服务"

@@ -458,12 +458,41 @@ getdb(){
 #host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
+echo -e "\033[32m打开管理面板的速度更快且更稳定\033[0m"
 echo -----------------------------------------------
-echo -e "\033[32m打开管理面板的速度更快且更稳定"
-echo -e "\033[33m需要占用约500kb的本地空间\033[0m"
+echo -e "请选择面板\033[33m安装类型：\033[0m"
 echo -----------------------------------------------
-echo -e " 1 在$clashdir/ui目录安装（推荐！）\033[33m安装后需重启clash服务！！！\033[0m"
-echo " 2 在/www/clash目录安装(依赖路由器自带的Nginx服务，可能安装失败！)"
+echo -e " 1 安装\033[32m官方面板\033[0m(约500kb)"
+echo -e " 2 安装\033[32mYacd面板\033[0m(约1.1mb)"
+echo -e " 3 卸载\033[33m本地面板\033[0m"
+echo " 0 返回上级菜单"
+read -p "请输入对应数字 > " num
+
+if [ -z "$num" ];then
+	update
+elif [ "$num" = '1' ]; then
+	db_type=clashdb
+elif [ "$num" = '2' ]; then
+	db_type=yacd
+elif [ "$num" = '3' ]; then
+	read -p "确认卸载本地面板？(1/0) > " res
+	if [ "$res" = 1 ];then
+		rm -rf /www/clash
+		rm -rf $clashdir/ui
+		echo -----------------------------------------------
+		echo -e "\033[31m面板已经卸载！\033[0m"
+		sleep 1
+	fi
+	update
+else
+	echo -e "\033[31m请输入正确的数字！\033[0m"
+	update
+fi
+echo -----------------------------------------------
+echo -e "请选择面板\033[33m安装目录：\033[0m"
+echo -----------------------------------------------
+echo -e " 1 在$clashdir/ui目录安装(推荐！安装后会自动重启clash服务！)"
+echo -e " 2 在/www/clash目录安装(依赖Openwrt的Nginx服务，可能失败！)"
 echo -----------------------------------------------
 echo " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
@@ -472,7 +501,7 @@ if [ -z "$num" ];then
 	update
 elif [ "$num" = '1' ]; then
 	dbdir=$clashdir/ui
-	hostdir=":$db_port/ui\033[0;36m访问面板(需重启clash服务！)"
+	hostdir=":$db_port/ui\033[0;36m访问面板"
 elif [ "$num" = '2' ]; then
 	dbdir=/www/clash
 	hostdir='/clash\033[0;36m访问面板'
@@ -481,9 +510,9 @@ else
 fi
 	#下载及安装
 	if [ -d /www/clash -o -d $clashdir/ui ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		read -p "是否覆盖安装？[1/0] > " res
 		if [ -z "$res" ]; then
 			update
@@ -494,28 +523,34 @@ fi
 			update
 		fi
 	fi
-	dblink="$update_url/bin/clashdb.tar.gz"
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	dblink="${update_url}/bin/${db_type}.tar.gz"
+	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
 	result=$(curl -w %{http_code} -kLo /tmp/clashdb.tar.gz $dblink)
 	if [ "$result" != "200" ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		getdb
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		mkdir -p $dbdir > /dev/null
-		tar -zxvf '/tmp/clashdb.tar.gz' -C $dbdir > /dev/null
+		tar -zxvf "/tmp/clashdb.tar.gz" -C $dbdir > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
 		#修改默认host和端口
-		sed -i "s/127.0.0.1/${host}/g" $dbdir/js/*.js
-		sed -i "s/9090/${db_port}/g" $dbdir/js/*.js
-		#
+		if [ "$db_type" = "clashdb" ];then
+			sed -i "s/127.0.0.1/${host}/g" $dbdir/js/*.js
+			sed -i "s/9090/${db_port}/g" $dbdir/js/*.js
+		else
+			sed -i "s/127.0.0.1/${host}/g" $dbdir/app*.js
+			sed -i "s/7892/${db_port}/g" $dbdir/app*.js
+		fi
+		[ "$dbdir" != "/www/clash" ] && $clashdir/start.sh restart
+		echo -----------------------------------------------
 		echo -e "\033[32m面板安装成功！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0m"
 		rm -rf /tmp/clashdb.tar.gz
+		sleep 1
 		update
 	fi
 	
@@ -583,7 +618,7 @@ elif [[ $num == 4 ]]; then
 		update
 	fi
 elif [[ $num == 9 ]]; then
-	update_url='http://127.0.0.1:8080/clash-for-Miwifi'
+	update_url='http://192.168.31.30:8080/clash-for-Miwifi'
 else
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[31m请输入正确的数字！\033[0m"
