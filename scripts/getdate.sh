@@ -573,9 +573,11 @@ echo -----------------------------------------------
 echo -e " 0 返回上级菜单"
 read -p "请输入对应数字 > " num
 	if [ "$num" = '1' ]; then
-		echo 'function FindProxyForURL(url, host) {' > $dir/pac
-		echo "    return \"SOCKS $authentication@$host:$mix_port; PROXY $authentication@$host:$mix_port; DIRECT;\"" >> $dir/pac
-		echo '}' >> $dir/pac
+		cat > $dir/pac <<EOF
+function FindProxyForURL(url, host) {
+		return "PROXY $authentication@$host:$mix_port; DIRECT;"
+}
+EOF
 		echo -e "\033[33mPAC文件已生成！\033[0m"
 		echo -e "PAC地址：\033[32m$pac\033[0m"
 		echo "使用教程：https://baike.baidu.com/item/PAC/16292100"
