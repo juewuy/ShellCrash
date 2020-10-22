@@ -197,8 +197,8 @@ fi
 		sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $yaml
 	fi
 	#禁止fake-ip回环流量
-	sed -i '/192.168.0.0/'d $yaml
-	sed -i '/rules:/a \ - IP-CIDR,192.168.0.0/16,REJECT' $yaml
+	#sed -i '/198.18.0.0/'d $yaml
+	#sed -i '/rules:/a \ - IP-CIDR,198.18.0.0/16,REJECT' $yaml
 }
 mark_time(){
 	start_time=`date +%s`
@@ -266,6 +266,7 @@ start_dns(){
 	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
 	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
 	iptables -t nat -A PREROUTING -p udp -j clash_dns
+	iptables -t nat -A OUTPUT -p udp -j clash_dns
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
