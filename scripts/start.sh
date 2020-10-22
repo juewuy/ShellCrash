@@ -341,7 +341,7 @@ afstart(){
 	#标记启动时间
 	mark_time
 	#设置本机代理
-	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port
+	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $dbdir
 	#启用面板配置自动保存
 	web_save_auto
 	#后台还原面板配置
@@ -406,12 +406,32 @@ web_save)
 		web_save
 	;;
 set_proxy)
-		echo 'export all_proxy=http://127.0.0.1:'"$2" >> /etc/profile
-		echo 'export ALL_PROXY=$all_proxy' >> /etc/profile
+		#GNOME配置
+		if  gsettings --version >/dev/null 2>&1 ;then
+			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1${3}/pac"
+			gsettings set org.gnome.system.proxy mode "auto"
+		#KDE配置
+		elif  kwriteconfig5 -h >/dev/null 2>&1 ;then
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 2
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1${3}/pac"
+		#环境变量方式
+		else
+			echo 'export all_proxy=http://127.0.0.1:'"$2" >> /etc/profile
+			echo 'export ALL_PROXY=$all_proxy' >> /etc/profile
+		fi
 	;;
 unset_proxy)
-		sed -i '/all_proxy/'d /etc/profile
-		sed -i '/ALL_PROXY/'d /etc/profile
+		#GNOME配置
+		if  gsettings --version >/dev/null 2>&1 ;then
+			gsettings set org.gnome.system.proxy mode "none"
+		#KDE配置
+		elif  kwriteconfig5 -h >/dev/null 2>&1 ;then
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 0
+		#环境变量方式
+		else
+			sed -i '/all_proxy/'d /etc/profile
+			sed -i '/ALL_PROXY/'d /etc/profile
+		fi
 	;;
 esac
 

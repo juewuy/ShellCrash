@@ -16,10 +16,13 @@ fi
 ccfg=$clashdir/mark
 yaml=$clashdir/config.yaml
 #检查/读取标识文件
-[ ! -f $ccfg ]&& echo '#标识clash运行状态的文件，不明勿动！' >> $ccfg
+[ ! -f $ccfg ] && echo '#标识clash运行状态的文件，不明勿动！' > $ccfg
 source $ccfg
 #检查mac地址记录
 [ ! -f $clashdir/mac ] && touch $clashdir/mac
+#dashboard目录位置
+[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
+[ -d $clashdir/ui ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
 #开机自启相关
 if [ -f /etc/rc.common ];then
 	if [ -n "$(find /etc/rc.d -name '*clash')" ];then
@@ -86,22 +89,6 @@ if [ -n "$PID" ];then
 fi
 echo -e "TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
 echo -----------------------------------------------
-#检查clash核心
-if [ ! -f $clashdir/clash ];then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
-	checkupdate
-	source $clashdir/getdate.sh
-	getcore
-fi
-#检查GeoIP数据库
-if [ ! -f $clashdir/Country.mmdb ];then
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
-	checkupdate
-	source $clashdir/getdate.sh
-	getgeo
-fi
 #检查定时任务配置文件
 if [ -z "$cronpath" ];then
 	[ -d /etc/crontabs/ ] && cronpath="/etc/crontabs/root"
@@ -110,14 +97,19 @@ if [ -z "$cronpath" ];then
 	[ -d /etc/storage/cron/crontabs ] && cronpath="/etc/storage/cron/crontabs/admin"
 	[ -n "$cronpath" ] && sed -i "1i\cronpath=\'$cronpath\'" $ccfg
 fi
+#检查新手引导
+if [ -z "$userguide" ];then
+	read -p "检测到首次运行，是否启动新手引导？(1/0) > " res
+	echo -----------------------------------------------
+	sed -i "1i\userguide=1" $ccfg
+	[ "$res" = 1 ] && source $clashdir/getdate.sh && userguide
+fi
 }
 start_over(){
 	[ $? -eq 1 ] && exit
 	echo -e "\033[32mclash服务已启动！\033[0m"
-	if [ -d /www/clash ];then
-		echo -e "请使用\033[30;47m http://$host/clash \033[0m管理内置规则"
-	elif [ -d $clashdir/ui  ];then
-		echo -e "请使用\033[30;47m http://$host:$db_port/ui \033[0m管理内置规则"
+	if [ -n "$dbdir" ];then
+		echo -e "请使用\033[30;47m http://$host$dbdir \033[0m管理内置规则"
 	else
 		echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
 		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m $db_port \033[0m"
@@ -293,6 +285,21 @@ checkport(){
 	done
 }
 clashstart(){
+	#检查clash核心
+	if [ ! -f $clashdir/clash ];then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
+		checkupdate
+		source $clashdir/getdate.sh && getcore
+	fi
+	#检查GeoIP数据库
+	if [ ! -f $clashdir/Country.mmdb ];then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
+		checkupdate
+		source $clashdir/getdate.sh && getgeo
+	fi
+	#检查yaml配置文件
 	if [ ! -f "$yaml" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
@@ -631,7 +638,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			read -p "是否配置自动代理PAC文件(1/0) > " res
 				if [ "$res" = 1 ]; then
-					source $clashdir/getdate.sh && catpac
+					source $clashdir/getdate.sh && setpac
 				fi
 		else
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -758,7 +765,7 @@ echo -----------------------------------------------
 echo -e " 1 使用自定义配置:	\033[36m$modify_yaml\033[0m	————不使用内置规则修饰config.yaml"
 echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
-echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m	————配置本机代理环境变量"
+echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m	————使用环境变量或者PAC配置本机代理"
 echo -e " 5 手动指定clash运行端口及秘钥"
 echo -e " 6 手动配置内置DNS服务"
 echo -----------------------------------------------
@@ -828,14 +835,14 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\local_proxy=已开启" $ccfg
 			local_proxy=已开启
-			$clashdir/start.sh set_proxy $mix_port
-			echo -e "\033[32m已经将代理参数写入环境变量~\033[0m"
+			$clashdir/start.sh set_proxy $mix_port $dbdir
+			echo -e "\033[32m已经成功配置本机代理~\033[0m"
 			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
 		else
 			sed -i "1i\local_proxy=未开启" $ccfg
 			local_proxy=未开启
 			$clashdir/start.sh unset_proxy
-			echo -e "\033[33m已经将代理参数从环境变量移除！！\033[0m"	
+			echo -e "\033[33m已经停用本机代理规则！！\033[0m"	
 		fi
 		sleep 1
 		clashadv 		
@@ -924,7 +931,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		
 	elif [[ $num == 5 ]]; then	
 		source $clashdir/getdate.sh
-		catpac
+		setpac
 		update
 
 	elif [[ $num == 7 ]]; then	
@@ -1177,74 +1184,7 @@ if [[ $num -le 9 ]] > /dev/null 2>&1; then
 		clashadv
 
 	elif [[ $num == 8 ]]; then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[30;47m这里是测试命令菜单\033[0m"
-		echo -e "\033[33m如遇问题尽量运行相应命令后截图发群\033[0m"
-		echo -e "磁盘占用/所在目录："
-		du -h $clashdir
-		echo -----------------------------------------------
-		echo " 1 查看clash运行时的报错信息"
-		echo " 2 查看系统DNS端口(:53)占用 "
-		echo " 3 测试ssl加密（aes-128-gcm）跑分"
-		echo " 4 查看iptables端口转发详情"
-		echo " 5 查看config.yaml前40行"
-		echo " 6 测试代理服务器连通性（google.tw)"
-		echo -----------------------------------------------
-		echo " 0 返回上级目录！"
-		read -p "请输入对应数字 > " num
-		if [ -z "$num" ]; then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashsh
-		elif [[ $num == 0 ]]; then
-			clashsh
-		elif [[ $num == 1 ]]; then
-			$clashdir/start.sh stop
-			echo -----------------------------------------------
-			$clashdir/clash -t -d $clashdir 
-			echo -----------------------------------------------
-			echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
-			exit;
-		elif [[ $num == 2 ]]; then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			netstat -ntulp |grep 53
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
-			exit;
-		elif [[ $num == 3 ]]; then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			openssl speed -multi 4 -evp aes-128-gcm
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			exit;
-		elif [[ $num == 4 ]]; then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			iptables  -t nat  -L PREROUTING --line-numbers
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			iptables  -t nat  -L clash --line-numbers
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			iptables  -t nat  -L clash_dns --line-numbers
-			exit;
-		elif [[ $num == 5 ]]; then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			sed -n '1,40p' $yaml
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			exit;
-		elif [[ $num == 6 ]]; then
-			echo 注意：测试结果不保证一定准确！
-			delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
-			delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if [ `echo ${#delay}` -gt 1 ];then
-				echo -e "\033[32m连接成功！响应时间为："$delay" ms\033[0m"
-			else
-				echo -e "\033[31m连接超时！请重试或检查节点配置！\033[0m"
-			fi
-			clashsh
-		else
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m请输入正确的数字！\033[0m"
-			clashsh
-		fi
+		source $clashdir/getdate.sh && testcommand
 
 	elif [[ $num == 9 ]]; then
 		update
