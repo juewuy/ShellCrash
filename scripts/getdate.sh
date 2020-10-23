@@ -1,6 +1,17 @@
 #!/bin/bash
 # Copyright (C) Juewuy
 
+webget(){
+	[ -n "$(pidof clash)" ] && export http_proxy="http:/127.0.0.1:$mix_port" #设置临时http代理
+	if curl --version > /dev/null 2>&1;then
+		result=$(curl -w %{http_code} --connect-timeout 5 -# -kLo $1 $2)
+	elif wget --version > /dev/null 2>&1;then
+		wget -q --show-progress --no-check-certificate --timeout=5 -O $1 $2
+		[ $? -eq 0 ] && result="200"
+	else
+		echo 找不到curl或者wget，无法下载，请先安装相应依赖！
+	fi
+}
 linkconfig(){
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
@@ -21,12 +32,11 @@ linkconfig(){
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ] || [[ $num -gt 13 ]];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
-	elif [[ "$num" = "0" ]];then
+	if [ -z "$num" ] || [ "$num" -gt 13 ];then
+		echoerrornum
+	elif [ "$num" = 0 ];then
 		echo 
-	elif [[ $num -le 13 ]];then
+	elif [ "$num" -le 13 ];then
 		#将对应标记值写入mark
 		sed -i '/rule_link*/'d $ccfg
 		sed -i "4i\rule_link="$num"" $ccfg	
@@ -48,12 +58,11 @@ linkserver(){
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ] || [[ $num -gt 5 ]];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
-	elif [[ "$num" = 0 ]];then
+	if [ -z "$num" ] || [ "$num" -gt 5 ];then
+		echoerrornum
+	elif [ "$num" = 0 ];then
 		echo
-	elif [[ $num -le 5 ]];then
+	elif [ "$num" -le 5 ];then
 		#将对应标记值写入mark
 		sed -i '/server_link*/'d $ccfg
 		sed -i "4i\server_link="$num"" $ccfg	
@@ -169,8 +178,7 @@ linkset(){
 			fi
 			linkset
 		else
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m请输入正确的数字！\033[0m"
+			echoerrornum
 			linkset
 		fi
 		clashlink
@@ -196,7 +204,7 @@ getlink(){
 		url=`echo ${url/*\&url\=/""}`   #将clash完整链接还原成单一链接
 		url=`echo ${url/\&config\=*/""}`   #将clash完整链接还原成单一链接
 		url=`echo ${url//\&/\%26}`   #将分隔符 & 替换成urlcode：%26
-		if [[ "$test" != "" ]];then
+		if [ -n "$test" ];then
 			if [ -z "$Url" ];then
 				Url="$url"
 			else
@@ -205,7 +213,7 @@ getlink(){
 			i=$((i+1))
 		elif [ -z "$url" ];then
 			[ -n "$Url" ] && linkset
-		elif [[ $url == 0 ]];then
+		elif [ "$url" = 0 ];then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m已撤销并删除所有已输入的链接！！！\033[0m"
 			Url=""
@@ -248,7 +256,7 @@ getlink2(){
 				start_over
 				exit;
 			fi
-	elif [[ $Https == 0 ]];then
+	elif [ "$Https" = 0 ];then
 		clashlink
 	else
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -257,8 +265,133 @@ getlink2(){
 		clashlink
 	fi
 }
+clashlink(){
+	#获取订阅规则
+	if [ -z "$rule_link" ]; then
+		sed -i "4i\rule_link=1" $ccfg
+		rule_link=1
+	fi
+	#获取后端服务器地址
+	if [ -z "$server_link" ]; then
+		sed -i "5i\server_link=1" $ccfg
+		server_link=1
+	fi
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[30;47m 欢迎使用导入配置文件功能！\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 在线导入\033[36m订阅\033[0m并生成Clash配置文件"
+	echo -e " 2 在线导入\033[33mClash\033[0m配置文件"
+	echo -e " 3 设置\033[31m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
+	echo -e " 4 设置\033[32m节点筛选\033[0m关键字 \033[47;30m$include\033[0m"
+	echo -e " 5 选取\033[33mClash配置规则\033[0m在线模版"
+	echo -e " 6 选择在线生成服务器-subconverter"
+	echo -e " 7 \033[36m还原\033[0m之前的配置文件"
+	echo -e " 8 \033[33m手动更新\033[0m配置文件"
+	echo -e " 9 设置\033[36m自动更新\033[0m配置文件"
+	echo -----------------------------------------------
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ];then
+		echoerrornum
+		clashsh
+	elif [ "$num" = 1 ];then
+		if [ -n "$Url" ];then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[33m检测到已记录的订阅链接：\033[0m"
+			echo -e "\033[4;32m$Url\033[0m"
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			read -p "清空链接/追加导入？[1/0] > " res
+			if [ "$res" = '1' ]; then
+				Url=""
+				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -e "\033[31m链接已清空！\033[0m"
+			fi
+		fi
+		getlink
+	  
+	elif [ "$num" = 2 ];then
+		if [ -n "$Url" ];then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[33m检测到已记录的订阅链接：\033[0m"
+			echo -e "\033[4;32m$Url\033[0m"
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			read -p "清空链接/追加导入？[1/0] > " res
+			if [ "$res" = '1' ]; then
+				Url=""
+				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -e "\033[31m链接已清空！\033[0m"
+			fi
+		fi
+		getlink2
+		
+	elif [ "$num" = 3 ];then
+		linkfilter
+		clashlink
+		
+	elif [ "$num" = 4 ];then
+		linkfilter2
+		clashlink
+		
+	elif [ "$num" = 5 ];then
+		linkconfig
+		clashlink
+		
+	elif [ "$num" = 6 ];then
+		linkserver
+		clashlink
+		
+	elif [ "$num" = 7 ];then
+		yamlbak=$yaml.bak
+		if [ ! -f "$yaml".bak ];then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
+		else
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e 备份文件共有"\033[32m`wc -l < $yamlbak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < $yaml`\033[0m"行内容
+			read -p "确认还原配置文件？此操作不可逆！[1/0] > " res
+			if [ "$res" = '1' ]; then
+				mv $yamlbak $yaml
+				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -e "\033[32m配置文件已还原！请手动重启clash服务！\033[0m"
+			else 
+				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -e "\033[31m操作已取消！返回上级菜单！\033[0m"
+			fi
+		fi
+		clashsh
+		
+	elif [ "$num" = 8 ];then
+		if [ -z "$Url" -a -z "$Https" ];then
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[31m没有找到你的订阅链接！请先输入链接！\033[0m"
+			sleep 2
+			clashlink
+		else
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -e "\033[33m当前系统记录的订阅链接为：\033[0m"
+			echo -e "\033[4;32m$Url\033[0m"
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			read -p "确认更新配置文件？[1/0] > " res
+			if [ "$res" = '1' ]; then
+				$clashdir/start.sh getyaml
+				start_over
+				exit;
+			fi
+			clashlink
+		fi
+		
+	elif [ "$num" = 9 ];then
+		clashcron
+		
+	elif [ "$num" = 0 ];then
+		clashsh
+	else
+		echoerrornum
+		clashsh
+	fi
+}
 gettar(){
-	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
+	result=$(curl -w %{http_code} -skLo /tmp/clashfm.tar.gz $tarurl)
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
 	#解压
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -362,18 +495,17 @@ getcore(){
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
-			echo -----------------------------------------------
-			echo -e "\033[31m请输入正确的数字！\033[0m"
+			echoerrornum
 			update
-		elif [[ $num == 0 ]]; then
+		elif [ "$num" = 0 ]; then
 			update
-		elif [[ $num == 1 ]]; then
+		elif [ "$num" = 1 ]; then
 			clashcore=clash
 			version=$clash_v
-		elif [[ $num == 2 ]]; then
+		elif [ "$num" = 2 ]; then
 			clashcore=clashpre
 			version=$clashpre_v
-		elif [[ $num == 3 ]]; then
+		elif [ "$num" = 3 ]; then
 			cpucore_list="armv5 armv7 armv8 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
 			echo -----------------------------------------------
 			echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
@@ -390,8 +522,7 @@ getcore(){
 			fi
 			getcore
 		else
-			echo -----------------------------------------------
-			echo -e "\033[31m请输入正确的数字！\033[0m"
+			echoerrornum
 			update
 		fi
 	#生成链接
@@ -406,7 +537,7 @@ getcore(){
 	echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出        |"
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
 	#获取在线clash核心文件
-	result=$(curl -w %{http_code} -kLo /tmp/clash.new $corelink)
+	result=$(curl -w %{http_code} -#kLo /tmp/clash.new $corelink)
 	if [ "$result" != "200" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m核心文件下载失败！\033[0m"
@@ -434,7 +565,7 @@ getgeo(){
 	if [ "$res" = '1' ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo 正在从服务器获取数据库文件…………
-		result=$(curl -w %{http_code} -kLo /tmp/Country.mmdb $update_url/bin/Country.mmdb)
+		result=$(curl -w %{http_code} -#kLo /tmp/Country.mmdb $update_url/bin/Country.mmdb)
 		if [ "$result" != "200" ];then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m文件下载失败！\033[0m"
@@ -482,7 +613,7 @@ getdb(){
 		fi
 		update
 	else
-		echo -e "\033[31m请输入正确的数字！\033[0m"
+		echoerrornum
 		update
 	fi
 	echo -----------------------------------------------
@@ -523,7 +654,7 @@ getdb(){
 		dblink="${update_url}/bin/${db_type}.tar.gz"
 		echo -----------------------------------------------
 		echo 正在连接服务器获取安装文件…………
-		result=$(curl -w %{http_code} -kLo /tmp/clashdb.tar.gz $dblink)
+		result=$(curl -w %{http_code} -#kLo /tmp/clashdb.tar.gz $dblink)
 		if [ "$result" != "200" ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m文件下载失败！\033[0m"
@@ -544,8 +675,8 @@ getdb(){
 			fi
 			[ "$dbdir" != "/www/clash" ] && $clashdir/start.sh restart
 			#写入配置文件
-			sed -i '/dbdir*/'d $ccfg
-			sed -i "1i\dbdir=\'$hostdir\'" $ccfg
+			sed -i '/hostdir*/'d $ccfg
+			sed -i "1i\hostdir=\'$hostdir\'" $ccfg
 			echo -----------------------------------------------
 			echo -e "\033[32m面板安装成功！\033[0m"
 			echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0;36m访问面板\033[0m"
@@ -592,7 +723,7 @@ setpac(){
 			echo -e "PAC地址：\033[32mhttp://$host$dbdir/pac\033[0m"
 			echo "使用教程：https://baike.baidu.com/item/PAC/16292100"
 			sleep 2
-		elif [[ $num == 2 ]]; then
+		elif [ "$num" = 2 ]; then
 			rm -rf $dbdir/pac
 			echo -----------------------------------------------
 			echo -e "\033[33mPAC文件已清除！\033[0m"
@@ -612,16 +743,15 @@ setserver(){
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
+		echoerrornum
 		update
-	elif [[ $num == 1 ]]; then
+	elif [ "$num" = 1 ]; then
 		update_url='--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master'
-	elif [[ $num == 2 ]]; then
+	elif [ "$num" = 2 ]; then
 		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
-	elif [[ $num == 3 ]]; then
+	elif [ "$num" = 3 ]; then
 		update_url='-x '$authentication'@127.0.0.1:'$mix_port' https://raw.githubusercontent.com/juewuy/ShellClash/master'
-	elif [[ $num == 4 ]]; then
+	elif [ "$num" = 4 ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		read -p "请输入个人源路径 > " update_url
 		if [ -z "$update_url" ];then
@@ -629,11 +759,10 @@ setserver(){
 			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 			update
 		fi
-	elif [[ $num == 9 ]]; then
+	elif [ "$num" = 9 ]; then
 		update_url='http://192.168.31.30:8080/clash-for-Miwifi'
 	else
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
+		echoerrornum
 		update
 	fi
 	#写入mark文件
@@ -643,6 +772,97 @@ setserver(){
 	echo -e "\033[32m源地址更新成功！\033[0m"
 	release_new=""
 	update
+}
+checkupdate(){
+if [ -z "$release_new" ];then
+	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
+		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 --connect-timeout 5 -m 5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+		update_url=$update_url@$release_new
+	fi
+	curl -skL --connect-timeout 5 -m 5  $update_url/bin/version > /tmp/clashversion
+	source /tmp/clashversion
+	[ -z "$release_new" ] && release_new=$versionsh
+fi
+}
+update(){
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -e "\033[33m正在检查更新！\033[0m"
+	checkupdate
+	[ "$clashcore" = "clash" ] && clash_n=$clash_v || clash_n=$clashpre_v
+	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh\033[0m"
+	echo -e " 2 切换\033[33mclash核心 	\033[33m$clashv\033[0m > \033[32m$clash_n\033[0m"
+	echo -e " 3 更新\033[32mGeoIP数据库	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
+	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+	echo -e " 5 生成本地PAC文件(需先安装本地面板)"
+	echo -----------------------------------------------
+	echo -e " 7 切换\033[36m安装源\033[0m地址"
+	echo -e " 8 鸣谢"
+	echo -e " 9 \033[31m卸载\033[34mShellClash\033[0m"
+	echo -e " 0 返回上级菜单" 
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then
+		echoerrornum
+		clashsh
+	elif [ "$num" = 0 ]; then
+		clashsh
+	elif [ "$num" = 1 ]; then	
+		getsh	
+	
+	elif [ "$num" = 2 ]; then	
+		getcore
+
+	elif [ "$num" = 3 ]; then	
+		getgeo
+		update
+	
+	elif [ "$num" = 4 ]; then	
+		getdb
+		
+	elif [ "$num" = 5 ]; then	
+		setpac
+		update
+
+	elif [ "$num" = 7 ]; then	
+		setserver
+		
+	elif [ "$num" = 8 ]; then		
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
+		echo -e "感谢：\033[32msubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
+		echo -e "感谢：\033[32malecthw提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
+		echo -e "感谢：\033[32myacd \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
+		echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
+		sleep 2
+		update
+		
+	elif [ "$num" = 9 ]; then
+		read -p "确认卸载ShellClash？（警告：该操作不可逆！）[1/0] " res
+		if [ "$res" = '1' ]; then
+			$clashdir/start.sh stop
+			rm -rf $clashdir
+			rm -rf /etc/init.d/clash
+			rm -rf /etc/systemd/system/clash.service
+			rm -rf /usr/lib/systemd/system/clash.service
+			rm -rf /www/clash
+			sed -i '/alias clash=*/'d /etc/profile
+			sed -i '/export clashdir=*/'d /etc/profile
+			sed -i '/http*_proxy/'d /etc/profile
+			sed -i '/HTTP*_PROXY/'d /etc/profile
+			source /etc/profile > /dev/null 2>&1
+			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo 已卸载ShellClash相关文件！有缘再会！
+			exit
+		fi
+		echo -e "\033[31m操作已取消！\033[0m"
+		update
+	else
+		echoerrornum
+		clashsh
+	fi
+exit;
 }
 userguide(){
 	echo 欢迎使用ShellClash新手引导！
@@ -671,30 +891,29 @@ testcommand(){
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
+		echoerrornum
 		clashsh
-	elif [[ $num == 0 ]]; then
+	elif [ "$num" = 0 ]; then
 		clashsh
-	elif [[ $num == 1 ]]; then
+	elif [ "$num" = 1 ]; then
 		$clashdir/start.sh stop
 		echo -----------------------------------------------
 		$clashdir/clash -t -d $clashdir 
 		echo -----------------------------------------------
 		echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
 		exit;
-	elif [[ $num == 2 ]]; then
+	elif [ "$num" = 2 ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		netstat -ntulp |grep 53
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
 		exit;
-	elif [[ $num == 3 ]]; then
+	elif [ "$num" = 3 ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		openssl speed -multi 4 -evp aes-128-gcm
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		exit;
-	elif [[ $num == 4 ]]; then
+	elif [ "$num" = 4 ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		iptables  -t nat  -L PREROUTING --line-numbers
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -702,12 +921,12 @@ testcommand(){
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		iptables  -t nat  -L clash_dns --line-numbers
 		exit;
-	elif [[ $num == 5 ]]; then
+	elif [ "$num" = 5 ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		sed -n '1,40p' $yaml
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		exit;
-	elif [[ $num == 6 ]]; then
+	elif [ "$num" = 6 ]; then
 		echo 注意：测试结果不保证一定准确！
 		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
 		delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
@@ -718,11 +937,10 @@ testcommand(){
 			echo -e "\033[31m连接超时！请重试或检查节点配置！\033[0m"
 		fi
 		clashsh
-	elif [[ $num == 7 ]]; then
+	elif [ "$num" = 7 ]; then
 		userguide
 	else
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m请输入正确的数字！\033[0m"
+		echoerrornum
 		clashsh
 	fi
 }
