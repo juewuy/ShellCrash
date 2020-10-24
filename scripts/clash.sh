@@ -427,6 +427,7 @@ clashcfg(){
 		echo "              适合游戏用户、综合用户"
 		echo " 4 纯净模式： 不设置iptables静态路由"
 		echo "              必须手动配置http/sock5代理"
+		echo "              或使用内置的PAC文件配置代理"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
 		if [ -z "$num" ]; then
