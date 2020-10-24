@@ -4,15 +4,17 @@
 webget(){
 	[ -n "$(pidof clash)" ] && export all_proxy="http://127.0.0.1:$mix_port" #设置临时http代理
 	#参数【$1】代表下载目录，【$2】代表在线地址
+	#参数【$3】代表输出显示，【$4】不启用重定向
 	if curl --version > /dev/null 2>&1;then
-		[ -z "$3" ] && progress='-#' || progress='-s'
-		result=$(curl -w %{http_code} --connect-timeout 5 $progress -kLo $1 $2)
-	elif wget --version > /dev/null 2>&1;then
-		[ -z "$3" ] && progress='--show-progress' || progress=''
-		wget -Y on -q $progress --no-check-certificate --timeout=5 -O $1 $2 
-		[ $? -eq 0 ] && result="200"
+		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
+		[ -z "$4" ] && redirect='-L' || redirect=''
+		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
 	else
-		echo 找不到curl或者wget，无法下载，请先安装相应依赖！
+		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		[ "$3" = "echoon" ] && progress=''
+		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
+		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
+		[ $? -eq 0 ] && result="200"
 	fi
 	export all_proxy=''
 }
@@ -783,15 +785,14 @@ setserver(){
 checkupdate(){
 if [ -z "$release_new" ];then
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		webget /tmp/clashrelease https://api.github.com/repos/juewuy/ShellClash/releases/latest noprogress
-		[ "$result" = "200" ] && release_new=$(cat /tmp/clashrelease | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g') || release_new=master
+		release_new=$(webget /dev/null https://github.com.cnpmjs.org/juewuy/ShellClash/releases/latest echoon rediroff 2>&1 | grep -oE "releases/tag/.*" | awk -F '[/" ]' '{print $3}')
+		[ -z "$release_new" ] && release_new=master
 		update_url=$update_url@$release_new
 	fi
-	webget /tmp/clashversion $update_url/bin/version noprogress
+	webget /tmp/clashversion $update_url/bin/version echooff
 	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！\033[0m"
 	[ -z "$release_new" ] && release_new=$versionsh
 	rm -rf /tmp/clashversion
-	rm -rf /tmp/clashrelease
 fi
 }
 update(){
@@ -820,16 +821,18 @@ update(){
 		clashsh
 	elif [ "$num" = 1 ]; then	
 		getsh	
-	
+
 	elif [ "$num" = 2 ]; then	
 		getcore
-
+		update
+		
 	elif [ "$num" = 3 ]; then	
 		getgeo
 		update
 	
 	elif [ "$num" = 4 ]; then	
 		getdb
+		update
 		
 	elif [ "$num" = 5 ]; then	
 		setpac

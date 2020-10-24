@@ -291,8 +291,19 @@ daemon(){
 	fi
 }
 web_save(){
-	#使用curl获取面板节点设置
-	curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save
+	get_save(){
+		if curl --version > /dev/null 2>&1;then
+			curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1"
+		elif [ -n "$(wget --help 2>&1|grep '\-\-method')" ];then
+			wget -q --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" -O - "$1"
+		else
+			logger 当前系统未安装curl且wget的版本太低，无法保存节点配置！
+			getconfig
+			sed -i /保存节点配置/d $cronpath >/dev/null 2>&1
+		fi
+	}
+	#使用get_save获取面板节点设置
+	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save
 	#对比文件，如果有变动则写入磁盘，否则清除缓存
 	if [ "$(cat /tmp/clash_web_save)" = "$(cat $clashdir/web_save 2>/dev/null)" ];then
 		rm -rf /tmp/clash_web_save
@@ -301,12 +312,24 @@ web_save(){
 	fi
 }
 web_restore(){
+	put_save(){
+		if curl --version > /dev/null 2>&1;then
+			curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
+		else
+			wget --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
+		fi
+	}
 	#设置循环检测clash面板端口
 	i=1
 	while [ $i -lt 10 ]
 	do
 		sleep 1
-		[ -n "$(curl -s http://localhost:${db_port})" ] && i=10
+		if curl --version > /dev/null 2>&1;then
+			test=$(curl -s http://localhost:${db_port})
+		else
+			test=$(wget -q -O - http://localhost:${db_port})
+		fi
+		[ -n "$test" ] && i=10
 	done
 	#发送数据
 	num=$(cat $clashdir/web_save | wc -l)
@@ -314,7 +337,7 @@ web_restore(){
 	do
 		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' $clashdir/web_save | sed 's/ /%20/g')
 		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $clashdir/web_save)
-		curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" http://localhost:${db_port}/proxies/"${group_name}" -d "{\"name\":\"${now_name}\"}" >/dev/null
+		put_save http://localhost:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
 	done
 	exit 0
 }
@@ -336,13 +359,9 @@ afstart(){
 	mark_time
 	#设置本机代理
 	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $hostdir
-	#还原面板配置相关
-	if curl --version > /dev/null 2>&1;then
-		web_save_auto #启用面板配置自动保存
-		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
-	fi
-	#clash启动校验
-	[ -z "$(pidof clash)" ] && logger clash启动失败！ && $0 stop && exit 0
+	#还原面板配置
+	web_save_auto #启用面板配置自动保存
+	[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 }
 
 case "$1" in
@@ -351,7 +370,6 @@ afstart)
 		afstart
 	;;
 start)		
-		[ -n "$(pidof clash)" ] && logger clash服务已经运行，请勿重复运行！ && exit 0
 		#读取配置文件
 		getconfig
 		#使用内置规则强行覆盖config配置文件
@@ -372,9 +390,7 @@ stop)
 		#读取配置文件
 		getconfig
 		#保存面板配置
-		if curl --version > /dev/null 2>&1;then
-			web_save
-		fi
+		web_save
 		#删除守护进程&面板配置自动保存
 		sed -i /clash保守模式守护进程/d $cronpath >/dev/null 2>&1
 		sed -i /保存节点配置/d $cronpath >/dev/null 2>&1

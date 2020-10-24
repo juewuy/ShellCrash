@@ -278,15 +278,13 @@ clashstart(){
 	if [ ! -f $clashdir/clash ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
-		checkupdate
-		source $clashdir/getdate.sh && getcore
+		source $clashdir/getdate.sh && checkupdate && getcore
 	fi
 	#检查GeoIP数据库
 	if [ ! -f $clashdir/Country.mmdb ];then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
-		checkupdate
-		source $clashdir/getdate.sh && getgeo
+		source $clashdir/getdate.sh && checkupdate && getgeo
 	fi
 	#检查yaml配置文件
 	if [ ! -f "$yaml" ];then
