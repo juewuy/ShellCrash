@@ -24,37 +24,41 @@ getconfig(){
 	#是否代理常用端口
 	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443 '
 	}
+logger(){
+	echo -e "\033[31m$1\033[0m"
+	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
+	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1d' $clashdir/log
+}
 getyaml(){
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
-	subcon.dlj.tf
-	subconverter.herokuapp.com
-	subcon.py6.pw
-	api.dler.io
-	api.wcc.best
-	EOF`
+subcon.dlj.tf
+subconverter.herokuapp.com
+subcon.py6.pw
+api.dler.io
+api.wcc.best
+EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
-	https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
-	https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiMode.ini
-	https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
-	https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
-	https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
-	https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_AdblockPlus.ini
-	https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini
-	https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini
-	https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_pro.ini
-	https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_backtocn.ini
-	https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/dlercloud_lige_platinum.ini
-	https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/basic.ini
-	https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/netease.ini
-	EOF`
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiMode.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_AdblockPlus.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_pro.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_backtocn.ini
+https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/dlercloud_lige_platinum.ini
+https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/basic.ini
+https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/netease.ini
+EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		#echo $Url
 		Https="https://$Server/sub?target=clash&insert=true&new_name=true&scv=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		markhttp=1
 	fi
-	#
+	#输出
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo 正在连接服务器获取配置文件…………链接地址为：
 	echo -e "\033[4;32m$Https\033[0m"
@@ -67,24 +71,23 @@ getyaml(){
 	#获取在线yaml文件
 	yaml=$clashdir/config.yaml
 	yamlnew=/tmp/config.yaml
-	rm -rf $yamlnew > /dev/null 2>&1
-	result=$(curl -w %{http_code} -kLo $yamlnew $Https)
+	rm -rf $yamlnew
+	source $clashdir/getdate.sh && webget $yamlnew $Https
 	if [ "$result" != "200" ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		echo -e "\033[31m配置文件获取失败！\033[0m"
 		if [ -z "$markhttp" ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m请尝试使用【导入节点/链接】功能！\033[0m"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
+			logger "配置文件获取失败！"
+			echo -e "\033[31m请尝试使用【导入订阅】功能！\033[0m"
+			echo -----------------------------------------------
 			exit 1
 		else
 			if [ "$retry" -ge 5 ];then
-				echo -e "\033[32m无法获取配置文件，请检查链接格式以及网络连接状态！\033[0m"
+				logger "无法获取配置文件，请检查链接格式以及网络连接状态！"
 				exit 1
 			else
 				retry=$((retry+1))
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				echo -e "\033[33m正在尝试第$retry次/共5次！\033[0m"
+				logger "正在尝试第$retry次/共5次！"
 				sed -i '/server_link=*/'d $ccfg
 				if [ "$server_link" -ge 5 ]; then
 					server_link=0
@@ -100,7 +103,7 @@ getyaml(){
 		#检测节点
 		if [ -z "$(cat $yamlnew | grep 'server:' | grep -v 'nameserver')" ];then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[33m获取到了配置文件，但似乎并不包含正确的节点信息！\033[0m"
+			logger "获取到了配置文件，但似乎并不包含正确的节点信息！"
 			echo -----------------------------------------------
 			sed -n '1,30p' $yamlnew
 			echo -----------------------------------------------
@@ -111,7 +114,7 @@ getyaml(){
 		#检测旧格式
 		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m已经停止对旧格式配置文件的支持！！！\033[0m"
+			logger "已经停止对旧格式配置文件的支持！！！"
 			echo -e "请使用新格式或者使用【导入节点/链接】功能！"
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			exit 1
@@ -119,7 +122,7 @@ getyaml(){
 		#检测不支持的加密协议
 		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo -e "\033[31m不支持chacha20加密，请更换节点加密协议！！！\033[0m"
+			logger "不支持chacha20加密，请更换节点加密协议！！！"
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			exit 1
 		fi
@@ -137,11 +140,11 @@ getyaml(){
 				$clashdir/start.sh stop
 				mv $yaml.bak $yaml
 				$0 start
-				echo -e "\033[31mclash服务启动失败！已还原配置文件并重启clash！\033[0m"
+				logger "clash服务启动失败！已还原配置文件并重启clash！"
 				sleep 1
 				[ -n "$(pidof clash)" ] && exit 0
 			fi
-			echo -e "\033[31mclash服务启动失败！请查看报错信息！\033[0m"
+			logger "clash服务启动失败！请查看报错信息！"
 			$0 stop
 			$clashdir/clash -t -d $clashdir
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -327,17 +330,19 @@ afstart(){
 	#读取配置文件
 	getconfig
 	#修改iptables规则使流量进入clash
-	stop_iptables
 	[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "true" ] && start_dns
 	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 	#标记启动时间
 	mark_time
 	#设置本机代理
 	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $hostdir
-	#启用面板配置自动保存
-	web_save_auto
-	#后台还原面板配置
-	[ -f $clashdir/web_save ] && web_restore &
+	#还原面板配置相关
+	if curl --version > /dev/null 2>&1;then
+		web_save_auto #启用面板配置自动保存
+		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+	fi
+	#clash启动校验
+	[ -z "$(pidof clash)" ] && logger clash启动失败！ && $0 stop && exit 0
 }
 
 case "$1" in
@@ -346,6 +351,7 @@ afstart)
 		afstart
 	;;
 start)		
+		[ -n "$(pidof clash)" ] && logger clash服务已经运行，请勿重复运行！ && exit 0
 		#读取配置文件
 		getconfig
 		#使用内置规则强行覆盖config配置文件
@@ -366,7 +372,9 @@ stop)
 		#读取配置文件
 		getconfig
 		#保存面板配置
-		web_save
+		if curl --version > /dev/null 2>&1;then
+			web_save
+		fi
 		#删除守护进程&面板配置自动保存
 		sed -i /clash保守模式守护进程/d $cronpath >/dev/null 2>&1
 		sed -i /保存节点配置/d $cronpath >/dev/null 2>&1

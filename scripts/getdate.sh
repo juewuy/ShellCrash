@@ -2,15 +2,19 @@
 # Copyright (C) Juewuy
 
 webget(){
-	[ -n "$(pidof clash)" ] && export http_proxy="http:/127.0.0.1:$mix_port" #设置临时http代理
+	[ -n "$(pidof clash)" ] && export all_proxy="http://127.0.0.1:$mix_port" #设置临时http代理
+	#参数【$1】代表下载目录，【$2】代表在线地址
 	if curl --version > /dev/null 2>&1;then
-		result=$(curl -w %{http_code} --connect-timeout 5 -# -kLo $1 $2)
+		[ -z "$3" ] && progress='-#' || progress='-s'
+		result=$(curl -w %{http_code} --connect-timeout 5 $progress -kLo $1 $2)
 	elif wget --version > /dev/null 2>&1;then
-		wget -q --show-progress --no-check-certificate --timeout=5 -O $1 $2
+		[ -z "$3" ] && progress='--show-progress' || progress=''
+		wget -Y on -q $progress --no-check-certificate --timeout=5 -O $1 $2 
 		[ $? -eq 0 ] && result="200"
 	else
 		echo 找不到curl或者wget，无法下载，请先安装相应依赖！
 	fi
+	export all_proxy=''
 }
 linkconfig(){
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -391,7 +395,7 @@ clashlink(){
 	fi
 }
 gettar(){
-	result=$(curl -w %{http_code} -skLo /tmp/clashfm.tar.gz $tarurl)
+	webget /tmp/clashfm.tar.gz $tarurl
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
 	#解压
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -537,7 +541,7 @@ getcore(){
 	echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出        |"
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
 	#获取在线clash核心文件
-	result=$(curl -w %{http_code} -#kLo /tmp/clash.new $corelink)
+	webget /tmp/clash.new $corelink
 	if [ "$result" != "200" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m核心文件下载失败！\033[0m"
@@ -565,7 +569,7 @@ getgeo(){
 	if [ "$res" = '1' ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		echo 正在从服务器获取数据库文件…………
-		result=$(curl -w %{http_code} -#kLo /tmp/Country.mmdb $update_url/bin/Country.mmdb)
+		webget /tmp/Country.mmdb $update_url/bin/Country.mmdb
 		if [ "$result" != "200" ];then
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			echo -e "\033[31m文件下载失败！\033[0m"
@@ -654,7 +658,7 @@ getdb(){
 		dblink="${update_url}/bin/${db_type}.tar.gz"
 		echo -----------------------------------------------
 		echo 正在连接服务器获取安装文件…………
-		result=$(curl -w %{http_code} -#kLo /tmp/clashdb.tar.gz $dblink)
+		webget /tmp/clashdb.tar.gz $dblink
 		if [ "$result" != "200" ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m文件下载失败！\033[0m"
@@ -736,22 +740,25 @@ setserver(){
 	echo -e "\033[30;47m您可以在此处切换在线更新时使用的资源地址\033[0m"
 	echo -e "当前源：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 Github源(直连美国服务器)"
-	echo -e " 2 Jsdelivr-CDN源(仅同步最新release版本)"
-	echo -e " 3 Github源+clash代理(需开启clash服务)"
-	echo -e " 4 自定义输入(请务必确保路径正确)"
+	echo -e " 1 Jsdelivr-CDN源(test版本)"
+	echo -e " 2 Jsdelivr-CDN源(release版本)"
+	echo -e " 3 Github源(test版本，需开启clash服务)"
+	echo -e " 4 Gitee源(release版本，可能滞后)"
+	echo -e " 5 自定义输入(请务必确保路径正确)"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
 		echoerrornum
 		update
 	elif [ "$num" = 1 ]; then
-		update_url='--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master'
+		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
 	elif [ "$num" = 2 ]; then
 		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
 	elif [ "$num" = 3 ]; then
-		update_url='-x '$authentication'@127.0.0.1:'$mix_port' https://raw.githubusercontent.com/juewuy/ShellClash/master'
+		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
 	elif [ "$num" = 4 ]; then
+		update_url='https://gitee.com/juewuy/ShellClash/raw/master'
+	elif [ "$num" = 5 ]; then
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		read -p "请输入个人源路径 > " update_url
 		if [ -z "$update_url" ];then
@@ -776,12 +783,15 @@ setserver(){
 checkupdate(){
 if [ -z "$release_new" ];then
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 --connect-timeout 5 -m 5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+		webget /tmp/clashrelease https://api.github.com/repos/juewuy/ShellClash/releases/latest noprogress
+		[ "$result" = "200" ] && release_new=$(cat /tmp/clashrelease | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g') || release_new=master
 		update_url=$update_url@$release_new
 	fi
-	curl -skL --connect-timeout 5 -m 5  $update_url/bin/version > /tmp/clashversion
-	source /tmp/clashversion
+	webget /tmp/clashversion $update_url/bin/version noprogress
+	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！\033[0m"
 	[ -z "$release_new" ] && release_new=$versionsh
+	rm -rf /tmp/clashversion
+	rm -rf /tmp/clashrelease
 fi
 }
 update(){
@@ -887,6 +897,7 @@ testcommand(){
 	echo " 5 查看config.yaml前40行"
 	echo " 6 测试代理服务器连通性（google.tw)"
 	echo " 7 重新进入新手引导"
+	echo " 9 查看后台脚本运行日志"
 	echo -----------------------------------------------
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num
@@ -927,7 +938,7 @@ testcommand(){
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		exit;
 	elif [ "$num" = 6 ]; then
-		echo 注意：测试结果不保证一定准确！
+		echo 注意：依赖curl，且测试结果不保证一定准确！
 		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
 		delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -939,6 +950,10 @@ testcommand(){
 		clashsh
 	elif [ "$num" = 7 ]; then
 		userguide
+	elif [ "$num" = 9 ]; then
+		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		cat $clashdir/log
+		exit;
 	else
 		echoerrornum
 		clashsh
