@@ -23,9 +23,9 @@
 
 使用方式：
 --
-~确认路由器或设备已经开启SSH并获取root权限<br>
-~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或设备的SSH管理界面，并切换到root用户<br>
-~确认设备已经安装curl，如未安装，LInux设备请[参考此处](https://www.howtoing.com/install-curl-in-linux)进行安装，基于OpenWrt（小米官方系统、潘多拉、高恪等）的设备请使用如下命令安装：<br>
+~确认路由器设备已经开启SSH并获取root权限（带GUI桌面的Linux设备可使用自带终端安装）<br>
+~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或Linux设备的SSH管理界面或终端界面，并切换到root用户<br>
+~确认设备已经安装curl或者wget下载工具。如未安装，LInux设备请[参考此处](https://www.howtoing.com/install-curl-in-linux)安装curl，基于OpenWrt（小米官方系统、潘多拉、高恪等）的设备请使用如下命令安装curl：<br>
 
 ```shell
 opkg update && opkg install curl
@@ -33,7 +33,7 @@ opkg update && opkg install curl
 
 ~之后在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
 
-~使用curl：<br>
+~**使用curl安装**：<br>
 
 ```Shell
 #Release版本-github直连
@@ -44,7 +44,20 @@ sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/instal
 sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" -s 1 && source /etc/profile &> /dev/null
 ```
 
-~安装完成管理脚本后，执行如下命令以运行管理脚本<br>
+~**使用wget安装**：<br>
+
+```sh
+#Release版本-jsdelivrCDN源
+wget -q --no-check-certificate -O /tmp/install.sh https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install.sh  && sh /tmp/install.sh 2 && source /etc/profile &> /dev/null
+```
+
+~**非root用户安装后**请额外执行以下命令以读取环境变量：<br>
+
+```shell
+source ~/.bashrc &> /dev/null
+```
+
+~安装完成管理脚本后，执行如下命令以**运行管理脚本**<br>
 
 ```Shell
 clash #正常模式运行
@@ -52,8 +65,35 @@ clash -h #脚本帮助及说明
 clash -t #测试模式运行
 ```
 
+~**运行时的额外依赖**：<br>
+
+`大部分的设备/系统都已经预装了以下的大部分依赖，使用时如无影响可以无视之`
+
+```sh
+bash/ash	重要！	全部缺少时无法安装及运行脚本
+
+curl/wget	重要！	全部缺少时无法在线安装及更新，无法使用节点保存功能
+
+iptables	重要！	缺少时只能使用PAC模式
+
+systemd/init.d/rc.common	一般~	全部缺少时只能使用保守模式
+
+iptables-mod-nat	一般~	缺少时无法使用redir模式，混合模式
+
+ip6tables-mod-nat	低~	缺少时影响redir模式，混合模式对ipv6的支持
+
+net-tools	低~	缺少时无法正常检测端口占用
+
+ubus/iproute-doc	低~	缺少时无法正常获取本机host地址
+
+crontab	低~	缺少时无法启用定时任务功能
+```
+
+
+
 更新日志：
 --
+
 ### [点击查看](https://github.com/juewuy/ShellClash/releases)
 
 交流反馈：

@@ -18,22 +18,42 @@ if [ "$USER" != "root" ];then
 	read -p "仍要安装？可能会产生未知错误！(1/0) > " res
 	[ "$res" != "1" ] && exit
 fi
-
+webget(){
+	#参数【$1】代表下载目录，【$2】代表在线地址
+	#参数【$3】代表输出显示，【$4】不启用重定向
+	if curl --version > /dev/null 2>&1;then
+		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
+		[ -z "$4" ] && redirect='-L' || redirect=''
+		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
+	else
+		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		[ "$3" = "echoon" ] && progress=''
+		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
+		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
+		[ $? -eq 0 ] && result="200"
+	fi
+}
 #检查更新
 url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
 if [ "$test" -gt 0 ];then 
-	url="--resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master"
+	url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash/master"
 	[ "$test" -eq 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
 	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else
-	release_new=$(curl -kfsSL --resolve api.github.com:443:140.82.113.5 "https://api.github.com/repos/juewuy/ShellClash/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')	#检查版本
+	release_new=$(webget /dev/null https://github.com.cnpmjs.org/juewuy/ShellClash/releases/latest echoon rediroff 2>&1 | grep -oE "releases/tag/.*" | awk -F '[/" ]' '{print $3}')
+	[ -z "$release_new" ] && release_new=master
+	url=$url@$release_new
 fi
-[ -z "$release_new" ] && release_new=$(curl -kfsSL $url/bin/version | grep "versionsh" | awk -F "=" '{print $2}')
+webget /tmp/clashversion $url/bin/version echooff
+[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！\033[0m"
+[ -z "$release_new" ] && release_new=$versionsh
+rm -rf /tmp/clashversion
 [ -z "$release_new" ] && echo "无法连接服务器！" && exit
-tarurl=$url@$release_new/bin/clashfm.tar.gz
-[ "$test" -gt 0 ] && tarurl=$url/bin/clashfm.tar.gz
+
+tarurl=$url/bin/clashfm.tar.gz
+
 gettar(){
-	result=$(curl -w %{http_code} -kLo /tmp/clashfm.tar.gz $tarurl)
+	webget /tmp/clashfm.tar.gz $tarurl
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
 	#解压
 	echo -----------------------------------------------
@@ -69,7 +89,7 @@ gettar(){
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	sed -i "1i\versionsh_l=$release_new" $clashdir/mark
 	#设置环境变量
-	[ -w $HOME/.bashrc ] && profile=$HOME/.bashrc
+	[ -w ~/.bashrc ] && profile=~/.bashrc
 	[ -w /etc/profile ] && profile=/etc/profile
 	sed -i '/alias clash=*/'d $profile
 	echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
@@ -111,8 +131,8 @@ elif [ "$num" = "1" ];then
 elif [ "$num" = "2" ];then
 	dir=/usr/share
 elif [ "$num" = "3" ];then
-	dir=$HOME/.local/share
-	mkdir -p $HOME/.config/systemd/user
+	dir=~/.local/share
+	mkdir -p ~/.config/systemd/user
 elif [ "$num" = "4" ];then
 	echo -----------------------------------------------
 	echo '可用路径 剩余空间:'

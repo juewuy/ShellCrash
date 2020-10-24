@@ -434,10 +434,12 @@ gettar(){
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	sed -i "1i\versionsh_l=$release_new" $clashdir/mark
 	#设置环境变量
-	sed -i '/alias clash=*/'d /etc/profile
-	echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> /etc/profile #设置快捷命令环境变量
-	sed -i '/export clashdir=*/'d /etc/profile
-	echo "export clashdir=\"$clashdir\"" >> /etc/profile #设置clash路径环境变量
+	[ -w ~/.bashrc ] && profile=~/.bashrc
+	[ -w /etc/profile ] && profile=/etc/profile
+	sed -i '/alias clash=*/'d $profile
+	echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
+	sed -i '/export clashdir=*/'d $profile
+	echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clashservice
@@ -860,13 +862,17 @@ update(){
 			rm -rf /etc/systemd/system/clash.service
 			rm -rf /usr/lib/systemd/system/clash.service
 			rm -rf /www/clash
-			sed -i '/alias clash=*/'d /etc/profile
-			sed -i '/export clashdir=*/'d /etc/profile
-			sed -i '/http*_proxy/'d /etc/profile
-			sed -i '/HTTP*_PROXY/'d /etc/profile
-			source /etc/profile > /dev/null 2>&1
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			echo 已卸载ShellClash相关文件！有缘再会！
+			[ -w ~/.bashrc ] && profile=~/.bashrc
+			[ -w /etc/profile ] && profile=/etc/profile
+			sed -i '/alias clash=*/'d $profile
+			sed -i '/export clashdir=*/'d $profile
+			sed -i '/http*_proxy/'d $profile
+			sed -i '/HTTP*_PROXY/'d $profile
+			source $profile > /dev/null 2>&1
+			echo -----------------------------------------------
+			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
+			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
+			echo -----------------------------------------------
 			exit
 		fi
 		echo -e "\033[31m操作已取消！\033[0m"
@@ -941,7 +947,7 @@ testcommand(){
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		exit;
 	elif [ "$num" = 6 ]; then
-		echo 注意：依赖curl，且测试结果不保证一定准确！
+		echo "注意：依赖curl(不支持wget)，且测试结果不保证一定准确！"
 		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
 		delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
 		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

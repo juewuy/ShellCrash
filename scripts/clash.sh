@@ -5,7 +5,7 @@ getconfig(){
 	#服务器缺省地址
 	[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
 	#文件路径
-	[ -z "$clashdir" ] && clashdir=$(dirname $(readlink -f "$0")) && echo "export clashdir=\"$clashdir\"" >> /etc/profile
+	[ -z "$clashdir" ] && echo 环境变量配置有误！请重新安装脚本！
 	ccfg=$clashdir/mark
 	yaml=$clashdir/config.yaml
 	#检查/读取标识文件
