@@ -1,7 +1,7 @@
 #! /bin/bash
 # Copyright (C) Juewuy
 
-echo='echo -e' && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && echo=echo
+echo='echo -e' && [ -n "$(echo -e|grep e)" ] && echo=echo
 [ -z "$1" ] && test=0 || test=$1
 
 echo "***********************************************"
@@ -36,7 +36,7 @@ webget(){
 #检查更新
 url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
 if [ "$test" -gt 0 ];then 
-	url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash/master"
+	url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master"
 	[ "$test" -eq 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
 	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else

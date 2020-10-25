@@ -382,7 +382,7 @@ afstart(){
 	#标记启动时间
 	mark_time
 	#设置本机代理
-	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $hostdir
+	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port
 	#还原面板配置
 	web_save_auto #启用面板配置自动保存
 	[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
@@ -448,17 +448,17 @@ web_save)
 set_proxy)
 		#GNOME配置
 		if  gsettings --version >/dev/null 2>&1 ;then
-			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1${3}/pac"
+			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1:$1/ui/pac"
 			gsettings set org.gnome.system.proxy mode "auto"
 		#KDE配置
 		elif  kwriteconfig5 -h >/dev/null 2>&1 ;then
 			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 2
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1${3}/pac"
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1:$1/ui/pac"
 		#环境变量方式
 		else
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
-			echo 'export all_proxy=http://127.0.0.1:'"$2" >> $profile
+			echo 'export all_proxy=http://127.0.0.1:'"$1" >> $profile
 			echo 'export ALL_PROXY=$all_proxy' >>  $profile
 		fi
 	;;

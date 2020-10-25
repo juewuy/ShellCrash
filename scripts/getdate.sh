@@ -692,52 +692,6 @@ getdb(){
 			sleep 1
 		fi
 }
-catpac(){
-	cat > $dbdir/pac <<EOF
-function FindProxyForURL(url, host) {
-	if (
-		isInNet(host, "0.0.0.0", "255.0.0.0")||
-		isInNet(host, "10.0.0.0", "255.0.0.0")||
-		isInNet(host, "127.0.0.0", "255.0.0.0")||
-		isInNet(host, "224.0.0.0", "224.0.0.0")||
-		isInNet(host, "240.0.0.0", "240.0.0.0")||
-		isInNet(host, "172.16.0.0",  "255.240.0.0")||
-		isInNet(host, "192.168.0.0", "255.255.0.0")||
-		isInNet(host, "169.254.0.0", "255.255.0.0")
-	)
-		return "DIRECT";
-	else
-		return "PROXY $host:$mix_port; DIRECT;"
-}
-EOF
-}
-setpac(){
-	#检测目录
-	[ -n "$authentication" ] && echo 检测到已经设置http代理密码，pac不支持加密代理，请先取消加密！ && sleep 1 && clashadv
-	[ ! -d /www/clash -a ! -d $clashdir/ui ] && echo 未检测到本地Dashboard面板，请先安装面板！ && sleep 1 && getdb
-	echo -----------------------------------------------
-	echo -e "\033[30;47m生成用于设备WIFI或浏览器的自动PAC代理文件\033[0m"
-	echo -e "\033[33m适用于纯净模式或本机代理配置\033[0m"
-	[ -f $dbdir/pac ] && echo -e "PAC地址：\033[32mhttp://$host$dbdir/pac\033[0m"
-	echo -----------------------------------------------
-	echo -e " 1 生成PAC文件"
-	echo -e " 2 清除PAC文件"
-	echo -----------------------------------------------
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-		if [ "$num" = '1' ]; then
-			catpac
-			echo -e "\033[33mPAC文件已生成！\033[0m"
-			echo -e "PAC地址：\033[32mhttp://$host$dbdir/pac\033[0m"
-			echo "使用教程：https://baike.baidu.com/item/PAC/16292100"
-			sleep 2
-		elif [ "$num" = 2 ]; then
-			rm -rf $dbdir/pac
-			echo -----------------------------------------------
-			echo -e "\033[33mPAC文件已清除！\033[0m"
-			sleep 1
-		fi
-}
 setserver(){
 
 	echo -----------------------------------------------
@@ -810,7 +764,6 @@ update(){
 	echo -e " 2 切换\033[33mclash核心 	\033[33m$clashv\033[0m > \033[32m$clash_n\033[0m"
 	echo -e " 3 更新\033[32mGeoIP数据库	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
-	echo -e " 5 生成本地PAC文件(需先安装本地面板)"
 	echo -----------------------------------------------
 	echo -e " 7 切换\033[36m安装源\033[0m地址"
 	echo -e " 8 鸣谢"
@@ -836,10 +789,6 @@ update(){
 	
 	elif [ "$num" = 4 ]; then	
 		getdb
-		update
-		
-	elif [ "$num" = 5 ]; then	
-		setpac
 		update
 
 	elif [ "$num" = 7 ]; then	
@@ -891,7 +840,6 @@ userguide(){
 	getcore
 	getgeo
 	getdb
-	catpac
 	clashlink
 }
 testcommand(){

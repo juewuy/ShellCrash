@@ -96,6 +96,27 @@ echoerrornum(){
 	echo -----------------------------------------------
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 }
+catpac(){
+	cat > /tmp/pac <<EOF
+function FindProxyForURL(url, host) {
+	if (
+		isInNet(host, "0.0.0.0", "255.0.0.0")||
+		isInNet(host, "10.0.0.0", "255.0.0.0")||
+		isInNet(host, "127.0.0.0", "255.0.0.0")||
+		isInNet(host, "224.0.0.0", "224.0.0.0")||
+		isInNet(host, "240.0.0.0", "240.0.0.0")||
+		isInNet(host, "172.16.0.0",  "255.240.0.0")||
+		isInNet(host, "192.168.0.0", "255.255.0.0")||
+		isInNet(host, "169.254.0.0", "255.255.0.0")
+	)
+		return "DIRECT";
+	else
+		return "PROXY $host:$mix_port; DIRECT;"
+}
+EOF
+	[ ! -d $clashdir/ui] && mkdir -p $clashdir/ui
+	[ "$(cat /tmp/pac)" != "$(cat $clashdir/ui/pac 2>&1)" ] && mv -f /tmp/pac $clashdir/ui/pac || rm -rf /tmp/pac
+}
 start_over(){
 	[ $? -eq 1 ] && exit
 	echo -e "\033[32mclash服务已启动！\033[0m"
@@ -304,8 +325,9 @@ clashstart(){
 	if [ -z "$PID" ];then 
 		$clashdir/start.sh stop
 		echo -e "\033[31mclash启动失败！\033[0m" 
-		exit
+		exit;
 	fi
+	catpac #生成pac自动代理文件
 	start_over
 }
 macfilter(){
@@ -599,7 +621,8 @@ clashcfg(){
 		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\local_proxy=已开启" $ccfg
 			local_proxy=已开启
-			$clashdir/start.sh set_proxy $mix_port $hostdir
+			catpac #生成pac自动代理文件
+			$clashdir/start.sh set_proxy $mix_port
 			echo -e "\033[32m已经成功配置本机代理~\033[0m"
 			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
 		else
