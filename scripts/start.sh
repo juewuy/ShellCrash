@@ -420,7 +420,7 @@ stop)
 		else
 			systemctl stop clash.service >/dev/null 2>&1
 		fi
-		pidof clash | xargs kill -9
+		pidof clash | xargs kill -9 >/dev/null 2>&1
 		killall -9 clash >/dev/null 2>&1
 		stop_iptables #清理iptables
 		[ "$local_proxy" = "已开启" ] && $0 unset_proxy #禁用本机代理
