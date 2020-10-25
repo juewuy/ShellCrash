@@ -111,7 +111,7 @@ function FindProxyForURL(url, host) {
 	)
 		return "DIRECT";
 	else
-		return "PROXY $host:$mix_port; DIRECT;"
+		return "SOCKS5 $host:$mix_port; PROXY $host:$mix_port; DIRECT;"
 }
 EOF
 	[ ! -d $clashdir/ui ] && mkdir -p $clashdir/ui
@@ -258,7 +258,7 @@ setdns(){
 		fi
 	elif [ "$num" = 2 ]; then
 		read -p "请输入新的DNS > " dns_fallback
-		dns_fallback=$(echo $dns_nameserver | sed 's/|/\,\ /')
+		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /')
 		if [ -n "$dns_fallback" ]; then
 			sed -i "/dns_fallback*/"d $ccfg
 			sed -i "1i\dns_fallback=\'$dns_fallback\'" $ccfg
@@ -462,27 +462,39 @@ clashcfg(){
 		elif [ "$num" = 1 ]; then
 			redir_mod=Redir模式
 		elif [ "$num" = 2 ]; then
-			if [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
+			modinfo tun >/dev/null 2>&1
+			if [ "$?" != 0 ];then
+				echo -----------------------------------------------
+				echo -e "\033[31m当前设备内核不支持开启Tun/混合模式，请使用其他模式！\033[0m"
+				set_redir_mod
+			elif [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
 				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
 				clashcfg
+			else	
+				redir_mod=Tun模式
+				dns_mod=fake-ip
 			fi
-			redir_mod=Tun模式
-			dns_mod=fake-ip
 		elif [ "$num" = 3 ]; then
-			if [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
+			modinfo tun >/dev/null 2>&1
+			if [ "$?" != 0 ];then
+				echo -----------------------------------------------
+				echo -e "\033[31m当前设备内核不支持开启Tun/混合模式，请使用其他模式！\033[0m"
+				set_redir_mod
+			elif [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
 				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
 				clashcfg
+			else	
+				redir_mod=混合模式	
 			fi
-			redir_mod=混合模式	
 		elif [ "$num" = 4 ]; then
 			redir_mod=纯净模式			
 			echo -----------------------------------------------
-			echo -e "\033[32m已经设置为纯净模式！\033[0m"
 			echo -e "\033[33m当前模式需要手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
 			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m$mix_port\033[0m"
-			echo -e "也可以使用更便捷的PAC自动代理，PAC代理链接为：\033[30;47m http://$host:$mix_port/ui/pac \033[0m"
+			echo -e "也可以使用更便捷的PAC自动代理，PAC代理链接为："
+			echo -e "\033[30;47m http://$host:$db_port/ui/pac \033[0m"
 			echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
 			sleep 2
 		else

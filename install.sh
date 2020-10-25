@@ -185,4 +185,5 @@ if [ -n "$clashdir" ];then
 	fi
 else
 	setdir
+	install
 fi
