@@ -40,14 +40,16 @@ if [ "$test" -gt 0 ];then
 	[ "$test" -eq 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
 	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else
-	release_new=$(webget /dev/null https://github.com.cnpmjs.org/juewuy/ShellClash/releases/latest echoon rediroff 2>&1 | grep -oE "releases/tag/.*" | awk -F '[/" ]' '{print $3}')
+	webget /tmp/clashrelease https://github.com.cnpmjs.org/juewuy/ShellClash/releases/latest echoon rediroff 2>/tmp/clashrelease
+	release_new=$( cat /tmp/clashrelease | grep -aoE "releases/tag/.*" | awk -F '[/" ]' '{print $3}')
 	[ -z "$release_new" ] && release_new=master
 	url=$url@$release_new
 fi
 webget /tmp/clashversion $url/bin/version echooff
-[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！\033[0m"
+[ "$result" = "200" ] && versionsh=$(cat /tmp/clashversion | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && release_new=$versionsh
 rm -rf /tmp/clashversion
+rm -rf /tmp/clashrelease
 [ -z "$release_new" ] && echo "无法连接服务器！" && exit
 
 tarurl=$url/bin/clashfm.tar.gz

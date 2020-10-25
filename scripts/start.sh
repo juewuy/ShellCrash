@@ -26,7 +26,7 @@ getconfig(){
 	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443 '
 	}
 logger(){
-	echo -e "\033[31m$1\033[0m"
+	[ -z "$1" ] && echo -e "\033[31m$1\033[0m"
 	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
 	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1d' $clashdir/log
 }
@@ -87,8 +87,9 @@ EOF`
 				exit 1
 			else
 				retry=$((retry+1))
+				logger "配置文件获取失败！"
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在尝试第$retry次/共5次！"
+				logger "正在重试第$retry次/共5次！"
 				sed -i '/server_link=*/'d $ccfg
 				if [ "$server_link" -ge 5 ]; then
 					server_link=0
@@ -150,6 +151,8 @@ EOF`
 			$clashdir/clash -t -d $clashdir
 			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			exit 1
+		else
+			logger "配置文件获取成功！clash服务已启动！" echooff
 		fi
 	fi
 }
@@ -234,6 +237,21 @@ start_redir(){
 		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
 	fi
 }
+start_udp(){
+	ip rule add fwmark 1 table 100
+	ip route add local default dev lo table 100
+	iptables -t mangle -N clash
+	iptables -t mangle -A clash -d 0.0.0.0/8 -j RETURN
+	iptables -t mangle -A clash -d 10.0.0.0/8 -j RETURN
+	iptables -t mangle -A clash -d 127.0.0.0/8 -j RETURN
+	iptables -t mangle -A clash -d 169.254.0.0/16 -j RETURN
+	iptables -t mangle -A clash -d 172.16.0.0/12 -j RETURN
+	iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
+	iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
+	iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
+	iptables -t mangle -A clash -p udp -j TPROXY --on-port $redir_port --tproxy-mark 1
+	iptables -t mangle -A PREROUTING -p udp -j clash
+}
 stop_iptables(){
     #重置iptables规则
 	iptables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
@@ -245,6 +263,10 @@ stop_iptables(){
 	iptables -t nat -F clash_dns > /dev/null 2>&1
 	iptables -t nat -X clash_dns > /dev/null 2>&1
 	iptables -D FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	#重置udp规则
+	iptables -t mangle -D PREROUTING -p udp -j clash > /dev/null 2>&1
+	iptables -t mangle -F clash > /dev/null 2>&1
+	iptables -t mangle -X clash > /dev/null 2>&1
 	#重置ipv6规则
 	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 > /dev/null 2>&1
 	ip6tables -t nat -D PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
@@ -356,6 +378,7 @@ afstart(){
 	#修改iptables规则使流量进入clash
 	[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "true" ] && start_dns
 	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
+	[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
 	#标记启动时间
 	mark_time
 	#设置本机代理

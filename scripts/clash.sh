@@ -76,7 +76,7 @@ getconfig(){
 		[ -n "$cronpath" ] && sed -i "1i\cronpath=\'$cronpath\'" $ccfg
 	fi
 	#输出状态
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo -e "\033[30;46m欢迎使用ShellClash！\033[0m		版本：$versionsh_l"
 	echo -e "Clash服务"$run"，"$auto""
 	if [ -n "$PID" ];then
@@ -142,7 +142,7 @@ setport(){
 			clashadv
 		fi
 	fi
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo -e " 1 修改Http/Sock5端口：	\033[36m$mix_port\033[0m"
 	echo -e " 2 设置Http/Sock5密码：	\033[36m$authentication\033[0m"
 	echo -e " 3 修改静态路由端口：	\033[36m$redir_port\033[0m"
@@ -209,7 +209,7 @@ setdns(){
 	fi
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[36m$dns_nameserver\033[0m"
 	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m | \033[0m分隔一次性输入"
@@ -262,10 +262,10 @@ setdns(){
 checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
 		if [ -n "$(netstat -ntul 2>&1 |grep :$portx)" ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			echo -e "检测到端口【$portx】被以下进程占用！clash可能无法正常启动！\033[33m"
 			echo $(netstat -ntulp | grep :$portx | head -n 1)
-			echo -e "\033[0m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+			echo -e "\033[0m-----------------------------------------------"
 			echo -e "\033[36m请修改默认端口配置！\033[0m"
 			setport
 			source $ccfg
@@ -276,13 +276,13 @@ checkport(){
 clashstart(){
 	#检查clash核心
 	if [ ! -f $clashdir/clash ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
 		source $clashdir/getdate.sh && checkupdate && getcore
 	fi
 	#检查GeoIP数据库
 	if [ ! -f $clashdir/Country.mmdb ];then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
 		source $clashdir/getdate.sh && checkupdate && getgeo
 	fi
@@ -362,7 +362,7 @@ macfilter(){
 		fi
 		del_mac
 	}
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	[ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
 	[ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
 	[ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
@@ -411,7 +411,7 @@ macfilter(){
 }
 clashcfg(){
 	set_redir_mod(){
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -e "\033[36mTun及混合模式必须使用clashpre核心！\033[0m"
@@ -439,7 +439,7 @@ clashcfg(){
 			redir_mod=Redir模式
 		elif [ "$num" = 2 ]; then
 			if [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
-				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
 				clashcfg
 			fi
@@ -447,19 +447,19 @@ clashcfg(){
 			dns_mod=fake-ip
 		elif [ "$num" = 3 ]; then
 			if [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
-				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
 				clashcfg
 			fi
 			redir_mod=混合模式	
 		elif [ "$num" = 4 ]; then
 			redir_mod=纯净模式			
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			echo -e "\033[32m已经设置为纯净模式！\033[0m"
 			echo -e "\033[33m当前模式必须手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
 			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m$mix_port\033[0m"
 			echo -e "\033[31m也可以使用PAC自动代理文件，具体使用方法请自行搜索\033[0m"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			read -p "是否配置自动代理PAC文件(1/0) > " res
 				if [ "$res" = 1 ]; then
 					source $clashdir/getdate.sh && setpac
@@ -472,11 +472,11 @@ clashcfg(){
 		sed -i "1i\redir_mod=$redir_mod" $ccfg
 		sed -i '/dns_mod*/'d $ccfg
 		sed -i "1i\dns_mod=$dns_mod" $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+		echo -----------------------------------------------	
 		echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 	}
 	set_dns_mod(){
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
@@ -504,7 +504,7 @@ clashcfg(){
 		sed -i "1i\dns_mod=$dns_mod" $ccfg
 		sed -i '/redir_mod*/'d $ccfg
 		sed -i "1i\redir_mod=$redir_mod" $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+		echo -----------------------------------------------	
 		echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 	}
 	
@@ -513,9 +513,10 @@ clashcfg(){
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
 	[ -z "$dns_over" ] && dns_over=已开启
+	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$(cat $clashdir/mac)" ] && mac_return=未开启 || mac_return=已启用
 	#
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
 	echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 	echo -----------------------------------------------
@@ -525,6 +526,7 @@ clashcfg(){
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于屏蔽P2P流量"
 	echo -e " 5 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
 	echo -e " 6 不使用本地DNS服务：	\033[36m$dns_over\033[0m   ————防止redir-host模式的dns污染"
+	echo -e " 7 设置代理本机流量:	\033[36m$local_proxy\033[0m	————使用环境变量或者PAC配置本机代理"
 	echo -----------------------------------------------
 	echo -e " 9 \033[32m重启\033[0mclash服务"
 	echo -e " 0 返回上级菜单 \033[0m"
@@ -545,7 +547,7 @@ clashcfg(){
 	
 	elif [ "$num" = 3 ]; then	
 		sed -i '/skip_cert*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		if [ "$skip_cert" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\skip_cert=已开启" $ccfg
 			echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
@@ -559,7 +561,7 @@ clashcfg(){
 	
 	elif [ "$num" = 4 ]; then	
 		sed -i '/common_ports*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		if [ "$common_ports" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\common_ports=已开启" $ccfg
 			echo -e "\033[33m已设为仅代理（22,53,587,465,995,993,143,80,443）等常用端口！！\033[0m"
@@ -576,7 +578,7 @@ clashcfg(){
 		
 	elif [ "$num" = 6 ]; then	
 		sed -i '/dns_over*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		if [ "$dns_over" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\dns_over=已开启" $ccfg
 			echo -e "\033[33m已设置DNS为不走本地dnsmasq服务器！\033[0m"
@@ -591,6 +593,25 @@ clashcfg(){
 		fi
 		clashcfg  
 		
+	elif [ "$num" = 7 ]; then	
+		sed -i '/local_proxy*/'d $ccfg
+		echo -----------------------------------------------
+		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
+			sed -i "1i\local_proxy=已开启" $ccfg
+			local_proxy=已开启
+			$clashdir/start.sh set_proxy $mix_port $hostdir
+			echo -e "\033[32m已经成功配置本机代理~\033[0m"
+			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+		else
+			sed -i "1i\local_proxy=未开启" $ccfg
+			local_proxy=未开启
+			$clashdir/start.sh unset_proxy
+			echo -e "\033[33m已经停用本机代理规则！！\033[0m"
+			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+		fi
+		sleep 1
+		clashcfg
+		
 	elif [ "$num" = 9 ]; then	
 		clashstart
 		clashsh
@@ -604,9 +625,9 @@ clashadv(){
 	[ -z "$modify_yaml" ] && modify_yaml=未开启
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$start_old" ] && start_old=未开启
-	[ -z "$local_proxy" ] && local_proxy=未开启
+	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	#
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 	echo -e "\033[33m如您不是很了解clash的运行机制，请勿更改！\033[0m"
 	echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
@@ -614,7 +635,7 @@ clashadv(){
 	echo -e " 1 使用自定义配置:	\033[36m$modify_yaml\033[0m	————不使用内置规则修饰config.yaml"
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
-	echo -e " 4 代理本机流量:	\033[36m$local_proxy\033[0m	————使用环境变量或者PAC配置本机代理"
+	echo -e " 4 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 5 手动指定clash运行端口及秘钥"
 	echo -e " 6 手动配置内置DNS服务"
 	echo -----------------------------------------------
@@ -631,7 +652,7 @@ clashadv(){
 	
 	elif [ "$num" = 1 ]; then	
 		sed -i '/modify_yaml*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		if [ "$modify_yaml" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\modify_yaml=已开启" $ccfg
 			echo -e "\033[33m已设为使用用户完全自定义的配置文件！！"
@@ -648,7 +669,7 @@ clashadv(){
 		
 	elif [ "$num" = 2 ]; then	
 		sed -i '/ipv6_support*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		if [ "$ipv6_support" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\ipv6_support=已开启" $ccfg
 			echo -e "\033[33m已开启对ipv6协议的支持！！\033[0m"
@@ -664,7 +685,7 @@ clashadv(){
 		
 	elif [ "$num" = 3 ]; then	
 		sed -i '/start_old*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
 			sed -i "1i\start_old=已开启" $ccfg
 			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
@@ -681,20 +702,20 @@ clashadv(){
 		clashadv  
 		
 	elif [ "$num" = 4 ]; then	
-		sed -i '/local_proxy*/'d $ccfg
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
-			sed -i "1i\local_proxy=已开启" $ccfg
-			local_proxy=已开启
-			$clashdir/start.sh set_proxy $mix_port $hostdir
-			echo -e "\033[32m已经成功配置本机代理~\033[0m"
-			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+		sed -i '/tproxy_mod*/'d $ccfg
+		echo -----------------------------------------------
+		if [ "$tproxy_mod" = "未开启" ]; then 
+			if [ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ];then
+				sed -i "1i\tproxy_mod=已开启" $ccfg
+				tproxy_mod=已开启
+				echo -e "\033[32m已经为Redir模式启用udp转发功能！\033[0m"
+			else
+				echo -e "\033[31m您的设备不支持tproxy模式，无法开启！\033[0m"
+			fi
 		else
-			sed -i "1i\local_proxy=未开启" $ccfg
-			local_proxy=未开启
-			$clashdir/start.sh unset_proxy
-			echo -e "\033[33m已经停用本机代理规则！！\033[0m"
-			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+			sed -i "1i\tproxy_mod=未开启" $ccfg
+			tproxy_mod=未开启
+			echo -e "\033[33m已经停止使用tproxy转发udp流量！！\033[0m"
 		fi
 		sleep 1
 		clashadv 		
@@ -746,7 +767,7 @@ clashcron(){
 			clashcron
 		elif [ "$num" = 9 ]; then
 			sed -i /$cronname/d $cronpath
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
 			clashcron
 		elif [ "$num" = 8 ]; then	
@@ -787,7 +808,7 @@ clashcron(){
 			if [ "$res" = '1' ]; then
 				sed -i /$cronname/d $cronpath
 				echo "$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname" >> $cronpath
-				echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				echo -----------------------------------------------
 				echo -e "\033[31m定时任务已添加！！！\033[0m"
 				chmod 600 $cronpath #修改权限
 			fi
@@ -795,10 +816,10 @@ clashcron(){
 	}
 	checkcron(){
 		if [ -z "$cronpath" ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			echo -e "\033[33m找不到定时任务配置文件，无法添加添加定时任务！"
 			echo -e "\033[0m请手动指定定时任务配置文件，文件位置可以通过【crontab -e】命令查看\033[0m"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			read -p "请输入crontab文件路径(输入回车返回主菜单) > " path
 			if [ -z "$path" ];then
 				clashsh
@@ -814,7 +835,7 @@ clashcron(){
 	}
 	#定时任务菜单
 	checkcron #检测定时任务文件
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用定时任务功能：\033[0m"
 	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 	echo -----------------------------------------------
@@ -890,13 +911,13 @@ clashsh(){
 
 	elif [ "$num" = 3 ]; then
 		$clashdir/start.sh stop
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		echo -e "\033[31mClash服务已停止！\033[0m"
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		exit;
 
 	elif [ "$num" = 4 ]; then
-		echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		echo -----------------------------------------------
 		if [ "$start_old" = "已开启" ];then
 			sed -i "/start_old*/d" $ccfg
 			sed -i "1i\start_old=未开启" $ccfg
