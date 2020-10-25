@@ -153,7 +153,6 @@ echo 目标目录磁盘剩余：$(df -h $dir | awk '{print $4}' | sed 1d )
 read -p "确认安装？(1/0) > " res
 [ "$res" != "1" ] && setdir
 clashdir=$dir/clash
-install
 }
 
 #输出
@@ -175,9 +174,11 @@ if [ -n "$clashdir" ];then
 		echo -----------------------------------------------
 		$echo "\033[31m 旧版本文件已卸载！\033[0m"
 		setdir
+		install
 	elif [ "$res" = "9" ];then
 		echo 测试模式，变更安装位置
 		setdir
+		install
 	else
 		$echo "\033[31m输入错误！已取消安装！\033[0m"
 		exit;

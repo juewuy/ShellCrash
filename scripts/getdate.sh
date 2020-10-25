@@ -681,7 +681,8 @@ getdb(){
 				sed -i "s/127.0.0.1/${host}/g" $dbdir/app*.js
 				sed -i "s/7892/${db_port}/g" $dbdir/app*.js
 			fi
-			[ "$dbdir" != "/www/clash" ] && $clashdir/start.sh restart
+			#如果clash在运行则重启clash服务
+			[ "$dbdir" != "/www/clash" ] && [ -n "$PID" ] && $clashdir/start.sh restart
 			#写入配置文件
 			sed -i '/hostdir*/'d $ccfg
 			sed -i "1i\hostdir=\'$hostdir\'" $ccfg
