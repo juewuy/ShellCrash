@@ -394,10 +394,8 @@ afstart)
 		afstart
 	;;
 start)		
-		#读取配置文件
 		getconfig
-		#使用内置规则强行覆盖config配置文件
-		[ "$modify_yaml" != "已开启" ] && modify_yaml
+		[ "$modify_yaml" != "已开启" ] && modify_yaml #使用内置规则强行覆盖config配置文件
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			$clashdir/clash -d $clashdir >/dev/null 2>&1 &
@@ -411,10 +409,8 @@ start)
 		fi
 	;;
 stop)	
-		#读取配置文件
 		getconfig
-		#保存面板配置
-		web_save
+		web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
 		sed -i /clash保守模式守护进程/d $cronpath >/dev/null 2>&1
 		sed -i /保存节点配置/d $cronpath >/dev/null 2>&1
@@ -424,11 +420,10 @@ stop)
 		else
 			systemctl stop clash.service >/dev/null 2>&1
 		fi
+		pidof clash | xargs kill -9
 		killall -9 clash >/dev/null 2>&1
-		#清理iptables
-		stop_iptables
-		#禁用本机代理
-		[ "$local_proxy" = "已开启" ] && $0 unset_proxy
+		stop_iptables #清理iptables
+		[ "$local_proxy" = "已开启" ] && $0 unset_proxy #禁用本机代理
         ;;
 restart)
         $0 stop
@@ -450,12 +445,15 @@ set_proxy)
 		if  gsettings --version >/dev/null 2>&1 ;then
 			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1:$1/ui/pac"
 			gsettings set org.gnome.system.proxy mode "auto"
+			[ "$?" = 0 ] && check=$?
 		#KDE配置
 		elif  kwriteconfig5 -h >/dev/null 2>&1 ;then
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 2
 			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1:$1/ui/pac"
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 2
+			[ "$?" = 0 ] && check=$?
 		#环境变量方式
-		else
+		fi
+		if [ -z "$check" ];then
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
 			echo 'export all_proxy=http://127.0.0.1:'"$1" >> $profile

@@ -26,8 +26,8 @@ getconfig(){
 		[ -z "$host" ] && host=127.0.0.1
 	fi
 	#dashboard目录位置
-	[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
 	[ -d $clashdir/ui ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
+	[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
 	#开机自启相关
 	if [ -f /etc/rc.common ];then
 		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable_rc || autostart=disable_rc
@@ -114,8 +114,8 @@ function FindProxyForURL(url, host) {
 		return "PROXY $host:$mix_port; DIRECT;"
 }
 EOF
-	[ ! -d $clashdir/ui] && mkdir -p $clashdir/ui
-	[ "$(cat /tmp/pac)" != "$(cat $clashdir/ui/pac 2>&1)" ] && mv -f /tmp/pac $clashdir/ui/pac || rm -rf /tmp/pac
+	[ ! -d $clashdir/ui ] && mkdir -p $clashdir/ui
+	[ "$(cat /tmp/pac)" = "$(cat $clashdir/ui/pac 2>&1)" ] && rm -rf /tmp/pac || mv -f /tmp/pac $clashdir/ui/pac
 }
 start_over(){
 	[ $? -eq 1 ] && exit
@@ -181,6 +181,7 @@ setport(){
 		echo -----------------------------------------------
 		echo -e "格式必须是\033[32m 用户名:密码 \033[0m的形式，注意用小写冒号分隔！"
 		echo -e "请尽量不要使用特殊符号！可能会产生未知错误！"
+		echo -e "\033[31m需要使用本机代理功能时，请勿设置密码！\033[0m"
 		echo "输入 0 删除密码"
 		echo -----------------------------------------------
 		read -p "请输入Http/Sock5用户名及密码 > " input
@@ -189,6 +190,7 @@ setport(){
 			sed -i "/authentication*/"d $ccfg
 			echo 密码已移除！
 		else
+			[ "$local_proxy" = "已开启" ] && echo -e "\033[32m请先禁用本机代理功能！\033[0m" && setport
 			authentication=$(echo $input | grep :)
 			if [ -n "$authentication" ]; then
 				sed -i "/authentication*/"d $ccfg
@@ -318,6 +320,7 @@ clashstart(){
 		$clashdir/start.sh stop
 		echo -e "\033[31mClash服务已停止！\033[0m"
 	fi
+	catpac #生成pac自动代理文件
 	echo -----------------------------------------------
 	$clashdir/start.sh start
 	sleep 1
@@ -327,7 +330,6 @@ clashstart(){
 		echo -e "\033[31mclash启动失败！\033[0m" 
 		exit;
 	fi
-	catpac #生成pac自动代理文件
 	start_over
 }
 macfilter(){
@@ -478,14 +480,11 @@ clashcfg(){
 			redir_mod=纯净模式			
 			echo -----------------------------------------------
 			echo -e "\033[32m已经设置为纯净模式！\033[0m"
-			echo -e "\033[33m当前模式必须手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
+			echo -e "\033[33m当前模式需要手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
 			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m$mix_port\033[0m"
-			echo -e "\033[31m也可以使用PAC自动代理文件，具体使用方法请自行搜索\033[0m"
-			echo -----------------------------------------------
-			read -p "是否配置自动代理PAC文件(1/0) > " res
-				if [ "$res" = 1 ]; then
-					source $clashdir/getdate.sh && setpac
-				fi
+			echo -e "也可以使用更便捷的PAC自动代理，PAC代理链接为：\033[30;47m http://$host:$mix_port/ui/pac \033[0m"
+			echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
+			sleep 2
 		else
 			echoerrornum
 			clashcfg
@@ -548,7 +547,7 @@ clashcfg(){
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于屏蔽P2P流量"
 	echo -e " 5 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
 	echo -e " 6 不使用本地DNS服务：	\033[36m$dns_over\033[0m   ————防止redir-host模式的dns污染"
-	echo -e " 7 设置代理本机流量:	\033[36m$local_proxy\033[0m	————使用环境变量或者PAC配置本机代理"
+	echo -e " 7 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或GUI/api配置本机代理"
 	echo -----------------------------------------------
 	echo -e " 9 \033[32m重启\033[0mclash服务"
 	echo -e " 0 返回上级菜单 \033[0m"
@@ -619,12 +618,17 @@ clashcfg(){
 		sed -i '/local_proxy*/'d $ccfg
 		echo -----------------------------------------------
 		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
-			sed -i "1i\local_proxy=已开启" $ccfg
-			local_proxy=已开启
-			catpac #生成pac自动代理文件
-			$clashdir/start.sh set_proxy $mix_port
-			echo -e "\033[32m已经成功配置本机代理~\033[0m"
-			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+			if [ -n "$authentication" ] && [ "$authentication" != "未设置" ] ;then
+				echo -e "\033[32m检测到您已经设置了Http/Sock5代理密码，请先取消密码！\033[0m"
+				sleep 1
+				setport
+			else
+				sed -i "1i\local_proxy=已开启" $ccfg
+				local_proxy=已开启
+				$clashdir/start.sh set_proxy $mix_port
+				echo -e "\033[32m已经成功配置本机代理~\033[0m"
+				echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+			fi
 		else
 			sed -i "1i\local_proxy=未开启" $ccfg
 			local_proxy=未开启
