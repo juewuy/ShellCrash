@@ -23,10 +23,10 @@ start() {
 	if [ -z "$(pidof procd)" ];then
 		#创建后台进程
 		service_start  $DIR/clash -d $DIR
-		#设置守护进程
-		$DIR/start.sh deamon
 		#其他设置
 		$DIR/start.sh afstart
+		#设置守护进程
+		$DIR/start.sh deamon
 	else
 		start_service
 	fi

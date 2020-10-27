@@ -94,7 +94,7 @@ echoerrornum(){
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 }
 catpac(){
-	cat > /tmp/pac <<EOF
+	cat > /tmp/clash_pac <<EOF
 function FindProxyForURL(url, host) {
 	if (
 		isInNet(host, "0.0.0.0", "255.0.0.0")||
@@ -112,19 +112,18 @@ function FindProxyForURL(url, host) {
 }
 EOF
 	[ ! -d $clashdir/ui ] && mkdir -p $clashdir/ui
-	[ "$(cat /tmp/pac)" = "$(cat $clashdir/ui/pac 2>&1)" ] && rm -rf /tmp/pac || mv -f /tmp/pac $clashdir/ui/pac
+	cmp -s /tmp/clash_pac $clashdir/ui/pac
+	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $clashdir/ui/pac
 }
 start_over(){
-	[ $? -eq 1 ] && exit
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -n "$hostdir" ];then
 		echo -e "请使用\033[30;47m http://$host$hostdir \033[0m管理内置规则"
 	else
 		echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
 		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m $db_port \033[0m"
-		echo -e "也可前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+		echo -e "推荐前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
 	fi
-	echo -----------------------------------------------
 }
 setport(){
 	inputport(){
@@ -186,13 +185,18 @@ setport(){
 			sed -i "/authentication*/"d $ccfg
 			echo 密码已移除！
 		else
-			[ "$local_proxy" = "已开启" ] && echo -e "\033[32m请先禁用本机代理功能！\033[0m" && setport
-			authentication=$(echo $input | grep :)
-			if [ -n "$authentication" ]; then
-				setconfig authentication \'$authentication\'
-				echo -e "\033[32m设置成功！！！\033[0m"
+			if [ "$local_proxy" = "已开启" ];then
+				echo -----------------------------------------------
+				echo -e "\033[33m请先禁用本机代理功能！\033[0m"
+				sleep 1
 			else
-				echo -e "\033[31m输入有误，请重新输入！\033[0m"
+				authentication=$(echo $input | grep :)
+				if [ -n "$authentication" ]; then
+					setconfig authentication \'$authentication\'
+					echo -e "\033[32m设置成功！！！\033[0m"
+				else
+					echo -e "\033[31m输入有误，请重新输入！\033[0m"
+				fi
 			fi
 		fi
 		setport
@@ -266,7 +270,8 @@ setdns(){
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
 		echo -e "\033[31m仅限搭配其他DNS服务(比如dnsmasq、smartDNS)时使用！\033[0m"
-		setconfig dns_no 已禁用
+		dns_no=已禁用
+		setconfig dns_no $dns_no
 		echo -e "\033[33m已禁用内置DNS！！！\033[0m"
 		clashadv
 	else
@@ -307,22 +312,11 @@ clashstart(){
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
 		clashlink
 	fi
-	if [ -n "$PID" ];then
-		echo -----------------------------------------------
-		$clashdir/start.sh stop
-		echo -e "\033[31mClash服务已停止！\033[0m"
-	fi
 	catpac #生成pac自动代理文件
 	echo -----------------------------------------------
 	$clashdir/start.sh start
 	sleep 1
-	PID=$(pidof clash)
-	if [ -z "$PID" ];then 
-		$clashdir/start.sh stop
-		echo -e "\033[31mclash启动失败！\033[0m" 
-		exit;
-	fi
-	start_over
+	[ -n "$(pidof clash)" ] && start_over || exit 1
 }
 macfilter(){
 	add_mac(){

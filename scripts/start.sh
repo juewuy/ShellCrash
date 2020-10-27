@@ -28,9 +28,9 @@ getconfig(){
 	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443 '
 	}
 logger(){
-	[ -z "$1" ] && echo -e "\033[31m$1\033[0m"
+	[ -z "$2" ] && echo -e "\033[31m$1\033[0m"
 	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
-	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1d' $clashdir/log
+	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1,5d' $clashdir/log
 }
 cronset(){
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
@@ -69,18 +69,18 @@ EOF`
 		markhttp=1
 	fi
 	#输出
-	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo -----------------------------------------------
 	echo 正在连接服务器获取配置文件…………链接地址为：
 	echo -e "\033[4;32m$Https\033[0m"
 	echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
-	echo -e "\033[36m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	echo -e "\033[36m-----------------------------------------------"
 	echo -e "|                                             |"
 	echo -e "|         需要一点时间，请耐心等待！          |"
 	echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出\033[36m        |"
-	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[0m"
+	echo -e "-----------------------------------------------\033[0m"
 	#获取在线yaml文件
 	yaml=$clashdir/config.yaml
-	yamlnew=/tmp/config.yaml
+	yamlnew=/tmp/clash_config.yaml
 	rm -rf $yamlnew
 	source $clashdir/getdate.sh && webget $yamlnew $Https
 	if [ "$result" != "200" ];then
@@ -113,55 +113,50 @@ EOF`
 		Https=""
 		#检测节点
 		if [ -z "$(cat $yamlnew | grep 'server:' | grep -v 'nameserver')" ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			logger "获取到了配置文件，但似乎并不包含正确的节点信息！"
 			echo -----------------------------------------------
 			sed -n '1,30p' $yamlnew
 			echo -----------------------------------------------
 			echo -e "\033[33m请检查如上配置文件信息:\033[0m"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			exit 1
 		fi
 		#检测旧格式
 		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			logger "已经停止对旧格式配置文件的支持！！！"
 			echo -e "请使用新格式或者使用【导入节点/链接】功能！"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			exit 1
 		fi
 		#检测不支持的加密协议
 		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			logger "不支持chacha20加密，请更换节点加密协议！！！"
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			echo -----------------------------------------------
 			exit 1
 		fi
-		#替换文件
-		[ -f $yaml ] && mv $yaml $yaml.bak
-		mv $yamlnew $yaml
+		#如果不同则备份并替换文件
+		if [ -f $yaml ];then
+			cmp -s $yamlnew $yaml
+			[ "$?" = 0 ] && rm -f $yamlnew || mv -f $yaml $yaml.bak && mv -f $yamlnew $yaml
+		else
+			mv -f $yamlnew $yaml
+		fi
 		echo 配置文件已生成！正在启动clash使其生效！
 		#重启clash服务
 		$0 stop
 		$0 start
-		sleep 1
-		if [ -z "$(pidof clash)" ];then
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if [ -f $yaml.bak ];then
-				$clashdir/start.sh stop
-				mv $yaml.bak $yaml
-				$0 start
-				logger "clash服务启动失败！已还原配置文件并重启clash！"
-				sleep 1
-				[ -n "$(pidof clash)" ] && exit 0
-			fi
-			logger "clash服务启动失败！请查看报错信息！"
-			$0 stop
-			$clashdir/clash -t -d $clashdir
-			echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			exit 1
-		else
+		if [ "$?" = 0 ];then
 			logger "配置文件获取成功！clash服务已启动！" echooff
+		else
+			if [ -f $yaml.bak ];then
+				$0 stop
+				mv -f $yaml.bak $yaml
+				$0 start
+				[ "$?" = 0 ] && logger "已还原配置文件并重启clash！" && exit 0
+			fi
 		fi
 	fi
 }
@@ -331,11 +326,8 @@ web_save(){
 	#使用get_save获取面板节点设置
 	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save
 	#对比文件，如果有变动则写入磁盘，否则清除缓存
-	if [ "$(cat /tmp/clash_web_save)" = "$(cat $clashdir/web_save 2>/dev/null)" ];then
-		rm -rf /tmp/clash_web_save
-	else
-		mv -f /tmp/clash_web_save $clashdir/web_save
-	fi
+	cmp -s /tmp/clash_web_save $clashdir/web_save
+	[ "$?" = 0 ] && rm -rf /tmp/clash_web_save || mv -f /tmp/clash_web_save $clashdir/web_save
 }
 web_restore(){
 	put_save(){
@@ -368,25 +360,33 @@ web_restore(){
 	exit 0
 }
 afstart(){
-	#读取配置文件
-	getconfig
-	#修改iptables规则使流量进入clash
-	[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
-	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
-	[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
-	#标记启动时间
-	mark_time
-	#设置本机代理
-	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
-	#启用面板配置自动保存
-	cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
-	[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+	$clashdir/clash -t -d $clashdir >/dev/null
+	if [ "$?" = 0 ];then
+		#读取配置文件
+		getconfig
+		#修改iptables规则使流量进入clash
+		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
+		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
+		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
+		#标记启动时间
+		mark_time
+		#设置本机代理
+		[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
+		#启用面板配置自动保存
+		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
+		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+	else
+		logger "clash服务启动失败！请查看报错信息！"
+		logger `$clashdir/clash -t -d $clashdir 1>&0`
+		$0 stop &
+		exit 1
+	fi
+	exit 0
 }
 start_old(){
 	$clashdir/clash -d $clashdir >/dev/null &
-	sleep 1
-	cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
 	afstart
+	daemon
 }
 
 case "$1" in
@@ -395,6 +395,7 @@ afstart)
 		afstart
 	;;
 start)		
+		[ -n "$(pidof clash)" ] && $0 stop #禁止多实例
 		getconfig
 		#使用内置规则强行覆盖config配置文件
 		[ "$modify_yaml" != "已开启" ] && modify_yaml
@@ -421,8 +422,7 @@ stop)
 		elif [ "$USER" = "root" ];then
 			systemctl stop clash.service >/dev/null 2>&1
 		fi
-		pidof clash | xargs kill -9 >/dev/null 2>&1
-		killall -9 clash >/dev/null 2>&1
+		PID=$(pidof clash) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
 		stop_iptables #清理iptables
 		[ "$local_proxy" = "已开启" ] && $0 unset_proxy #禁用本机代理
         ;;
@@ -437,6 +437,10 @@ getyaml)
 web_save)
 		getconfig
 		web_save
+	;;
+daemon)
+		getconfig
+		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
 	;;
 set_proxy)
 		#GNOME配置

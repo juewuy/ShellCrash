@@ -841,11 +841,8 @@ testcommand(){
 	elif [ "$num" = 1 ]; then
 		$clashdir/start.sh stop
 		echo -----------------------------------------------
-		[ -f /tmp/clash/config.yaml ] && confdir='-f /tmp/clash/config.yaml'
-		$clashdir/clash -t -d $clashdir $confdir
-		
+		$clashdir/clash -t -d $clashdir	
 		[ "$?" = 0 ] && testover=32m测试通过！|| testover=31m出现错误！请截图后到TG群询问！！！
-		echo -----------------------------------------------
 		echo -e "\033[$testover\033[0m"
 		exit;
 	elif [ "$num" = 2 ]; then
