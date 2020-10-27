@@ -81,7 +81,7 @@ gettar(){
 		else
 			#设为保守模式启动
 			sed -i '/start_old=*/'d $clashdir/mark
-			sed -i "1i\start_old=已开启" $clashdir/mark
+			echo start_old=已开启 >> $clashdir/mark
 		fi
 	fi
 	#修饰文件及版本号
@@ -89,7 +89,7 @@ gettar(){
 	sed -i "s%#!/bin/sh%#!/bin/$shtype%g" $clashdir/start.sh
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
-	sed -i "1i\versionsh_l=$release_new" $clashdir/mark
+	echo versionsh_l=$release_new >> $clashdir/mark
 	#设置环境变量
 	[ -w ~/.bashrc ] && profile=~/.bashrc
 	[ -w /etc/profile ] && profile=/etc/profile
