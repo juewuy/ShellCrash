@@ -8,6 +8,8 @@ getconfig(){
 	ccfg=$clashdir/mark
 	[ -f $ccfg ] && source $ccfg
 	#默认设置
+	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
+	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
@@ -30,7 +32,14 @@ logger(){
 	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
 	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1d' $clashdir/log
 }
+cronset(){
+	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
+	crontab -l > /tmp/conf && sed -i "/$1/d" /tmp/conf && echo "$2" >> /tmp/conf && crontab /tmp/conf
+	rm -f /tmp/conf
+}
 getyaml(){
+	[ -z "$rule_link" ] && rule_link=1
+	[ -z "$server_link" ] && server_link=1
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
 subcon.dlj.tf
@@ -95,7 +104,7 @@ EOF`
 					server_link=0
 				fi
 				server_link=$((server_link+1))
-				sed -i "1i\server_link=$server_link" $ccfg
+				echo server_link=$server_link >> $ccfg
 				Https=""
 				getyaml
 			fi
@@ -173,42 +182,42 @@ modify_yaml(){
 	else
 		dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	fi
-
 ###################################
 	yaml=$clashdir/config.yaml
 	#预删除需要添加的项目
 	a=$(grep -n "port:" $yaml | head -1 | cut -d ":" -f 1)
 	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
 	b=$((b-1))
-	sed -i "${a},${b}d" $yaml
-	#添加配置
-	sed -i "1imixed-port:\ $mix_port" $yaml
-	sed -i "1aredir-port:\ $redir_port" $yaml
-	sed -i "2aauthentication:\ \[\"$authentication\"\]" $yaml
-	sed -i "3a$lan" $yaml
-	sed -i "4a$mode" $yaml
-	sed -i "5a$log" $yaml
-	sed -i "6a$ipv6" $yaml
-	sed -i "7aexternal-controller:\ :$db_port" $yaml
-	sed -i "8aexternal-ui:\ $db_ui" $yaml
-	sed -i "9asecret:\ $secret" $yaml
-	sed -i "10a$tun" $yaml
-	sed -i "11a$exper" $yaml
-	sed -i "12a$dns" $yaml
+	mkdir -p /tmp/clash > /dev/null
+	sed "${a},${b}d" $yaml > /tmp/clash/rule.yaml
 	#跳过本地tls证书验证
-	if [ "$skip_cert" = "已开启" ];then
-		sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $yaml
-	else
-		sed -i '10,99s/skip-cert-verify: true/skip-cert-verify: false/' $yaml
-	fi
-	#禁止fake-ip回环流量
-	#sed -i '/198.18.0.0/'d $yaml
-	#sed -i '/rules:/a \ - IP-CIDR,198.18.0.0/16,REJECT' $yaml
+	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' /tmp/clash/rule.yaml
+	#添加配置
+	cat > /tmp/clash/set.yaml <<EOF
+mixed-port: $mix_port
+redir-port: $redir_port
+authentication: ["$authentication"]
+$lan
+$mode
+$log
+$ipv6
+external-controller: :$db_port
+external-ui: $db_ui
+secret: $secret
+$tun
+$exper
+$dns
+EOF
+	cat /tmp/clash/set.yaml /tmp/clash/rule.yaml > /tmp/clash/config.yaml
+	cmp -s /tmp/clash/config.yaml $yaml
+	[ "$?" != 0 ] && mv -f /tmp/clash/config.yaml $yaml || rm -f /tmp/clash/config.yaml
+	rm -f /tmp/clash/set.yaml
+	rm -f /tmp/clash/rule.yaml
 }
 mark_time(){
 	start_time=`date +%s`
 	sed -i '/start_time*/'d $clashdir/mark
-	sed -i "1i\start_time=$start_time" $clashdir/mark
+	echo start_time=$start_time >> $clashdir/mark
 }
 start_redir(){
 	#流量过滤规则
@@ -307,12 +316,6 @@ start_dns(){
 		ip6tables -I INPUT -p udp --dport 53 -j REJECT
 	fi
 }
-daemon(){
-	if [ -n "$cronpath" ];then
-		echo '*/1 * * * * test -z "$(pidof clash)"  &&  /etc/init.d/clash restart #clash保守模式守护进程' >> $cronpath
-		chmod 600 $cronpath
-	fi
-}
 web_save(){
 	get_save(){
 		if curl --version > /dev/null 2>&1;then
@@ -322,7 +325,7 @@ web_save(){
 		else
 			logger 当前系统未安装curl且wget的版本太低，无法保存节点配置！
 			getconfig
-			sed -i /保存节点配置/d $cronpath >/dev/null 2>&1
+			cronset '保存节点配置'
 		fi
 	}
 	#使用get_save获取面板节点设置
@@ -339,7 +342,7 @@ web_restore(){
 		if curl --version > /dev/null 2>&1;then
 			curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
 		else
-			wget --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
+			wget -q --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
 		fi
 	}
 	#设置循环检测clash面板端口
@@ -364,28 +367,26 @@ web_restore(){
 	done
 	exit 0
 }
-web_save_auto(){
-	if [ -n "$cronpath" ];then
-		if [ -z "$(cat $cronpath | grep '保存节点配置')" ];then
-			echo '*/10 * * * * test -n "$(pidof clash)"  &&  /etc/init.d/clash web_save #每10分钟保存节点配置' >> $cronpath
-			chmod 600 $cronpath
-		fi
-	fi
-}
 afstart(){
 	#读取配置文件
 	getconfig
 	#修改iptables规则使流量进入clash
-	[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "true" ] && start_dns
+	[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
 	[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 	[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
 	#标记启动时间
 	mark_time
 	#设置本机代理
-	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port
-	#还原面板配置
-	web_save_auto #启用面板配置自动保存
+	[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
+	#启用面板配置自动保存
+	cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 	[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+}
+start_old(){
+	$clashdir/clash -d $clashdir >/dev/null &
+	sleep 1
+	cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
+	afstart
 }
 
 case "$1" in
@@ -395,29 +396,29 @@ afstart)
 	;;
 start)		
 		getconfig
-		[ "$modify_yaml" != "已开启" ] && modify_yaml #使用内置规则强行覆盖config配置文件
+		#使用内置规则强行覆盖config配置文件
+		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
-			$clashdir/clash -d $clashdir >/dev/null 2>&1 &
-			sleep 1
-			daemon
-			afstart
+			start_old
 		elif [ -f /etc/rc.common ];then
 			/etc/init.d/clash start
-		else
+		elif [ "$USER" = "root" ];then
 			systemctl start clash.service
+		else
+			start_old
 		fi
 	;;
 stop)	
 		getconfig
 		web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
-		sed -i /clash保守模式守护进程/d $cronpath >/dev/null 2>&1
-		sed -i /保存节点配置/d $cronpath >/dev/null 2>&1
+		cronset "clash保守模式守护进程"
+		cronset "保存节点配置"
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1
-		else
+		elif [ "$USER" = "root" ];then
 			systemctl stop clash.service >/dev/null 2>&1
 		fi
 		pidof clash | xargs kill -9 >/dev/null 2>&1
@@ -433,9 +434,6 @@ getyaml)
 		getconfig
 		getyaml
 		;;
-daemon)	
-		daemon
-		;;
 web_save)
 		getconfig
 		web_save
@@ -443,12 +441,12 @@ web_save)
 set_proxy)
 		#GNOME配置
 		if  gsettings --version >/dev/null 2>&1 ;then
-			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1:$1/ui/pac"
+			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1:$3/ui/pac"
 			gsettings set org.gnome.system.proxy mode "auto"
 			[ "$?" = 0 ] && check=$?
 		#KDE配置
 		elif  kwriteconfig5 -h >/dev/null 2>&1 ;then
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1:$1/ui/pac"
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1:$3/ui/pac"
 			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 2
 			[ "$?" = 0 ] && check=$?
 		#环境变量方式
@@ -456,7 +454,7 @@ set_proxy)
 		if [ -z "$check" ];then
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
-			echo 'export all_proxy=http://127.0.0.1:'"$1" >> $profile
+			echo 'export all_proxy=http://127.0.0.1:'"$2" >> $profile
 			echo 'export ALL_PROXY=$all_proxy' >>  $profile
 		fi
 	;;

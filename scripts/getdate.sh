@@ -44,9 +44,8 @@ linkconfig(){
 		echo 
 	elif [ "$num" -le 13 ];then
 		#将对应标记值写入mark
-		sed -i '/rule_link*/'d $ccfg
-		sed -i "4i\rule_link="$num"" $ccfg	
 		rule_link=$num
+		setconfig rule_link $rule_link
 		echo -----------------------------------------------	  
 		echo -e "\033[32m设置成功！返回上级菜单\033[0m"
 	fi
@@ -70,9 +69,8 @@ linkserver(){
 		echo
 	elif [ "$num" -le 5 ];then
 		#将对应标记值写入mark
-		sed -i '/server_link*/'d $ccfg
-		sed -i "4i\server_link="$num"" $ccfg	
 		server_link=$num
+		setconfig server_link $server_link
 		echo -----------------------------------------------	  
 		echo -e "\033[32m设置成功！返回上级菜单\033[0m"
 	fi
@@ -98,8 +96,7 @@ linkfilter(){
 		exclude=''
 		echo -e "\033[31m 已删除节点过滤关键字！！！\033[0m"
 	fi
-	sed -i '/exclude=*/'d $ccfg
-	sed -i "1i\exclude=\'$exclude\'" $ccfg
+	setconfig exclude \'$exclude\'
 	linkset
 }
 linkfilter2(){
@@ -123,8 +120,7 @@ linkfilter2(){
 		include=''
 		echo -e "\033[31m 已删除节点匹配关键字！！！\033[0m"
 	fi
-	sed -i '/include=*/'d $ccfg
-	sed -i "1i\include=\'$include\'" $ccfg
+	setconfig include \'$include\'
 	linkset
 }
 linkset(){
@@ -150,9 +146,8 @@ linkset(){
 			clashlink
 		elif [ "$num" = '1' ]; then
 			#将用户链接写入mark
-			sed -i '/Url=*/'d $ccfg
 			sed -i '/Https=*/'d $ccfg
-			sed -i "6i\Url=\'$Url\'" $ccfg
+			setconfig Url \'$Url\'
 			Https=""
 			#获取在线yaml文件
 			$clashdir/start.sh getyaml
@@ -171,17 +166,9 @@ linkset(){
 			linkserver
 			linkset
 		elif [ "$num" = '6' ]; then
-			sed -i '/skip_cert*/'d $ccfg
 			echo -----------------------------------------------
-			if [ "$skip_cert" = "未开启" ] > /dev/null 2>&1; then 
-				sed -i "1i\skip_cert=已开启" $ccfg
-				#echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
-				skip_cert=已开启
-			else
-				sed -i "1i\skip_cert=未开启" $ccfg
-				#echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
-				skip_cert=未开启
-			fi
+			[ "$skip_cert" = "未开启" ] && skip_cert=已开启 || skip_cert=未开启
+			setconfig skip_cert $skip_cert
 			linkset
 		else
 			echoerrornum
@@ -255,8 +242,7 @@ getlink2(){
 			if [ "$res" = '1' ]; then
 				#将用户链接写入mark
 				sed -i '/Url=*/'d $ccfg
-				sed -i '/Https=*/'d $ccfg
-				sed -i "6i\Https=\'$Https\'" $ccfg
+				setconfig Https \'$Https\'
 				#获取在线yaml文件
 				$clashdir/start.sh getyaml
 				start_over
@@ -272,16 +258,8 @@ getlink2(){
 	fi
 }
 clashlink(){
-	#获取订阅规则
-	if [ -z "$rule_link" ]; then
-		sed -i "4i\rule_link=1" $ccfg
-		rule_link=1
-	fi
-	#获取后端服务器地址
-	if [ -z "$server_link" ]; then
-		sed -i "5i\server_link=1" $ccfg
-		server_link=1
-	fi
+	[ -z "$rule_link" ] && rule_link=1
+	[ -z "$server_link" ] && server_link=1
 	echo -----------------------------------------------
 	echo -e "\033[30;47m 欢迎使用导入配置文件功能！\033[0m"
 	echo -----------------------------------------------
@@ -413,18 +391,17 @@ gettar(){
 			mv $clashdir/clashservice /etc/init.d/clash
 			chmod  777 /etc/init.d/clash
 	else
-		[ -d /etc/systemd/system ] && sysdir=/etc/systemd/system
-		[ -d /usr/lib/systemd/system/ ] && sysdir=/usr/lib/systemd/system/ 
+		[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
+		[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
 		if [ -n "$sysdir" ];then
 			#设为systemd方式启动
 			mv $clashdir/clash.service $sysdir/clash.service
 			sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service
 			systemctl daemon-reload
-			rm -rf /etc/init.d/clash
 		else
 			#设为保守模式启动
 			sed -i '/start_old=*/'d $clashdir/mark
-			sed -i "1i\start_old=已开启" $clashdir/mark
+			echo start_old=已开启 >> $clashdir/mark
 		fi
 	fi
 	#修饰文件及版本号
@@ -432,7 +409,7 @@ gettar(){
 	sed -i "s%#!/bin/sh%#!/bin/$shtype%g" $clashdir/start.sh
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
-	sed -i "1i\versionsh_l=$release_new" $clashdir/mark
+	echo versionsh_l=$release_new >> $clashdir/mark
 	#设置环境变量
 	[ -w ~/.bashrc ] && profile=~/.bashrc
 	[ -w /etc/profile ] && profile=/etc/profile
@@ -555,10 +532,8 @@ getcore(){
 		echo -e "\033[32m$clashcore核心下载成功，正在替换！\033[0m"
 		mv /tmp/clash.new $clashdir/clash
 		chmod  777 $clashdir/clash  #授予权限
-		sed -i '/clashcore=*/'d $ccfg
-		sed -i "1i\clashcore=$clashcore" $ccfg
-		sed -i '/clashv=*/'d $ccfg
-		sed -i "1i\clashv=$version" $ccfg
+		setconfig clashcore $clashcore
+		setconfig clashv $version
 		rm -rf /tmp/clashversion
 		echo -----------------------------------------------
 		echo -e "\033[32m$clashcore核心安装成功！\033[0m"
@@ -583,8 +558,7 @@ getgeo(){
 			echo -----------------------------------------------
 			echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
 			mv /tmp/Country.mmdb $clashdir/Country.mmdb
-			sed -i '/Geo_v=*/'d $ccfg
-			sed -i "1i\Geo_v=$GeoIP_v" $ccfg
+			setconfig Geo_v $GeoIP_v
 			rm -rf /tmp/clashversion
 		fi
 	else
@@ -684,8 +658,7 @@ getdb(){
 			#如果clash在运行则重启clash服务
 			[ "$dbdir" != "/www/clash" ] && [ -n "$PID" ] && $clashdir/start.sh restart
 			#写入配置文件
-			sed -i '/hostdir*/'d $ccfg
-			sed -i "1i\hostdir=\'$hostdir\'" $ccfg
+			setconfig hostdir \'$hostdir\'
 			echo -----------------------------------------------
 			echo -e "\033[32m面板安装成功！\033[0m"
 			echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0;36m访问面板\033[0m"
@@ -732,8 +705,7 @@ setserver(){
 		update
 	fi
 	#写入mark文件
-	sed -i '/update_url*/'d $ccfg
-	sed -i "1i\update_url=\'$update_url\'" $ccfg
+	setconfig update_url \'$update_url\'
 	echo -----------------------------------------------
 	echo -e "\033[32m源地址更新成功！\033[0m"
 	release_new=""
@@ -869,9 +841,12 @@ testcommand(){
 	elif [ "$num" = 1 ]; then
 		$clashdir/start.sh stop
 		echo -----------------------------------------------
-		$clashdir/clash -t -d $clashdir 
+		[ -f /tmp/clash/config.yaml ] && confdir='-f /tmp/clash/config.yaml'
+		$clashdir/clash -t -d $clashdir $confdir
+		
+		[ "$?" = 0 ] && testover=32m测试通过！|| testover=31m出现错误！请截图后到TG群询问！！！
 		echo -----------------------------------------------
-		echo -e "\033[31m如有报错请截图后到TG群询问！！！\033[0m"
+		echo -e "\033[$testover\033[0m"
 		exit;
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
