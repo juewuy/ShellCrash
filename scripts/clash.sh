@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+#读取配置相关
 getconfig(){
 	#服务器缺省地址
 	[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
@@ -37,7 +38,7 @@ getconfig(){
 	fi
 	#开机自启描述
 	if [ "$start_old" = "已开启" ];then
-		auto="\033[33m已设置保守模式！\033[0m"
+		auto="\033[32m保守模式\033[0m"
 		auto1="代理本机：\033[36m$local_proxy\033[0m"
 	elif [ "$autostart" = "enable_rc" -o "$autostart" = "enable_sys" ]; then
 		auto="\033[32m已设置开机启动！\033[0m"
@@ -89,7 +90,8 @@ setconfig(){
 	sed -i "/${1}*/"d $configpath
 	echo "${1}=${2}" >> $configpath
 }
-echoerrornum(){
+#启动相关
+errornum(){
 	echo -----------------------------------------------
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 }
@@ -115,7 +117,7 @@ EOF
 	cmp -s /tmp/clash_pac $clashdir/ui/pac
 	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $clashdir/ui/pac
 }
-start_over(){
+startover(){
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -n "$hostdir" ];then
 		echo -e "请使用\033[30;47m http://$host$hostdir \033[0m管理内置规则"
@@ -125,6 +127,32 @@ start_over(){
 		echo -e "推荐前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
 	fi
 }
+clashstart(){
+	#检查clash核心
+	if [ ! -f $clashdir/clash ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
+		source $clashdir/getdate.sh && checkupdate && getcore
+	fi
+	#检查GeoIP数据库
+	if [ ! -f $clashdir/Country.mmdb ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
+		source $clashdir/getdate.sh && checkupdate && getgeo
+	fi
+	#检查yaml配置文件
+	if [ ! -f "$yaml" ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
+		clashlink
+	fi
+	catpac #生成pac自动代理文件
+	echo -----------------------------------------------
+	$clashdir/start.sh start
+	sleep 1
+	[ -n "$(pidof clash)" ] && startover || exit 1
+}
+#功能相关
 setport(){
 	inputport(){
 		read -p "请输入端口号(1000-65535) > " portx
@@ -168,7 +196,7 @@ setport(){
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
-		echoerrornum
+		errornum
 	elif [ "$num" = 1 ]; then
 		xport=mix_port
 		inputport
@@ -245,7 +273,7 @@ setdns(){
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
-		echoerrornum
+		errornum
 		clashadv
 	elif [ "$num" = 1 ]; then
 		read -p "请输入新的DNS > " dns_nameserver
@@ -292,31 +320,6 @@ checkport(){
 			checkport
 		fi
 	done
-}
-clashstart(){
-	#检查clash核心
-	if [ ! -f $clashdir/clash ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
-		source $clashdir/getdate.sh && checkupdate && getcore
-	fi
-	#检查GeoIP数据库
-	if [ ! -f $clashdir/Country.mmdb ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
-		source $clashdir/getdate.sh && checkupdate && getgeo
-	fi
-	#检查yaml配置文件
-	if [ ! -f "$yaml" ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
-		clashlink
-	fi
-	catpac #生成pac自动代理文件
-	echo -----------------------------------------------
-	$clashdir/start.sh start
-	sleep 1
-	[ -n "$(pidof clash)" ] && start_over || exit 1
 }
 macfilter(){
 	add_mac(){
@@ -394,7 +397,7 @@ macfilter(){
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
-		echoerrornum
+		errornum
 		clashcfg
 	elif [ "$num" = 0 ]; then
 		clashcfg
@@ -415,30 +418,72 @@ macfilter(){
 		sleep 1
 		macfilter
 	else
-		echoerrornum
+		errornum
 		macfilter
 	fi
 }
-set_local_proxy(){
+localproxy(){
+	[ -z "$local_proxy" ] && local_proxy='未开启'
+	[ -z "$local_proxy_type" ] && local_proxy_type='环境变量'
+	[ "$local_proxy" = "已开启" ] && proxy_set='禁用' || proxy_set='启用'
+	echo -----------------------------------------------
+	echo -e "\033[33m当前本机代理配置方式为：\033[32m$local_proxy_type\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
+	echo -e " 2 使用\033[32m环境变量\033[0m方式配置"
+	echo -e " 3 使用\033[32mGNOME桌面API\033[0m配置"
+	echo -e " 4 使用\033[32mKDE桌面API\033[0m配置"
+	echo -e " 0 返回上级菜单"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then 
+		errornum
+	elif [ "$num" = 1 ]; then
 		echo -----------------------------------------------
-		if [ "$local_proxy" = "未开启" ] > /dev/null 2>&1; then 
+		if [ "$local_proxy" = "未开启" ]; then 
 			if [ -n "$authentication" ] && [ "$authentication" != "未设置" ] ;then
 				echo -e "\033[32m检测到您已经设置了Http/Sock5代理密码，请先取消密码！\033[0m"
 				sleep 1
 				setport
+				localproxy
 			else
 				local_proxy=已开启
 				$clashdir/start.sh set_proxy $mix_port $db_port
-				echo -e "\033[32m已经成功配置本机代理~\033[0m"
-				echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
-			fi
+				echo -e "\033[32m已经成功使用$local_proxy_type方式配置本机代理~\033[0m"
+				[ "$local_proxy_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
+			fi		
 		else
 			local_proxy=未开启
 			$clashdir/start.sh unset_proxy
 			echo -e "\033[33m已经停用本机代理规则！！\033[0m"
-			echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+			[ "$local_proxy_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
 		fi
 		setconfig local_proxy $local_proxy
+	elif [ "$num" = 2 ]; then
+		local_proxy_type="环境变量"
+		setconfig local_proxy_type $local_proxy_type
+		localproxy
+	elif [ "$num" = 3 ]; then
+		if  gsettings --version >/dev/null 2>&1 ;then
+			local_proxy_type="GNOME"
+			setconfig local_proxy_type $local_proxy_type
+		else
+			echo -e "\033[31m没有找到GNOME桌面！\033[0m"
+			sleep 1
+		fi
+		localproxy
+	elif [ "$num" = 4 ]; then
+		if  kwriteconfig5 -h >/dev/null 2>&1 ;then
+			local_proxy_type="KDE"
+			setconfig local_proxy_type $local_proxy_type
+		else
+			echo -e "\033[31m没有找到KDE桌面！\033[0m"
+			sleep 1
+		fi
+		localproxy
+	else
+		errornum
+	fi	
 }
 clashcfg(){
 	set_redir_mod(){
@@ -462,7 +507,7 @@ clashcfg(){
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
 		if [ -z "$num" ]; then
-			echoerrornum
+			errornum
 			clashcfg
 		elif [ "$num" = 0 ]; then
 			clashcfg
@@ -509,7 +554,7 @@ clashcfg(){
 			echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
 			sleep 2
 		else
-			echoerrornum
+			errornum
 			clashcfg
 		fi
 		setconfig redir_mod $redir_mod
@@ -529,7 +574,7 @@ clashcfg(){
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
-			echoerrornum
+			errornum
 			clashcfg
 		elif [ "$num" = 0 ]; then
 			clashcfg
@@ -538,7 +583,7 @@ clashcfg(){
 		elif [ "$num" = 2 ]; then
 			dns_mod=redir_host
 		else
-			echoerrornum
+			errornum
 			clashcfg
 		fi
 		setconfig dns_mod $dns_mod 
@@ -570,7 +615,7 @@ clashcfg(){
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
-		echoerrornum
+		errornum
 		clashsh
 	elif [ "$num" = 0 ]; then
 		clashsh  
@@ -631,7 +676,7 @@ clashcfg(){
 		clashcfg  
 		
 	elif [ "$num" = 7 ]; then	
-		set_local_proxy
+		localproxy
 		sleep 1
 		clashcfg
 		
@@ -639,7 +684,7 @@ clashcfg(){
 		clashstart
 		clashsh
 	else
-		echoerrornum
+		errornum
 		clashsh
 	fi
 }
@@ -668,7 +713,7 @@ clashadv(){
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
-		echoerrornum
+		errornum
 		clashsh
 	elif [ "$num" = 0 ]; then
 		clashsh  
@@ -712,7 +757,7 @@ clashadv(){
 			$clashdir/start.sh stop
 			sleep 2
 		else
-			if [ -f /etc/init.d/clash -o -f /etc/systemd/system -o -f /usr/lib/systemd/system ];then
+			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
 				echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
 				start_old=未开启
 				setconfig start_old $start_old
@@ -766,7 +811,7 @@ clashadv(){
 		sleep 1
 		clashsh
 	else
-		echoerrornum
+		errornum
 		clashsh
 	fi
 }
@@ -784,12 +829,13 @@ clashcron(){
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then 
-			echoerrornum
+			errornum
 			clashcron
 		elif [ "$num" = 0 ]; then
 			clashcron
 		elif [ "$num" = 9 ]; then
-			crontab -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && crontab /tmp/conf && rm -f /tmp/conf
+			crontab -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && crontab /tmp/conf
+			rm -f /tmp/conf
 			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
 			clashcron
@@ -806,10 +852,10 @@ clashcron(){
 		echo -----------------------------------------------
 		read -p "请输入小时（0-23） > " num
 		if [ -z "$num" ]; then 
-			echoerrornum
+			errornum
 			setcron
 		elif [ $num -gt 23 ] || [ $num -lt 0 ]; then 
-			echoerrornum
+			errornum
 			setcron
 		else	
 			hour=$num
@@ -817,10 +863,10 @@ clashcron(){
 		echo -----------------------------------------------
 		read -p "请输入分钟（0-60） > " num
 		if [ -z "$num" ]; then 
-			echoerrornum
+			errornum
 			setcron
 		elif [ $num -gt 60 ] || [ $num -lt 0 ]; then 
-			echoerrornum
+			errornum
 			setcron
 		else	
 			min=$num
@@ -830,7 +876,10 @@ clashcron(){
 		read -p  "是否确认添加定时任务？(1/0) > " res
 			if [ "$res" = '1' ]; then
 				cronwords="$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname"
-				crontab -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && echo "$cronwords" >> /tmp/conf && crontab /tmp/conf && rm -f /tmp/conf
+				crontab -l > /tmp/conf
+				sed -i "/$cronname/d" /tmp/conf
+				echo "$cronwords" >> /tmp/conf && crontab /tmp/conf
+				rm -f /tmp/conf
 				echo -----------------------------------------------
 				echo -e "\033[31m定时任务已添加！！！\033[0m"
 			fi
@@ -852,7 +901,7 @@ clashcron(){
 	echo -e " 0 返回上级菜单" 
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
-		echoerrornum
+		errornum
 		clashsh
 		
 	elif [ "$num" = 0 ]; then
@@ -876,10 +925,11 @@ clashcron(){
 		setcron	
 		
 	else
-		echoerrornum
+		errornum
 		clashsh
 	fi
 }
+#主菜单
 clashsh(){
 	#############################
 	getconfig
@@ -897,7 +947,7 @@ clashsh(){
 	echo -e " 0 \033[0m退出脚本\033[0m"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ];then
-		echoerrornum
+		errornum
 		exit;
 		
 	elif [ "$num" = 0 ]; then
@@ -921,7 +971,7 @@ clashsh(){
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
 		if [ "$start_old" = "已开启" ];then
-			set_local_proxy
+			localproxy
 		elif [ "$autostart" = "enable_rc" ]; then
 			/etc/init.d/clash disable
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
@@ -955,7 +1005,7 @@ clashsh(){
 		source $clashdir/getdate.sh && update
 	
 	else
-		echoerrornum
+		errornum
 		exit;
 	fi
 }
@@ -964,19 +1014,23 @@ clashsh(){
 
 case "$1" in
 	-h)
-	echo -----------------------------------------
-	echo "欢迎使用ShellClash"
-	echo -----------------------------------------
-	echo "	-t 测试模式"
-	echo "	-h 帮助列表"
-	echo -----------------------------------------
-	echo "在线求助：t.me/clashfm"
-	echo "官方博客：juewuy.github.io"
-	echo "发布页面：github.com/juewuy/ShellClash"
-	echo -----------------------------------------
+		echo -----------------------------------------
+		echo "欢迎使用ShellClash"
+		echo -----------------------------------------
+		echo "	-t 测试模式"
+		echo "	-h 帮助列表"
+		echo -----------------------------------------
+		echo "在线求助：t.me/clashfm"
+		echo "官方博客：juewuy.github.io"
+		echo "发布页面：github.com/juewuy/ShellClash"
+		echo -----------------------------------------
 	;;
 	-t)
-	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
-	$shtype -x $clashdir/clash.sh
+		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
+		$shtype -x $clashdir/clash.sh
+	;;
+	*)
+		echo "	-t 测试模式"
+		echo "	-h 帮助列表"	
 	;;
 esac

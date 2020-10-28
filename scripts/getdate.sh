@@ -18,6 +18,7 @@ webget(){
 	fi
 	export all_proxy=''
 }
+#导入订阅、配置文件相关
 linkconfig(){
 	echo -----------------------------------------------
 	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
@@ -39,7 +40,7 @@ linkconfig(){
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ] || [ "$num" -gt 13 ];then
-		echoerrornum
+		errornum
 	elif [ "$num" = 0 ];then
 		echo 
 	elif [ "$num" -le 13 ];then
@@ -64,7 +65,7 @@ linkserver(){
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ] || [ "$num" -gt 5 ];then
-		echoerrornum
+		errornum
 	elif [ "$num" = 0 ];then
 		echo
 	elif [ "$num" -le 5 ];then
@@ -171,7 +172,7 @@ linkset(){
 			setconfig skip_cert $skip_cert
 			linkset
 		else
-			echoerrornum
+			errornum
 			linkset
 		fi
 		clashlink
@@ -276,7 +277,7 @@ clashlink(){
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ];then
-		echoerrornum
+		errornum
 		clashsh
 	elif [ "$num" = 1 ];then
 		if [ -n "$Url" ];then
@@ -370,10 +371,11 @@ clashlink(){
 	elif [ "$num" = 0 ];then
 		clashsh
 	else
-		echoerrornum
+		errornum
 		clashsh
 	fi
 }
+#下载更新相关
 gettar(){
 	webget /tmp/clashfm.tar.gz $tarurl
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
@@ -480,7 +482,7 @@ getcore(){
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
-			echoerrornum
+			errornum
 			update
 		elif [ "$num" = 0 ]; then
 			update
@@ -507,7 +509,7 @@ getcore(){
 			fi
 			getcore
 		else
-			echoerrornum
+			errornum
 			update
 		fi
 	#生成链接
@@ -595,7 +597,7 @@ getdb(){
 		fi
 		update
 	else
-		echoerrornum
+		errornum
 		update
 	fi
 	echo -----------------------------------------------
@@ -680,7 +682,7 @@ setserver(){
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
-		echoerrornum
+		errornum
 		update
 	elif [ "$num" = 1 ]; then
 		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
@@ -701,7 +703,7 @@ setserver(){
 	elif [ "$num" = 9 ]; then
 		update_url='http://192.168.31.30:8080/clash-for-Miwifi'
 	else
-		echoerrornum
+		errornum
 		update
 	fi
 	#写入mark文件
@@ -745,7 +747,7 @@ update(){
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
-		echoerrornum
+		errornum
 		clashsh
 	elif [ "$num" = 0 ]; then
 		clashsh
@@ -802,11 +804,12 @@ update(){
 		echo -e "\033[31m操作已取消！\033[0m"
 		update
 	else
-		echoerrornum
+		errornum
 		clashsh
 	fi
 exit;
 }
+#新手引导
 userguide(){
 	echo 欢迎使用ShellClash新手引导！
 	checkupdate
@@ -815,6 +818,7 @@ userguide(){
 	getdb
 	clashlink
 }
+#测试菜单
 testcommand(){
 	echo -----------------------------------------------
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
@@ -834,7 +838,7 @@ testcommand(){
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
-		echoerrornum
+		errornum
 		clashsh
 	elif [ "$num" = 0 ]; then
 		clashsh
@@ -887,7 +891,7 @@ testcommand(){
 		cat $clashdir/log
 		exit;
 	else
-		echoerrornum
+		errornum
 		clashsh
 	fi
 }

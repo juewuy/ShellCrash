@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+#相关工具
 getconfig(){
 	#加载配置文件
 	[ -z "$clashdir" ] && source /etc/profile > /dev/null
@@ -34,9 +35,18 @@ logger(){
 }
 cronset(){
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
-	crontab -l > /tmp/conf && sed -i "/$1/d" /tmp/conf && echo "$2" >> /tmp/conf && crontab /tmp/conf
+	crontab -l > /tmp/conf
+	sed -i "/$1/d" /tmp/conf
+	echo "$2" >> /tmp/conf
+	crontab /tmp/conf
 	rm -f /tmp/conf
 }
+mark_time(){
+	start_time=`date +%s`
+	sed -i '/start_time*/'d $clashdir/mark
+	echo start_time=$start_time >> $clashdir/mark
+}
+#配置文件相关
 getyaml(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
@@ -209,11 +219,7 @@ EOF
 	rm -f /tmp/clash/set.yaml
 	rm -f /tmp/clash/rule.yaml
 }
-mark_time(){
-	start_time=`date +%s`
-	sed -i '/start_time*/'d $clashdir/mark
-	echo start_time=$start_time >> $clashdir/mark
-}
+#设置路由规则
 start_redir(){
 	#流量过滤规则
 	iptables -t nat -N clash
@@ -239,6 +245,37 @@ start_redir(){
 		done
 		ip6tables -t nat -A clashv6 -p tcp $ports-j REDIRECT --to-ports $redir_port
 		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
+	fi
+}
+start_dns(){
+	#允许tun网卡接受流量
+	if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
+		iptables -I FORWARD -o utun -j ACCEPT
+		[ "$ipv6_support" = "已开启" ] && ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	fi
+	#设置dns转发
+	iptables -t nat -N clash_dns
+	for mac in $(cat $clashdir/mac); do
+		iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
+	done
+	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
+	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
+	iptables -t nat -A PREROUTING -p udp -j clash_dns
+	#Google home DNS特殊处理
+	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
+	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
+	#ipv6DNS
+	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'Chain')
+	if [ -n "ip6_nat" ];then
+		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
+		for mac in $(cat $clashdir/mac); do
+			ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
+		done
+		ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port > /dev/null 2>&1
+		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
+	else
+		ip6tables -I INPUT -p tcp --dport 53 -j REJECT
+		ip6tables -I INPUT -p udp --dport 53 -j REJECT
 	fi
 }
 start_udp(){
@@ -280,37 +317,7 @@ stop_iptables(){
 	ip6tables -t nat -X clashv6_dns > /dev/null 2>&1
 	ip6tables -D FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 }
-start_dns(){
-	#允许tun网卡接受流量
-	if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
-		iptables -I FORWARD -o utun -j ACCEPT
-		[ "$ipv6_support" = "已开启" ] && ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
-	fi
-	#设置dns转发
-	iptables -t nat -N clash_dns
-	for mac in $(cat $clashdir/mac); do
-		iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
-	done
-	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
-	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
-	iptables -t nat -A PREROUTING -p udp -j clash_dns
-	#Google home DNS特殊处理
-	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
-	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
-	#ipv6DNS
-	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'Chain')
-	if [ -n "ip6_nat" ];then
-		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
-		for mac in $(cat $clashdir/mac); do
-			ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
-		done
-		ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port > /dev/null 2>&1
-		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
-	else
-		ip6tables -I INPUT -p tcp --dport 53 -j REJECT
-		ip6tables -I INPUT -p udp --dport 53 -j REJECT
-	fi
-}
+#面板配置保存相关
 web_save(){
 	get_save(){
 		if curl --version > /dev/null 2>&1;then
@@ -359,11 +366,12 @@ web_restore(){
 	done
 	exit 0
 }
+#启动相关
 afstart(){
+	#读取配置文件
+	getconfig
 	$clashdir/clash -t -d $clashdir >/dev/null
 	if [ "$?" = 0 ];then
-		#读取配置文件
-		getconfig
 		#修改iptables规则使流量进入clash
 		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
 		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
@@ -443,22 +451,20 @@ daemon)
 		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
 	;;
 set_proxy)
+		getconfig
 		#GNOME配置
-		if  gsettings --version >/dev/null 2>&1 ;then
-			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1:$3/ui/pac"
+		if  [ "$local_proxy_type" = "GNOME" ];then
+			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1:$db_port/ui/pac"
 			gsettings set org.gnome.system.proxy mode "auto"
-			[ "$?" = 0 ] && check=$?
 		#KDE配置
-		elif  kwriteconfig5 -h >/dev/null 2>&1 ;then
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1:$3/ui/pac"
+		elif  [ "$local_proxy_type" = "KDE" ];then
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1:$db_port/ui/pac"
 			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 2
-			[ "$?" = 0 ] && check=$?
 		#环境变量方式
-		fi
-		if [ -z "$check" ];then
+		else
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
-			echo 'export all_proxy=http://127.0.0.1:'"$2" >> $profile
+			echo 'export all_proxy=http://127.0.0.1:'"$mix_port" >> $profile
 			echo 'export ALL_PROXY=$all_proxy' >>  $profile
 		fi
 	;;
@@ -466,16 +472,16 @@ unset_proxy)
 		#GNOME配置
 		if  gsettings --version >/dev/null 2>&1 ;then
 			gsettings set org.gnome.system.proxy mode "none"
-		#KDE配置
-		elif  kwriteconfig5 -h >/dev/null 2>&1 ;then
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 0
-		#环境变量方式
-		else
-			[ -w ~/.bashrc ] && profile=~/.bashrc
-			[ -w /etc/profile ] && profile=/etc/profile
-			sed -i '/all_proxy/'d  $profile
-			sed -i '/ALL_PROXY/'d  $profile
 		fi
+		#KDE配置
+		if  kwriteconfig5 -h >/dev/null 2>&1 ;then
+			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 0
+		fi
+		#环境变量方式
+		[ -w ~/.bashrc ] && profile=~/.bashrc
+		[ -w /etc/profile ] && profile=/etc/profile
+		sed -i '/all_proxy/'d  $profile
+		sed -i '/ALL_PROXY/'d  $profile
 	;;
 esac
 
