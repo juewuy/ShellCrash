@@ -35,11 +35,12 @@ logger(){
 }
 cronset(){
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
-	crontab -l > /tmp/conf
-	sed -i "/$1/d" /tmp/conf
-	echo "$2" >> /tmp/conf
-	crontab /tmp/conf
-	rm -f /tmp/conf
+	crondir=/tmp/cron_$USER
+	crontab -l > $crondir
+	sed -i "/$1/d" $crondir
+	echo "$2" >> $crondir
+	crontab $crondir
+	rm -f $crondir
 }
 mark_time(){
 	start_time=`date +%s`
@@ -90,7 +91,7 @@ EOF`
 	echo -e "-----------------------------------------------\033[0m"
 	#获取在线yaml文件
 	yaml=$clashdir/config.yaml
-	yamlnew=/tmp/clash_config.yaml
+	yamlnew=/tmp/clash_config_$USER.yaml
 	rm -rf $yamlnew
 	source $clashdir/getdate.sh && webget $yamlnew $Https
 	if [ "$result" != "200" ];then
@@ -189,16 +190,17 @@ modify_yaml(){
 	fi
 ###################################
 	yaml=$clashdir/config.yaml
+	tmp_clash=/tmp/clash_$USER
 	#预删除需要添加的项目
 	a=$(grep -n "port:" $yaml | head -1 | cut -d ":" -f 1)
 	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
 	b=$((b-1))
-	mkdir -p /tmp/clash > /dev/null
-	sed "${a},${b}d" $yaml > /tmp/clash/rule.yaml
+	mkdir -p $tmp_clash > /dev/null
+	sed "${a},${b}d" $yaml > $tmp_clash/rule.yaml
 	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' /tmp/clash/rule.yaml
+	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmp_clash/rule.yaml
 	#添加配置
-	cat > /tmp/clash/set.yaml <<EOF
+	cat > $tmp_clash/set.yaml <<EOF
 mixed-port: $mix_port
 redir-port: $redir_port
 authentication: ["$authentication"]
@@ -213,11 +215,11 @@ $tun
 $exper
 $dns
 EOF
-	cat /tmp/clash/set.yaml /tmp/clash/rule.yaml > /tmp/clash/config.yaml
-	cmp -s /tmp/clash/config.yaml $yaml
-	[ "$?" != 0 ] && mv -f /tmp/clash/config.yaml $yaml || rm -f /tmp/clash/config.yaml
-	rm -f /tmp/clash/set.yaml
-	rm -f /tmp/clash/rule.yaml
+	cat $tmp_clash/set.yaml $tmp_clash/rule.yaml > $tmp_clash/config.yaml
+	cmp -s $tmp_clash/config.yaml $yaml
+	[ "$?" != 0 ] && mv -f $tmp_clash/config.yaml $yaml || rm -f $tmp_clash/config.yaml
+	rm -f $tmp_clash/set.yaml
+	rm -f $tmp_clash/rule.yaml
 }
 #设置路由规则
 start_redir(){
@@ -331,10 +333,10 @@ web_save(){
 		fi
 	}
 	#使用get_save获取面板节点设置
-	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save
+	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save_$USER
 	#对比文件，如果有变动则写入磁盘，否则清除缓存
-	cmp -s /tmp/clash_web_save $clashdir/web_save
-	[ "$?" = 0 ] && rm -rf /tmp/clash_web_save || mv -f /tmp/clash_web_save $clashdir/web_save
+	cmp -s /tmp/clash_web_save_$USER $clashdir/web_save
+	[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
 }
 web_restore(){
 	put_save(){

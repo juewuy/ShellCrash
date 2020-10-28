@@ -120,11 +120,16 @@ EOF
 startover(){
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -n "$hostdir" ];then
-		echo -e "请使用\033[30;47m http://$host$hostdir \033[0m管理内置规则"
+		echo -e "请使用\033[4;32mhttp://$host$hostdir\033[0m管理内置规则"
 	else
-		echo -e "可使用\033[30;47m http://clash.razord.top \033[0m管理内置规则"
+		echo -e "可使用\033[4;32mhttp://clash.razord.top\033[0m管理内置规则"
 		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m $db_port \033[0m"
 		echo -e "推荐前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
+	fi
+	if [ "$redir_mod" = "纯净模式" ];then
+		echo -----------------------------------------------
+		echo -e "其他设备可以使用PAC配置连接：\033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
+		echo -e "或者使用HTTP/SOCK5方式连接：IP{\033[36m$host\033[0m}端口{\033[36m$mix_port\033[0m}"
 	fi
 }
 clashstart(){

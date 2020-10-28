@@ -62,7 +62,7 @@ gettar(){
 	echo 开始解压文件！
 	mkdir -p $clashdir > /dev/null
 	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
-	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
+	[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
 	#初始化文件目录
 	[ -f "$clashdir/mark" ] || echo '#标识clash运行状态的文件，不明勿动！' > $clashdir/mark
 	#判断系统类型写入不同的启动文件
@@ -149,10 +149,13 @@ else
 	echo 安装已取消！！！
 	exit;
 fi
-echo 目标目录磁盘剩余：$(df -h $dir | awk '{print $4}' | sed 1d )
-read -p "确认安装？(1/0) > " res
-[ "$res" != "1" ] && setdir
-clashdir=$dir/clash
+if [ ! -w $dir ];then
+	$echo "\033[31m没有$dir目录写入权限！请重新设置！\033[0m" && sleep 1 && setdir
+else
+	echo 目标目录磁盘剩余：$(df -h $dir | awk '{print $4}' | sed 1d )
+	read -p "确认安装？(1/0) > " res
+	[ "$res" = "1" ] && clashdir=$dir/clash || setdir
+fi
 }
 
 #输出

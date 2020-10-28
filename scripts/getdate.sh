@@ -152,7 +152,7 @@ linkset(){
 			Https=""
 			#获取在线yaml文件
 			$clashdir/start.sh getyaml
-			start_over
+			startover
 			exit;
 		elif [ "$num" = '2' ]; then
 			linkfilter
@@ -246,7 +246,7 @@ getlink2(){
 				setconfig Https \'$Https\'
 				#获取在线yaml文件
 				$clashdir/start.sh getyaml
-				start_over
+				startover
 				exit;
 			fi
 	elif [ "$Https" = 0 ];then
@@ -359,7 +359,7 @@ clashlink(){
 			read -p "确认更新配置文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
 				$clashdir/start.sh getyaml
-				start_over
+				startover
 				exit;
 			fi
 			clashlink
@@ -384,7 +384,7 @@ gettar(){
 	echo 开始解压文件！
 	mkdir -p $clashdir > /dev/null
 	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
-	[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
+	[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
 	#初始化文件目录
 	[ -f "$clashdir/mark" ] || echo '#标识clash运行状态的文件，不明勿动！' > $clashdir/mark
 	#判断系统类型写入不同的启动文件
@@ -532,7 +532,7 @@ getcore(){
 		getcore
 	else
 		echo -e "\033[32m$clashcore核心下载成功，正在替换！\033[0m"
-		mv /tmp/clash.new $clashdir/clash
+		mv -f /tmp/clash.new $clashdir/clash
 		chmod  777 $clashdir/clash  #授予权限
 		setconfig clashcore $clashcore
 		setconfig clashv $version
@@ -559,7 +559,7 @@ getgeo(){
 		else
 			echo -----------------------------------------------
 			echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
-			mv /tmp/Country.mmdb $clashdir/Country.mmdb
+			mv -f /tmp/Country.mmdb $clashdir/Country.mmdb
 			setconfig Geo_v $GeoIP_v
 			rm -rf /tmp/clashversion
 		fi
@@ -648,7 +648,7 @@ getdb(){
 			echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 			mkdir -p $dbdir > /dev/null
 			tar -zxvf "/tmp/clashdb.tar.gz" -C $dbdir > /dev/null
-			[ $? -ne 0 ] && echo "文件解压失败！" && exit 1 
+			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
 			#修改默认host和端口
 			if [ "$db_type" = "clashdb" ];then
 				sed -i "s/127.0.0.1/${host}/g" $dbdir/js/*.js
