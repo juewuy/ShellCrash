@@ -443,33 +443,42 @@ getsh(){
 		update
 	fi
 }
+getcpucore(){
+	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
+	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
+	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && cpucore="armv7"
+	[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="armv8"
+	[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
+	[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
+	if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
+		mipstype=$(echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}') #通过判断大小端判断mips或mipsle
+		[ "$mipstype" = "1" ] && cpucore="mipsle-softfloat" || cpucore="mips-softfloat"
+	fi
+	[ -n "$cpucore" ] && setconfig cpucore $cpucore
+}
 getcore(){
+	[ -z "$clashcore" ] && clashcore=clashpre
+	[ -z "$cpucore" ] && getcpucore
+	#生成链接
+	corelink="$update_url/bin/$clashcore/clash-linux-$cpucore"
+	#获取在线clash核心文件
+	webget /tmp/clash.new $corelink
+	if [ "$result" != "200" ];then
+		exit 1
+	else
+		mv -f /tmp/clash.new $bindir/clash
+		chmod  777 $bindir/clash  #授予权限
+	fi	
+}
+setcore(){
 	#获取核心及版本信息
 	[ ! -f $clashdir/clash ] && clashcore="未安装核心"
-	#获取设备处理器架构
-		getcputype(){
-			cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
-			[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
-			[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && cpucore="armv7"
-			[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="armv8"
-			[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
-			[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
-			if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
-				mipstype=$(echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}') #通过判断大小端判断mips或mipsle
-				if [ "$mipstype" = "1" ];then
-					cpucore="mipsle-softfloat"
-					#[ -n "$(uname -a | grep -E "M2100")" ] && cpucore="mipsle-hardfloat"
-				else
-					cpucore="mips-softfloat"
-				fi
-			fi
-		}
 	###
 	echo -----------------------------------------------
-	[ -z "$cpucore" ] && getcputype
+	[ -z "$cpucore" ] && getcpucore
 	echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
 	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
-	echo -e "\033[33m请选择需要下载的核心版本！\033[0m"
+	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
 	echo -----------------------------------------------
 	echo "1 clash：     稳定，内存占用小，推荐！"
 	echo "(官方正式版)  不支持Tun模式、混合模式"
@@ -493,7 +502,7 @@ getcore(){
 			clashcore=clashpre
 			version=$clashpre_v
 		elif [ "$num" = 3 ]; then
-			cpucore_list="armv5 armv7 armv8 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
+			cpucore_list="armv5 armv7 armv8 386 amd64 \nmipsle-softfloat mipsle-hardfloat mips-softfloat"
 			echo -----------------------------------------------
 			echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
 			echo -e "当前可供在线下载的处理器架构为："
@@ -506,42 +515,34 @@ getcore(){
 				echo -e "\033[31m请输入正确的处理器架构！\033[0m"
 				sleep 1
 				cpucore=""
+			else
+				setconfig cpucore $cpucore
 			fi
-			getcore
+			setcore
 		else
 			errornum
 			update
 		fi
-	#生成链接
-	corelink="$update_url/bin/$clashcore/clash-linux-$cpucore"
 	echo -----------------------------------------------
-	echo 正在连接服务器获取clash核心文件…………链接地址为：
-	echo -e "\033[4;32m$corelink\033[0m"
-	echo 如无法正常下载可以手动复制到浏览器下载核心文件！
-	echo -e "\033[36m-----------------------------------------------"
-	echo -e "|                                             |"
-	echo -e "|         需要一点时间，请耐心等待！          |"
-	echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出        |"
-	echo -e "-----------------------------------------------\033[0m"
-	#获取在线clash核心文件
-	webget /tmp/clash.new $corelink
-	if [ "$result" != "200" ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m核心文件下载失败！\033[0m"
-		echo -----------------------------------------------
-		getcore
-	else
-		echo -e "\033[32m$clashcore核心下载成功，正在替换！\033[0m"
-		mv -f /tmp/clash.new $clashdir/clash
-		chmod  777 $clashdir/clash  #授予权限
+	echo 在线获取clash核心文件……
+	getcore
+	if [ "$?" = 0 ];then
+		echo -e "\033[32m$clashcore核心下载成功！\033[0m"
 		setconfig clashcore $clashcore
 		setconfig clashv $version
-		rm -rf /tmp/clashversion
-		echo -----------------------------------------------
-		echo -e "\033[32m$clashcore核心安装成功！\033[0m"
-	fi			
+	else
+		echo -e "\033[31m核心文件下载失败！\033[0m"
+	fi
 }
 getgeo(){
+	webget /tmp/Country.mmdb $update_url/bin/Country.mmdb
+	if [ "$result" != "200" ];then
+		exit 1
+	else
+		mv -f /tmp/Country.mmdb $bindir/Country.mmdb
+	fi	
+}
+setgeo(){
 	echo -----------------------------------------------
 	echo -e "当前GeoIP版本为：\033[33m $Geo_v \033[0m"
 	echo -e "最新GeoIP版本为：\033[32m $GeoIP_v \033[0m"
@@ -550,18 +551,14 @@ getgeo(){
 	if [ "$res" = '1' ]; then
 		echo -----------------------------------------------
 		echo 正在从服务器获取数据库文件…………
-		webget /tmp/Country.mmdb $update_url/bin/Country.mmdb
-		if [ "$result" != "200" ];then
+		getgeo
+		if [ "$?" != 0 ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m文件下载失败！\033[0m"
-			echo -----------------------------------------------
-			getgeo
 		else
 			echo -----------------------------------------------
 			echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
-			mv -f /tmp/Country.mmdb $clashdir/Country.mmdb
 			setconfig Geo_v $GeoIP_v
-			rm -rf /tmp/clashversion
 		fi
 	else
 		update
@@ -651,8 +648,8 @@ getdb(){
 			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
 			#修改默认host和端口
 			if [ "$db_type" = "clashdb" ];then
-				sed -i "s/127.0.0.1/${host}/g" $dbdir/js/*.js
-				sed -i "s/9090/${db_port}/g" $dbdir/js/*.js
+				sed -i "s/127.0.0.1/${host}/g" $dbdir/static/js/*.js
+				sed -i "s/9090/${db_port}/g" $dbdir/static/js/*.js
 			else
 				sed -i "s/127.0.0.1/${host}/g" $dbdir/app*.js
 				sed -i "s/7892/${db_port}/g" $dbdir/app*.js
@@ -811,12 +808,74 @@ exit;
 }
 #新手引导
 userguide(){
-	echo 欢迎使用ShellClash新手引导！
+
+	
+	whichmod(){	
+		echo -----------------------------------------------
+		echo -e "\033[36m 是否需要代理UDP(主要用于游戏)？ \033[0m"
+		echo -e "\033[0m你之后依然可以在设置中更改各种配置\033[0m"
+		echo -e " 1 \033[36m不需要代理UDP流量\033[0m"
+		modinfo tun >/dev/null 2>&1 && [ "$?" = 0 ] && \
+		echo -e " 2 \033[36m使用Tun虚拟网卡代理UDP流量(更低的延迟但更多的CPU消耗)\033[0m" || \
+		echo -e " x \033[36m(你的设备不支持此模式，如为虚拟机运行请调整虚拟网络)\033[0m"
+		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && \
+		echo -e " 3 \033[36m使用Tproxy模式代理UDP流量(较低CPU消耗但更高的延迟)033[0m"
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num
+		if [ -z "$num" ] || [ "$num" -gt 4 ];then
+			errornum
+			whichmod
+		elif [ "$num" = 1 ];then
+			setconfig redir_mod "Redir模式"
+			setconfig clashcore "clash"
+		elif [ "$num" = 2 ];then
+			setconfig redir_mod "混合模式"
+			setconfig clashcore "clashpre"
+		elif [ "$num" = 3 ];then
+			setconfig redir_mod "Redir模式"
+			setconfig clashcore "clash"
+			setconfig tproxy_mod "已开启"
+		fi		
+	}
+	forwhat(){
+		echo -----------------------------------------------
+		echo -e "\033[30;46m 欢迎使用ShellClash新手引导！ \033[0m"
+		echo -----------------------------------------------
+		echo -e "\033[33m 请选择你的使用环境！ \033[0m"
+		echo -e " 1 \033[32m各类路由设备\033[0m，配置局域网透明路由"
+		echo -e " 2 \033[36mLinux系统带GUI桌面\033[0m，配置本机路由"
+		echo -e " 3 \033[32m服务器Linux系统\033[0m，配置本机路由"
+		echo -e " 4 \033[36m多功能设备\033[0m，配置本机及局域网路由"
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num
+		if [ -z "$num" ] || [ "$num" -gt 4 ];then
+			errornum
+			forwhat
+		elif [ "$num" = 1 ];then
+			whichmod
+		elif [ "$num" = 2 -o "$num" = 3 ];then
+			setconfig redir_mod "纯净模式"
+			setconfig clashcore "clash"
+			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
+			localproxy
+		elif [ "$num" = 4 ];then
+			whichmod
+		fi
+	}
+	
 	checkupdate
-	getcore
-	getgeo
-	getdb
-	clashlink
+	forwhat
+	dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
+	if [ "$dir_size" -lt 10240 ];then
+		echo -e "\033[33m检测到你的安装目录空间不足10M，是否开启小闪存模式？\033[0m"
+		echo -e "\033[33m开启后核心及数据库文件将被下载到内存中！\033[0m"
+		read -p "是否开启？(1/0) > " res
+		[ "$res" = 1 ] && setconfig bindir="/tmp/clash_$USER"
+	fi
+	read -p "需要安装本地Dashboard面板吗？(1/0) > " res
+	[ "$res" = 1 ] && getdb
+	read -p "现在导入订阅或者配置文件链接？(1/0) > " res 
+	[ "$res" = 1 ] && clashlink
 }
 #测试菜单
 testcommand(){
@@ -824,7 +883,7 @@ testcommand(){
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图发群\033[0m"
 	echo -e "磁盘占用/所在目录："
-	du -h $clashdir
+	du -sh $clashdir
 	echo -----------------------------------------------
 	echo " 1 查看clash运行时的报错信息"
 	echo " 2 查看系统DNS端口(:53)占用 "

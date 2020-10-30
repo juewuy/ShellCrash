@@ -12,6 +12,8 @@ getconfig(){
 	#检查/读取标识文件
 	[ ! -f $ccfg ] && echo '#标识clash运行状态的文件，不明勿动！' > $ccfg
 	source $ccfg
+	#设置默认核心资源目录
+	[ -z "$bindir" ] && bindir=$clashdir
 	#设置默认端口及变量
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
@@ -21,12 +23,9 @@ getconfig(){
 	#检查mac地址记录
 	[ ! -f $clashdir/mac ] && touch $clashdir/mac
 	#获取本机host地址
-	if [ -f /bin/opkg ];then
-		host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	else
-		host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g'|head -n 1)
-		[ -z "$host" ] && host=127.0.0.1
-	fi
+	host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '192.|10.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
+	[ -z "$host" ] && host=127.0.0.1
 	#dashboard目录位置
 	[ -d $clashdir/ui ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
 	[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
@@ -95,28 +94,6 @@ errornum(){
 	echo -----------------------------------------------
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 }
-catpac(){
-	cat > /tmp/clash_pac <<EOF
-function FindProxyForURL(url, host) {
-	if (
-		isInNet(host, "0.0.0.0", "255.0.0.0")||
-		isInNet(host, "10.0.0.0", "255.0.0.0")||
-		isInNet(host, "127.0.0.0", "255.0.0.0")||
-		isInNet(host, "224.0.0.0", "224.0.0.0")||
-		isInNet(host, "240.0.0.0", "240.0.0.0")||
-		isInNet(host, "172.16.0.0",  "255.240.0.0")||
-		isInNet(host, "192.168.0.0", "255.255.0.0")||
-		isInNet(host, "169.254.0.0", "255.255.0.0")
-	)
-		return "DIRECT";
-	else
-		return "SOCKS5 $host:$mix_port; PROXY $host:$mix_port; DIRECT;"
-}
-EOF
-	[ ! -d $clashdir/ui ] && mkdir -p $clashdir/ui
-	cmp -s /tmp/clash_pac $clashdir/ui/pac
-	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $clashdir/ui/pac
-}
 startover(){
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -n "$hostdir" ];then
@@ -133,25 +110,12 @@ startover(){
 	fi
 }
 clashstart(){
-	#检查clash核心
-	if [ ! -f $clashdir/clash ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m没有找到核心文件，请先下载clash核心！\033[0m"
-		source $clashdir/getdate.sh && checkupdate && getcore
-	fi
-	#检查GeoIP数据库
-	if [ ! -f $clashdir/Country.mmdb ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m没有找到GeoIP数据库文件，请下载数据库文件！\033[0m"
-		source $clashdir/getdate.sh && checkupdate && getgeo
-	fi
 	#检查yaml配置文件
 	if [ ! -f "$yaml" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
 		clashlink
 	fi
-	catpac #生成pac自动代理文件
 	echo -----------------------------------------------
 	$clashdir/start.sh start
 	sleep 1
@@ -699,6 +663,7 @@ clashadv(){
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
+	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
@@ -709,8 +674,9 @@ clashadv(){
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 	echo -e " 4 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
-	echo -e " 5 配置内置DNS服务:	\033[36m$dns_no\033[0m"
-	echo -e " 6 手动指定clash运行端口及秘钥"
+	echo -e " 5 启用小闪存模式:	\033[36m$mini_clash\033[0m	————启动时方下载核心及数据库文件"
+	echo -e " 6 配置内置DNS服务:	\033[36m$dns_no\033[0m"
+	echo -e " 7 手动指定clash运行端口及秘钥"
 	echo -----------------------------------------------
 	echo -e " 8 \033[31m重置\033[0m配置文件"
 	echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -792,11 +758,38 @@ clashadv(){
 		sleep 1
 		clashadv 	
 		
-	elif [ "$num" = 5 ]; then
+	elif [ "$num" = 5 ]; then	
+		echo -----------------------------------------------
+		dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
+		if [ "$mini_clash" = "未开启" ]; then 
+			if [ "$dir_size" -gt 20480 ];then
+				echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
+			elif pidof systemd >/dev/null 2>&1;then
+				echo -e "\033[33m该设备不支持开启此模式！\033[0m"
+			else
+				bindir="/tmp/clash_$USER"
+				echo -e "\033[32m已经启用小闪存功能！\033[0m"
+				echo -e "核心及数据库文件将存储在内存中执行，并在每次开机运行后自动下载\033[0m"
+			fi
+		else
+			if [ "$dir_size" -lt 8192 ];then
+				echo -e "\033[31m您的设备剩余空间不足8M，停用后可能无法正常运行！\033[0m"
+				read -p "确认停用此功能？(1/0) > " res
+				[ "$res" = 1 ] && bindir="$clashdir" && echo -e "\033[33m已经停用小闪存功能！\033[0m"
+			else
+				bindir="$clashdir"
+				echo -e "\033[33m已经停用小闪存功能！\033[0m"
+			fi
+		fi
+		setconfig bindir $bindir
+		sleep 1
+		clashadv
+		
+	elif [ "$num" = 6 ]; then
 		setdns
 		clashadv	
 		
-	elif [ "$num" = 6 ]; then
+	elif [ "$num" = 7 ]; then
 		setport
 		clashadv
 

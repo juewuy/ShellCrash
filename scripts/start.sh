@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-#相关工具
+#脚本内部工具
 getconfig(){
 	#加载配置文件
 	[ -z "$clashdir" ] && source /etc/profile > /dev/null
@@ -9,6 +9,7 @@ getconfig(){
 	ccfg=$clashdir/mark
 	[ -f $ccfg ] && source $ccfg
 	#默认设置
+	[ -z "$bindir" ] && bindir=$clashdir
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
@@ -28,8 +29,31 @@ getconfig(){
 	#是否代理常用端口
 	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443 '
 	}
+setconfig(){
+	#参数1代表变量名，参数2代表变量值,参数3即文件路径
+	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
+	sed -i "/${1}*/"d $configpath
+	echo "${1}=${2}" >> $configpath
+}
+webget(){
+	[ -n "$(pidof clash)" ] && export all_proxy="http://127.0.0.1:$mix_port" #设置临时http代理
+	#参数【$1】代表下载目录，【$2】代表在线地址
+	#参数【$3】代表输出显示，【$4】不启用重定向
+	if curl --version > /dev/null 2>&1;then
+		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
+		[ -z "$4" ] && redirect='-L' || redirect=''
+		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
+	else
+		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		[ "$3" = "echoon" ] && progress=''
+		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
+		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
+		[ $? -eq 0 ] && result="200"
+	fi
+	export all_proxy=''
+}
 logger(){
-	[ -z "$2" ] && echo -e "\033[31m$1\033[0m"
+	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
 	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
 	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1,5d' $clashdir/log
 }
@@ -84,32 +108,27 @@ EOF`
 	echo 正在连接服务器获取配置文件…………链接地址为：
 	echo -e "\033[4;32m$Https\033[0m"
 	echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
-	echo -e "\033[36m-----------------------------------------------"
-	echo -e "|                                             |"
-	echo -e "|         需要一点时间，请耐心等待！          |"
-	echo -e "|       \033[0m如长时间没有数据请用ctrl+c退出\033[36m        |"
-	echo -e "-----------------------------------------------\033[0m"
 	#获取在线yaml文件
 	yaml=$clashdir/config.yaml
 	yamlnew=/tmp/clash_config_$USER.yaml
 	rm -rf $yamlnew
-	source $clashdir/getdate.sh && webget $yamlnew $Https
+	webget $yamlnew $Https
 	if [ "$result" != "200" ];then
 		if [ -z "$markhttp" ];then
 			echo -----------------------------------------------
-			logger "配置文件获取失败！"
+			logger "配置文件获取失败！" 31
 			echo -e "\033[31m请尝试使用【导入订阅】功能！\033[0m"
 			echo -----------------------------------------------
 			exit 1
 		else
 			if [ "$retry" -ge 5 ];then
-				logger "无法获取配置文件，请检查链接格式以及网络连接状态！"
+				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
 				exit 1
 			else
 				retry=$((retry+1))
-				logger "配置文件获取失败！"
+				logger "配置文件获取失败！" 31
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在重试第$retry次/共5次！"
+				logger "正在重试第$retry次/共5次！" 32
 				sed -i '/server_link=*/'d $ccfg
 				if [ "$server_link" -ge 5 ]; then
 					server_link=0
@@ -125,7 +144,7 @@ EOF`
 		#检测节点
 		if [ -z "$(cat $yamlnew | grep 'server:' | grep -v 'nameserver')" ];then
 			echo -----------------------------------------------
-			logger "获取到了配置文件，但似乎并不包含正确的节点信息！"
+			logger "获取到了配置文件，但似乎并不包含正确的节点信息！" 31
 			echo -----------------------------------------------
 			sed -n '1,30p' $yamlnew
 			echo -----------------------------------------------
@@ -136,7 +155,7 @@ EOF`
 		#检测旧格式
 		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
 			echo -----------------------------------------------
-			logger "已经停止对旧格式配置文件的支持！！！"
+			logger "已经停止对旧格式配置文件的支持！！！" 31
 			echo -e "请使用新格式或者使用【导入节点/链接】功能！"
 			echo -----------------------------------------------
 			exit 1
@@ -144,7 +163,7 @@ EOF`
 		#检测不支持的加密协议
 		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
 			echo -----------------------------------------------
-			logger "不支持chacha20加密，请更换节点加密协议！！！"
+			logger "不支持chacha20加密，请更换节点加密协议！！！" 31
 			echo -----------------------------------------------
 			exit 1
 		fi
@@ -160,13 +179,15 @@ EOF`
 		$0 stop
 		$0 start
 		if [ "$?" = 0 ];then
-			logger "配置文件获取成功！clash服务已启动！" echooff
+			logger "配置文件获取成功！clash服务已启动！"
+			exit 0
 		else
 			if [ -f $yaml.bak ];then
 				$0 stop
 				mv -f $yaml.bak $yaml
 				$0 start
-				[ "$?" = 0 ] && logger "已还原配置文件并重启clash！" && exit 0
+				[ "$?" = 0 ] && logger "已还原配置文件并重启clash！" 32 && exit 0
+				logger "已还原配置文件但依然无法启动clash！" 31 && exit 1
 			fi
 		fi
 	fi
@@ -189,18 +210,19 @@ modify_yaml(){
 		dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	fi
 ###################################
+	#设置目录
 	yaml=$clashdir/config.yaml
-	tmp_clash=/tmp/clash_$USER
+	tmpdir=/tmp/clash_$USER
 	#预删除需要添加的项目
 	a=$(grep -n "port:" $yaml | head -1 | cut -d ":" -f 1)
 	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
 	b=$((b-1))
-	mkdir -p $tmp_clash > /dev/null
-	sed "${a},${b}d" $yaml > $tmp_clash/rule.yaml
+	mkdir -p $tmpdir > /dev/null
+	sed "${a},${b}d" $yaml > $tmpdir/rule.yaml
 	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmp_clash/rule.yaml
+	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/rule.yaml
 	#添加配置
-	cat > $tmp_clash/set.yaml <<EOF
+	cat > $tmpdir/set.yaml <<EOF
 mixed-port: $mix_port
 redir-port: $redir_port
 authentication: ["$authentication"]
@@ -215,11 +237,13 @@ $tun
 $exper
 $dns
 EOF
-	cat $tmp_clash/set.yaml $tmp_clash/rule.yaml > $tmp_clash/config.yaml
-	cmp -s $tmp_clash/config.yaml $yaml
-	[ "$?" != 0 ] && mv -f $tmp_clash/config.yaml $yaml || rm -f $tmp_clash/config.yaml
-	rm -f $tmp_clash/set.yaml
-	rm -f $tmp_clash/rule.yaml
+	cat $tmpdir/set.yaml $tmpdir/rule.yaml > $tmpdir/config.yaml
+	if [ "$tmpdir" != "$bindir" ];then #如果没有使用小闪存模式
+		cmp -s $tmpdir/config.yaml $yaml
+		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
+	fi
+	rm -f $tmpdir/set.yaml
+	rm -f $tmpdir/rule.yaml
 }
 #设置路由规则
 start_redir(){
@@ -327,7 +351,7 @@ web_save(){
 		elif [ -n "$(wget --help 2>&1|grep '\-\-method')" ];then
 			wget -q --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" -O - "$1"
 		else
-			logger 当前系统未安装curl且wget的版本太低，无法保存节点配置！
+			logger 当前系统未安装curl且wget的版本太低，无法保存节点配置！ 31
 			getconfig
 			cronset '保存节点配置'
 		fi
@@ -369,10 +393,76 @@ web_restore(){
 	exit 0
 }
 #启动相关
+catpac(){
+	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g'|head -n 1)
+	[ -z "$host" ] && host=127.0.0.1
+	cat > /tmp/clash_pac <<EOF
+function FindProxyForURL(url, host) {
+	if (
+		isInNet(host, "0.0.0.0", "255.0.0.0")||
+		isInNet(host, "10.0.0.0", "255.0.0.0")||
+		isInNet(host, "127.0.0.0", "255.0.0.0")||
+		isInNet(host, "224.0.0.0", "224.0.0.0")||
+		isInNet(host, "240.0.0.0", "240.0.0.0")||
+		isInNet(host, "172.16.0.0",  "255.240.0.0")||
+		isInNet(host, "192.168.0.0", "255.255.0.0")||
+		isInNet(host, "169.254.0.0", "255.255.0.0")
+	)
+		return "DIRECT";
+	else
+		return "SOCKS5 $host:$mix_port; PROXY $host:$mix_port; DIRECT;"
+}
+EOF
+	cmp -s /tmp/clash_pac $bindir/ui/pac
+	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $bindir/ui/pac
+}
+bfstart(){
+	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
+	[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
+	#检查clash核心
+	if [ ! -f $bindir/clash ];then
+		if [ -f $clashdir/clash ];then
+			mv $clashdir/clash $bindir/clash && chmod 777 $bindir/clash
+		else
+			logger "未找到clash核心，正在下载！" 33
+			[ -z "$clashcore" ] && clashcore=clash
+			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
+			webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
+			[ "$?" = 1 ] && logger "核心下载失败，已退出！" 31 && rm -f $bindir/clash && exit 1
+		fi
+	fi
+	#检查数据库文件
+	if [ ! -f $bindir/Country.mmdb ];then
+		if [ -f $clashdir/Country.mmdb ];then
+			mv $clashdir/Country.mmdb $bindir/Country.mmdb
+		else
+			logger "未找到GeoIP数据库，正在下载！" 33
+			webget /tmp/Country.mmdb $update_url/bin/Country.mmdb
+			[ "$?" = 1 ] && logger "数据库下载失败，已退出！" 31 && rm -f $bindir/Country.mmdb && exit 1
+		fi
+	fi
+	#检查dashboard文件
+	if [ -f $clashdir/ui/index.html -a ! -f $bindir/ui/index.html ];then
+		cp -rf $clashdir/ui $bindir
+	fi
+	catpac #生成pac文件
+	#检查yaml配置文件
+	if [ ! -f $clashdir/config.yaml ];then
+		if [ -n "$Url" -o -n "$Https" ];then
+			logger "未找到配置文件，正在下载！" 33
+			getyaml
+			exit 0
+		else
+			logger "未找到配置文件链接，请先导入配置文件！" 31
+			exit 1
+		fi
+	fi
+}
 afstart(){
 	#读取配置文件
 	getconfig
-	$clashdir/clash -t -d $clashdir >/dev/null
+	$bindir/clash -t -d $bindir >/dev/null
 	if [ "$?" = 0 ];then
 		#修改iptables规则使流量进入clash
 		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
@@ -386,27 +476,33 @@ afstart(){
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 	else
-		logger "clash服务启动失败！请查看报错信息！"
-		logger `$clashdir/clash -t -d $clashdir 1>&0`
+		logger "clash服务启动失败！请查看报错信息！" 31
+		logger `$bindir/clash -t -d $bindir 1>&0` 0
 		$0 stop &
 		exit 1
 	fi
 	exit 0
 }
 start_old(){
-	$clashdir/clash -d $clashdir >/dev/null &
+	#使用传统后台执行二进制文件的方式执行
+	$bindir/clash -d $bindir >/dev/null &
 	afstart
 	daemon
 }
 
 case "$1" in
 
+bfstart)
+		bfstart
+	;;
 afstart)
 		afstart
 	;;
 start)		
 		[ -n "$(pidof clash)" ] && $0 stop #禁止多实例
 		getconfig
+		#检测必须文件并下载
+		bfstart
 		#使用内置规则强行覆盖config配置文件
 		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
@@ -443,6 +539,9 @@ restart)
 getyaml)	
 		getconfig
 		getyaml
+		;;
+webget)
+		webget $1 $2 $3 $4
 		;;
 web_save)
 		getconfig
