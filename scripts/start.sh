@@ -418,6 +418,8 @@ EOF
 	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $bindir/ui/pac
 }
 bfstart(){
+	#读取配置文件
+	getconfig
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
 	[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master
 	#检查clash核心
@@ -484,7 +486,7 @@ afstart(){
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
 		logger `$bindir/clash -t -d $bindir 1>&0` 0
-		$0 stop &
+		$0 stop
 		exit 1
 	fi
 	exit 0
