@@ -394,8 +394,8 @@ web_restore(){
 }
 #启动相关
 catpac(){
-	host=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host" ] && host=$(ip a|grep -w 'inet'|grep 'global'|grep -E '192.|10.'|sed 's/.*inet.//g'|sed 's/\/[0-9][0-9].*$//g'|head -n 1)
+	host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '192.|10.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host=127.0.0.1
 	cat > /tmp/clash_pac <<EOF
 function FindProxyForURL(url, host) {
@@ -419,7 +419,7 @@ EOF
 }
 bfstart(){
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
-	[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash
+	[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master
 	#检查clash核心
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
@@ -428,8 +428,12 @@ bfstart(){
 			logger "未找到clash核心，正在下载！" 33
 			[ -z "$clashcore" ] && clashcore=clash
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
+			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
 			[ "$?" = 1 ] && logger "核心下载失败，已退出！" 31 && rm -f $bindir/clash && exit 1
+			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
+			clashv=$($bindir/clash -v | awk '{print $2}')
+			setconfig clashv $clashv
 		fi
 	fi
 	#检查数据库文件
@@ -438,8 +442,10 @@ bfstart(){
 			mv $clashdir/Country.mmdb $bindir/Country.mmdb
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			webget /tmp/Country.mmdb $update_url/bin/Country.mmdb
+			webget $bindir/Country.mmdb $update_url/bin/Country.mmdb
 			[ "$?" = 1 ] && logger "数据库下载失败，已退出！" 31 && rm -f $bindir/Country.mmdb && exit 1
+			GeoIP_v=$(date +"%Y%m%d")
+			setconfig GeoIP_v $GeoIP_v
 		fi
 	fi
 	#检查dashboard文件

@@ -77,8 +77,6 @@ getconfig(){
 	echo -----------------------------------------------
 	#检查新手引导
 	if [ -z "$userguide" ];then
-		read -p "检测到首次运行，是否启动新手引导？(1/0) > " res
-		echo -----------------------------------------------
 		sed -i "1i\userguide=1" $ccfg
 		[ "$res" = 1 ] && source $clashdir/getdate.sh && userguide
 	fi
@@ -114,7 +112,7 @@ clashstart(){
 	if [ ! -f "$yaml" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
-		clashlink
+		source $clashdir/getdate.sh && clashlink
 	fi
 	echo -----------------------------------------------
 	$clashdir/start.sh start
@@ -407,6 +405,8 @@ localproxy(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
 		errornum
+	elif [ "$num" = 0 ]; then
+		i=
 	elif [ "$num" = 1 ]; then
 		echo -----------------------------------------------
 		if [ "$local_proxy" = "未开启" ]; then 
@@ -437,7 +437,7 @@ localproxy(){
 			local_proxy_type="GNOME"
 			setconfig local_proxy_type $local_proxy_type
 		else
-			echo -e "\033[31m没有找到GNOME桌面！\033[0m"
+			echo -e "\033[31m没有找到GNOME桌面，无法设置！\033[0m"
 			sleep 1
 		fi
 		localproxy
@@ -446,7 +446,7 @@ localproxy(){
 			local_proxy_type="KDE"
 			setconfig local_proxy_type $local_proxy_type
 		else
-			echo -e "\033[31m没有找到KDE桌面！\033[0m"
+			echo -e "\033[31m没有找到KDE桌面，无法设置！\033[0m"
 			sleep 1
 		fi
 		localproxy

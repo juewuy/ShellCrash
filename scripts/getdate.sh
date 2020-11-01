@@ -456,6 +456,24 @@ getcpucore(){
 	fi
 	[ -n "$cpucore" ] && setconfig cpucore $cpucore
 }
+setcpucore(){
+	cpucore_list="armv5 armv7 armv8 386 amd64 \nmipsle-softfloat mipsle-hardfloat mips-softfloat"
+	echo -----------------------------------------------
+	echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
+	echo -e "当前可供在线下载的处理器架构为："
+	echo -e "\033[32m$cpucore_list\033[0m"
+	echo -e "如果您的CPU架构未在以上列表中，请运行【uname -a】命令,并复制好返回信息"
+	echo -e "之后前往 t.me/clashfm 群提交或 github.com/juewuy/ShellClash 提交issue"
+	echo -----------------------------------------------
+	read -p "请手动输入处理器架构 > " cpucore
+	if [ -z "$(echo $cpucore_list |grep "$cpucore")" ];then
+		echo -e "\033[31m请输入正确的处理器架构！\033[0m"
+		sleep 1
+		cpucore=""
+	else
+		setconfig cpucore $cpucore
+	fi
+}
 getcore(){
 	[ -z "$clashcore" ] && clashcore=clashpre
 	[ -z "$cpucore" ] && getcpucore
@@ -502,22 +520,7 @@ setcore(){
 			clashcore=clashpre
 			version=$clashpre_v
 		elif [ "$num" = 3 ]; then
-			cpucore_list="armv5 armv7 armv8 386 amd64 \nmipsle-softfloat mipsle-hardfloat mips-softfloat"
-			echo -----------------------------------------------
-			echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
-			echo -e "当前可供在线下载的处理器架构为："
-			echo -e "\033[32m$cpucore_list\033[0m"
-			echo -e "如果您的CPU架构未在以上列表中，请运行【uname -a】命令,并复制好返回信息"
-			echo -e "之后前往 t.me/clashfm 群提交或 github.com/juewuy/ShellClash 提交issue"
-			echo -----------------------------------------------
-			read -p "请手动输入处理器架构 > " cpucore
-			if [ -z "$(echo $cpucore_list |grep "$cpucore")" ];then
-				echo -e "\033[31m请输入正确的处理器架构！\033[0m"
-				sleep 1
-				cpucore=""
-			else
-				setconfig cpucore $cpucore
-			fi
+			setcpucore
 			setcore
 		else
 			errornum
@@ -752,11 +755,11 @@ update(){
 		getsh	
 
 	elif [ "$num" = 2 ]; then	
-		getcore
+		setcore
 		update
 		
 	elif [ "$num" = 3 ]; then	
-		getgeo
+		setgeo
 		update
 	
 	elif [ "$num" = 4 ]; then	
@@ -812,14 +815,14 @@ userguide(){
 	
 	whichmod(){	
 		echo -----------------------------------------------
-		echo -e "\033[36m 是否需要代理UDP(主要用于游戏)？ \033[0m"
-		echo -e "\033[0m你之后依然可以在设置中更改各种配置\033[0m"
-		echo -e " 1 \033[36m不需要代理UDP流量\033[0m"
+		echo -e "\033[33m是否需要代理UDP流量(主要用于游戏)？ \033[0m"
+		echo -----------------------------------------------
+		echo -e " 1 \033[0m不代理UDP流量(可能会导致一部分游戏/应用无法连接)\033[0m"
 		modinfo tun >/dev/null 2>&1 && [ "$?" = 0 ] && \
-		echo -e " 2 \033[36m使用Tun虚拟网卡代理UDP流量(更低的延迟但更多的CPU消耗)\033[0m" || \
-		echo -e " x \033[36m(你的设备不支持此模式，如为虚拟机运行请调整虚拟网络)\033[0m"
+		echo -e " 2 \033[0m使用Tun虚拟网卡代理UDP流量(更低的延迟但更多的CPU消耗)\033[0m" || \
+		echo -e " 0 \033[0m使用Tun模式(你的设备不支持此模式，如为虚拟机运行请调整虚拟网卡设置)\033[0m"
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && \
-		echo -e " 3 \033[36m使用Tproxy模式代理UDP流量(较低CPU消耗但更高的延迟)033[0m"
+		echo -e " 3 \033[0m使用Tproxy模式代理UDP流量(较低CPU消耗但更高的延迟)033[0m"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ] || [ "$num" -gt 4 ];then
@@ -841,10 +844,12 @@ userguide(){
 		echo -----------------------------------------------
 		echo -e "\033[30;46m 欢迎使用ShellClash新手引导！ \033[0m"
 		echo -----------------------------------------------
-		echo -e "\033[33m 请选择你的使用环境！ \033[0m"
+		echo -e "\033[33m请先选择你的使用环境： \033[0m"
+		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
+		echo -----------------------------------------------
 		echo -e " 1 \033[32m各类路由设备\033[0m，配置局域网透明路由"
-		echo -e " 2 \033[36mLinux系统带GUI桌面\033[0m，配置本机路由"
-		echo -e " 3 \033[32m服务器Linux系统\033[0m，配置本机路由"
+		echo -e " 2 \033[36mLinux桌面系统\033[0m，仅配置本机路由"
+		echo -e " 3 \033[32m服务器Linux系统\033[0m，仅配置本机路由"
 		echo -e " 4 \033[36m多功能设备\033[0m，配置本机及局域网路由"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
@@ -856,26 +861,31 @@ userguide(){
 		elif [ "$num" = 2 -o "$num" = 3 ];then
 			setconfig redir_mod "纯净模式"
 			setconfig clashcore "clash"
+			echo -----------------------------------------------
 			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
 			localproxy
 		elif [ "$num" = 4 ];then
 			whichmod
 		fi
 	}
-	
-	checkupdate
 	forwhat
 	dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
 	if [ "$dir_size" -lt 10240 ];then
 		echo -e "\033[33m检测到你的安装目录空间不足10M，是否开启小闪存模式？\033[0m"
-		echo -e "\033[33m开启后核心及数据库文件将被下载到内存中！\033[0m"
+		echo -e "\033[0m开启后核心及数据库文件将被下载到内存中，这将占用一部分内存空间\033[0m"
+		echo -e "\033[0m每次开机后首次运行clash时都会自动的重新下载相关文件\033[0m"
 		read -p "是否开启？(1/0) > " res
 		[ "$res" = 1 ] && setconfig bindir="/tmp/clash_$USER"
 	fi
+	echo -----------------------------------------------
+	echo -e "\033[33m安装本地Dashboard面板，可以更快捷的管理clash内置规则！\033[0m"
 	read -p "需要安装本地Dashboard面板吗？(1/0) > " res
 	[ "$res" = 1 ] && getdb
-	read -p "现在导入订阅或者配置文件链接？(1/0) > " res 
+	echo -----------------------------------------------
+	echo -e "\033[32m请导入订阅链接或者导入配置文件！\033[0m"
+	read -p "开始导入？(1/0) > " res 
 	[ "$res" = 1 ] && clashlink
+	clashsh
 }
 #测试菜单
 testcommand(){
