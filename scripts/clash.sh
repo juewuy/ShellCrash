@@ -486,9 +486,14 @@ clashcfg(){
 			modinfo tun >/dev/null 2>&1
 			if [ "$?" != 0 ];then
 				echo -----------------------------------------------
-				echo -e "\033[31m当前设备内核不支持开启Tun/混合模式，请使用其他模式！\033[0m"
-				sleep 1
-				set_redir_mod
+				echo -e "\033[31m当前设备内核可能不支持开启Tun/混合模式！\033[0m"
+				read -p "是否强制开启？可能无法正常使用！(1/0) > " res
+				if [ "$res" = 1 ];then
+					redir_mod=Tun模式
+					dns_mod=fake-ip
+				else
+					set_redir_mod
+				fi
 			elif [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
 				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
@@ -501,10 +506,13 @@ clashcfg(){
 		elif [ "$num" = 3 ]; then
 			modinfo tun >/dev/null 2>&1
 			if [ "$?" != 0 ];then
-				echo -----------------------------------------------
-				echo -e "\033[31m当前设备内核不支持开启Tun/混合模式，请使用其他模式！\033[0m"
-				sleep 1
-				set_redir_mod
+				echo -e "\033[31m当前设备内核可能不支持开启Tun/混合模式！\033[0m"
+				read -p "是否强制开启？可能无法正常使用！(1/0) > " res
+				if [ "$res" = 1 ];then
+					redir_mod=混合模式
+				else
+					set_redir_mod
+				fi
 			elif [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
 				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
