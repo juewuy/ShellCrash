@@ -27,8 +27,7 @@ getconfig(){
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	#是否代理常用端口
-	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443 '
-	[ "$macfilter_type" = "白名单" ] && mac_white='!'
+	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443'
 	}
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -259,20 +258,35 @@ start_redir(){
 	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
-	for mac in $(cat $clashdir/mac); do
-		iptables -t nat -A clash -m mac $mac_white --mac-source $mac -j RETURN
-	done
-	#设置防火墙流量转发
-	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports $redir_port
-	iptables -t nat -A PREROUTING -p tcp -j clash
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+		#mac白名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+		done
+	else
+		#mac黑名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
+		done
+		iptables -t nat -A clash -p tcp -j REDIRECT --to-ports $redir_port
+	fi
+	#转发设置
+	iptables -t nat -A PREROUTING -p tcp $ports -j clash
 	#设置ipv6转发
 	if [ -n "ip6_nat" -a "$ipv6_support" = "已开启" ];then
 		ip6tables -t nat -N clashv6
-		for mac in $(cat $clashdir/mac); do
-			ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
-		done
-		ip6tables -t nat -A clashv6 -p tcp $ports-j REDIRECT --to-ports $redir_port
-		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+			#mac白名单
+			for mac in $(cat $clashdir/mac); do
+				ip6tables -t nat -A clashv6 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+			done
+		else
+			#mac黑名单
+			for mac in $(cat $clashdir/mac); do
+				ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
+			done
+			ip6tables -t nat -A clashv6 -p tcp -j REDIRECT --to-ports $redir_port
+		fi
 	fi
 }
 start_dns(){
@@ -283,11 +297,20 @@ start_dns(){
 	fi
 	#设置dns转发
 	iptables -t nat -N clash_dns
-	for mac in $(cat $clashdir/mac); do
-		iptables -t nat -A clash_dns -m mac $mac_white --mac-source $mac -j RETURN
-	done
-	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
-	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+		#mac白名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash_dns -p udp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+			iptables -t nat -A clash_dns -p tcp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+		done
+	else
+		#mac黑名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
+		done	
+		iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
+		iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
+	fi
 	iptables -t nat -A PREROUTING -p udp -j clash_dns
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
@@ -296,11 +319,20 @@ start_dns(){
 	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'Chain')
 	if [ -n "ip6_nat" ];then
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
-		for mac in $(cat $clashdir/mac); do
-			ip6tables -t nat -A clashv6_dns -m mac $mac_white --mac-source $mac -j RETURN > /dev/null 2>&1
-		done
-		ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port > /dev/null 2>&1
-		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+			#mac白名单
+			for mac in $(cat $clashdir/mac); do
+				ip6tables -t nat -A clashv6_dns -p udp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+				ip6tables -t nat -A clashv6_dns -p tcp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+			done
+		else
+			#mac黑名单
+			for mac in $(cat $clashdir/mac); do
+				ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN
+			done	
+			ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port
+			ip6tables -t nat -A clashv6_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
+		fi
 	else
 		ip6tables -I INPUT -p tcp --dport 53 -j REJECT
 		ip6tables -I INPUT -p udp --dport 53 -j REJECT

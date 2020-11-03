@@ -585,7 +585,7 @@ clashcfg(){
 	echo -e " 2 切换DNS运行模式：	\033[36m$dns_mod\033[0m"
 	echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于屏蔽P2P流量"
-	echo -e " 5 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
+	echo -e " 5 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————当前为$macfilter_type模式"
 	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或GUI/api配置本机代理"
 	echo -----------------------------------------------
 	echo -e " 9 \033[32m重启\033[0mclash服务"
