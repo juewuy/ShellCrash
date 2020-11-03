@@ -28,6 +28,7 @@ getconfig(){
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	#是否代理常用端口
 	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443 '
+	[ "$macfilter_type" = "白名单" ] && mac_white='!'
 	}
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -36,7 +37,7 @@ setconfig(){
 	echo "${1}=${2}" >> $configpath
 }
 webget(){
-	[ -n "$(pidof clash)" ] && export all_proxy="http://127.0.0.1:$mix_port" #设置临时http代理
+	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
 	if curl --version > /dev/null 2>&1;then
@@ -203,7 +204,6 @@ modify_yaml(){
 	[ "$redir_mod" != "Redir模式" ] && tun='tun: {enable: true, stack: system}' || tun='tun: {enable: false}'
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#dns配置
-	[ "$dns_over" = "未开启" ] && dns_local=', 127.0.0.1:53'
 	if [ "$dns_mod" = "fake-ip" ];then
 		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org"], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	else
@@ -237,7 +237,8 @@ $tun
 $exper
 $dns
 EOF
-	cat $tmpdir/set.yaml $tmpdir/rule.yaml > $tmpdir/config.yaml
+	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
+	cat $tmpdir/set.yaml $yaml_user $tmpdir/rule.yaml > $tmpdir/config.yaml
 	if [ "$tmpdir" != "$bindir" ];then #如果没有使用小闪存模式
 		cmp -s $tmpdir/config.yaml $yaml
 		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
@@ -258,7 +259,7 @@ start_redir(){
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
 	for mac in $(cat $clashdir/mac); do
-		iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
+		iptables -t nat -A clash -m mac $mac_white --mac-source $mac -j RETURN
 	done
 	#设置防火墙流量转发
 	iptables -t nat -A clash -p tcp $ports-j REDIRECT --to-ports $redir_port
@@ -282,7 +283,7 @@ start_dns(){
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	for mac in $(cat $clashdir/mac); do
-		iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
+		iptables -t nat -A clash_dns -m mac $mac_white --mac-source $mac -j RETURN
 	done
 	iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
 	iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
@@ -295,7 +296,7 @@ start_dns(){
 	if [ -n "ip6_nat" ];then
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 		for mac in $(cat $clashdir/mac); do
-			ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN > /dev/null 2>&1
+			ip6tables -t nat -A clashv6_dns -m mac $mac_white --mac-source $mac -j RETURN > /dev/null 2>&1
 		done
 		ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port > /dev/null 2>&1
 		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1

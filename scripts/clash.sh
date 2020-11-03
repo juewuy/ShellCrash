@@ -346,8 +346,11 @@ macfilter(){
 	[ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
 	[ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
 	[ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
+	[ -z "$macfilter_type" ] && macfilter_type='黑名单' 
+	[ "$macfilter_type" = "黑名单" ] && macfilter_over='白名单' || macfilter_over='黑名单'
 	######
 	echo -e "\033[30;47m请在此添加或移除设备\033[0m"
+	echo -e "当前过滤方式为：\033[33m$macfilter_type模式\033[0m"
 	if [ -n "$(cat $clashdir/mac)" ]; then
 		echo -----------------------------------------------
 		echo -e "当前已过滤设备为：\033[36m"
@@ -357,10 +360,10 @@ macfilter(){
 		done
 		echo -----------------------------------------------
 	fi
-	echo -e " 1 \033[31m清空整个列表\033[0m"
+	echo -e " 1 切换为\033[33m$macfilter_over模式\033[0m"
 	echo -e " 2 \033[32m添加指定设备\033[0m"
-	echo -e " 3 \033[33m移除指定设备\033[0m"
-	echo -e " 4 \033[32m添加全部设备\033[0m(请搭配移除指定设备使用)"
+	echo -e " 3 \033[36m移除指定设备\033[0m"
+	echo -e " 4 \033[31m清空整个列表\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
@@ -369,20 +372,19 @@ macfilter(){
 	elif [ "$num" = 0 ]; then
 		clashcfg
 	elif [ "$num" = 1 ]; then
-		:>$clashdir/mac
+		macfilter_type=$macfilter_over
+		setconfig macfilter_type $macfilter_type
 		echo -----------------------------------------------
-		echo -e "\033[31m设备列表已清空！\033[0m"
+		echo -e "\033[31m已切换为$macfilter_type模式！\033[0m"
 		macfilter
 	elif [ "$num" = 2 ]; then	
 		add_mac
 	elif [ "$num" = 3 ]; then	
 		del_mac
-	elif [ "$num" = 4 ]; then	
-		echo -----------------------------------------------		
-		cat $dhcpdir | awk '{print $2}' > $clashdir/mac
-		echo -e "\033[32m已经将所有设备全部添加进过滤列表！\033[0m"
-		echo -e "\033[33m请搭配【移除指定设备】功能使用！\033[0m"
-		sleep 1
+	elif [ "$num" = 4 ]; then
+		:>$clashdir/mac
+		echo -----------------------------------------------
+		echo -e "\033[31m设备列表已清空！\033[0m"
 		macfilter
 	else
 		errornum
@@ -584,8 +586,7 @@ clashcfg(){
 	echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于屏蔽P2P流量"
 	echo -e " 5 过滤局域网mac地址：	\033[36m$mac_return\033[0m   ————列表内设备不走代理"
-	echo -e " 6 不使用本地DNS服务：	\033[36m$dns_over\033[0m   ————防止redir-host模式的dns污染"
-	echo -e " 7 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或GUI/api配置本机代理"
+	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或GUI/api配置本机代理"
 	echo -----------------------------------------------
 	echo -e " 9 \033[32m重启\033[0mclash服务"
 	echo -e " 0 返回上级菜单 \033[0m"
@@ -638,21 +639,6 @@ clashcfg(){
 		macfilter
 		
 	elif [ "$num" = 6 ]; then	
-		echo -----------------------------------------------
-		if [ "$dns_over" = "未开启" ] > /dev/null 2>&1; then 
-			echo -e "\033[33m已设置DNS为不走本地dnsmasq服务器！\033[0m"
-			echo -e "可能会对浏览速度产生一定影响，介意勿用！"
-			dns_over=已开启
-		else
-			/etc/init.d/clash enable
-			echo -e "\033[32m已设置DNS通过本地dnsmasq服务器！\033[0m"
-			echo -e "redir-host模式下部分网站可能会被运营商dns污染导致无法打开"
-			dns_over=未开启
-		fi
-		setconfig dns_over $dns_over
-		clashcfg  
-		
-	elif [ "$num" = 7 ]; then	
 		localproxy
 		sleep 1
 		clashcfg
@@ -678,13 +664,12 @@ clashadv(){
 	echo -e "\033[33m如您不是很了解clash的运行机制，请勿更改！\033[0m"
 	echo -e "\033[32m修改配置后请手动重启clash服务！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 使用自定义配置:	\033[36m$modify_yaml\033[0m	————不使用内置规则修饰config.yaml"
+	echo -e " 1 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
-	echo -e " 3 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
-	echo -e " 4 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
-	echo -e " 5 启用小闪存模式:	\033[36m$mini_clash\033[0m	————启动时方下载核心及数据库文件"
-	echo -e " 6 配置内置DNS服务:	\033[36m$dns_no\033[0m"
-	echo -e " 7 手动指定clash运行端口及秘钥"
+	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
+	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————启动时方下载核心及数据库文件"
+	echo -e " 5 配置内置DNS服务:	\033[36m$dns_no\033[0m"
+	echo -e " 6 手动指定clash运行端口及秘钥"
 	echo -----------------------------------------------
 	echo -e " 8 \033[31m重置\033[0m配置文件"
 	echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -696,21 +681,6 @@ clashadv(){
 		clashsh
 	elif [ "$num" = 0 ]; then
 		clashsh  
-	
-	elif [ "$num" = 1 ]; then	
-		echo -----------------------------------------------
-		if [ "$modify_yaml" = "未开启" ] > /dev/null 2>&1; then 
-			echo -e "\033[33m已设为使用用户完全自定义的配置文件！！"
-			echo -e "\033[36m不明白原理的用户切勿随意开启此选项"
-			echo -e "\033[31m！！！必然会导致上不了网！！!\033[0m"
-			modify_yaml=已开启
-			sleep 3
-		else
-			echo -e "\033[32m已设为使用脚本内置规则管理config.yaml配置文件！！\033[0m"
-			modify_yaml=未开启
-		fi
-		setconfig modify_yaml $modify_yaml
-		clashadv  
 		
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
@@ -726,7 +696,7 @@ clashadv(){
 		setconfig ipv6_support $ipv6_support
 		clashadv  
 		
-	elif [ "$num" = 3 ]; then	
+	elif [ "$num" = 1 ]; then	
 		echo -----------------------------------------------
 		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
 			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
@@ -748,7 +718,7 @@ clashadv(){
 		fi
 		clashadv  
 		
-	elif [ "$num" = 4 ]; then	
+	elif [ "$num" = 3 ]; then	
 		echo -----------------------------------------------
 		if [ "$tproxy_mod" = "未开启" ]; then 
 			if [ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ];then
@@ -766,7 +736,7 @@ clashadv(){
 		sleep 1
 		clashadv 	
 		
-	elif [ "$num" = 5 ]; then	
+	elif [ "$num" = 4 ]; then	
 		echo -----------------------------------------------
 		dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
 		if [ "$mini_clash" = "未开启" ]; then 
@@ -793,11 +763,11 @@ clashadv(){
 		sleep 1
 		clashadv
 		
-	elif [ "$num" = 6 ]; then
+	elif [ "$num" = 5 ]; then
 		setdns
 		clashadv	
 		
-	elif [ "$num" = 7 ]; then
+	elif [ "$num" = 6 ]; then
 		setport
 		clashadv
 

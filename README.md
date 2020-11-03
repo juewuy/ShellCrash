@@ -96,6 +96,10 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 ### [详见博客](https://juewuy.github.io)
 
+## 捐赠此项目：
+
+### [前往页面](https://juewuy.github.io/yOF4Yf06Q/)
+
 友情推广：
 --
 ### [顶级8K专线机场-墙洞](https://dler.best/auth/register?affid=89698)

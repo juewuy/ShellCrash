@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 webget(){
-	[ -n "$(pidof clash)" ] && export all_proxy="http://127.0.0.1:$mix_port" #设置临时http代理
+	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
 	if curl --version > /dev/null 2>&1;then
