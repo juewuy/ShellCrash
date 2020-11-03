@@ -218,9 +218,9 @@ modify_yaml(){
 	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
 	b=$((b-1))
 	mkdir -p $tmpdir > /dev/null
-	sed "${a},${b}d" $yaml > $tmpdir/rule.yaml
+	sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
 	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/rule.yaml
+	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#添加配置
 	cat > $tmpdir/set.yaml <<EOF
 mixed-port: $mix_port
@@ -238,13 +238,14 @@ $exper
 $dns
 EOF
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
-	cat $tmpdir/set.yaml $yaml_user $tmpdir/rule.yaml > $tmpdir/config.yaml
+	[ -f $clashdir/rules.yaml ] && yaml_rules=$clashdir/rules.yaml
+	cat $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml $yaml_rules > $tmpdir/config.yaml
 	if [ "$tmpdir" != "$bindir" ];then #如果没有使用小闪存模式
 		cmp -s $tmpdir/config.yaml $yaml
 		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
 	fi
 	rm -f $tmpdir/set.yaml
-	rm -f $tmpdir/rule.yaml
+	rm -f $tmpdir/proxy.yaml
 }
 #设置路由规则
 start_redir(){

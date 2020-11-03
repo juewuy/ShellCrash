@@ -244,14 +244,14 @@ setdns(){
 		clashadv
 	elif [ "$num" = 1 ]; then
 		read -p "请输入新的DNS > " dns_nameserver
-		dns_nameserver=$(echo $dns_nameserver | sed 's/|/\,\ /')
+		dns_nameserver=$(echo $dns_nameserver | sed 's/|/\,\ /g')
 		if [ -n "$dns_nameserver" ]; then
 			setconfig dns_nameserver \'$dns_nameserver\'
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 	elif [ "$num" = 2 ]; then
 		read -p "请输入新的DNS > " dns_fallback
-		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /')
+		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /g')
 		if [ -n "$dns_fallback" ]; then
 			setconfig dns_fallback \'$dns_fallback\' 
 			echo -e "\033[32m设置成功！！！\033[0m"
