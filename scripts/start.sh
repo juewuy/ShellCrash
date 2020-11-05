@@ -237,9 +237,17 @@ $exper
 $dns
 EOF
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
-	[ -f $clashdir/rules.yaml ] && yaml_rules=$clashdir/rules.yaml
-	cat $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml $yaml_rules > $tmpdir/config.yaml
-	if [ "$tmpdir" != "$bindir" ];then #如果没有使用小闪存模式
+	#合并文件
+	sed -i "/^prox/i" $tmpdir/proxy.yaml #防止缺少换行符导致的报错
+	cat $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
+	#插入自定义规则
+	if [ -f $clashdir/rules.yaml ];then
+		while read line;do
+			sed -i "/^rules:/a\ $line" $tmpdir/config.yaml
+		done < $clashdir/rules.yaml
+	fi
+	#如果没有使用小闪存模式
+	if [ "$tmpdir" != "$bindir" ];then
 		cmp -s $tmpdir/config.yaml $yaml
 		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
 	fi
@@ -261,33 +269,35 @@ start_redir(){
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+			iptables -t nat -A clash -p tcp $ports -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 		done
 	else
 		#mac黑名单
 		for mac in $(cat $clashdir/mac); do
 			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 		done
-		iptables -t nat -A clash -p tcp -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
 	fi
 	#转发设置
-	iptables -t nat -A PREROUTING -p tcp $ports -j clash
+	iptables -t nat -A PREROUTING -p tcp -j clash
 	#设置ipv6转发
+	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'Chain')
 	if [ -n "ip6_nat" -a "$ipv6_support" = "已开启" ];then
 		ip6tables -t nat -N clashv6
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
 			for mac in $(cat $clashdir/mac); do
-				ip6tables -t nat -A clashv6 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+				ip6tables -t nat -A clashv6 -p tcp $ports -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 			done
 		else
 			#mac黑名单
 			for mac in $(cat $clashdir/mac); do
 				ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
 			done
-			ip6tables -t nat -A clashv6 -p tcp -j REDIRECT --to-ports $redir_port
+			ip6tables -t nat -A clashv6 -p tcp $ports -j REDIRECT --to-ports $redir_port
 		fi
 	fi
+	ip6tables -t nat -A PREROUTING -p tcp -j clashv6
 }
 start_dns(){
 	#允许tun网卡接受流量
@@ -333,9 +343,10 @@ start_dns(){
 			ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port
 			ip6tables -t nat -A clashv6_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
 		fi
+		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns
 	else
-		ip6tables -I INPUT -p tcp --dport 53 -j REJECT
-		ip6tables -I INPUT -p udp --dport 53 -j REJECT
+		ip6tables -I INPUT -p tcp --dport 53 -j REJECT > /dev/null 2>&1
+		ip6tables -I INPUT -p udp --dport 53 -j REJECT > /dev/null 2>&1
 	fi
 }
 start_udp(){
