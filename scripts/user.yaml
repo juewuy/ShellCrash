@@ -1,5 +1,0 @@
-#用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)，例如
-#port: 7890
-#hosts:
-#   '*.clash.dev': 127.0.0.1 
-#   'alpha.clash.dev': ::1
