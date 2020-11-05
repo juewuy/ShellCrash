@@ -239,8 +239,7 @@ EOF
 ###################################
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
 	#合并文件
-	sed -i "/^prox/i" $tmpdir/proxy.yaml #防止缺少换行符导致的报错
-	cat $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
+	cut -c 1- $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
 	#插入自定义规则
 	if [ -f $clashdir/rules.yaml ];then
 		while read line;do
