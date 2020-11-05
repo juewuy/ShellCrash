@@ -291,20 +291,29 @@ checkport(){
 macfilter(){
 	add_mac(){
 		echo -----------------------------------------------
+		echo 已添加的mac地址：
+		cat $clashdir/mac
+		echo -----------------------------------------------
 		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
 		cat $dhcpdir | awk '{print " "NR" "$3,$2,$4}'
-		echo -e "\033[0m 0-----------------------------------------------"
+		echo -e "\033[0m-----------------------------------------------"
+		echo -e "手动输入mac地址时仅支持\033[32mxx:xx:xx:xx:xx:xx\033[0m的形式"
 		echo -e " 0 或回车 结束添加"
-		read -p "请输入需要添加的设备的对应序号 > " num
-		if [ -z "$num" ]||[ "$num" -le 0 ]; then
+		echo -----------------------------------------------
+		read -p "请输入对应序号或直接输入mac地址 > " num
+		if [ -z "$num" -o "$num" = 0 ]; then
 			macfilter
-		elif [ $num -le $(cat $dhcpdir | awk 'END{print NR}') ]; then
+		elif [ -n "$(echo $num | grep -E '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')" ];then
+			if [ -z "$(cat $clashdir/mac | grep -E "$num")" ];then
+				echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >> $clashdir/mac
+			else
+				echo -----------------------------------------------
+				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
+			fi
+		elif [ $num -le $(cat $dhcpdir | awk 'END{print NR}') 2>/dev/null ]; then
 			macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
 			if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
 				echo $macadd >> $clashdir/mac
-				echo -----------------------------------------------
-				echo 已添加的mac地址：
-				cat $clashdir/mac
 			else
 				echo -----------------------------------------------
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
@@ -324,7 +333,10 @@ macfilter(){
 		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[0m"
 		i=1
 		for mac in $(cat $clashdir/mac); do
-			echo -e " $i \033[32m$(cat $dhcpdir | awk '{print $3,$2,$4}' | grep $mac)\033[0m"
+			dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
+			dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
+			dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
+			echo -e " $i \033[32m$dev_ip \033[36m$dev_mac \033[32m$dev_name\033[0m"
 			i=$((i+1))
 		done
 		echo -----------------------------------------------
@@ -356,7 +368,10 @@ macfilter(){
 		echo -e "当前已过滤设备为：\033[36m"
 		echo -e "\033[33m   设备IP       设备mac地址       设备名称\033[0m"
 		for mac in $(cat $clashdir/mac); do
-			cat $dhcpdir | awk '{print $3,$2,$4}' | grep $mac
+			dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
+			dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
+			dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
+			echo -e "\033[32m$dev_ip \033[36m$dev_mac \033[32m$dev_name\033[0m"
 		done
 		echo -----------------------------------------------
 	fi
