@@ -208,7 +208,6 @@ modify_yaml(){
 	else
 		dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	fi
-###################################
 	#设置目录
 	yaml=$clashdir/config.yaml
 	tmpdir=/tmp/clash_$USER
@@ -221,6 +220,7 @@ modify_yaml(){
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#添加配置
+###################################
 	cat > $tmpdir/set.yaml <<EOF
 mixed-port: $mix_port
 redir-port: $redir_port
@@ -236,6 +236,7 @@ $tun
 $exper
 $dns
 EOF
+###################################
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
 	#合并文件
 	sed -i "/^prox/i" $tmpdir/proxy.yaml #防止缺少换行符导致的报错
@@ -243,7 +244,7 @@ EOF
 	#插入自定义规则
 	if [ -f $clashdir/rules.yaml ];then
 		while read line;do
-			sed -i "/^rules:/a\ $line" $tmpdir/config.yaml
+			[ -z "$(echo "$line" | grep '#')" ] && [ -n "$(echo "$line" | grep '\-\ ')" ] && sed -i "/^rules:/a\ $line" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
 	fi
 	#如果没有使用小闪存模式
@@ -281,8 +282,8 @@ start_redir(){
 	#转发设置
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	#设置ipv6转发
-	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'Chain')
-	if [ -n "ip6_nat" -a "$ipv6_support" = "已开启" ];then
+	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
+	if [ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ];then
 		ip6tables -t nat -N clashv6
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
@@ -326,8 +327,8 @@ start_dns(){
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
 	#ipv6DNS
-	ip6_nat=$(ip6tables -t nat -L 2>&1|grep -o 'Chain')
-	if [ -n "ip6_nat" ];then
+	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
+	if [ -n "$ip6_nat" ];then
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
@@ -361,7 +362,18 @@ start_udp(){
 	iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
-	iptables -t mangle -A clash -p udp -j TPROXY --on-port $redir_port --tproxy-mark 1
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+		#mac白名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t mangle -A clash -p udp -m mac --mac-source $mac -j TPROXY --on-port $redir_port --tproxy-mark 1
+		done
+	else
+		#mac黑名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
+		done
+		iptables -t mangle -A clash -p udp -j TPROXY --on-port $redir_port --tproxy-mark 1
+	fi
 	iptables -t mangle -A PREROUTING -p udp -j clash
 }
 stop_iptables(){

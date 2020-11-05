@@ -670,6 +670,7 @@ clashadv(){
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————启动时方下载核心及数据库文件"
 	echo -e " 5 配置内置DNS服务:	\033[36m$dns_no\033[0m"
 	echo -e " 6 手动指定clash运行端口及秘钥"
+	echo -e " 7 使用自定义配置"
 	echo -----------------------------------------------
 	echo -e " 8 \033[31m重置\033[0m配置文件"
 	echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -770,7 +771,34 @@ clashadv(){
 	elif [ "$num" = 6 ]; then
 		setport
 		clashadv
-
+		
+	elif [ "$num" = 7 ]; then
+		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
+#用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)，例如
+#port: 7890
+#hosts:
+#   '*.clash.dev': 127.0.0.1 
+#   'alpha.clash.dev': ::1
+EOF
+		[ ! -f $clashdir/rules.yaml ] && cat > $clashdir/rules.yaml <<EOF
+#用于编写自定义规则(此处规则将优先生效)，(可参考https://lancellc.gitbook.io/clash/clash-config-file/rules)：
+#例如“🚀 节点选择”、“🎯 全球直连”这样的自定义规则组必须与config.yaml中的代理规则组相匹配，否则将无法运行！
+# - DOMAIN-SUFFIX,google.com,🚀 节点选择
+# - DOMAIN-KEYWORD,baidu,🎯 全球直连
+# - DOMAIN,ad.com,REJECT
+# - SRC-IP-CIDR,192.168.1.201/32,DIRECT
+# - IP-CIDR,127.0.0.0/8,DIRECT
+# - IP-CIDR6,2620:0:2d0:200::7/32,🚀 节点选择
+# - DST-PORT,80,DIRECT
+# - SRC-PORT,7777,DIRECT
+EOF
+		echo -e "\033[32m已经启用自定义配置功能！\033[0m"
+		echo -e "Shell下(部分旧设备可能不显示中文)可\n使用【\033[36mvi $clashdir/user.yaml\033[0m】编辑自定义设定文件;\n使用【\033[36mvi $clashdir/rules.yaml\033[0m】编辑自定义规则文件。"
+		echo -e "Windows下请\n使用\033[33mwinscp软件\033[0m进入$clashdir目录后手动编辑！\033[0m"
+		echo -e "其他设备请\n使用\033[32mscp命令\033[0m下载文件编辑后上传到$clashdir目录！\033[0m"
+		sleep 3
+		clashadv
+		
 	elif [ "$num" = 8 ]; then	
 		read -p "确认重置配置文件？(1/0) > " res
 		if [ "$res" = "1" ];then
