@@ -279,7 +279,6 @@ start_redir(){
 		done
 		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
 	fi
-	#转发设置
 	iptables -t nat -A PREROUTING -p tcp -j clash
 	#设置ipv6转发
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
@@ -297,8 +296,8 @@ start_redir(){
 			done
 			ip6tables -t nat -A clashv6 -p tcp $ports -j REDIRECT --to-ports $redir_port
 		fi
+		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
 	fi
-	ip6tables -t nat -A PREROUTING -p tcp -j clashv6
 }
 start_dns(){
 	#允许tun网卡接受流量
