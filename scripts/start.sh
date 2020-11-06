@@ -169,7 +169,7 @@ EOF`
 		fi
 		#如果不同则备份并替换文件
 		if [ -f $yaml ];then
-			cmp -s $yamlnew $yaml
+			cmp -s $yamlnew $yaml 2>/dev/null
 			[ "$?" = 0 ] && rm -f $yamlnew || mv -f $yaml $yaml.bak && mv -f $yamlnew $yaml
 		else
 			mv -f $yamlnew $yaml
@@ -248,7 +248,7 @@ EOF
 	fi
 	#如果没有使用小闪存模式
 	if [ "$tmpdir" != "$bindir" ];then
-		cmp -s $tmpdir/config.yaml $yaml
+		cmp -s $tmpdir/config.yaml $yaml 2>/dev/null
 		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
 	fi
 	rm -f $tmpdir/set.yaml
@@ -414,7 +414,7 @@ web_save(){
 	#使用get_save获取面板节点设置
 	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save_$USER
 	#对比文件，如果有变动则写入磁盘，否则清除缓存
-	cmp -s /tmp/clash_web_save_$USER $clashdir/web_save
+	cmp -s /tmp/clash_web_save_$USER $clashdir/web_save 2>/dev/null
 	[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
 }
 web_restore(){
@@ -469,7 +469,7 @@ function FindProxyForURL(url, host) {
 		return "SOCKS5 $host:$mix_port; PROXY $host:$mix_port; DIRECT;"
 }
 EOF
-	cmp -s /tmp/clash_pac $bindir/ui/pac
+	cmp -s /tmp/clash_pac $bindir/ui/pac 2>/dev/null
 	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $bindir/ui/pac
 }
 bfstart(){
@@ -483,7 +483,7 @@ bfstart(){
 			mv $clashdir/clash $bindir/clash && chmod 777 $bindir/clash
 		else
 			logger "未找到clash核心，正在下载！" 33
-			[ -z "$clashcore" ] && clashcore=clash
+			[ -z "$clashcore" ] && [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clashpre || clashcore=clash
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
@@ -544,13 +544,12 @@ afstart(){
 		$0 stop
 		exit 1
 	fi
-	exit 0
 }
 start_old(){
 	#使用传统后台执行二进制文件的方式执行
 	$bindir/clash -d $bindir >/dev/null &
 	afstart
-	daemon
+	$0 daemon
 }
 
 case "$1" in
@@ -566,6 +565,7 @@ start)
 		getconfig
 		#检测必须文件并下载
 		bfstart
+		stop_iptables #清理iptables
 		#使用内置规则强行覆盖config配置文件
 		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
@@ -581,7 +581,7 @@ start)
 	;;
 stop)	
 		getconfig
-		web_save #保存面板配置
+		[ -n "$(pidof clash)" ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
 		cronset "clash保守模式守护进程"
 		cronset "保存节点配置"

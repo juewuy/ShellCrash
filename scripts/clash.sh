@@ -811,6 +811,7 @@ EOF
 		echo -e "Shell下(部分旧设备可能不显示中文)可\n使用【\033[36mvi $clashdir/user.yaml\033[0m】编辑自定义设定文件;\n使用【\033[36mvi $clashdir/rules.yaml\033[0m】编辑自定义规则文件。"
 		echo -e "Windows下请\n使用\033[33mwinscp软件\033[0m进入$clashdir目录后手动编辑！\033[0m"
 		echo -e "其他设备请\n使用\033[32mscp命令\033[0m下载文件编辑后上传到$clashdir目录！\033[0m"
+		echo -e "如需自定义节点，可以在config.yaml文件中修改或者直接替换config.yaml文件！\033[0m"
 		sleep 3
 		clashadv
 		
