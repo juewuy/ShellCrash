@@ -35,6 +35,13 @@ setconfig(){
 	sed -i "/${1}*/"d $configpath
 	echo "${1}=${2}" >> $configpath
 }
+compare(){
+	if command -v cmp >/dev/null 2>&1; then
+		cmp -s $1 $2
+	else
+		[ "$(cat $1)" = "$(cat $2)" ] && return 0 || return 1
+	fi
+}
 webget(){
 	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理
 	#参数【$1】代表下载目录，【$2】代表在线地址
@@ -169,7 +176,7 @@ EOF`
 		fi
 		#如果不同则备份并替换文件
 		if [ -f $yaml ];then
-			cmp -s $yamlnew $yaml 2>/dev/null
+			compare $yamlnew $yaml
 			[ "$?" = 0 ] && rm -f $yamlnew || mv -f $yaml $yaml.bak && mv -f $yamlnew $yaml
 		else
 			mv -f $yamlnew $yaml
@@ -243,12 +250,15 @@ EOF
 	#插入自定义规则
 	if [ -f $clashdir/rules.yaml ];then
 		while read line;do
-			[ -z "$(echo "$line" | grep '#')" ] && [ -n "$(echo "$line" | grep '\-\ ')" ] && sed -i "/^rules:/a\ $line" $tmpdir/config.yaml
+			[ -z "$(echo "$line" | grep '#')" ] && \
+			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
+			sed -i "/$line/d" $tmpdir/config.yaml && \
+			sed -i "/^rules:/a\ $line" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
 	fi
 	#如果没有使用小闪存模式
 	if [ "$tmpdir" != "$bindir" ];then
-		cmp -s $tmpdir/config.yaml $yaml 2>/dev/null
+		compare $tmpdir/config.yaml $yaml
 		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
 	fi
 	rm -f $tmpdir/set.yaml
@@ -413,8 +423,8 @@ web_save(){
 	}
 	#使用get_save获取面板节点设置
 	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save_$USER
-	#对比文件，如果有变动则写入磁盘，否则清除缓存
-	cmp -s /tmp/clash_web_save_$USER $clashdir/web_save 2>/dev/null
+	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
+	[ ! -s /tmp/clash_web_save_$USER ] && compare /tmp/clash_web_save_$USER $clashdir/web_save
 	[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
 }
 web_restore(){
@@ -445,7 +455,6 @@ web_restore(){
 		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $clashdir/web_save)
 		put_save http://localhost:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
 	done
-	exit 0
 }
 #启动相关
 catpac(){
@@ -469,7 +478,7 @@ function FindProxyForURL(url, host) {
 		return "SOCKS5 $host:$mix_port; PROXY $host:$mix_port; DIRECT;"
 }
 EOF
-	cmp -s /tmp/clash_pac $bindir/ui/pac 2>/dev/null
+	compare /tmp/clash_pac $bindir/ui/pac
 	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $bindir/ui/pac
 }
 bfstart(){

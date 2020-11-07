@@ -40,8 +40,8 @@ if [ "$test" -gt 0 ];then
 	[ "$test" -eq 2 ] && url="http://192.168.31.30:8080/clash-for-Miwifi"
 	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else
-	webget /tmp/clashrelease https://github.com.cnpmjs.org/juewuy/ShellClash/releases/latest echoon rediroff 2>/tmp/clashrelease
-	release_new=$( cat /tmp/clashrelease | grep -aoE "releases/tag/.*" | awk -F '[/" ]' '{print $3}')
+	webget /tmp/clashrelease $url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
+	release_new=$(cat /tmp/clashrelease | head -1)
 	[ -z "$release_new" ] && release_new=master
 	url=$url@$release_new
 fi

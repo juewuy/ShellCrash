@@ -679,6 +679,7 @@ setserver(){
 	echo -e " 3 Github源(test版本，需开启clash服务)"
 	echo -e " 4 Gitee源(release版本，可能滞后)"
 	echo -e " 5 自定义输入(请务必确保路径正确)"
+	echo -e " 6 切换版本(仅支持切换至release分支)"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
@@ -700,6 +701,24 @@ setserver(){
 			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 			update
 		fi
+	elif [ "$num" = 6 ]; then
+		echo -----------------------------------------------
+		webget /tmp/clashrelease https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/bin/release_version echooff rediroff 2>/tmp/clashrelease
+		echo -e "\033[32m请选择想要更新至的版本：\033[0m"
+		cat /tmp/clashrelease | awk '{print " "NR" "$1}'
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num
+		if [ -z "$num" -o "$num" = 0 ]; then
+			setserver
+		elif [ $num -le $(cat /tmp/clashrelease | awk 'END{print NR}') 2>/dev/null ]; then
+			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
+			update_url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_version"
+			echo -e "\033[32m设置成功！\033[0m" 
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m输入有误，请重新输入！\033[0m"
+		fi
+		
 	elif [ "$num" = 9 ]; then
 		update_url='http://192.168.31.30:8080/clash-for-Miwifi'
 	else
@@ -716,8 +735,8 @@ setserver(){
 checkupdate(){
 if [ -z "$release_new" ];then
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		webget /tmp/clashrelease https://github.com.cnpmjs.org/juewuy/ShellClash/releases/latest echoon rediroff 2>/tmp/clashrelease
-		release_new=$( cat /tmp/clashrelease | grep -aoE "releases/tag/.*" | awk -F '[/" ]' '{print $3}')
+		webget /tmp/clashrelease $update_url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
+		release_new=$(cat /tmp/clashrelease | head -1)
 		[ -z "$release_new" ] && release_new=master
 		update_url=$update_url@$release_new
 	fi
