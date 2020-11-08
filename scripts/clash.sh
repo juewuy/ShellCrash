@@ -227,14 +227,14 @@ setdns(){
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	echo -----------------------------------------------
-	echo -e "当前基础DNS：\033[36m$dns_nameserver\033[0m"
+	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
 	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m | \033[0m分隔一次性输入"
 	echo -e "\033[33m使用redir-host时，fallback组暂不支持tls或者https形式的DNS\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 修改基础DNS"
-	echo -e " 2 修改fallback_DNS"
-	echo -e " 3 重置DNS配置"
+	echo -e " 1 修改\033[32m基础DNS\033[0m"
+	echo -e " 2 修改\033[36mfallback_DNS\033[0m"
+	echo -e " 3 \033[33m重置\033[0mDNS配置"
 	echo -e " 4 禁用内置DNS(慎用)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -246,14 +246,14 @@ setdns(){
 		read -p "请输入新的DNS > " dns_nameserver
 		dns_nameserver=$(echo $dns_nameserver | sed 's/|/\,\ /g')
 		if [ -n "$dns_nameserver" ]; then
-			setconfig dns_nameserver \'$dns_nameserver\'
+			setconfig dns_nameserver \'"$dns_nameserver"\'
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 	elif [ "$num" = 2 ]; then
 		read -p "请输入新的DNS > " dns_fallback
 		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /g')
 		if [ -n "$dns_fallback" ]; then
-			setconfig dns_fallback \'$dns_fallback\' 
+			setconfig dns_fallback \'"$dns_fallback"\' 
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi	
 	elif [ "$num" = 3 ]; then

@@ -741,7 +741,7 @@ if [ -z "$release_new" ];then
 		update_url=$update_url@$release_new
 	fi
 	webget /tmp/clashversion $update_url/bin/version echooff
-	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！\033[0m"
+	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或更换安装源！\033[0m"
 	[ -z "$release_new" ] && release_new=$versionsh
 	rm -rf /tmp/clashversion
 	rm -rf /tmp/clashrelease
