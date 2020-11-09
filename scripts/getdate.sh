@@ -654,8 +654,8 @@ getdb(){
 				sed -i "s/127.0.0.1/${host}/g" $dbdir/static/js/*.js
 				sed -i "s/9090/${db_port}/g" $dbdir/static/js/*.js
 			else
-				sed -i "s/127.0.0.1/${host}/g" $dbdir/app*.js
-				sed -i "s/7892/${db_port}/g" $dbdir/app*.js
+				sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/app*.js
+				#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
 			fi
 			#如果clash在运行则重启clash服务
 			[ "$dbdir" != "/www/clash" ] && [ -n "$PID" ] && $clashdir/start.sh restart
