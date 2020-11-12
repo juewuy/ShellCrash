@@ -358,7 +358,7 @@ macfilter(){
 	[ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
 	[ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
 	[ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
-	[ -f /tmp/dhcp.leases ] && dhcpdir='/dev/null'
+	[ -z "$dhcpdir" ] && dhcpdir='/dev/null'
 	[ -z "$macfilter_type" ] && macfilter_type='黑名单' 
 	[ "$macfilter_type" = "黑名单" ] && macfilter_over='白名单' || macfilter_over='黑名单'
 	######
