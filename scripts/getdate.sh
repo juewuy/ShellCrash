@@ -758,6 +758,7 @@ update(){
 	echo -e " 2 切换\033[33mclash核心 	\033[33m$clashv\033[0m > \033[32m$clash_n\033[0m"
 	echo -e " 3 更新\033[32mGeoIP数据库	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+	echo -e " 5 查看\033[32mPAC\033[0m自动代理配置"
 	echo -----------------------------------------------
 	echo -e " 7 切换\033[36m安装源\033[0m地址"
 	echo -e " 8 鸣谢"
@@ -784,7 +785,14 @@ update(){
 	elif [ "$num" = 4 ]; then	
 		getdb
 		update
-
+		
+	elif [ "$num" = 5 ]; then	
+		echo -----------------------------------------------
+		echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
+		echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
+		sleep 2
+		update
+		
 	elif [ "$num" = 7 ]; then	
 		setserver
 		
