@@ -295,18 +295,6 @@ clashlink(){
 		getlink
 	  
 	elif [ "$num" = 2 ];then
-		if [ -n "$Url" ];then
-			echo -----------------------------------------------
-			echo -e "\033[33m检测到已记录的订阅链接：\033[0m"
-			echo -e "\033[4;32m$Url\033[0m"
-			echo -----------------------------------------------
-			read -p "清空链接/追加导入？[1/0] > " res
-			if [ "$res" = '1' ]; then
-				Url=""
-				echo -----------------------------------------------
-				echo -e "\033[31m链接已清空！\033[0m"
-			fi
-		fi
 		getlink2
 		
 	elif [ "$num" = 3 ];then
@@ -354,7 +342,7 @@ clashlink(){
 		else
 			echo -----------------------------------------------
 			echo -e "\033[33m当前系统记录的订阅链接为：\033[0m"
-			echo -e "\033[4;32m$Url\033[0m"
+			echo -e "\033[4;32m$Url$Https\033[0m"
 			echo -----------------------------------------------
 			read -p "确认更新配置文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
@@ -600,25 +588,30 @@ getdb(){
 		errornum
 		update
 	fi
-	echo -----------------------------------------------
-	echo -e "请选择面板\033[33m安装目录：\033[0m"
-	echo -----------------------------------------------
-	echo -e " 1 在$clashdir/ui目录安装(推荐！安装后会自动重启clash服务！)"
-	echo -e " 2 在/www/clash目录安装(依赖Openwrt的Nginx服务，可能失败！)"
-	echo -----------------------------------------------
-	echo " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
+	if [ -w /www/clash ];then
+		echo -----------------------------------------------
+		echo -e "请选择面板\033[33m安装目录：\033[0m"
+		echo -----------------------------------------------
+		echo -e " 1 在$clashdir/ui目录安装"
+		echo -e " 2 在/www/clash目录安装(推荐！)"
+		echo -----------------------------------------------
+		echo " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num
 
-	if [ -z "$num" ];then
-		update
-	elif [ "$num" = '1' ]; then
-		dbdir=$clashdir/ui
-		hostdir=":$db_port/ui"
-	elif [ "$num" = '2' ]; then
+		if [ -z "$num" ];then
+			update
+		elif [ "$num" = '1' ]; then
+			dbdir=$clashdir/ui
+			hostdir=":$db_port/ui"
+		elif [ "$num" = '2' ]; then
+			dbdir=/www/clash
+			hostdir='/clash'
+		else
+			update
+		fi
+	else
 		dbdir=/www/clash
 		hostdir='/clash'
-	else
-		update
 	fi
 		#下载及安装
 		if [ -d /www/clash -o -d $clashdir/ui ];then

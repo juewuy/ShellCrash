@@ -80,6 +80,8 @@ getconfig(){
 		sed -i "1i\userguide=1" $ccfg
 		[ "$res" = 1 ] && source $clashdir/getdate.sh && userguide
 	fi
+	#检查执行权限
+	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 }
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -95,9 +97,9 @@ errornum(){
 startover(){
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -n "$hostdir" ];then
-		echo -e "请使用\033[4;32mhttp://$host$hostdir\033[0m管理内置规则"
+		echo -e "请使用 \033[4;32mhttp://$host$hostdir\033[0m 管理内置规则"
 	else
-		echo -e "可使用\033[4;32mhttp://clash.razord.top\033[0m管理内置规则"
+		echo -e "可使用 \033[4;32mhttp://clash.razord.top\033[0m 管理内置规则"
 		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m $db_port \033[0m"
 		echo -e "推荐前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
 	fi

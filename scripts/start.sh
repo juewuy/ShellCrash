@@ -55,7 +55,7 @@ webget(){
 		[ "$3" = "echoon" ] && progress=''
 		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
 		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
-		[ $? -eq 0 ] && result="200"
+		[ "$?" = 0 ] && result="200"
 	fi
 	export all_proxy=''
 }
@@ -148,8 +148,8 @@ EOF`
 		fi
 	else
 		Https=""
-		#检测节点
-		if [ -z "$(cat $yamlnew | grep 'server:' | grep -v 'nameserver')" ];then
+		#检测节点或providers
+		if [ -z "$(cat $yamlnew | grep -E 'server:|proxy-providers:' | grep -v 'nameserver')" ];then
 			echo -----------------------------------------------
 			logger "获取到了配置文件，但似乎并不包含正确的节点信息！" 31
 			echo -----------------------------------------------
@@ -182,8 +182,7 @@ EOF`
 			mv -f $yamlnew $yaml
 		fi
 		echo 配置文件已生成！正在启动clash使其生效！
-		#重启clash服务
-		$0 stop
+		#启动clash服务
 		$0 start
 		if [ "$?" = 0 ];then
 			logger "配置文件获取成功！clash服务已启动！"
@@ -489,7 +488,7 @@ bfstart(){
 	#检查clash核心
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
-			mv $clashdir/clash $bindir/clash && chmod 777 $bindir/clash
+			mv $clashdir/clash $bindir/clash && chmod +x $bindir/clash
 		else
 			logger "未找到clash核心，正在下载！" 33
 			[ -z "$clashcore" ] && [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clashpre || clashcore=clash
@@ -613,7 +612,7 @@ getyaml)
 		getyaml
 		;;
 webget)
-		webget $1 $2 $3 $4
+		webget $2 $3 $4 $5
 		;;
 web_save)
 		getconfig

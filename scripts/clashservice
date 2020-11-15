@@ -1,12 +1,13 @@
 #!/bin/sh /etc/rc.common
 
-START=92
+START=99
 
 SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1
 USE_PROCD=1
 #获取目录
 DIR=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
+[ -z "$DIR" ] && DIR=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 BINDIR=$(cat $DIR/mark | grep bindir | awk -F "=" '{print $2}')
 [ -z "$BINDIR" ] && BINDIR=$DIR
 
