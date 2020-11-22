@@ -588,7 +588,7 @@ getdb(){
 		errornum
 		update
 	fi
-	if [ -w /www/clash ];then
+	if [ -w /www/clash -a -n "$(pidof nginx)" ];then
 		echo -----------------------------------------------
 		echo -e "请选择面板\033[33m安装目录：\033[0m"
 		echo -----------------------------------------------
@@ -610,56 +610,56 @@ getdb(){
 			update
 		fi
 	else
-		dbdir=/www/clash
-		hostdir='/clash'
+			dbdir=$clashdir/ui
+			hostdir=":$db_port/ui"
 	fi
-		#下载及安装
-		if [ -d /www/clash -o -d $clashdir/ui ];then
-			echo -----------------------------------------------
-			echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
-			echo -----------------------------------------------
-			read -p "是否覆盖安装？[1/0] > " res
-			if [ -z "$res" ]; then
-				update
-			elif [ "$res" = 1 ]; then
-				rm -rf /www/clash
-				rm -rf $clashdir/ui
-			else
-				update
-			fi
-		fi
-		dblink="${update_url}/bin/${db_type}.tar.gz"
+	#下载及安装
+	if [ -d /www/clash -o -d $clashdir/ui ];then
 		echo -----------------------------------------------
-		echo 正在连接服务器获取安装文件…………
-		webget /tmp/clashdb.tar.gz $dblink
-		if [ "$result" != "200" ];then
-			echo -----------------------------------------------
-			echo -e "\033[31m文件下载失败！\033[0m"
-			echo -----------------------------------------------
-			getdb
+		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
+		echo -----------------------------------------------
+		read -p "是否覆盖安装？[1/0] > " res
+		if [ -z "$res" ]; then
+			update
+		elif [ "$res" = 1 ]; then
+			rm -rf /www/clash
+			rm -rf $clashdir/ui
 		else
-			echo -e "\033[33m下载成功，正在解压文件！\033[0m"
-			mkdir -p $dbdir > /dev/null
-			tar -zxvf "/tmp/clashdb.tar.gz" -C $dbdir > /dev/null
-			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
-			#修改默认host和端口
-			if [ "$db_type" = "clashdb" ];then
-				sed -i "s/127.0.0.1/${host}/g" $dbdir/static/js/*.js
-				sed -i "s/9090/${db_port}/g" $dbdir/static/js/*.js
-			else
-				sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/app*.js
-				#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
-			fi
-			#如果clash在运行则重启clash服务
-			[ "$dbdir" != "/www/clash" ] && [ -n "$PID" ] && $clashdir/start.sh restart
-			#写入配置文件
-			setconfig hostdir \'$hostdir\'
-			echo -----------------------------------------------
-			echo -e "\033[32m面板安装成功！\033[0m"
-			echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0;36m访问面板\033[0m"
-			rm -rf /tmp/clashdb.tar.gz
-			sleep 1
+			update
 		fi
+	fi
+	dblink="${update_url}/bin/${db_type}.tar.gz"
+	echo -----------------------------------------------
+	echo 正在连接服务器获取安装文件…………
+	webget /tmp/clashdb.tar.gz $dblink
+	if [ "$result" != "200" ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m文件下载失败！\033[0m"
+		echo -----------------------------------------------
+		getdb
+	else
+		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
+		mkdir -p $dbdir > /dev/null
+		tar -zxvf "/tmp/clashdb.tar.gz" -C $dbdir > /dev/null
+		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
+		#修改默认host和端口
+		if [ "$db_type" = "clashdb" ];then
+			sed -i "s/127.0.0.1/${host}/g" $dbdir/static/js/*.js
+			sed -i "s/9090/${db_port}/g" $dbdir/static/js/*.js
+		else
+			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/app*.js
+			#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
+		fi
+		#如果clash在运行则重启clash服务
+		[ "$dbdir" != "/www/clash" ] && [ -n "$PID" ] && $clashdir/start.sh restart
+		#写入配置文件
+		setconfig hostdir \'$hostdir\'
+		echo -----------------------------------------------
+		echo -e "\033[32m面板安装成功！\033[0m"
+		echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0;36m访问面板\033[0m"
+		rm -rf /tmp/clashdb.tar.gz
+		sleep 1
+	fi
 }
 setserver(){
 
