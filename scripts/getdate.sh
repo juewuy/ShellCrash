@@ -246,8 +246,8 @@ getlink2(){
 				setconfig Https \'$Https\'
 				#获取在线yaml文件
 				$clashdir/start.sh getyaml
-				startover
-				exit;
+				sleep 1
+				[ -n "$(pidof clash)" ] && startover || exit 1
 			fi
 	elif [ "$Https" = 0 ];then
 		clashlink
