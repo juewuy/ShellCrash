@@ -47,7 +47,7 @@ sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 http
 
 ```sh
 #Release版本-jsdelivrCDN源
-wget -q --no-check-certificate -O /tmp/install.sh https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install.sh  && sh /tmp/install.sh 2 && source /etc/profile &> /dev/null
+wget -q --no-check-certificate -O /tmp/install.sh https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**非root用户安装后**请额外执行以下命令以读取环境变量：<br>
