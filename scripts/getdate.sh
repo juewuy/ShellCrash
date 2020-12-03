@@ -186,8 +186,9 @@ getlink(){
 		echo -----------------------------------------------
 		echo -e "\033[44m 遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 		echo -e "\033[31m本功能依赖第三方网站在线服务实现，脚本本身不提供任何代理服务！\033[0m"
+		echo -e "\033[31m严禁使用本脚本从事非法活动，否则一切后果请自负！\033[0m"
 		echo -----------------------------------------------
-		echo -e "支持批量导入订阅文件的在线链接"
+		echo -e "支持批量导入订阅链接、分享链接"
 		echo -----------------------------------------------
 		echo -e " 0   \033[31m撤销输入\033[0m"
 		echo -e "回车 \033[32m完成输入\033[0m并\033[33m开始导入\033[0m配置文件！"
@@ -729,12 +730,12 @@ checkupdate(){
 if [ -z "$release_new" ];then
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
 		webget /tmp/clashrelease $update_url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
-		release_new=$(cat /tmp/clashrelease | head -1)
+		[ "$result" = "200" ] && release_new=$(cat /tmp/clashrelease | head -1)
 		[ -z "$release_new" ] && release_new=master
 		update_url=$update_url@$release_new
 	fi
 	webget /tmp/clashversion $update_url/bin/version echooff
-	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或更换安装源！\033[0m"
+	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
 	[ -z "$release_new" ] && release_new=$versionsh
 	rm -rf /tmp/clashversion
 	rm -rf /tmp/clashrelease
@@ -831,8 +832,6 @@ exit;
 }
 #新手引导
 userguide(){
-
-	
 	whichmod(){	
 		echo -----------------------------------------------
 		echo -e "\033[33m是否需要代理UDP流量(主要用于游戏)？ \033[0m"
@@ -840,7 +839,7 @@ userguide(){
 		echo -e " 1 \033[0m不代理UDP流量(可能会导致一部分游戏/应用无法连接)\033[0m"
 		modinfo tun >/dev/null 2>&1 && [ "$?" = 0 ] && \
 		echo -e " 2 \033[0m使用Tun虚拟网卡代理UDP流量(更低的延迟但更多的CPU消耗)\033[0m" || \
-		echo -e " 0 \033[0m使用Tun模式(你的设备不支持此模式，如为虚拟机运行请调整虚拟网卡设置)\033[0m"
+		echo -e " - \033[0m使用Tun模式(你的设备不支持此模式，如为虚拟机运行请调整虚拟网卡设置)\033[0m"
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && \
 		echo -e " 3 \033[0m使用Tproxy模式代理UDP流量(较低CPU消耗但更高的延迟)033[0m"
 		echo -----------------------------------------------
@@ -868,7 +867,7 @@ userguide(){
 		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 \033[32m各类路由设备\033[0m，配置局域网透明路由"
-		echo -e " 2 \033[36mLinux桌面系统\033[0m，仅配置本机路由"
+		echo -e " 2 \033[36m桌面版Linux系统\033[0m，仅配置本机路由"
 		echo -e " 3 \033[32m服务器Linux系统\033[0m，仅配置本机路由"
 		echo -e " 4 \033[36m多功能设备\033[0m，配置本机及局域网路由"
 		echo -----------------------------------------------
