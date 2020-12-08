@@ -4,14 +4,14 @@
 #脚本内部工具
 getconfig(){
 	#加载配置文件
-	[ -z "$clashdir" ] && source /etc/profile > /dev/null
-	[ -z "$clashdir" ] && source ~/.bashrc > /dev/null
+	[ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
+	[ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 	ccfg=$clashdir/mark
 	[ -f $ccfg ] && source $ccfg
 	#默认设置
 	[ -z "$bindir" ] && bindir=$clashdir
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
-	[ -z "$redir_mod" ] && redir_mod=纯净模式
+	[ -z "$redir_mod" ] && redir_mod=Redir模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
@@ -531,21 +531,15 @@ bfstart(){
 	fi
 }
 afstart(){
-	set_iptables(){
-		#设置循环检测iptables服务
-		i=1
-		while [ $i -lt 10 ];do
-			[ -n "$(iptables -L)" ] && i=10 || sleep 1
-		done
-		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
-		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
-		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
-	}
+
 	#读取配置文件
 	getconfig
 	$bindir/clash -t -d $bindir >/dev/null
 	if [ "$?" = 0 ];then
-		set_iptables & #后台检测及设置iptables
+		#设置iptables转发规则
+		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
+		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
+		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
 		#标记启动时间
 		mark_time
 		#设置本机代理

@@ -79,7 +79,7 @@ getconfig(){
 	#检查新手引导
 	if [ -z "$userguide" ];then
 		sed -i "1i\userguide=1" $ccfg
-		[ "$res" = 1 ] && source $clashdir/getdate.sh && userguide
+		source $clashdir/getdate.sh && userguide
 	fi
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
