@@ -671,7 +671,6 @@ setserver(){
 	echo -e " 1 Jsdelivr-CDN源(test版本)"
 	echo -e " 2 Jsdelivr-CDN源(release版本)"
 	echo -e " 3 Github源(test版本，需开启clash服务)"
-	echo -e " 4 Gitee源(release版本，可能滞后)"
 	echo -e " 5 自定义输入(请务必确保路径正确)"
 	echo -e " 6 切换版本(仅支持切换至release分支)"
 	echo -e " 0 返回上级菜单"
@@ -685,8 +684,6 @@ setserver(){
 		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
 	elif [ "$num" = 3 ]; then
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
-	elif [ "$num" = 4 ]; then
-		update_url='https://gitee.com/juewuy/ShellClash/raw/master'
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
 		read -p "请输入个人源路径 > " update_url

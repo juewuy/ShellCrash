@@ -26,8 +26,9 @@ getconfig(){
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	[ -z "$multiport" ] && multiport='53,587,465,995,993,143,80,443'
 	#是否代理常用端口
-	[ "$common_ports" = "已开启" ] && ports='-m multiport --dports 53,587,465,995,993,143,80,443'
+	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	}
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -436,8 +437,7 @@ web_restore(){
 	}
 	#设置循环检测clash面板端口
 	i=1
-	while [ $i -lt 10 ]
-	do
+	while [ $i -lt 10 ];do
 		sleep 1
 		if curl --version > /dev/null 2>&1;then
 			test=$(curl -s http://localhost:${db_port})
@@ -531,14 +531,21 @@ bfstart(){
 	fi
 }
 afstart(){
+	set_iptables(){
+		#设置循环检测iptables服务
+		i=1
+		while [ $i -lt 10 ];do
+			[ -n "$(iptables -L)" ] && i=10 || sleep 1
+		done
+		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
+		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
+		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
+	}
 	#读取配置文件
 	getconfig
 	$bindir/clash -t -d $bindir >/dev/null
 	if [ "$?" = 0 ];then
-		#修改iptables规则使流量进入clash
-		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
-		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
-		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
+		set_iptables & #后台检测及设置iptables
 		#标记启动时间
 		mark_time
 		#设置本机代理

@@ -19,6 +19,7 @@ getconfig(){
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
+	[ -z "$multiport" ] && multiport='53,587,465,995,993,143,80,443'
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	#检查mac地址记录
 	[ ! -f $clashdir/mac ] && touch $clashdir/mac
@@ -162,6 +163,7 @@ setport(){
 	echo -e " 4 修改DNS监听端口：	\033[36m$dns_port\033[0m"
 	echo -e " 5 修改面板访问端口：	\033[36m$db_port\033[0m"
 	echo -e " 6 设置面板访问密码：	\033[36m$secret\033[0m"
+	echo -e " 7 修改默认端口过滤：	\033[36m$multiport\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
@@ -211,6 +213,21 @@ setport(){
 		if [ -n "$secret" ]; then
 			[ "$secret" = "0" ] && secret=""
 			setconfig secret $secret
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi
+		setport
+	elif [ "$num" = 7 ]; then
+		echo -----------------------------------------------
+		echo -e "需配合\033[32m仅代理常用端口\033[0m功能使用"
+		echo -e "多个端口请用小写逗号分隔，例如：\033[33m143,80,443\033[0m"
+		echo -e "输入 0 重置为默认端口"
+		echo -----------------------------------------------
+		read -p "请输入需要指定代理的端口 > " multiport
+		if [ -n "$multiport" ]; then
+			[ "$multiport" = "0" ] && multiport=""
+			common_ports=已开启
+			setconfig multiport $multiport
+			setconfig common_ports $common_ports
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		setport
@@ -642,9 +659,9 @@ clashcfg(){
 		clashcfg
 	
 	elif [ "$num" = 4 ]; then	
-		echo -----------------------------------------------
+		echo -----------------------------------------------	
 		if [ "$common_ports" = "未开启" ] > /dev/null 2>&1; then 
-			echo -e "\033[33m已设为仅代理（53,587,465,995,993,143,80,443）等常用端口！！\033[0m"
+			echo -e "\033[33m已设为仅代理【$multiport】等常用端口！！\033[0m"
 			common_ports=已开启
 		else
 			echo -e "\033[33m已设为代理全部端口！！\033[0m"
@@ -686,8 +703,8 @@ clashadv(){
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————启动时方下载核心及数据库文件"
-	echo -e " 5 配置内置DNS服务:	\033[36m$dns_no\033[0m"
-	echo -e " 6 手动指定clash运行端口及秘钥"
+	echo -e " 5 配置内置DNS服务	\033[36m$dns_no\033[0m"
+	echo -e " 6 手动指定相关服务端口及秘钥"
 	echo -e " 7 使用自定义配置"
 	echo -----------------------------------------------
 	echo -e " 8 \033[31m重置\033[0m配置文件"
