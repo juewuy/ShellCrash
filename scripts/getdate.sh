@@ -711,7 +711,7 @@ setserver(){
 		fi
 		
 	elif [ "$num" = 9 ]; then
-		update_url='http://192.168.31.30:8080/clash-for-Miwifi'
+		update_url='http://192.168.31.31:8080/ShellClash'
 	else
 		errornum
 		update
