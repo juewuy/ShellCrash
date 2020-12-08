@@ -58,7 +58,7 @@ webget(){
 		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
 		[ "$?" = 0 ] && result="200"
 	fi
-	export all_proxy=''
+	unset all_proxy
 }
 logger(){
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"

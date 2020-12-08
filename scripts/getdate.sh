@@ -16,7 +16,7 @@ webget(){
 		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
 		[ $? -eq 0 ] && result="200"
 	fi
-	export all_proxy=''
+	unset all_proxy
 }
 #导入订阅、配置文件相关
 linkconfig(){
