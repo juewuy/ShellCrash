@@ -662,6 +662,62 @@ getdb(){
 		sleep 1
 	fi
 }
+getcrt(){
+	echo -----------------------------------------------
+	echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
+	echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
+	echo -e "\033[31m无上述问题的设备无需使用本功能！\033[0m"
+	echo -----------------------------------------------
+	read -p "确认安装？(1/0) > " res
+
+	if [ -z "$res" ];then
+		update
+	elif [ "$res" = '0' ]; then
+		update
+	elif [ "$res" = '1' ]; then
+		if [ ! -d /etc/ssl/certs ];then
+			echo -----------------------------------------------
+			echo -e "\033[33m设备可能未安装openssl或者证书文件目录不是/etc/ssl/certs，无法安装！\033[0m"
+			sleep 1
+			update
+		else
+			crtdir='/etc/ssl/certs/ca-certificates.crt'
+		fi
+	else
+		errornum
+		update
+	fi
+
+	#下载及安装
+	if [ -f $crtdir ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m检测到您的设备已经安装好根证书文件了！\033[0m"
+		echo -----------------------------------------------
+		read -p "是否覆盖安装？[1/0] > " res
+		if [ -z "$res" ]; then
+			update
+		elif [ "$res" = 1 ]; then
+			rm -rf $crtdir
+		else
+			update
+		fi
+	fi
+	dblink="${update_url}/bin/ca-certificates.crt"
+	echo -----------------------------------------------
+	echo 正在连接服务器获取安装文件…………
+	webget /tmp/ca-certificates.crt $dblink
+	if [ "$result" != "200" ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m文件下载失败！\033[0m"
+		echo -----------------------------------------------
+		getcrt
+	else
+		echo -----------------------------------------------
+		mv -f /tmp/ca-certificates.crt $crtdir
+		echo -e "\033[32m证书安装成功！\033[0m"
+		sleep 1
+	fi
+}
 setserver(){
 
 	echo -----------------------------------------------
@@ -749,7 +805,8 @@ update(){
 	echo -e " 2 切换\033[33mclash核心 	\033[33m$clashv\033[0m > \033[32m$clash_n\033[0m"
 	echo -e " 3 更新\033[32mGeoIP数据库	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
-	echo -e " 5 查看\033[32mPAC\033[0m自动代理配置"
+	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
+	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
 	echo -----------------------------------------------
 	echo -e " 7 切换\033[36m安装源\033[0m地址"
 	echo -e " 8 鸣谢"
@@ -778,6 +835,10 @@ update(){
 		update
 		
 	elif [ "$num" = 5 ]; then	
+		getcrt
+		update	
+		
+	elif [ "$num" = 6 ]; then	
 		echo -----------------------------------------------
 		echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
 		echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
