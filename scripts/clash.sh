@@ -120,7 +120,7 @@ clashstart(){
 	echo -----------------------------------------------
 	$clashdir/start.sh start
 	sleep 1
-	[ -n "$(pidof clash)" ] && startover || exit 1
+	[ -n "$(pidof clash)" ] && startover
 }
 #功能相关
 setport(){
@@ -995,8 +995,7 @@ clashsh(){
 		
 	elif [ "$num" = 1 ]; then
 		clashstart
-		sleep 1
-		clashsh
+		exit;
   
 	elif [ "$num" = 2 ]; then
 		clashcfg

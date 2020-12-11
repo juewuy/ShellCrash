@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 webget(){
-	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理
+	[ -n "$(netstat -ntul 2>&1 |grep :$mix_port)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
 	if curl --version > /dev/null 2>&1;then
@@ -16,12 +16,11 @@ webget(){
 		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
 		[ $? -eq 0 ] && result="200"
 	fi
-	unset all_proxy
+	export all_proxy=""
 }
 #导入订阅、配置文件相关
 linkconfig(){
 	echo -----------------------------------------------
-	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 	echo 当前使用规则为：$rule_link
 	echo 1	ACL4SSR通用版无去广告（推荐）
 	echo 2	ACL4SSR精简全能版（推荐）
@@ -53,12 +52,11 @@ linkconfig(){
 }
 linkserver(){
 	echo -----------------------------------------------
-	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
-	echo -e "\033[36m 感谢 https://github.com/tindy2013/subconverter \033[0m"
+	echo -e "\033[36m以下为互联网采集的第三方服务器，具体安全性请自行斟酌！\033[0m"
 	echo 当前使用后端为：$server_link
 	echo 1 subcon.dlj.tf
 	echo 2 subconverter.herokuapp.com
-	echo 3 subcon.py6.pw
+	echo 3 subconverter-web.now.sh
 	echo 4 api.dler.io
 	echo 5 api.wcc.best
 	echo -----------------------------------------------
@@ -90,15 +88,12 @@ linkfilter(){
 	echo -e " 回车  取消输入并返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入关键字 > " exclude
-	if [ -z "$exclude" ]; then
-		linkset
-	elif [ "$exclude" = '000' ]; then
+	if [ "$exclude" = '000' ]; then
 		echo -----------------------------------------------
 		exclude=''
 		echo -e "\033[31m 已删除节点过滤关键字！！！\033[0m"
 	fi
 	setconfig exclude \'$exclude\'
-	linkset
 }
 linkfilter2(){
 	[ -z "$include" ] && include="未设置"
@@ -114,68 +109,21 @@ linkfilter2(){
 	echo -e " 回车  取消输入并返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入关键字 > " include
-	if [ -z "$include" ]; then
-		linkset
-	elif [ "$include" = '000' ]; then
+	if [ "$include" = '000' ]; then
 		echo -----------------------------------------------
 		include=''
 		echo -e "\033[31m 已删除节点匹配关键字！！！\033[0m"
 	fi
 	setconfig include \'$include\'
-	linkset
 }
-linkset(){
-	if [ -n "$Url" ];then
-		[ -z "$skip_cert" ] && skip_cert=已开启
-		echo -----------------------------------------------
-		echo -e "\033[47;30m请检查输入的链接是否正确：\033[0m"
-		echo -e "\033[32;4m$Url\033[0m"
-		echo -----------------------------------------------
-		echo -e " 1 \033[36m生成配置文件\033[0m（原文件将被备份）"
-		echo -e " 2 设置\033[31m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
-		echo -e " 3 设置\033[32m节点筛选\033[0m关键字 \033[47;30m$include\033[0m"
-		echo -e " 4 选取在线\033[33m配置规则模版\033[0m"
-		echo -e " 5 \033[0m选取在线生成服务器\033[0m"
-		echo -e " 6 \033[0m跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————自建tls节点务必开启"
-		echo -----------------------------------------------
-		echo -e " 0 \033[31m取消导入\033[0m并返回上级菜单"
-		echo -----------------------------------------------
-		read -p "请输入对应数字 > " num
-		if [ -z "$num" ]; then
-			clashlink
-		elif [ "$num" = '0' ]; then
-			clashlink
-		elif [ "$num" = '1' ]; then
-			#将用户链接写入mark
-			sed -i '/Https=*/'d $ccfg
-			setconfig Url \'$Url\'
-			Https=""
-			#获取在线yaml文件
-			$clashdir/start.sh getyaml
-			startover
-			exit;
-		elif [ "$num" = '2' ]; then
-			linkfilter
-			linkset
-		elif [ "$num" = '3' ]; then
-			linkfilter2
-			linkset
-		elif [ "$num" = '4' ]; then
-			linkconfig
-			linkset
-		elif [ "$num" = '5' ]; then
-			linkserver
-			linkset
-		elif [ "$num" = '6' ]; then
-			echo -----------------------------------------------
-			[ "$skip_cert" = "未开启" ] && skip_cert=已开启 || skip_cert=未开启
-			setconfig skip_cert $skip_cert
-			linkset
-		else
-			errornum
-			linkset
+getyaml(){
+	$clashdir/start.sh getyaml
+	if [ "$?" = 0 ];then
+		if [ "$inuserguide" != 1 ];then
+			read -p "是否启动clash服务以使配置文件生效？(1/0) > " res 
+			[ "$res" = 1 ] && clashstart
+			exit 0
 		fi
-		clashlink
 	fi
 }
 getlink(){
@@ -185,15 +133,19 @@ getlink(){
 	do
 		echo -----------------------------------------------
 		echo -e "\033[44m 遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
-		echo -e "\033[31m本功能依赖第三方网站在线服务实现，脚本本身不提供任何代理服务！\033[0m"
-		echo -e "\033[31m严禁使用本脚本从事非法活动，否则一切后果请自负！\033[0m"
+		echo -e "\033[33m本功能依赖第三方在线subconverter服务实现，脚本本身不提供任何代理服务！\033[0m"
+		echo -e "\033[31m严禁使用本脚本从事任何非法活动，否则一切后果请自负！\033[0m"
 		echo -----------------------------------------------
-		echo -e "支持批量导入订阅链接、分享链接"
+		echo -e "支持批量(<=99)导入订阅链接、分享链接"
 		echo -----------------------------------------------
-		echo -e " 0   \033[31m撤销输入\033[0m"
-		echo -e "回车 \033[32m完成输入\033[0m并\033[33m开始导入\033[0m配置文件！"
+		echo -e " 1 \033[36m开始生成配置文件\033[0m（原文件将被备份）"
+		echo -e " 2 设置\033[31m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
+		echo -e " 3 设置\033[32m节点筛选\033[0m关键字 \033[47;30m$include\033[0m"
+		echo -e " 4 选取在线\033[33m配置规则模版\033[0m"
+		echo -e " 5 \033[0m选取在线生成服务器\033[0m"
+		echo -e " 0 \033[31m撤销输入并返回上级菜单\033[0m"
 		echo -----------------------------------------------
-		read -p "请输入第${i}个链接 > " url
+		read -p "请直接输入第${i}个链接或对应数字选项 > " url
 		test=$(echo $url | grep "://")
 		url=`echo ${url/\ \(*\)/''}`   #删除恶心的超链接内容
 		url=`echo ${url/*\&url\=/""}`   #将clash完整链接还原成单一链接
@@ -206,56 +158,73 @@ getlink(){
 				Url="$Url"\|"$url"
 			fi
 			i=$((i+1))
-		elif [ -z "$url" ];then
-			[ -n "$Url" ] && linkset
+				
+		elif [ "$url" = '1' ]; then
+			if [ -n "$Url" ];then
+				i=100
+				#将用户链接写入mark
+				sed -i '/Https=*/'d $ccfg
+				setconfig Url \'$Url\'
+				Https=""
+				#获取在线yaml文件
+				getyaml
+			else
+				echo -----------------------------------------------
+				echo -e "\033[31m请先输入订阅或分享链接！\033[0m"
+				sleep 1
+			fi
+			
+		elif [ "$url" = '2' ]; then
+			linkfilter
+			
+		elif [ "$url" = '3' ]; then
+			linkfilter2
+			
+		elif [ "$url" = '4' ]; then
+			linkconfig
+			
+		elif [ "$url" = '5' ]; then
+			linkserver
+			
 		elif [ "$url" = 0 ];then
-			echo -----------------------------------------------
-			echo -e "\033[31m已撤销并删除所有已输入的链接！！！\033[0m"
 			Url=""
-			sleep 1
 			clashlink
+			
 		else
 			echo -----------------------------------------------
-			echo -e "\033[31m请输入正确的订阅链接！！！\033[0m"
+			echo -e "\033[31m请输入正确的链接或者数字！\033[0m"
+			sleep 1
 		fi
 	done
-	####
-	echo -----------------------------------------------
-	echo 输入太多啦，可能会导致订阅失败！
-	echo "多个较短的链接请尽量用“|”分隔以一次性输入！"
-	clashlink
 } 
 getlink2(){
 	echo -----------------------------------------------
 	echo -e "\033[33m仅限导入完整clash配置文件链接！！！\033[0m"
-	echo -e "可以使用\033[32m https://acl4ssr.netlify.app \033[0m在线生成配置文件"
-	echo -e "\033[36m导入后如无法运行，请使用【导入订阅】功能"
+	echo -e "可使用\033[4;32mhttps://acl4ssr.netlify.app\033[0m在线生成配置文件"
 	echo -----------------------------------------------
 	echo -e "\033[33m0 返回上级菜单\033[0m"
 	echo -----------------------------------------------
 	read -p "请输入完整链接 > " Https
-	test=$(echo $Https | grep -iE "http.*://" )
+	test=$(echo $Https | grep -iE "tp.*://" )
 	Https=`echo ${Https/\ \(*\)/''}`   #删除恶心的超链接内容
 	if [ -n "$Https" -a -n "$test" ];then
 		echo -----------------------------------------------
 		echo -e 请检查输入的链接是否正确：
-		echo -e "\033[4m$Https\033[0m"
+		echo -e "\033[4;32m$Https\033[0m"
 		read -p "确认导入配置文件？原配置文件将被更名为config.yaml.bak![1/0] > " res
 			if [ "$res" = '1' ]; then
 				#将用户链接写入mark
 				sed -i '/Url=*/'d $ccfg
 				setconfig Https \'$Https\'
 				#获取在线yaml文件
-				$clashdir/start.sh getyaml
-				sleep 1
-				[ -n "$(pidof clash)" ] && startover || exit 1
+				getyaml
 			fi
 	elif [ "$Https" = 0 ];then
 		clashlink
 	else
 		echo -----------------------------------------------
 		echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
-		echo -e "\033[33m链接地址必须是http或者https开头的形式\033[0m"
+		echo -e "\033[33m仅支持http、https、ftp以及ftps链接！\033[0m"
 		clashlink
 	fi
 }
@@ -265,21 +234,19 @@ clashlink(){
 	echo -----------------------------------------------
 	echo -e "\033[30;47m 欢迎使用导入配置文件功能！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 在线导入\033[36m订阅\033[0m并生成Clash配置文件"
-	echo -e " 2 在线导入\033[33mClash\033[0m配置文件"
-	echo -e " 3 设置\033[31m节点过滤\033[0m关键字 \033[47;30m$exclude\033[0m"
-	echo -e " 4 设置\033[32m节点筛选\033[0m关键字 \033[47;30m$include\033[0m"
-	echo -e " 5 选取\033[33mClash配置规则\033[0m在线模版"
-	echo -e " 6 选择在线生成服务器-subconverter"
-	echo -e " 7 \033[36m还原\033[0m之前的配置文件"
-	echo -e " 8 \033[33m手动更新\033[0m配置文件"
-	echo -e " 9 设置\033[36m自动更新\033[0m配置文件"
+	echo -e " 1 在线\033[32m生成Clash配置文件\033[0m"
+	echo -e " 2 导入\033[33mClash配置文件链接\033[0m"
+	echo -e " 3 \033[36m还原\033[0m配置文件"
+	echo -e " 4 \033[33m更新\033[0m配置文件"
+	echo -e " 5 设置\033[36m自动更新\033[0m"
 	echo -----------------------------------------------
-	echo -e " 0 返回上级菜单"
+	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ];then
 		errornum
-		clashsh
+		clashlink
+	elif [ "$num" = 0 ];then
+		i=
 	elif [ "$num" = 1 ];then
 		if [ -n "$Url" ];then
 			echo -----------------------------------------------
@@ -299,22 +266,6 @@ clashlink(){
 		getlink2
 		
 	elif [ "$num" = 3 ];then
-		linkfilter
-		clashlink
-		
-	elif [ "$num" = 4 ];then
-		linkfilter2
-		clashlink
-		
-	elif [ "$num" = 5 ];then
-		linkconfig
-		clashlink
-		
-	elif [ "$num" = 6 ];then
-		linkserver
-		clashlink
-		
-	elif [ "$num" = 7 ];then
 		yamlbak=$yaml.bak
 		if [ ! -f "$yaml".bak ];then
 			echo -----------------------------------------------
@@ -332,36 +283,29 @@ clashlink(){
 				echo -e "\033[31m操作已取消！返回上级菜单！\033[0m"
 			fi
 		fi
-		clashsh
 		
-	elif [ "$num" = 8 ];then
+	elif [ "$num" = 4 ];then
 		if [ -z "$Url" -a -z "$Https" ];then
 			echo -----------------------------------------------
-			echo -e "\033[31m没有找到你的订阅链接！请先输入链接！\033[0m"
-			sleep 2
+			echo -e "\033[31m没有找到你的配置文件/订阅链接！请先输入链接！\033[0m"
+			sleep 1
 			clashlink
 		else
 			echo -----------------------------------------------
-			echo -e "\033[33m当前系统记录的订阅链接为：\033[0m"
+			echo -e "\033[33m当前系统记录的链接为：\033[0m"
 			echo -e "\033[4;32m$Url$Https\033[0m"
 			echo -----------------------------------------------
 			read -p "确认更新配置文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
-				$clashdir/start.sh getyaml
-				startover
-				exit;
+				getyaml
 			fi
-			clashlink
 		fi
 		
-	elif [ "$num" = 9 ];then
+	elif [ "$num" = 5 ];then
 		clashcron
-		
-	elif [ "$num" = 0 ];then
-		clashsh
 	else
 		errornum
-		clashsh
+		clashlink
 	fi
 }
 #下载更新相关
@@ -527,106 +471,52 @@ setcore(){
 	fi
 }
 getgeo(){
-	webget /tmp/Country.mmdb $update_url/bin/Country.mmdb
+	echo -----------------------------------------------
+	echo 正在从服务器获取数据库文件…………
+	webget /tmp/Country.mmdb $update_url/bin/$geotype
 	if [ "$result" != "200" ];then
+		echo -----------------------------------------------
+		echo -e "\033[31m文件下载失败！\033[0m"
 		exit 1
 	else
 		mv -f /tmp/Country.mmdb $bindir/Country.mmdb
-	fi	
+		echo -----------------------------------------------
+		echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
+		setconfig Geo_v $GeoIP_v
+		setconfig geotype $geotype
+	fi
 }
 setgeo(){
 	echo -----------------------------------------------
-	echo -e "当前GeoIP版本为：\033[33m $Geo_v \033[0m"
-	echo -e "最新GeoIP版本为：\033[32m $GeoIP_v \033[0m"
+	[ "$geotype" = "Country.mmdb" ] && geo_type=全球版 || geo_type=精简版
+	[ -n "$geo_type" ] && echo -e "当前使用的是\033[47;30m$geo_type数据库\033[0m"
+	echo -e "\033[36m请选择需要更新的GeoIP数据库：\033[0m"
 	echo -----------------------------------------------
-	read -p "是否更新数据库文件？[1/0] > " res
-	if [ "$res" = '1' ]; then
-		echo -----------------------------------------------
-		echo 正在从服务器获取数据库文件…………
+	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约4mb)"
+	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.1mb)"
+	echo " 0 返回上级菜单"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	if [ "$num" = '1' ]; then
+		geotype=Country.mmdb
 		getgeo
-		if [ "$?" != 0 ];then
-			echo -----------------------------------------------
-			echo -e "\033[31m文件下载失败！\033[0m"
-		else
-			echo -----------------------------------------------
-			echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
-			setconfig Geo_v $GeoIP_v
-		fi
+	elif [ "$num" = '2' ]; then
+		geotype=cn_mini.mmdb
+		getgeo
 	else
 		update
 	fi
 }
 getdb(){
-	echo -----------------------------------------------
-	echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
-	echo -e "\033[32m打开管理面板的速度更快且更稳定\033[0m"
-	echo -----------------------------------------------
-	echo -e "请选择面板\033[33m安装类型：\033[0m"
-	echo -----------------------------------------------
-	echo -e " 1 安装\033[32m官方面板\033[0m(约500kb)"
-	echo -e " 2 安装\033[32mYacd面板\033[0m(约1.1mb)"
-	echo -e " 3 卸载\033[33m本地面板\033[0m"
-	echo " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-
-	if [ -z "$num" ];then
-		update
-	elif [ "$num" = '1' ]; then
-		db_type=clashdb
-	elif [ "$num" = '2' ]; then
-		db_type=yacd
-	elif [ "$num" = '3' ]; then
-		read -p "确认卸载本地面板？(1/0) > " res
-		if [ "$res" = 1 ];then
-			rm -rf /www/clash
-			rm -rf $clashdir/ui
-			echo -----------------------------------------------
-			echo -e "\033[31m面板已经卸载！\033[0m"
-			sleep 1
-		fi
-		update
-	else
-		errornum
-		update
-	fi
-	if [ -w /www/clash -a -n "$(pidof nginx)" ];then
-		echo -----------------------------------------------
-		echo -e "请选择面板\033[33m安装目录：\033[0m"
-		echo -----------------------------------------------
-		echo -e " 1 在$clashdir/ui目录安装"
-		echo -e " 2 在/www/clash目录安装(推荐！)"
-		echo -----------------------------------------------
-		echo " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-
-		if [ -z "$num" ];then
-			update
-		elif [ "$num" = '1' ]; then
-			dbdir=$clashdir/ui
-			hostdir=":$db_port/ui"
-		elif [ "$num" = '2' ]; then
-			dbdir=/www/clash
-			hostdir='/clash'
-		else
-			update
-		fi
-	else
-			dbdir=$clashdir/ui
-			hostdir=":$db_port/ui"
-	fi
 	#下载及安装
 	if [ -d /www/clash -o -d $clashdir/ui ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
 		echo -----------------------------------------------
 		read -p "是否覆盖安装？[1/0] > " res
-		if [ -z "$res" ]; then
-			update
-		elif [ "$res" = 1 ]; then
+		if [ "$res" = 1 ]; then
 			rm -rf /www/clash
 			rm -rf $clashdir/ui
-		else
-			update
 		fi
 	fi
 	dblink="${update_url}/bin/${db_type}.tar.gz"
@@ -637,7 +527,7 @@ getdb(){
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		echo -----------------------------------------------
-		getdb
+		setdb
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		mkdir -p $dbdir > /dev/null
@@ -662,33 +552,68 @@ getdb(){
 		sleep 1
 	fi
 }
-getcrt(){
-	echo -----------------------------------------------
-	echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
-	echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
-	echo -e "\033[31m无上述问题的设备无需使用本功能！\033[0m"
-	echo -----------------------------------------------
-	read -p "确认安装？(1/0) > " res
-
-	if [ -z "$res" ];then
-		update
-	elif [ "$res" = '0' ]; then
-		update
-	elif [ "$res" = '1' ]; then
-		if [ ! -d /etc/ssl/certs ];then
+setdb(){
+	dbdir(){
+		if [ -w /www/clash -a -n "$(pidof nginx)" ];then
 			echo -----------------------------------------------
-			echo -e "\033[33m设备可能未安装openssl或者证书文件目录不是/etc/ssl/certs，无法安装！\033[0m"
-			sleep 1
-			update
+			echo -e "请选择面板\033[33m安装目录：\033[0m"
+			echo -----------------------------------------------
+			echo -e " 1 在$clashdir/ui目录安装"
+			echo -e " 2 在/www/clash目录安装(推荐！)"
+			echo -----------------------------------------------
+			echo " 0 返回上级菜单"
+			read -p "请输入对应数字 > " num
+
+			if [ "$num" = '1' ]; then
+				dbdir=$clashdir/ui
+				hostdir=":$db_port/ui"
+			elif [ "$num" = '2' ]; then
+				dbdir=/www/clash
+				hostdir='/clash'
+			else
+				setdb
+			fi
 		else
-			crtdir='/etc/ssl/certs/ca-certificates.crt'
+				dbdir=$clashdir/ui
+				hostdir=":$db_port/ui"
+		fi
+	}
+
+	echo -----------------------------------------------
+	echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
+	echo -e "\033[32m打开管理面板的速度更快且更稳定\033[0m"
+	echo -----------------------------------------------
+	echo -e "请选择面板\033[33m安装类型：\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 安装\033[32m官方面板\033[0m(约500kb)"
+	echo -e " 2 安装\033[32mYacd面板\033[0m(约1.1mb)"
+	echo -e " 3 卸载\033[33m本地面板\033[0m"
+	echo " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+
+	if [ "$num" = '1' ]; then
+		db_type=clashdb
+		dbdir
+		getdb
+	elif [ "$num" = '2' ]; then
+		db_type=yacd
+		dbdir
+		getdb
+	elif [ "$num" = '3' ]; then
+		read -p "确认卸载本地面板？(1/0) > " res
+		if [ "$res" = 1 ];then
+			rm -rf /www/clash
+			rm -rf $clashdir/ui
+			echo -----------------------------------------------
+			echo -e "\033[31m面板已经卸载！\033[0m"
+			sleep 1
 		fi
 	else
 		errornum
-		update
 	fi
-
-	#下载及安装
+}
+getcrt(){
+	crtdir='/etc/ssl/certs/ca-certificates.crt'
 	if [ -f $crtdir ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m检测到您的设备已经安装好根证书文件了！\033[0m"
@@ -716,6 +641,32 @@ getcrt(){
 		mv -f /tmp/ca-certificates.crt $crtdir
 		echo -e "\033[32m证书安装成功！\033[0m"
 		sleep 1
+	fi
+}
+setcrt(){
+	echo -----------------------------------------------
+	echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
+	echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
+	echo -e "\033[31m无上述问题的设备无需使用本功能！\033[0m"
+	echo -----------------------------------------------
+	read -p "确认安装？(1/0) > " res
+
+	if [ -z "$res" ];then
+		update
+	elif [ "$res" = '0' ]; then
+		update
+	elif [ "$res" = '1' ]; then
+		if [ -d /etc/ssl/certs ];then
+			getcrt
+		else
+			echo -----------------------------------------------
+			echo -e "\033[33m设备可能未安装openssl或者证书文件目录不是/etc/ssl/certs，无法安装！\033[0m"
+			sleep 1
+			update
+		fi
+	else
+		errornum
+		update
 	fi
 }
 setserver(){
@@ -799,10 +750,12 @@ update(){
 	echo -ne "\033[32m正在检查更新！\033[0m\r"
 	checkupdate
 	[ "$clashcore" = "clash" ] && clash_n=$clash_v || clash_n=$clashpre_v
+	clash_v=$($bindir/clash -v 2>/dev/null | awk '{print $2}')
+	[ -z "$clash_v" ] && clash_v=$clashv
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh\033[0m"
-	echo -e " 2 切换\033[33mclash核心 	\033[33m$clashv\033[0m > \033[32m$clash_n\033[0m"
+	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_n\033[0m"
 	echo -e " 3 更新\033[32mGeoIP数据库	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
@@ -831,11 +784,11 @@ update(){
 		update
 	
 	elif [ "$num" = 4 ]; then	
-		getdb
+		setdb
 		update
 		
 	elif [ "$num" = 5 ]; then	
-		getcrt
+		setcrt
 		update	
 		
 	elif [ "$num" = 6 ]; then	
@@ -871,9 +824,8 @@ update(){
 			[ -w /etc/profile ] && profile=/etc/profile
 			sed -i '/alias clash=*/'d $profile
 			sed -i '/export clashdir=*/'d $profile
-			sed -i '/http*_proxy/'d $profile
-			sed -i '/HTTP*_PROXY/'d $profile
-			source $profile > /dev/null 2>&1
+			sed -i '/all_proxy/'d $profile
+			sed -i '/ALL_PROXY/'d $profile
 			echo -----------------------------------------------
 			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
 			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
@@ -946,22 +898,44 @@ userguide(){
 		fi
 	}
 	forwhat
+	#检测小内存模式
 	dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
 	if [ "$dir_size" -lt 10240 ];then
+		echo -----------------------------------------------
 		echo -e "\033[33m检测到你的安装目录空间不足10M，是否开启小闪存模式？\033[0m"
 		echo -e "\033[0m开启后核心及数据库文件将被下载到内存中，这将占用一部分内存空间\033[0m"
 		echo -e "\033[0m每次开机后首次运行clash时都会自动的重新下载相关文件\033[0m"
+		echo -----------------------------------------------
 		read -p "是否开启？(1/0) > " res
-		[ "$res" = 1 ] && setconfig bindir="/tmp/clash_$USER"
+		[ "$res" = 1 ] && setconfig bindir "/tmp/clash_$USER"
 	fi
+	#下载本地面板
 	echo -----------------------------------------------
 	echo -e "\033[33m安装本地Dashboard面板，可以更快捷的管理clash内置规则！\033[0m"
-	read -p "需要安装本地Dashboard面板吗？(1/0) > " res
-	[ "$res" = 1 ] && getdb
 	echo -----------------------------------------------
-	echo -e "\033[32m请导入订阅链接或者导入配置文件！\033[0m"
-	read -p "开始导入？(1/0) > " res 
-	[ "$res" = 1 ] && clashlink
+	read -p "需要安装本地Dashboard面板吗？(1/0) > " res
+	[ "$res" = 1 ] && setdb
+	#检测及下载根证书
+	if [ -d /etc/ssl/certs -a ! -f '/etc/ssl/certs/ca-certificates.crt' ];then
+		echo -----------------------------------------------
+		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
+		echo -----------------------------------------------
+		read -p "是否下载并安装根证书？(1/0) > " res
+		[ "$res" = 1 ] && getcrt
+	fi
+	#提示导入订阅或者配置文件
+	echo -----------------------------------------------
+	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
+	echo -e "\033[0m你必须拥有一份yaml格式的配置文件才能运行clash服务！\033[0m"
+	echo -----------------------------------------------
+	read -p "现在开始导入？(1/0) > " res
+	[ "$res" = 1 ] && inuserguide=1 && clashlink && inuserguide=""
+	#回到主界面
+	echo -----------------------------------------------
+	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
+	echo -----------------------------------------------
+	read -p "立即启动clash服务？(1/0) > " res 
+	[ "$res" = 1 ] && clashstart && sleep 2
 	clashsh
 }
 #测试菜单

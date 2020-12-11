@@ -44,7 +44,7 @@ compare(){
 	fi
 }
 webget(){
-	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理
+	[ -n "$(netstat -ntul 2>&1 |grep :$mix_port)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
 	if curl --version > /dev/null 2>&1;then
@@ -58,7 +58,7 @@ webget(){
 		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
 		[ "$?" = 0 ] && result="200"
 	fi
-	unset all_proxy
+	export all_proxy=""
 }
 logger(){
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
@@ -87,7 +87,7 @@ getyaml(){
 	Server=`sed -n ""$server_link"p"<<EOF
 subcon.dlj.tf
 subconverter.herokuapp.com
-subcon.py6.pw
+subconverter-web.now.sh
 api.dler.io
 api.wcc.best
 EOF`
@@ -171,32 +171,30 @@ EOF`
 		#检测不支持的加密协议
 		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
 			echo -----------------------------------------------
-			logger "不支持chacha20加密，请更换节点加密协议！！！" 31
+			logger "已停止支持chacha20加密，请更换更安全的节点加密协议！" 31
 			echo -----------------------------------------------
 			exit 1
+		fi
+		#使用核心内置test功能检测
+		if [ -x $bindir/clash ];then
+			$bindir/clash -t -d $bindir -f $yamlnew >/dev/null
+			if [ "$?" != "0" ];then
+				logger "配置文件加载失败！请查看报错信息！" 31
+				$bindir/clash -t -d $bindir -f $yamlnew
+				echo "$($bindir/clash -t -d $bindir -f $yamlnew)" >> $clashdir/log
+				exit 1
+			fi
 		fi
 		#如果不同则备份并替换文件
 		if [ -f $yaml ];then
 			compare $yamlnew $yaml
-			[ "$?" = 0 ] && rm -f $yamlnew || mv -f $yaml $yaml.bak && mv -f $yamlnew $yaml
+			[ "$?" = 0 ] || mv -f $yaml $yaml.bak && mv -f $yamlnew $yaml
 		else
 			mv -f $yamlnew $yaml
 		fi
-		echo 配置文件已生成！正在启动clash使其生效！
-		#启动clash服务
-		$0 start
-		if [ "$?" = 0 ];then
-			logger "配置文件获取成功！clash服务已启动！"
-			exit 0
-		else
-			if [ -f $yaml.bak ];then
-				$0 stop
-				mv -f $yaml.bak $yaml
-				$0 start
-				[ "$?" = 0 ] && logger "已还原配置文件并重启clash！" 32 && exit 0
-				logger "已还原配置文件但依然无法启动clash！" 31 && exit 1
-			fi
-		fi
+		echo -e "\033[32m已成功获取配置文件！\033[0m"
+		rm -rf $yamlnew
+		exit 0
 	fi
 }
 modify_yaml(){
@@ -491,7 +489,9 @@ bfstart(){
 			mv $clashdir/clash $bindir/clash && chmod +x $bindir/clash
 		else
 			logger "未找到clash核心，正在下载！" 33
-			[ -z "$clashcore" ] && [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clashpre || clashcore=clash
+			if [ -z "$clashcore" ];then
+				[ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clashpre || clashcore=clash
+			fi
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
@@ -507,10 +507,11 @@ bfstart(){
 			mv $clashdir/Country.mmdb $bindir/Country.mmdb
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			webget $bindir/Country.mmdb $update_url/bin/Country.mmdb
+			[ -z "$geotype" ] && geotype=cn_mini.mmdb
+			webget $bindir/Country.mmdb $update_url/bin/$geotype
 			[ "$?" = 1 ] && logger "数据库下载失败，已退出！" 31 && rm -f $bindir/Country.mmdb && exit 1
-			GeoIP_v=$(date +"%Y%m%d")
-			setconfig GeoIP_v $GeoIP_v
+			Geo_v=$(date +"%Y%m%d")
+			setconfig Geo_v $Geo_v
 		fi
 	fi
 	#检查dashboard文件
@@ -549,7 +550,8 @@ afstart(){
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
-		logger `$bindir/clash -t -d $bindir 1>&0` 0
+		$bindir/clash -t -d $bindir
+		echo "$($bindir/clash -t -d $bindir)" >> $clashdir/log
 		$0 stop
 		exit 1
 	fi
