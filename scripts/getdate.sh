@@ -554,7 +554,7 @@ getdb(){
 }
 setdb(){
 	dbdir(){
-		if [ -w /www/clash -a -n "$(pidof nginx)" ];then
+		if [ -w /www -a -n "$(pidof nginx)" ];then
 			echo -----------------------------------------------
 			echo -e "请选择面板\033[33m安装目录：\033[0m"
 			echo -----------------------------------------------
