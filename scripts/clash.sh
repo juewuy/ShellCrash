@@ -124,6 +124,8 @@ clashstart(){
 }
 #功能相关
 setport(){
+	[ -z "$secret" ] && secret=未设置
+	[ -z "$authentication" ] && authentication=未设置
 	inputport(){
 		read -p "请输入端口号(1000-65535) > " portx
 		if [ -z "$portx" ]; then
@@ -143,19 +145,6 @@ setport(){
 			setport
 		fi
 	}
-	source $ccfg
-	[ -z "$secret" ] && secret=未设置
-	[ -z "$authentication" ] && authentication=未设置
-	if [ -n "$(pidof clash)" ];then
-		echo -----------------------------------------------
-		echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
-		read -p "是否停止clash服务？(1/0) > " res
-		if [ "$res" = "1" ];then
-			$clashdir/start.sh stop
-		else
-			clashadv
-		fi
-	fi
 	echo -----------------------------------------------
 	echo -e " 1 修改Http/Sock5端口：	\033[36m$mix_port\033[0m"
 	echo -e " 2 设置Http/Sock5密码：	\033[36m$authentication\033[0m"
@@ -234,22 +223,13 @@ setport(){
 	fi	
 }
 setdns(){
-	source $ccfg
-	if [ "$dns_no" = "已禁用" ];then
-		read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
-		if [ "$res" = "1" ];then
-			sed -i "/dns_no*/"d $ccfg
-		else
-			clashadv
-		fi
-	fi
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
 	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m | \033[0m分隔一次性输入"
-	echo -e "\033[33m使用redir-host时，fallback组暂不支持tls或者https形式的DNS\033[0m"
+	echo -e "\033[33m必须拥有本地根证书文件才能使用dot/doh类型的加密dns\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
 	echo -e " 2 修改\033[36mfallback_DNS\033[0m"
@@ -260,7 +240,6 @@ setdns(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
 		errornum
-		clashadv
 	elif [ "$num" = 1 ]; then
 		read -p "请输入新的DNS > " dns_nameserver
 		dns_nameserver=$(echo $dns_nameserver | sed 's/|/\,\ /g')
@@ -268,30 +247,30 @@ setdns(){
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
+		setdns
 	elif [ "$num" = 2 ]; then
 		read -p "请输入新的DNS > " dns_fallback
 		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /g')
 		if [ -n "$dns_fallback" ]; then
 			setconfig dns_fallback \'"$dns_fallback"\' 
 			echo -e "\033[32m设置成功！！！\033[0m"
-		fi	
+		fi
+		setdns
 	elif [ "$num" = 3 ]; then
 		dns_nameserver=""
 		dns_fallback=""
 		sed -i "/dns_nameserver*/"d $ccfg
 		sed -i "/dns_fallback*/"d $ccfg
 		echo -e "\033[33mDNS配置已重置！！！\033[0m"
+		setdns
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
 		echo -e "\033[31m仅限搭配其他DNS服务(比如dnsmasq、smartDNS)时使用！\033[0m"
 		dns_no=已禁用
 		setconfig dns_no $dns_no
 		echo -e "\033[33m已禁用内置DNS！！！\033[0m"
-		clashadv
-	else
-		clashadv
+		setdns
 	fi
-	setdns
 }
 checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
@@ -321,7 +300,7 @@ macfilter(){
 		echo -----------------------------------------------
 		read -p "请输入对应序号或直接输入mac地址 > " num
 		if [ -z "$num" -o "$num" = 0 ]; then
-			macfilter
+			i=
 		elif [ -n "$(echo $num | grep -E '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')" ];then
 			if [ -z "$(cat $clashdir/mac | grep -E "$num")" ];then
 				echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >> $clashdir/mac
@@ -329,6 +308,7 @@ macfilter(){
 				echo -----------------------------------------------
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
 			fi
+			add_mac
 		elif [ $num -le $(cat $dhcpdir | awk 'END{print NR}') 2>/dev/null ]; then
 			macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
 			if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
@@ -337,41 +317,43 @@ macfilter(){
 				echo -----------------------------------------------
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
 			fi
+			add_mac
 		else
 			echo -----------------------------------------------
 			echo -e "\033[31m输入有误，请重新输入！\033[0m"
+			add_mac
 		fi
-		add_mac
 	}
 	del_mac(){
 		echo -----------------------------------------------
 		if [ -z "$(cat $clashdir/mac)" ];then
 			echo -e "\033[31m列表中没有需要移除的设备！\033[0m"
-			macfilter
-		fi
-		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[0m"
-		i=1
-		for mac in $(cat $clashdir/mac); do
-			dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
-			dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
-			dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
-			echo -e " $i \033[32m$dev_ip \033[36m$dev_mac \033[32m$dev_name\033[0m"
-			i=$((i+1))
-		done
-		echo -----------------------------------------------
-		echo -e "\033[0m 0 或回车 结束删除"
-		read -p "请输入需要移除的设备的对应序号 > " num
-		if [ -z "$num" ]||[ "$num" -le 0 ]; then
-			macfilter
-		elif [ $num -le $(cat $clashdir/mac | wc -l) ];then
-			sed -i "${num}d" $clashdir/mac
-			echo -----------------------------------------------
-			echo -e "\033[32m对应设备已移除！\033[0m"
 		else
+			echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[0m"
+			i=1
+			for mac in $(cat $clashdir/mac); do
+				dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
+				dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
+				dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
+				echo -e " $i \033[32m$dev_ip \033[36m$dev_mac \033[32m$dev_name\033[0m"
+				i=$((i+1))
+			done
 			echo -----------------------------------------------
-			echo -e "\033[31m输入有误，请重新输入！\033[0m"
+			echo -e "\033[0m 0 或回车 结束删除"
+			read -p "请输入需要移除的设备的对应序号 > " num
+			if [ -z "$num" ]||[ "$num" -le 0 ]; then
+				n=
+			elif [ $num -le $(cat $clashdir/mac | wc -l) ];then
+				sed -i "${num}d" $clashdir/mac
+				echo -----------------------------------------------
+				echo -e "\033[32m对应设备已移除！\033[0m"
+				del_mac
+			else
+				echo -----------------------------------------------
+				echo -e "\033[31m输入有误，请重新输入！\033[0m"
+				del_mac
+			fi
 		fi
-		del_mac
 	}
 	echo -----------------------------------------------
 	[ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
@@ -403,9 +385,8 @@ macfilter(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		errornum
-		clashcfg
 	elif [ "$num" = 0 ]; then
-		clashcfg
+		i=
 	elif [ "$num" = 1 ]; then
 		macfilter_type=$macfilter_over
 		setconfig macfilter_type $macfilter_type
@@ -414,8 +395,10 @@ macfilter(){
 		macfilter
 	elif [ "$num" = 2 ]; then	
 		add_mac
+		macfilter
 	elif [ "$num" = 3 ]; then	
 		del_mac
+		macfilter
 	elif [ "$num" = 4 ]; then
 		:>$clashdir/mac
 		echo -----------------------------------------------
@@ -493,32 +476,38 @@ localproxy(){
 }
 clashcfg(){
 	set_redir_mod(){
+		set_redir_config(){
+			setconfig redir_mod $redir_mod
+			setconfig dns_mod $dns_mod 
+			echo -----------------------------------------------	
+			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
+		}
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -e "\033[36mTun及混合模式必须使用clashpre核心！\033[0m"
 		echo -----------------------------------------------
-		echo " 1 Redir模式：CPU以及内存占用较低"
-		echo "              但不支持UDP流量转发"
-		echo "              适合非游戏用户使用"
-		echo " 2 Tun模式：  支持UDP转发且延迟最低"
-		echo "              CPU占用极高，只支持fake-ip模式"
-		echo "              适合游戏用户、非大流量用户"
-		echo " 3 混合模式： 使用redir转发TCP，Tun转发UPD"
-		echo "              速度较快，内存占用略高"
-		echo "              适合游戏用户、综合用户"
-		echo " 4 纯净模式： 不设置iptables静态路由"
-		echo "              必须手动配置http/sock5代理"
-		echo "              或使用内置的PAC文件配置代理"
+		echo -e " 1 Redir模式：CPU以及内存\033[33m占用较低\033[0m"
+		echo -e "              但\033[31m不支持UDP\033[0m流量转发"
+		echo -e "              适合\033[32m非游戏用户\033[0m使用"
+		echo -e " 2 Tun模式：  \033[33m支持UDP转发\033[0m且延迟最低"
+		echo -e "              \033[31mCPU占用极高\033[0m，只支持fake-ip模式"
+		echo -e "              适合\033[32m游戏用户、非大流量用户\033[0m"
+		echo -e " 3 混合模式： 使用redir转发TCP，Tun转发UPD"
+		echo -e "              \033[33m速度较快\033[0m，\033[31m内存占用略高\033[0m"
+		echo -e "              适合\033[32m游戏用户、综合用户\033[0m"
+		echo -e " 4 纯净模式： 不设置iptables静态路由"
+		echo -e "              必须\033[33m手动配置\033[0mhttp/sock5代理"
+		echo -e "              或使用内置的PAC文件配置代理"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
 		if [ -z "$num" ]; then
 			errornum
-			clashcfg
 		elif [ "$num" = 0 ]; then
-			clashcfg
+			i=
 		elif [ "$num" = 1 ]; then
 			redir_mod=Redir模式
+			set_redir_config
 		elif [ "$num" = 2 ]; then
 			modinfo tun >/dev/null 2>&1
 			if [ "$?" != 0 ];then
@@ -528,6 +517,7 @@ clashcfg(){
 				if [ "$res" = 1 ];then
 					redir_mod=Tun模式
 					dns_mod=fake-ip
+					set_redir_config
 				else
 					set_redir_mod
 				fi
@@ -535,10 +525,10 @@ clashcfg(){
 				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
 				sleep 1
-				clashcfg
 			else	
 				redir_mod=Tun模式
 				dns_mod=fake-ip
+				set_redir_config
 			fi
 		elif [ "$num" = 3 ]; then
 			modinfo tun >/dev/null 2>&1
@@ -547,6 +537,7 @@ clashcfg(){
 				read -p "是否强制开启？可能无法正常使用！(1/0) > " res
 				if [ "$res" = 1 ];then
 					redir_mod=混合模式
+					set_redir_config
 				else
 					set_redir_mod
 				fi
@@ -554,12 +545,13 @@ clashcfg(){
 				echo -----------------------------------------------
 				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
 				sleep 1
-				clashcfg
 			else	
 				redir_mod=混合模式	
+				set_redir_config
 			fi
 		elif [ "$num" = 4 ]; then
-			redir_mod=纯净模式			
+			redir_mod=纯净模式	
+			set_redir_config		
 			echo -----------------------------------------------
 			echo -e "\033[33m当前模式需要手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
 			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m$mix_port\033[0m"
@@ -569,40 +561,37 @@ clashcfg(){
 			sleep 2
 		else
 			errornum
-			clashcfg
 		fi
-		setconfig redir_mod $redir_mod
-		setconfig dns_mod $dns_mod 
-		echo -----------------------------------------------	
-		echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
+
 	}
 	set_dns_mod(){
 		echo -----------------------------------------------
 		echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
-		echo " 1 fake-ip模式：   响应速度更快"
-		echo "                   可能与某些局域网设备有冲突"
-		echo " 2 redir_host模式：兼容性更好"
-		echo "                   不支持Tun模式，可能存在DNS污染"
+		echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
+		echo -e "                   可能与某些局域网设备有冲突"
+		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
+		echo -e "                   不支持Tun模式，可能存在DNS污染"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
 			errornum
-			clashcfg
 		elif [ "$num" = 0 ]; then
-			clashcfg
+			i=
 		elif [ "$num" = 1 ]; then
 			dns_mod=fake-ip
+			setconfig dns_mod $dns_mod 
+			echo -----------------------------------------------	
+			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		elif [ "$num" = 2 ]; then
 			dns_mod=redir_host
+			setconfig dns_mod $dns_mod 
+			echo -----------------------------------------------	
+			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		else
 			errornum
-			clashcfg
 		fi
-		setconfig dns_mod $dns_mod 
-		echo -----------------------------------------------	
-		echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 	}
 	
 	#获取设置默认显示
@@ -620,7 +609,7 @@ clashcfg(){
 	echo -e " 2 切换DNS运行模式：	\033[36m$dns_mod\033[0m"
 	echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
-	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————当前为$macfilter_type模式"
+	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑名单/白名单进行过滤"
 	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或GUI/api配置本机代理"
 	echo -----------------------------------------------
 	echo -e " 9 \033[32m重启\033[0mclash服务"
@@ -671,6 +660,7 @@ clashcfg(){
 
 	elif [ "$num" = 5 ]; then	
 		macfilter
+		clashcfg
 		
 	elif [ "$num" = 6 ]; then	
 		localproxy
@@ -796,11 +786,31 @@ clashadv(){
 		clashadv
 		
 	elif [ "$num" = 5 ]; then
-		setdns
+		source $ccfg
+		if [ "$dns_no" = "已禁用" ];then
+			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
+			if [ "$res" = "1" ];then
+				sed -i "/dns_no*/"d $ccfg
+				setdns
+			fi
+		else
+			setdns
+		fi
 		clashadv	
 		
 	elif [ "$num" = 6 ]; then
-		setport
+		source $ccfg
+		if [ -n "$(pidof clash)" ];then
+			echo -----------------------------------------------
+			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
+			read -p "是否停止clash服务？(1/0) > " res
+			if [ "$res" = "1" ];then
+				$clashdir/start.sh stop
+				setport
+			fi
+		else
+			setport
+		fi
 		clashadv
 		
 	elif [ "$num" = 7 ]; then
@@ -864,15 +874,13 @@ clashcron(){
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then 
 			errornum
-			clashcron
 		elif [ "$num" = 0 ]; then
-			clashcron
+			i=
 		elif [ "$num" = 9 ]; then
 			crontab -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && crontab /tmp/conf
 			rm -f /tmp/conf
 			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
-			clashcron
 		elif [ "$num" = 8 ]; then	
 			week='*'
 			week1=每天
@@ -917,7 +925,6 @@ clashcron(){
 				echo -----------------------------------------------
 				echo -e "\033[31m定时任务已添加！！！\033[0m"
 			fi
-			clashcron
 	}
 	#定时任务菜单
 	echo -----------------------------------------------
@@ -936,31 +943,30 @@ clashcron(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
 		errornum
-		clashsh
-		
 	elif [ "$num" = 0 ]; then
-		clashsh
-		
+		i=
 	elif [ "$num" = 1 ]; then
 		cronname=重启clash服务
 		cronset="$clashdir/start.sh restart"
 		setcron
+		clashcron
 	elif [ "$num" = 2 ]; then
 		cronname=停止clash服务
 		cronset="$clashdir/start.sh stop"
 		setcron
+		clashcron
 	elif [ "$num" = 3 ]; then
 		cronname=开启clash服务
 		cronset="$clashdir/start.sh start"
 		setcron
+		clashcron
 	elif [ "$num" = 4 ]; then	
 		cronname=更新订阅链接
 		cronset="$clashdir/start.sh updateyaml"
 		setcron	
-		
+		clashcron
 	else
 		errornum
-		clashsh
 	fi
 }
 #主菜单
@@ -1024,6 +1030,7 @@ clashsh(){
 
 	elif [ "$num" = 5 ]; then
 		clashcron
+		clashsh
     
 	elif [ "$num" = 6 ]; then
 		source $clashdir/getdate.sh && clashlink

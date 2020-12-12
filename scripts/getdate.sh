@@ -309,6 +309,7 @@ clashlink(){
 		
 	elif [ "$num" = 5 ];then
 		clashcron
+		clashlink
 	else
 		errornum
 		clashlink
