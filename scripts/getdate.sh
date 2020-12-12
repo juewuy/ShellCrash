@@ -188,7 +188,7 @@ getlink(){
 			
 		elif [ "$url" = 0 ];then
 			Url=""
-			clashlink
+			i=100
 			
 		else
 			echo -----------------------------------------------
@@ -225,6 +225,7 @@ getlink2(){
 		echo -----------------------------------------------
 		echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
 		echo -e "\033[33m仅支持http、https、ftp以及ftps链接！\033[0m"
+		sleep 1
 		clashlink
 	fi
 }
@@ -244,7 +245,6 @@ clashlink(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ];then
 		errornum
-		clashlink
 	elif [ "$num" = 0 ];then
 		i=
 	elif [ "$num" = 1 ];then
@@ -261,6 +261,7 @@ clashlink(){
 			fi
 		fi
 		getlink
+		clashlink
 	  
 	elif [ "$num" = 2 ];then
 		getlink2
@@ -270,6 +271,7 @@ clashlink(){
 		if [ ! -f "$yaml".bak ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
+			clashlink
 		else
 			echo -----------------------------------------------
 			echo -e 备份文件共有"\033[32m`wc -l < $yamlbak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < $yaml`\033[0m"行内容
@@ -278,9 +280,11 @@ clashlink(){
 				mv $yamlbak $yaml
 				echo -----------------------------------------------
 				echo -e "\033[32m配置文件已还原！请手动重启clash服务！\033[0m"
+				sleep 1
 			else 
 				echo -----------------------------------------------
 				echo -e "\033[31m操作已取消！返回上级菜单！\033[0m"
+				clashlink
 			fi
 		fi
 		
@@ -298,6 +302,8 @@ clashlink(){
 			read -p "确认更新配置文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
 				getyaml
+			else
+				clashlink
 			fi
 		fi
 		

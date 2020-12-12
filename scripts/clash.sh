@@ -629,9 +629,8 @@ clashcfg(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		errornum
-		clashsh
 	elif [ "$num" = 0 ]; then
-		clashsh  
+		i=
 	elif [ "$num" = 1 ]; then
 		if [ "$USER" != "root" -a "$USER" != "admin" ];then
 			echo -----------------------------------------------
@@ -680,10 +679,8 @@ clashcfg(){
 		
 	elif [ "$num" = 9 ]; then	
 		clashstart
-		clashsh
 	else
 		errornum
-		clashsh
 	fi
 }
 clashadv(){
@@ -714,9 +711,8 @@ clashadv(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		errornum
-		clashsh
 	elif [ "$num" = 0 ]; then
-		clashsh  
+		i=
 		
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
@@ -849,10 +845,8 @@ EOF
 	elif [ "$num" = 9 ]; then	
 		clashstart
 		sleep 1
-		clashsh
 	else
 		errornum
-		clashsh
 	fi
 }
 clashcron(){
@@ -999,13 +993,14 @@ clashsh(){
   
 	elif [ "$num" = 2 ]; then
 		clashcfg
+		clashsh
 
 	elif [ "$num" = 3 ]; then
 		$clashdir/start.sh stop
 		echo -----------------------------------------------
 		echo -e "\033[31mClash服务已停止！\033[0m"
 		echo -----------------------------------------------
-		exit;
+		clashsh
 
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
@@ -1033,9 +1028,11 @@ clashsh(){
     
 	elif [ "$num" = 6 ]; then
 		source $clashdir/getdate.sh && clashlink
+		clashsh
 		
 	elif [ "$num" = 7 ]; then
 		clashadv
+		clashsh
 
 	elif [ "$num" = 8 ]; then
 		source $clashdir/getdate.sh && testcommand
