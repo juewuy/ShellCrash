@@ -614,6 +614,10 @@ getyaml)
 		getconfig
 		getyaml
 		;;
+updateyaml)	
+		$0 getyaml
+		$0 restart
+		;;
 webget)
 		webget $2 $3 $4 $5
 		;;

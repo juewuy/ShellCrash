@@ -955,7 +955,7 @@ clashcron(){
 		setcron
 	elif [ "$num" = 4 ]; then	
 		cronname=更新订阅链接
-		cronset="$clashdir/start.sh getyaml"
+		cronset="$clashdir/start.sh updateyaml"
 		setcron	
 		
 	else
@@ -999,7 +999,6 @@ clashsh(){
 		$clashdir/start.sh stop
 		echo -----------------------------------------------
 		echo -e "\033[31mClash服务已停止！\033[0m"
-		echo -----------------------------------------------
 		clashsh
 
 	elif [ "$num" = 4 ]; then
