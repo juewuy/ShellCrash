@@ -472,7 +472,7 @@ function FindProxyForURL(url, host) {
 	)
 		return "DIRECT";
 	else
-		return "SOCKS5 $host:$mix_port; PROXY $host:$mix_port; DIRECT;"
+		return "PROXY 192.168.31.1:7890; DIRECT; SOCKS5 192.168.31.1:7890"
 }
 EOF
 	compare /tmp/clash_pac $bindir/ui/pac

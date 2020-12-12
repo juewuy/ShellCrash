@@ -833,6 +833,8 @@ update(){
 			sed -i '/export clashdir=*/'d $profile
 			sed -i '/all_proxy/'d $profile
 			sed -i '/ALL_PROXY/'d $profile
+			cronset "clash服务"
+			cronset "订阅链接"
 			echo -----------------------------------------------
 			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
 			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"

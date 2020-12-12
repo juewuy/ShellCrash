@@ -122,6 +122,13 @@ clashstart(){
 	sleep 1
 	[ -n "$(pidof clash)" ] && startover
 }
+checkrestart(){
+	echo -----------------------------------------------
+	echo -e "\033[32m检测到配置文件已变更，需要重启clash服务以生效！\033[0m"
+	echo -----------------------------------------------
+	read -p "是否现在重启clash服务？(1/0) > " res
+	[ "$res" = 1 ] && clashstart
+}
 #功能相关
 setport(){
 	[ -z "$secret" ] && secret=未设置
@@ -998,7 +1005,10 @@ clashsh(){
 		exit;
   
 	elif [ "$num" = 2 ]; then
+		checkcfg=$(cat $ccfg)
 		clashcfg
+		checkcfg_new=$(cat $ccfg)
+		[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		clashsh
 
 	elif [ "$num" = 3 ]; then
@@ -1037,7 +1047,10 @@ clashsh(){
 		clashsh
 		
 	elif [ "$num" = 7 ]; then
+		checkcfg=$(cat $ccfg)
 		clashadv
+		checkcfg_new=$(cat $ccfg)
+		[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		clashsh
 
 	elif [ "$num" = 8 ]; then
