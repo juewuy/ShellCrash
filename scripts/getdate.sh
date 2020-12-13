@@ -121,8 +121,8 @@ getyaml(){
 	if [ "$?" = 0 ];then
 		if [ "$inuserguide" != 1 ];then
 			read -p "是否启动clash服务以使配置文件生效？(1/0) > " res 
-			[ "$res" = 1 ] && clashstart
-			exit 0
+			[ "$res" = 1 ] && clashstart || clashsh
+			exit;
 		fi
 	fi
 }
@@ -145,26 +145,26 @@ getlink(){
 		echo -e " 5 \033[0m选取在线生成服务器\033[0m"
 		echo -e " 0 \033[31m撤销输入并返回上级菜单\033[0m"
 		echo -----------------------------------------------
-		read -p "请直接输入第${i}个链接或对应数字选项 > " url
-		test=$(echo $url | grep "://")
-		url=`echo ${url/\ \(*\)/''}`   #删除恶心的超链接内容
-		url=`echo ${url/*\&url\=/""}`   #将clash完整链接还原成单一链接
-		url=`echo ${url/\&config\=*/""}`   #将clash完整链接还原成单一链接
-		url=`echo ${url//\&/\%26}`   #将分隔符 & 替换成urlcode：%26
+		read -p "请直接输入第${i}个链接或对应数字选项 > " link
+		test=$(echo $link | grep "://")
+		link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
+		link=`echo ${link/*\&url\=/""}`   #将clash完整链接还原成单一链接
+		link=`echo ${link/\&config\=*/""}`   #将clash完整链接还原成单一链接
+		link=`echo ${link//\&/\%26}`   #将分隔符 & 替换成urlcode：%26
 		if [ -n "$test" ];then
-			if [ -z "$Url" ];then
-				Url="$url"
+			if [ -z "$Url_link" ];then
+				Url_link="$link"
 			else
-				Url="$Url"\|"$url"
+				Url_link="$Url_link"\|"$link"
 			fi
 			i=$((i+1))
 				
-		elif [ "$url" = '1' ]; then
-			if [ -n "$Url" ];then
+		elif [ "$link" = '1' ]; then
+			if [ -n "$Url_link" ];then
 				i=100
 				#将用户链接写入mark
 				sed -i '/Https=*/'d $ccfg
-				setconfig Url \'$Url\'
+				setconfig Url \'$Url_link\'
 				Https=""
 				#获取在线yaml文件
 				getyaml
@@ -174,20 +174,20 @@ getlink(){
 				sleep 1
 			fi
 			
-		elif [ "$url" = '2' ]; then
+		elif [ "$link" = '2' ]; then
 			linkfilter
 			
-		elif [ "$url" = '3' ]; then
+		elif [ "$link" = '3' ]; then
 			linkfilter2
 			
-		elif [ "$url" = '4' ]; then
+		elif [ "$link" = '4' ]; then
 			linkconfig
 			
-		elif [ "$url" = '5' ]; then
+		elif [ "$link" = '5' ]; then
 			linkserver
 			
-		elif [ "$url" = 0 ];then
-			Url=""
+		elif [ "$link" = 0 ];then
+			Url_link=""
 			i=100
 			
 		else
@@ -204,29 +204,31 @@ getlink2(){
 	echo -----------------------------------------------
 	echo -e "\033[33m0 返回上级菜单\033[0m"
 	echo -----------------------------------------------
-	read -p "请输入完整链接 > " Https
-	test=$(echo $Https | grep -iE "tp.*://" )
-	Https=`echo ${Https/\ \(*\)/''}`   #删除恶心的超链接内容
-	if [ -n "$Https" -a -n "$test" ];then
+	read -p "请输入完整链接 > " link
+	test=$(echo $link | grep -iE "tp.*://" )
+	link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
+	if [ -n "$link" -a -n "$test" ];then
 		echo -----------------------------------------------
 		echo -e 请检查输入的链接是否正确：
-		echo -e "\033[4;32m$Https\033[0m"
+		echo -e "\033[4;32m$link\033[0m"
 		read -p "确认导入配置文件？原配置文件将被更名为config.yaml.bak![1/0] > " res
 			if [ "$res" = '1' ]; then
 				#将用户链接写入mark
 				sed -i '/Url=*/'d $ccfg
-				setconfig Https \'$Https\'
+				setconfig Https \'$link\'
 				#获取在线yaml文件
 				getyaml
+			else
+				getlink2
 			fi
-	elif [ "$Https" = 0 ];then
-		clashlink
+	elif [ "$link" = 0 ];then
+		i=
 	else
 		echo -----------------------------------------------
 		echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
 		echo -e "\033[33m仅支持http、https、ftp以及ftps链接！\033[0m"
 		sleep 1
-		clashlink
+		getlink2
 	fi
 }
 clashlink(){
@@ -250,14 +252,16 @@ clashlink(){
 	elif [ "$num" = 1 ];then
 		if [ -n "$Url" ];then
 			echo -----------------------------------------------
-			echo -e "\033[33m检测到已记录的订阅链接：\033[0m"
+			echo -e "\033[33m检测到已记录的链接内容：\033[0m"
 			echo -e "\033[4;32m$Url\033[0m"
 			echo -----------------------------------------------
 			read -p "清空链接/追加导入？[1/0] > " res
 			if [ "$res" = '1' ]; then
-				Url=""
+				Url_link=""
 				echo -----------------------------------------------
 				echo -e "\033[31m链接已清空！\033[0m"
+			else
+				Url_link=$Url
 			fi
 		fi
 		getlink
@@ -265,6 +269,7 @@ clashlink(){
 	  
 	elif [ "$num" = 2 ];then
 		getlink2
+		clashlink
 		
 	elif [ "$num" = 3 ];then
 		yamlbak=$yaml.bak
