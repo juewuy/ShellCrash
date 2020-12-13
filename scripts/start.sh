@@ -420,7 +420,13 @@ web_save(){
 		fi
 	}
 	#使用get_save获取面板节点设置
-	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save_$USER
+	#get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save_$USER
+	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
+	while read line ;do
+		def=$(echo $line | awk -F "[\[,]" '{print $2}')
+		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g'| sed 's/,//g')
+		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' >> /tmp/clash_web_save_$USER
+	done < /tmp/clash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
 	[ ! -s /tmp/clash_web_save_$USER ] && compare /tmp/clash_web_save_$USER $clashdir/web_save
 	[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
