@@ -385,27 +385,29 @@ start_udp(){
 }
 stop_iptables(){
     #重置iptables规则
-	iptables -t nat -D PREROUTING -p tcp -j clash > /dev/null 2>&1
-	iptables -t nat -D PREROUTING -p udp -j clash_dns > /dev/null 2>&1
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash_dns > /dev/null 2>&1
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash_dns > /dev/null 2>&1
-	iptables -t nat -F clash > /dev/null 2>&1
-	iptables -t nat -X clash > /dev/null 2>&1
-	iptables -t nat -F clash_dns > /dev/null 2>&1
-	iptables -t nat -X clash_dns > /dev/null 2>&1
-	iptables -D FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	ip rule del fwmark 1 table 100  2> /dev/null
+	ip route del local default dev lo table 100 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p udp -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash_dns 2> /dev/null
+	iptables -t nat -F clash 2> /dev/null
+	iptables -t nat -X clash 2> /dev/null
+	iptables -t nat -F clash_dns 2> /dev/null
+	iptables -t nat -X clash_dns 2> /dev/null
+	iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 	#重置udp规则
-	iptables -t mangle -D PREROUTING -p udp -j clash > /dev/null 2>&1
-	iptables -t mangle -F clash > /dev/null 2>&1
-	iptables -t mangle -X clash > /dev/null 2>&1
+	iptables -t mangle -D PREROUTING -p udp -j clash 2> /dev/null
+	iptables -t mangle -F clash 2> /dev/null
+	iptables -t mangle -X clash 2> /dev/null
 	#重置ipv6规则
-	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 > /dev/null 2>&1
-	ip6tables -t nat -D PREROUTING -p udp -j clashv6_dns > /dev/null 2>&1
-	ip6tables -t nat -F clashv6 > /dev/null 2>&1
-	ip6tables -t nat -X clashv6 > /dev/null 2>&1
-	ip6tables -t nat -F clashv6_dns > /dev/null 2>&1
-	ip6tables -t nat -X clashv6_dns > /dev/null 2>&1
-	ip6tables -D FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
+	ip6tables -t nat -D PREROUTING -p udp -j clashv6_dns 2> /dev/null
+	ip6tables -t nat -F clashv6 2> /dev/null
+	ip6tables -t nat -X clashv6 2> /dev/null
+	ip6tables -t nat -F clashv6_dns 2> /dev/null
+	ip6tables -t nat -X clashv6_dns 2> /dev/null
+	ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 }
 #面板配置保存相关
 web_save(){

@@ -33,22 +33,22 @@ getconfig(){
 	#dashboard目录位置
 	[ -d $clashdir/ui ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
 	[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
-	#开机自启相关
+	#开机自启检测
 	if [ -f /etc/rc.common ];then
 		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable_rc || autostart=disable_rc
-	else
+	elif [ -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
 		[ -n "$(systemctl is-enabled clash.service 2>&1 | grep enable)" ] && autostart=enable_sys || autostart=disable_sys
 	fi
 	#开机自启描述
-	if [ "$start_old" = "已开启" ];then
-		auto="\033[32m保守模式\033[0m"
-		auto1="代理本机：\033[36m$local_proxy\033[0m"
-	elif [ "$autostart" = "enable_rc" -o "$autostart" = "enable_sys" ]; then
+	if [ "$autostart" = "enable_rc" -o "$autostart" = "enable_sys" ]; then
 		auto="\033[32m已设置开机启动！\033[0m"
 		auto1="\033[36m禁用\033[0mclash开机启动"
-	else
+	elif [ "$autostart" = "disable_rc" -o "$autostart" = "disable_sys" ]; then
 		auto="\033[31m未设置开机启动！\033[0m"
 		auto1="\033[36m允许\033[0mclash开机启动"
+	else
+		auto="\033[32m保守模式\033[0m"
+		auto1="代理本机：\033[36m$local_proxy\033[0m"
 	fi
 	#获取运行模式
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式

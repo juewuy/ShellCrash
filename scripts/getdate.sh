@@ -490,6 +490,7 @@ getgeo(){
 		mv -f /tmp/Country.mmdb $bindir/Country.mmdb
 		echo -----------------------------------------------
 		echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
+		Geo_v=$GeoIP_v
 		setconfig Geo_v $GeoIP_v
 		setconfig geotype $geotype
 	fi
