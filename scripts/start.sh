@@ -37,7 +37,9 @@ setconfig(){
 	echo "${1}=${2}" >> $configpath
 }
 compare(){
-	if command -v cmp >/dev/null 2>&1; then
+	if [ ! -f $1 -o ! -f $2 ];then
+		return 1
+	elif command -v cmp >/dev/null 2>&1;then
 		cmp -s $1 $2
 	else
 		[ "$(cat $1)" = "$(cat $2)" ] && return 0 || return 1

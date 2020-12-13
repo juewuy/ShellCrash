@@ -384,8 +384,6 @@ getsh(){
 		echo -e "\033[32m管理脚本更新成功!\033[0m"
 		echo -----------------------------------------------
 		exit;
-		else
-		update
 	fi
 }
 getcpucore(){
@@ -397,7 +395,7 @@ getcpucore(){
 	[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
 	if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
 		mipstype=$(echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}') #通过判断大小端判断mips或mipsle
-		[ "$mipstype" = "1" ] && cpucore="mipsle-softfloat" || cpucore="mips-softfloat"
+		[ "$mipstype" != "1" ] && cpucore="mips-softfloat" || cpucore="mipsle-softfloat"
 	fi
 	[ -n "$cpucore" ] && setconfig cpucore $cpucore
 }
@@ -425,13 +423,18 @@ getcore(){
 	#生成链接
 	corelink="$update_url/bin/$clashcore/clash-linux-$cpucore"
 	#获取在线clash核心文件
+	echo -----------------------------------------------
+	echo 正在在线获取clash核心文件……
 	webget /tmp/clash.new $corelink
 	if [ "$result" != "200" ];then
-		exit 1
+		echo -e "\033[31m核心文件下载失败！\033[0m"
 	else
+		echo -e "\033[32m$clashcore核心下载成功！\033[0m"
 		mv -f /tmp/clash.new $bindir/clash
 		chmod  777 $bindir/clash  #授予权限
-	fi	
+		setconfig clashcore $clashcore
+		setconfig clashv $version
+	fi
 }
 setcore(){
 	#获取核心及版本信息
@@ -455,15 +458,16 @@ setcore(){
 	read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
 			errornum
-			update
 		elif [ "$num" = 0 ]; then
-			update
+			i=
 		elif [ "$num" = 1 ]; then
 			clashcore=clash
 			version=$clash_v
+			getcore
 		elif [ "$num" = 2 ]; then
 			clashcore=clashpre
 			version=$clashpre_v
+			getcore
 		elif [ "$num" = 3 ]; then
 			setcpucore
 			setcore
@@ -471,16 +475,6 @@ setcore(){
 			errornum
 			update
 		fi
-	echo -----------------------------------------------
-	echo 在线获取clash核心文件……
-	getcore
-	if [ "$?" = 0 ];then
-		echo -e "\033[32m$clashcore核心下载成功！\033[0m"
-		setconfig clashcore $clashcore
-		setconfig clashv $version
-	else
-		echo -e "\033[31m核心文件下载失败！\033[0m"
-	fi
 }
 getgeo(){
 	echo -----------------------------------------------
@@ -631,29 +625,24 @@ getcrt(){
 		echo -e "\033[31m检测到您的设备已经安装好根证书文件了！\033[0m"
 		echo -----------------------------------------------
 		read -p "是否覆盖安装？[1/0] > " res
-		if [ -z "$res" ]; then
-			update
-		elif [ "$res" = 1 ]; then
+		if [ "$res" = 1 ]; then
 			rm -rf $crtdir
-		else
-			update
+			dblink="${update_url}/bin/ca-certificates.crt"
+			echo -----------------------------------------------
+			echo 正在连接服务器获取安装文件…………
+			webget /tmp/ca-certificates.crt $dblink
+			if [ "$result" != "200" ];then
+				echo -----------------------------------------------
+				echo -e "\033[31m文件下载失败！\033[0m"
+			else
+				echo -----------------------------------------------
+				mv -f /tmp/ca-certificates.crt $crtdir
+				echo -e "\033[32m证书安装成功！\033[0m"
+				sleep 1
+			fi
 		fi
 	fi
-	dblink="${update_url}/bin/ca-certificates.crt"
-	echo -----------------------------------------------
-	echo 正在连接服务器获取安装文件…………
-	webget /tmp/ca-certificates.crt $dblink
-	if [ "$result" != "200" ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m文件下载失败！\033[0m"
-		echo -----------------------------------------------
-		getcrt
-	else
-		echo -----------------------------------------------
-		mv -f /tmp/ca-certificates.crt $crtdir
-		echo -e "\033[32m证书安装成功！\033[0m"
-		sleep 1
-	fi
+
 }
 setcrt(){
 	echo -----------------------------------------------
@@ -664,9 +653,9 @@ setcrt(){
 	read -p "确认安装？(1/0) > " res
 
 	if [ -z "$res" ];then
-		update
+		errornum
 	elif [ "$res" = '0' ]; then
-		update
+		i=
 	elif [ "$res" = '1' ]; then
 		if [ -d /etc/ssl/certs ];then
 			getcrt
@@ -674,15 +663,19 @@ setcrt(){
 			echo -----------------------------------------------
 			echo -e "\033[33m设备可能未安装openssl或者证书文件目录不是/etc/ssl/certs，无法安装！\033[0m"
 			sleep 1
-			update
 		fi
 	else
 		errornum
-		update
 	fi
 }
 setserver(){
-
+	saveserver(){
+		#写入mark文件
+		setconfig update_url \'$update_url\'
+		echo -----------------------------------------------
+		echo -e "\033[32m源地址更新成功！\033[0m"
+		release_new=""
+	}
 	echo -----------------------------------------------
 	echo -e "\033[30;47m您可以在此处切换在线更新时使用的资源地址\033[0m"
 	echo -e "当前源：\033[4;32m$update_url\033[0m"
@@ -696,20 +689,23 @@ setserver(){
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
 		errornum
-		update
 	elif [ "$num" = 1 ]; then
 		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
+		saveserver
 	elif [ "$num" = 2 ]; then
 		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
+		saveserver
 	elif [ "$num" = 3 ]; then
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
+		saveserver
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
 		read -p "请输入个人源路径 > " update_url
 		if [ -z "$update_url" ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
-			update
+		else
+			saveserver
 		fi
 	elif [ "$num" = 6 ]; then
 		echo -----------------------------------------------
@@ -723,7 +719,7 @@ setserver(){
 		elif [ $num -le $(cat /tmp/clashrelease | awk 'END{print NR}') 2>/dev/null ]; then
 			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
 			update_url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_version"
-			echo -e "\033[32m设置成功！\033[0m" 
+			saveserver
 		else
 			echo -----------------------------------------------
 			echo -e "\033[31m输入有误，请重新输入！\033[0m"
@@ -733,14 +729,7 @@ setserver(){
 		update_url='http://192.168.31.31:8080/ShellClash'
 	else
 		errornum
-		update
 	fi
-	#写入mark文件
-	setconfig update_url \'$update_url\'
-	echo -----------------------------------------------
-	echo -e "\033[32m源地址更新成功！\033[0m"
-	release_new=""
-	update
 }
 checkupdate(){
 if [ -z "$release_new" ];then
@@ -812,6 +801,7 @@ update(){
 		
 	elif [ "$num" = 7 ]; then	
 		setserver
+		update
 		
 	elif [ "$num" = 8 ]; then		
 		echo -----------------------------------------------
@@ -860,12 +850,12 @@ userguide(){
 		echo -----------------------------------------------
 		echo -e "\033[33m是否需要代理UDP流量(主要用于游戏)？ \033[0m"
 		echo -----------------------------------------------
-		echo -e " 1 \033[0m不代理UDP流量(可能会导致一部分游戏/应用无法连接)\033[0m"
+		echo -e " 1 \033[33m不代理UDP流量\033[0m(可能会导致一部分游戏/应用无法连接)"
 		modinfo tun >/dev/null 2>&1 && [ "$?" = 0 ] && \
-		echo -e " 2 \033[0m使用Tun虚拟网卡代理UDP流量(更低的延迟但更多的CPU消耗)\033[0m" || \
+		echo -e " 2 \033[32m使用Tun虚拟网卡\033[0m代理UDP流量(更低的延迟但更多的CPU消耗)" || \
 		echo -e " - \033[0m使用Tun模式(你的设备不支持此模式，如为虚拟机运行请调整虚拟网卡设置)\033[0m"
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && \
-		echo -e " 3 \033[0m使用Tproxy模式代理UDP流量(较低CPU消耗但更高的延迟)033[0m"
+		echo -e " 3 \033[32m使用Tproxy模式\033[0m代理UDP流量(较低CPU消耗但相对高的延迟)"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ] || [ "$num" -gt 4 ];then

@@ -148,6 +148,7 @@ setport(){
 			inputport
 		else
 			setconfig $xport $portx 
+			$xport=$portx
 			echo -e "\033[32m设置成功！！！\033[0m"
 			setport
 		fi
