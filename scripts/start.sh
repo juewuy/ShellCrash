@@ -33,8 +33,7 @@ getconfig(){
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
-	sed -i "/${1}*/"d $configpath
-	echo "${1}=${2}" >> $configpath
+	[ -n "$(grep ${1} $configpath)" ] && sed -i "s/${1}=.*/${1}=${2}/g" $configpath || echo "${1}=${2}" >> $configpath
 }
 compare(){
 	if [ ! -f $1 -o ! -f $2 ];then
@@ -422,7 +421,6 @@ web_save(){
 		fi
 	}
 	#使用get_save获取面板节点设置
-	#get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' > /tmp/clash_web_save_$USER
 	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
 	while read line ;do
 		def=$(echo $line | awk -F "[\[,]" '{print $2}')
@@ -430,8 +428,10 @@ web_save(){
 		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' >> /tmp/clash_web_save_$USER
 	done < /tmp/clash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
-	[ ! -s /tmp/clash_web_save_$USER ] && compare /tmp/clash_web_save_$USER $clashdir/web_save
-	[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
+	if [ -s /tmp/clash_web_save_$USER ];then
+		compare /tmp/clash_web_save_$USER $clashdir/web_save
+		[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
+	fi
 }
 web_restore(){
 	put_save(){

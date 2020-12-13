@@ -11,6 +11,9 @@ getconfig(){
 	yaml=$clashdir/config.yaml
 	#检查/读取标识文件
 	[ ! -f $ccfg ] && echo '#标识clash运行状态的文件，不明勿动！' > $ccfg
+	#检查重复行并去除
+	[ -n "$(awk 'a[$0]++' $ccfg)" ] && awk '!a[$0]++' $ccfg > $ccfg
+	#使用source加载配置文件
 	source $ccfg
 	#设置默认核心资源目录
 	[ -z "$bindir" ] && bindir=$clashdir
@@ -78,7 +81,7 @@ getconfig(){
 	echo -----------------------------------------------
 	#检查新手引导
 	if [ -z "$userguide" ];then
-		sed -i "1i\userguide=1" $ccfg
+		setconfig userguide 1
 		source $clashdir/getdate.sh && userguide
 	fi
 	#检查执行权限
@@ -87,8 +90,7 @@ getconfig(){
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
-	sed -i "/${1}*/"d $configpath
-	echo "${1}=${2}" >> $configpath
+	[ -n "$(grep ${1} $configpath)" ] && sed -i "s/${1}=.*/${1}=${2}/g" $configpath || echo "${1}=${2}" >> $configpath
 }
 #启动相关
 errornum(){
@@ -124,7 +126,7 @@ clashstart(){
 }
 checkrestart(){
 	echo -----------------------------------------------
-	echo -e "\033[32m检测到配置文件已变更，需要重启clash服务以生效！\033[0m"
+	echo -e "\033[32m检测到已变更的内容，请重启clash服务！\033[0m"
 	echo -----------------------------------------------
 	read -p "是否现在重启clash服务？(1/0) > " res
 	[ "$res" = 1 ] && clashstart
@@ -178,7 +180,7 @@ setport(){
 		read -p "请输入Http/Sock5用户名及密码 > " input
 		if [ "$input" = "0" ];then
 			authentication=""
-			sed -i "/authentication*/"d $ccfg
+			setconfig authentication
 			echo 密码已移除！
 		else
 			if [ "$local_proxy" = "已开启" ];then
@@ -267,8 +269,8 @@ setdns(){
 	elif [ "$num" = 3 ]; then
 		dns_nameserver=""
 		dns_fallback=""
-		sed -i "/dns_nameserver*/"d $ccfg
-		sed -i "/dns_fallback*/"d $ccfg
+		setconfig dns_nameserver
+		setconfig dns_fallback
 		echo -e "\033[33mDNS配置已重置！！！\033[0m"
 		setdns
 	elif [ "$num" = 4 ]; then
@@ -364,9 +366,10 @@ macfilter(){
 		fi
 	}
 	echo -----------------------------------------------
-	[ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
-	[ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
-	[ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
+	[ -z "$dhcpdir" ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
+	[ -z "$dhcpdir" ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
+	[ -z "$dhcpdir" ] && dhcpdir='/tmp/dhcp.leases'
+	[ -z "$dhcpdir" ] && dhcpdir='/tmp/dnsmasq.leases'
 	[ -z "$dhcpdir" ] && dhcpdir='/dev/null'
 	[ -z "$macfilter_type" ] && macfilter_type='黑名单' 
 	[ "$macfilter_type" = "黑名单" ] && macfilter_over='白名单' || macfilter_over='黑名单'
@@ -798,7 +801,7 @@ clashadv(){
 		if [ "$dns_no" = "已禁用" ];then
 			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
 			if [ "$res" = "1" ];then
-				sed -i "/dns_no*/"d $ccfg
+				setconfig dns_no
 				setdns
 			fi
 		else
@@ -1008,8 +1011,10 @@ clashsh(){
 	elif [ "$num" = 2 ]; then
 		checkcfg=$(cat $ccfg)
 		clashcfg
-		checkcfg_new=$(cat $ccfg)
-		[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+		if [ -n "$PID" ];then
+			checkcfg_new=$(cat $ccfg)
+			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+		fi
 		clashsh
 
 	elif [ "$num" = 3 ]; then
@@ -1050,15 +1055,23 @@ clashsh(){
 	elif [ "$num" = 7 ]; then
 		checkcfg=$(cat $ccfg)
 		clashadv
-		checkcfg_new=$(cat $ccfg)
-		[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+		if [ -n "$PID" ];then
+			checkcfg_new=$(cat $ccfg)
+			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+		fi
 		clashsh
 
 	elif [ "$num" = 8 ]; then
 		source $clashdir/getdate.sh && testcommand
 
 	elif [ "$num" = 9 ]; then
+		checkcfg=$(cat $ccfg)
 		source $clashdir/getdate.sh && update
+		if [ -n "$PID" ];then
+			checkcfg_new=$(cat $ccfg)
+			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+		fi
+		clashsh
 	
 	else
 		errornum

@@ -394,26 +394,28 @@ getcpucore(){
 	[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
 	[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
 	if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
-		mipstype=$(echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}') #通过判断大小端判断mips或mipsle
-		[ "$mipstype" != "1" ] && cpucore="mips-softfloat" || cpucore="mipsle-softfloat"
+		mipstype=$(echo -n I | hexdump -o 2>/dev/null | awk '{ print substr($2,6,1); exit}') #通过判断大小端判断mips或mipsle
+		[ "$mipstype" = "0" ] && cpucore="mips-softfloat" || cpucore="mipsle-softfloat"
 	fi
 	[ -n "$cpucore" ] && setconfig cpucore $cpucore
 }
 setcpucore(){
-	cpucore_list="armv5 armv7 armv8 386 amd64 \nmipsle-softfloat mipsle-hardfloat mips-softfloat"
+	cpucore_list="armv5 armv7 armv8 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
 	echo -----------------------------------------------
 	echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
 	echo -e "当前可供在线下载的处理器架构为："
-	echo -e "\033[32m$cpucore_list\033[0m"
+	echo $cpucore_list | awk -F " " '{for(i=1;i<=NF;i++) {print i" "$i }}'
 	echo -e "如果您的CPU架构未在以上列表中，请运行【uname -a】命令,并复制好返回信息"
 	echo -e "之后前往 t.me/clashfm 群提交或 github.com/juewuy/ShellClash 提交issue"
 	echo -----------------------------------------------
-	read -p "请手动输入处理器架构 > " cpucore
-	if [ -z "$(echo $cpucore_list |grep "$cpucore")" ];then
+	read -p "请输入对应数字 > " num
+	setcpucore=$(echo $cpucore_list | awk '{print $"'"$num"'"}' )
+	if [ -z "$setcpucore" ];then
 		echo -e "\033[31m请输入正确的处理器架构！\033[0m"
 		sleep 1
 		cpucore=""
 	else
+		cpucore=$setcpucore
 		setconfig cpucore $cpucore
 	fi
 }
@@ -770,9 +772,8 @@ update(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		errornum
-		clashsh
 	elif [ "$num" = 0 ]; then
-		clashsh
+		i=
 	elif [ "$num" = 1 ]; then	
 		getsh	
 
@@ -840,9 +841,7 @@ update(){
 		update
 	else
 		errornum
-		clashsh
 	fi
-exit;
 }
 #新手引导
 userguide(){
