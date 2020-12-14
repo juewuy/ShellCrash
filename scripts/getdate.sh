@@ -2,19 +2,28 @@
 # Copyright (C) Juewuy
 
 webget(){
-	[ -n "$(netstat -ntul 2>&1 |grep :$mix_port)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
+	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
+	#参数【$5】代表验证证书
 	if curl --version > /dev/null 2>&1;then
 		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
-		[ -z "$4" ] && redirect='-L' || redirect=''
-		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
+		[ "$4" = "rediroff" ] && redirect='' || redirect='-L'
+		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
+		result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
+		[ "$result" != "200" ] && export all_proxy="" && result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
 	else
 		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 		[ "$3" = "echoon" ] && progress=''
-		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
-		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
-		[ $? -eq 0 ] && result="200"
+		[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+		[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+		wget -Y on $progress $redirect $certificate --timeout=3 -O $1 $2 
+		if [ "$?" != "0" ];then
+			wget $progress $redirect $certificate --timeout=3 -O $1 $2
+			[ "$?" = "0" ] && result="200"
+		else
+			result="200"
+		fi
 	fi
 	export all_proxy=""
 }
@@ -622,36 +631,27 @@ setdb(){
 	fi
 }
 getcrt(){
-	crtdir='/etc/ssl/certs/ca-certificates.crt'
-	if [ -f $crtdir ];then
+	crtlink="${update_url}/bin/ca-certificates.crt"
+	echo -----------------------------------------------
+	echo 正在连接服务器获取安装文件…………
+	webget /tmp/ca-certificates.crt $crtlink
+	if [ "$result" != "200" ];then
 		echo -----------------------------------------------
-		echo -e "\033[31m检测到您的设备已经安装好根证书文件了！\033[0m"
+		echo -e "\033[31m文件下载失败！\033[0m"
+	else
 		echo -----------------------------------------------
-		read -p "是否覆盖安装？[1/0] > " res
-		if [ "$res" = 1 ]; then
-			rm -rf $crtdir
-			dblink="${update_url}/bin/ca-certificates.crt"
-			echo -----------------------------------------------
-			echo 正在连接服务器获取安装文件…………
-			webget /tmp/ca-certificates.crt $dblink
-			if [ "$result" != "200" ];then
-				echo -----------------------------------------------
-				echo -e "\033[31m文件下载失败！\033[0m"
-			else
-				echo -----------------------------------------------
-				mv -f /tmp/ca-certificates.crt $crtdir
-				echo -e "\033[32m证书安装成功！\033[0m"
-				sleep 1
-			fi
-		fi
+		mv -f /tmp/ca-certificates.crt $crtdir
+		echo -e "\033[32m证书安装成功！\033[0m"
+		sleep 1
 	fi
-
 }
 setcrt(){
+	crtdir='/etc/ssl/certs/ca-certificates.crt'
 	echo -----------------------------------------------
 	echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
 	echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
 	echo -e "\033[31m无上述问题的设备无需使用本功能！\033[0m"
+	[ -f "$crtdir" ] && echo -e "\033[32m当前设备已经安装根证书文件了！\033[0m"
 	echo -----------------------------------------------
 	read -p "确认安装？(1/0) > " res
 

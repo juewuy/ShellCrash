@@ -40,7 +40,10 @@ getconfig(){
 		[ -n "$(systemctl is-enabled clash.service 2>&1 | grep enable)" ] && autostart=enable_sys || autostart=disable_sys
 	fi
 	#开机自启描述
-	if [ "$autostart" = "enable_rc" -o "$autostart" = "enable_sys" ]; then
+	if [ "$start_old" = "已开启" ]; then
+		auto="\033[32m保守模式\033[0m"
+		auto1="代理本机：\033[36m$local_proxy\033[0m"
+	elif [ "$autostart" = "enable_rc" -o "$autostart" = "enable_sys" ]; then
 		auto="\033[32m已设置开机启动！\033[0m"
 		auto1="\033[36m禁用\033[0mclash开机启动"
 	elif [ "$autostart" = "disable_rc" -o "$autostart" = "disable_sys" ]; then
@@ -90,7 +93,7 @@ getconfig(){
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
-	[ -n "$(grep ${1} $configpath)" ] && sed -i "s/${1}=.*/${1}=${2}/g" $configpath || echo "${1}=${2}" >> $configpath
+	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 #启动相关
 errornum(){
@@ -238,13 +241,14 @@ setdns(){
 	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
 	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
-	echo -e "多个DNS地址请用\033[30;47m | \033[0m分隔一次性输入"
+	echo -e "多个DNS地址请用\033[30;47m“|”\033[0m或者\033[30;47m“, ”\033[0m分隔输入"
 	echo -e "\033[33m必须拥有本地根证书文件才能使用dot/doh类型的加密dns\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
 	echo -e " 2 修改\033[36mfallback_DNS\033[0m"
 	echo -e " 3 \033[33m重置\033[0mDNS配置"
 	echo -e " 4 禁用内置DNS(慎用)"
+	echo -e " 5 使用\033[32m加密DNS\033[0m"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -252,7 +256,7 @@ setdns(){
 		errornum
 	elif [ "$num" = 1 ]; then
 		read -p "请输入新的DNS > " dns_nameserver
-		dns_nameserver=$(echo $dns_nameserver | sed 's/|/\,\ /g')
+		dns_nameserver=$(echo $dns_nameserver | sed 's#|#\,\ #g')
 		if [ -n "$dns_nameserver" ]; then
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			echo -e "\033[32m设置成功！！！\033[0m"
@@ -279,6 +283,22 @@ setdns(){
 		dns_no=已禁用
 		setconfig dns_no $dns_no
 		echo -e "\033[33m已禁用内置DNS！！！\033[0m"
+		setdns
+	elif [ "$num" = 5 ]; then
+		source $clashdir/getdate.sh
+		webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
+		if [ "$result" != "200" ];then
+			echo -----------------------------------------------
+			echo -e "\033[31m当前设备未安装openssl服务或者没有根证书，无法启用！\033[0m"
+		else
+			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
+			dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
+			setconfig dns_nameserver \'"$dns_nameserver"\'
+			setconfig dns_fallback \'"$dns_fallback"\' 
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi
+		rm -rf /tmp/ssl_test
+		sleep 1
 		setdns
 	fi
 }

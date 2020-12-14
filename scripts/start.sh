@@ -33,7 +33,7 @@ getconfig(){
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
-	[ -n "$(grep ${1} $configpath)" ] && sed -i "s/${1}=.*/${1}=${2}/g" $configpath || echo "${1}=${2}" >> $configpath
+	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 compare(){
 	if [ ! -f $1 -o ! -f $2 ];then
@@ -45,19 +45,28 @@ compare(){
 	fi
 }
 webget(){
-	[ -n "$(netstat -ntul 2>&1 |grep :$mix_port)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
+	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
+	#参数【$5】代表验证证书
 	if curl --version > /dev/null 2>&1;then
 		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
-		[ -z "$4" ] && redirect='-L' || redirect=''
-		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
+		[ "$4" = "rediroff" ] && redirect='' || redirect='-L'
+		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
+		result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
+		[ "$result" != "200" ] && export all_proxy="" && result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
 	else
 		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 		[ "$3" = "echoon" ] && progress=''
-		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
-		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
-		[ "$?" = 0 ] && result="200"
+		[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+		[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+		wget -Y on $progress $redirect $certificate --timeout=3 -O $1 $2 
+		if [ "$?" != "0" ];then
+			wget $progress $redirect $certificate --timeout=3 -O $1 $2
+			[ "$?" = "0" ] && result="200"
+		else
+			result="200"
+		fi
 	fi
 	export all_proxy=""
 }
@@ -429,6 +438,7 @@ web_save(){
 		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g'| sed 's/,//g')
 		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' >> /tmp/clash_web_save_$USER
 	done < /tmp/clash_web_check_$USER
+	rm -rf /tmp/clash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
 	if [ -s /tmp/clash_web_save_$USER ];then
 		compare /tmp/clash_web_save_$USER $clashdir/web_save
