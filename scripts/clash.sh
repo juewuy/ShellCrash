@@ -893,6 +893,43 @@ EOF
 clashcron(){
 
 	setcron(){
+		setcrontab(){
+			#设置具体时间
+			echo -----------------------------------------------
+			read -p "请输入小时（0-23） > " num
+			if [ -z "$num" ]; then 
+				errornum
+				setcron
+			elif [ $num -gt 23 ] || [ $num -lt 0 ]; then 
+				errornum
+				setcron
+			else	
+				hour=$num
+				echo -----------------------------------------------
+				read -p "请输入分钟（0-60） > " num
+				if [ -z "$num" ]; then 
+					errornum
+					setcron
+				elif [ $num -gt 60 ] || [ $num -lt 0 ]; then 
+					errornum
+					setcron
+				else	
+					min=$num
+						echo -----------------------------------------------
+						echo 将在$week1的$hour点$min分$cronname（旧的任务会被覆盖）
+						read -p  "是否确认添加定时任务？(1/0) > " res
+						if [ "$res" = '1' ]; then
+							cronwords="$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname"
+							crontab -l > /tmp/conf
+							sed -i "/$cronname/d" /tmp/conf
+							echo "$cronwords" >> /tmp/conf && crontab /tmp/conf
+							rm -f /tmp/conf
+							echo -----------------------------------------------
+							echo -e "\033[31m定时任务已添加！！！\033[0m"
+						fi
+				fi			
+			fi
+		}
 		echo -----------------------------------------------
 		echo -e " 正在设置：\033[32m$cronname\033[0m定时任务"
 		echo -e " 输入  1-7  对应\033[33m每周相应天\033[0m运行"
@@ -916,46 +953,13 @@ clashcron(){
 			week='*'
 			week1=每天
 			echo 已设为每天定时运行！
+			setcrontab
 		else
 			week=$num	
 			week1=每周$week
 			echo 已设为每周 $num 运行！
+			setcrontab
 		fi
-		#设置具体时间
-		echo -----------------------------------------------
-		read -p "请输入小时（0-23） > " num
-		if [ -z "$num" ]; then 
-			errornum
-			setcron
-		elif [ $num -gt 23 ] || [ $num -lt 0 ]; then 
-			errornum
-			setcron
-		else	
-			hour=$num
-		fi
-		echo -----------------------------------------------
-		read -p "请输入分钟（0-60） > " num
-		if [ -z "$num" ]; then 
-			errornum
-			setcron
-		elif [ $num -gt 60 ] || [ $num -lt 0 ]; then 
-			errornum
-			setcron
-		else	
-			min=$num
-		fi
-		echo -----------------------------------------------
-		echo 将在$week1的$hour点$min分$cronname（旧的任务会被覆盖）
-		read -p  "是否确认添加定时任务？(1/0) > " res
-			if [ "$res" = '1' ]; then
-				cronwords="$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname"
-				crontab -l > /tmp/conf
-				sed -i "/$cronname/d" /tmp/conf
-				echo "$cronwords" >> /tmp/conf && crontab /tmp/conf
-				rm -f /tmp/conf
-				echo -----------------------------------------------
-				echo -e "\033[31m定时任务已添加！！！\033[0m"
-			fi
 	}
 	#定时任务菜单
 	echo -----------------------------------------------
