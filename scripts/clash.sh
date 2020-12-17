@@ -386,10 +386,10 @@ macfilter(){
 		fi
 	}
 	echo -----------------------------------------------
-	[ -z "$dhcpdir" ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
-	[ -z "$dhcpdir" ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
-	[ -z "$dhcpdir" ] && dhcpdir='/tmp/dhcp.leases'
-	[ -z "$dhcpdir" ] && dhcpdir='/tmp/dnsmasq.leases'
+	[ -z "$dhcpdir" ] && [ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
+	[ -z "$dhcpdir" ] && [ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
+	[ -z "$dhcpdir" ] && [ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
+	[ -z "$dhcpdir" ] && [ -f /tmp/dnsmasq.leases ] && dhcpdir='/tmp/dnsmasq.leases'
 	[ -z "$dhcpdir" ] && dhcpdir='/dev/null'
 	[ -z "$macfilter_type" ] && macfilter_type='黑名单' 
 	[ "$macfilter_type" = "黑名单" ] && macfilter_over='白名单' || macfilter_over='黑名单'
