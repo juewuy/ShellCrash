@@ -646,29 +646,30 @@ getcrt(){
 	fi
 }
 setcrt(){
-	crtdir='/etc/ssl/certs/ca-certificates.crt'
-	echo -----------------------------------------------
-	echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
-	echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
-	echo -e "\033[31m无上述问题的设备无需使用本功能！\033[0m"
-	[ -f "$crtdir" ] && echo -e "\033[32m当前设备已经安装根证书文件了！\033[0m"
-	echo -----------------------------------------------
-	read -p "确认安装？(1/0) > " res
+	openssldir=$(openssl version -a 2>&1 | grep OPENSSLDIR | awk -F "\"" '{print $2}')
+	if [ -n "$openssldir" ];then
+		crtdir="$openssldir/certs/ca-certificates.crt"
+		echo -----------------------------------------------
+		echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
+		echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
+		echo -e "\033[31m无上述问题的设备无需使用本功能！\033[0m"
+		[ -f "$crtdir" ] && echo -e "\033[32m当前设备已经安装根证书文件了！\033[0m"
+		echo -----------------------------------------------
+		read -p "确认安装？(1/0) > " res
 
-	if [ -z "$res" ];then
-		errornum
-	elif [ "$res" = '0' ]; then
-		i=
-	elif [ "$res" = '1' ]; then
-		if [ -d /etc/ssl/certs ];then
+		if [ -z "$res" ];then
+			errornum
+		elif [ "$res" = '0' ]; then
+			i=
+		elif [ "$res" = '1' ]; then
 			getcrt
 		else
-			echo -----------------------------------------------
-			echo -e "\033[33m设备可能未安装openssl或者证书文件目录不是/etc/ssl/certs，无法安装！\033[0m"
-			sleep 1
+			errornum
 		fi
 	else
-		errornum
+		echo -----------------------------------------------
+		echo -e "\033[33m设备可能尚未安装openssl，无法安装证书文件！\033[0m"
+		sleep 1
 	fi
 }
 setserver(){

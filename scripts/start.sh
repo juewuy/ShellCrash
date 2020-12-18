@@ -185,6 +185,14 @@ EOF`
 			echo -----------------------------------------------
 			exit 1
 		fi
+		#检测是否存在高级版规则
+		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers')" ];then
+			echo -----------------------------------------------
+			logger "检测到高级版核心专属规则！将改为使用premium核心启动！" 33
+			rm -rf $bindir/clash
+			setconfig clashcore clashpre
+			echo -----------------------------------------------
+		fi
 		#使用核心内置test功能检测
 		if [ -x $bindir/clash ];then
 			$bindir/clash -t -d $bindir -f $yamlnew >/dev/null
