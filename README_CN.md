@@ -1,6 +1,8 @@
 <h1 align="center">
   <img src="https://github.com/Dreamacro/clash/raw/master/docs/logo.png" alt="Clash" width="200">
   <br>ShellClash<br>
+</h1>
+
 
   <p align="center">
 	<a target="_blank" href="https://github.com/Dreamacro/clash/releases">
@@ -9,10 +11,9 @@
   <a target="_blank" href="https://github.com/juewuy/ShellClash/releases">
     <img src="https://img.shields.io/github/release/juewuy/ShellClash.svg?style=flat-square&label=ShellClash&colorB=green">
   </a>
-  </p>
-###### <br>
+</p>
 
-####  [中文](README_CN.md) | [English](README.md) 
+[中文](README.md) | [English](README_EN.md) 
 
 功能简介：
 --
