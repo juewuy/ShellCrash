@@ -10,7 +10,7 @@
     <img src="https://img.shields.io/github/release/juewuy/ShellClash.svg?style=flat-square&label=ShellClash&colorB=green">
   </a>
   </p>
-<br>
+###### <br>
 
 ####  [中文](README.md) | [English](README_EN.md) 
 
