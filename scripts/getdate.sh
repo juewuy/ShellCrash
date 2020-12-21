@@ -652,9 +652,9 @@ setcrt(){
 		echo -----------------------------------------------
 		echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
 		echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
-		echo -e "\033[31m无上述问题的设备无需使用本功能！\033[0m"
-		[ -f "$crtdir" ] && echo -e "\033[32m当前设备已经安装根证书文件了！\033[0m"
+		echo -e "\033[31m无上述问题的设备请勿使用！\033[0m"
 		echo -----------------------------------------------
+		[ -f "$crtdir" ] && echo -e "\033[33m检测到系统已经安装根证书文件了！\033[0m\n-----------------------------------------------"
 		read -p "确认安装？(1/0) > " res
 
 		if [ -z "$res" ];then
@@ -820,19 +820,19 @@ update(){
 		read -p "确认卸载ShellClash？（警告：该操作不可逆！）[1/0] " res
 		if [ "$res" = '1' ]; then
 			$clashdir/start.sh stop
-			rm -rf $clashdir
-			rm -rf /etc/init.d/clash
-			rm -rf /etc/systemd/system/clash.service
-			rm -rf /usr/lib/systemd/system/clash.service
-			rm -rf /www/clash
+			$clashdir/start.sh cronset "clash服务"
+			$clashdir/start.sh cronset "订阅链接"
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
 			sed -i '/alias clash=*/'d $profile
 			sed -i '/export clashdir=*/'d $profile
 			sed -i '/all_proxy/'d $profile
 			sed -i '/ALL_PROXY/'d $profile
-			cronset "clash服务"
-			cronset "订阅链接"
+			rm -rf $clashdir
+			rm -rf /etc/init.d/clash
+			rm -rf /etc/systemd/system/clash.service
+			rm -rf /usr/lib/systemd/system/clash.service
+			rm -rf /www/clash
 			echo -----------------------------------------------
 			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
 			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
@@ -919,14 +919,14 @@ userguide(){
 	echo -e "\033[33m安装本地Dashboard面板，可以更快捷的管理clash内置规则！\033[0m"
 	echo -----------------------------------------------
 	read -p "需要安装本地Dashboard面板吗？(1/0) > " res
-	[ "$res" = 1 ] && setdb
+	[ "$res" = 1 ] && checkupdate && setdb
 	#检测及下载根证书
 	if [ -d /etc/ssl/certs -a ! -f '/etc/ssl/certs/ca-certificates.crt' ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
 		echo -----------------------------------------------
 		read -p "是否下载并安装根证书？(1/0) > " res
-		[ "$res" = 1 ] && getcrt
+		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#提示导入订阅或者配置文件
 	echo -----------------------------------------------

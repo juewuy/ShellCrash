@@ -657,6 +657,9 @@ daemon)
 		getconfig
 		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
 	;;
+cronset)
+		cronset $2 $3
+	;;
 set_proxy)
 		getconfig
 		#GNOME配置
