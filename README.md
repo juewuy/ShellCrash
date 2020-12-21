@@ -2,7 +2,6 @@
   <img src="https://github.com/Dreamacro/clash/raw/master/docs/logo.png" alt="Clash" width="200">
   <br>ShellClash<br>
 
-
   <p align="center">
 	<a target="_blank" href="https://github.com/Dreamacro/clash/releases">
     <img src="https://img.shields.io/github/release/Dreamacro/Clash.svg?style=flat-square&label=Clash">
@@ -11,6 +10,7 @@
     <img src="https://img.shields.io/github/release/juewuy/ShellClash.svg?style=flat-square&label=ShellClash&colorB=green">
   </a>
   </p>
+<br>
 
 [中文](README.md) | [English](README_EN.md) 
 
