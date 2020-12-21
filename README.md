@@ -10,9 +10,11 @@
     <img src="https://img.shields.io/github/release/juewuy/ShellClash.svg?style=flat-square&label=ShellClash&colorB=green">
   </a>
   </p>
+ [中文](README.md) | [English](README_EN.md) 
 
 功能简介：
 --
+
 ~通过管理脚本在Shell环境下便捷使用[Clash](https://github.com/Dreamacro/clash)<br>
 ~支持在Shell环境下管理[Clash各种功能](https://lancellc.gitbook.io/clash)<br>
 ~支持在线导入[Clash](https://github.com/Dreamacro/clash)支持的分享、订阅及配置链接<br>~支持配置定时任务，支持配置文件定时更新<br>~支持在线安装及使用本地网页面板管理内置规则<br>
