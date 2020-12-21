@@ -13,7 +13,7 @@
   </a>
 </p>
 
-[中文](README.md) | [English](README_EN.md) 
+[中文](README_CN.md) | [English](README.md) 
 
 功能简介：
 --
