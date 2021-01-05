@@ -89,6 +89,11 @@ mark_time(){
 	sed -i '/start_time*/'d $clashdir/mark
 	echo start_time=$start_time >> $clashdir/mark
 }
+gethost(){
+	host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '192.|10.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
+	[ -n "$host" ] && lanhost="-s $(echo $host | grep -oE '192.|10.')0.0.0/8"
+}
 #配置文件相关
 getyaml(){
 	[ -z "$rule_link" ] && rule_link=1
@@ -282,6 +287,8 @@ EOF
 }
 #设置路由规则
 start_redir(){
+	#获取本地局域网地址段
+	gethost
 	#流量过滤规则
 	iptables -t nat -N clash
 	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
@@ -304,7 +311,7 @@ start_redir(){
 		done
 		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
 	fi
-	iptables -t nat -A PREROUTING -p tcp -j clash
+	iptables -t nat -A PREROUTING -p tcp $lanhost -j clash
 	#设置ipv6转发
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ];then
@@ -375,6 +382,7 @@ start_dns(){
 	fi
 }
 start_udp(){
+	gethost	#获取本地局域网地址段
 	ip rule add fwmark 1 table 100
 	ip route add local default dev lo table 100
 	iptables -t mangle -N clash
@@ -398,13 +406,14 @@ start_udp(){
 		done
 		iptables -t mangle -A clash -p udp -j TPROXY --on-port $redir_port --tproxy-mark 1
 	fi
-	iptables -t mangle -A PREROUTING -p udp -j clash
+	iptables -t mangle -A PREROUTING -p udp $lanhost -j clash
 }
 stop_iptables(){
+	gethost #获取本地局域网地址段
     #重置iptables规则
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp $lanhost -j clash 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash_dns 2> /dev/null
@@ -414,7 +423,7 @@ stop_iptables(){
 	iptables -t nat -X clash_dns 2> /dev/null
 	iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 	#重置udp规则
-	iptables -t mangle -D PREROUTING -p udp -j clash 2> /dev/null
+	iptables -t mangle -D PREROUTING -p udp $lanhost -j clash 2> /dev/null
 	iptables -t mangle -F clash 2> /dev/null
 	iptables -t mangle -X clash 2> /dev/null
 	#重置ipv6规则
@@ -483,9 +492,7 @@ web_restore(){
 }
 #启动相关
 catpac(){
-	host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '192.|10.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	[ -z "$host" ] && host=127.0.0.1
+	gethost
 	cat > /tmp/clash_pac <<EOF
 function FindProxyForURL(url, host) {
 	if (
@@ -500,7 +507,7 @@ function FindProxyForURL(url, host) {
 	)
 		return "DIRECT";
 	else
-		return "PROXY 192.168.31.1:7890; DIRECT; SOCKS5 192.168.31.1:7890"
+		return "PROXY $host:$mix_port; DIRECT; SOCKS5 $host:$mix_port"
 }
 EOF
 	compare /tmp/clash_pac $bindir/ui/pac

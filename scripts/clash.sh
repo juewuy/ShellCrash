@@ -808,6 +808,7 @@ clashadv(){
 				read -p "确认停用此功能？(1/0) > " res
 				[ "$res" = 1 ] && bindir="$clashdir" && echo -e "\033[33m已经停用小闪存功能！\033[0m"
 			else
+				rm -rf /tmp/clash_$USER
 				bindir="$clashdir"
 				echo -e "\033[33m已经停用小闪存功能！\033[0m"
 			fi
