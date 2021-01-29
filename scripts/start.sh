@@ -660,6 +660,10 @@ web_save)
 		getconfig
 		web_save
 	;;
+web_restore)
+		getconfig
+		web_restore
+	;;
 daemon)
 		getconfig
 		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
