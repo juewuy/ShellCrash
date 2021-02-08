@@ -521,12 +521,12 @@ clashcfg(){
 		echo -e " 1 Redir模式：CPU以及内存\033[33m占用较低\033[0m"
 		echo -e "              但\033[31m不支持UDP\033[0m流量转发"
 		echo -e "              适合\033[32m非游戏用户\033[0m使用"
-		echo -e " 2 Tun模式：  \033[33m支持UDP转发\033[0m且延迟最低"
-		echo -e "              \033[31mCPU占用极高\033[0m，只支持fake-ip模式"
-		echo -e "              适合\033[32m游戏用户、非大流量用户\033[0m"
-		echo -e " 3 混合模式： 使用redir转发TCP，Tun转发UPD"
+		echo -e " 2 混合模式： 使用redir转发TCP，Tun转发UPD"
 		echo -e "              \033[33m速度较快\033[0m，\033[31m内存占用略高\033[0m"
 		echo -e "              适合\033[32m游戏用户、综合用户\033[0m"
+		echo -e " 3 Tun模式：  \033[33m支持UDP转发\033[0m且延迟最低"
+		echo -e "              \033[31mCPU占用极高\033[0m，只支持fake-ip模式"
+		echo -e "              \033[33m如非必要不推荐使用\033[0m"
 		echo -e " 4 纯净模式： 不设置iptables静态路由"
 		echo -e "              必须\033[33m手动配置\033[0mhttp/sock5代理"
 		echo -e "              或使用内置的PAC文件配置代理"
@@ -539,7 +539,7 @@ clashcfg(){
 		elif [ "$num" = 1 ]; then
 			redir_mod=Redir模式
 			set_redir_config
-		elif [ "$num" = 2 ]; then
+		elif [ "$num" = 3 ]; then
 			modinfo tun >/dev/null 2>&1
 			if [ "$?" != 0 ];then
 				echo -----------------------------------------------
@@ -561,7 +561,7 @@ clashcfg(){
 				dns_mod=fake-ip
 				set_redir_config
 			fi
-		elif [ "$num" = 3 ]; then
+		elif [ "$num" = 2 ]; then
 			modinfo tun >/dev/null 2>&1
 			if [ "$?" != 0 ];then
 				echo -e "\033[31m当前设备内核可能不支持开启Tun/混合模式！\033[0m"

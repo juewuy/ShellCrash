@@ -44,14 +44,15 @@ linkconfig(){
 	echo 11	李哥规则-墙洞专用
 	echo 12	基础规则-仅Geoip CN+Final
 	echo 13	网易云解锁-仅规则分组
+	echo 14	ACL4SSR重度全分组+谷歌优化
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ] || [ "$num" -gt 13 ];then
+	if [ -z "$num" ] || [ "$num" -gt 14 ];then
 		errornum
 	elif [ "$num" = 0 ];then
 		echo 
-	elif [ "$num" -le 13 ];then
+	elif [ "$num" -le 14 ];then
 		#将对应标记值写入mark
 		rule_link=$num
 		setconfig rule_link $rule_link
