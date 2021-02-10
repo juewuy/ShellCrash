@@ -93,10 +93,15 @@ gettar(){
 	#设置环境变量
 	[ -w ~/.bashrc ] && profile=~/.bashrc
 	[ -w /etc/profile ] && profile=/etc/profile
-	sed -i '/alias clash=*/'d $profile
-	echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
-	sed -i '/export clashdir=*/'d $profile
-	echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
+	if [ -n "$profile" ];then
+		sed -i '/alias clash=*/'d $profile
+		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
+		sed -i '/export clashdir=*/'d $profile
+		echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
+	else
+		echo 无法写入环境变量！请检查安装权限！
+		exit 1
+	fi
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clashservice
