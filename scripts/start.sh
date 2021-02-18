@@ -274,6 +274,7 @@ EOF
 		while read line;do
 			[ -z "$(echo "$line" | grep '#')" ] && \
 			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
+			line=$(echo "$line" | sed 's#/#\\/#') && \
 			sed -i "/$line/d" $tmpdir/config.yaml && \
 			sed -i "/^rules:/a\ $line" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
