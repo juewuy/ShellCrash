@@ -91,8 +91,8 @@ mark_time(){
 }
 gethost(){
 	host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '192.|10.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	[ -n "$host" ] && lanhost="-s $(echo $host | grep -oE '192.|10.')0.0.0/8"
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '^1(92|0)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
+	[ -n "$host" ] && lanhost="-s $(echo $host | grep -oE '^1(92|0)\.')0.0.0/8"
 }
 #配置文件相关
 getyaml(){
