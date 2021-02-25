@@ -453,7 +453,7 @@ web_save(){
 	#使用get_save获取面板节点设置
 	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
 	while read line ;do
-		def=$(echo $line | awk -F "[\[,]" '{print $2}')
+		def=$(echo $line | awk -F "[[,]" '{print $2}')
 		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g'| sed 's/,//g')
 		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' >> /tmp/clash_web_save_$USER
 	done < /tmp/clash_web_check_$USER
