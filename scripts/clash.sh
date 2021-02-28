@@ -521,7 +521,7 @@ clashcfg(){
 		echo -e " 1 Redir模式：CPU以及内存\033[33m占用较低\033[0m"
 		echo -e "              但\033[31m不支持UDP\033[0m流量转发"
 		echo -e "              适合\033[32m非游戏用户\033[0m使用"
-		echo -e " 2 混合模式： 使用redir转发TCP，Tun转发UPD"
+		echo -e " 2 混合模式： 使用redir转发TCP，Tun转发UDP流量"
 		echo -e "              \033[33m速度较快\033[0m，\033[31m内存占用略高\033[0m"
 		echo -e "              适合\033[32m游戏用户、综合用户\033[0m"
 		echo -e " 3 Tun模式：  \033[33m支持UDP转发\033[0m且延迟最低"
