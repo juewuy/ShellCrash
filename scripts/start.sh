@@ -270,13 +270,13 @@ EOF
 	#合并文件
 	cut -c 1- $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
 	#插入自定义规则
+	sed -i "/#自定义规则/d" $tmpdir/config.yaml
 	if [ -f $clashdir/rules.yaml ];then
 		while read line;do
-			[ -z "$(echo "$line" | grep '#')" ] && \
+			[ -z "$(echo "$line " | grep '#')" ] && \
 			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
 			line=$(echo "$line" | sed 's#/#\\/#') && \
-			sed -i "/$line/d" $tmpdir/config.yaml && \
-			sed -i "/^rules:/a\ $line" $tmpdir/config.yaml
+			sed -i "/^rules:/a\ $line #自定义规则" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
 	fi
 	#如果没有使用小闪存模式

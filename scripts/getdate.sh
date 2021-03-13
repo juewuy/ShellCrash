@@ -932,6 +932,15 @@ userguide(){
 		read -p "是否下载并安装根证书？(1/0) > " res
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
+	#设置加密DNS
+	webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
+	if [ "$result" = "200" ];then
+		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
+		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
+		setconfig dns_nameserver \'"$dns_nameserver"\'
+		setconfig dns_fallback \'"$dns_fallback"\' 
+	fi
+	rm -rf /tmp/ssl_test
 	#提示导入订阅或者配置文件
 	echo -----------------------------------------------
 	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
