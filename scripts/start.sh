@@ -166,7 +166,7 @@ EOF`
 	else
 		Https=""
 		#检测节点或providers
-		if [ -z "$(cat $yamlnew | grep -E 'server:|proxy-providers:' | grep -v 'nameserver')" ];then
+		if [ -z "$(cat $yamlnew | grep -E 'server:|proxy-providers:' | grep -v 'nameserver' | head -n 1)" ];then
 			echo -----------------------------------------------
 			logger "获取到了配置文件，但似乎并不包含正确的节点信息！" 31
 			echo -----------------------------------------------
@@ -264,6 +264,7 @@ secret: $secret
 $tun
 $exper
 $dns
+store-selected: false
 EOF
 ###################################
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
