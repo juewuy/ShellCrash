@@ -86,7 +86,7 @@ gettar(){
 	fi
 	#修饰文件及版本号
 	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
-	sed -i "s%#!/bin/sh%#!/bin/$shtype%g" $clashdir/start.sh
+	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	echo versionsh_l=$release_new >> $clashdir/mark
