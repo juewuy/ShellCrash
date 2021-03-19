@@ -27,7 +27,7 @@ getconfig(){
 	#检查mac地址记录
 	[ ! -f $clashdir/mac ] && touch $clashdir/mac
 	#获取本机host地址
-	host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host=127.0.0.1
 	#dashboard目录位置
@@ -93,7 +93,7 @@ getconfig(){
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
-	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
+	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=\(.*\)#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 #启动相关
 errornum(){
@@ -166,6 +166,7 @@ setport(){
 	echo -e " 5 修改面板访问端口：	\033[36m$db_port\033[0m"
 	echo -e " 6 设置面板访问密码：	\033[36m$secret\033[0m"
 	echo -e " 7 修改默认端口过滤：	\033[36m$multiport\033[0m"
+	echo -e " 8 指定本机host地址：	\033[36m$host\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
@@ -232,6 +233,26 @@ setport(){
 			setconfig common_ports $common_ports
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
+		setport
+	elif [ "$num" = 8 ]; then
+		echo -----------------------------------------------
+		echo -e "\033[33m此处可以更改脚本内置的host地址\033[0m"
+		echo -e "\033[31m设置后如本机host地址有变动，请务必手动修改！\033[0m"
+		echo -----------------------------------------------
+		read -p "请输入自定义host地址(输入0移除自定义host) > " host
+		if [ "$host" = "0" ];then
+			host=""
+			setconfig host $host
+			echo -e "\033[32m已经移除自定义host地址，请重新运行脚本以自动获取host！！！\033[0m"
+			exit 0
+		elif [ -n "$(echo $host | grep -Po '(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|[1-9])(\.(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|\d)){3}')" ]; then
+			setconfig host $host
+			echo -e "\033[32m设置成功！！！\033[0m"
+		else
+			host=""
+			echo -e "\033[31m输入错误，请仔细核对！！！\033[0m"
+		fi
+		sleep 1
 		setport
 	fi	
 }
@@ -719,7 +740,7 @@ clashadv(){
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————启动时方下载核心及数据库文件"
 	echo -e " 5 配置内置DNS服务	\033[36m$dns_no\033[0m"
-	echo -e " 6 手动指定相关服务端口及秘钥"
+	echo -e " 6 手动指定相关端口、秘钥及本机host"
 	echo -e " 7 使用自定义配置"
 	echo -----------------------------------------------
 	echo -e " 8 \033[31m重置\033[0m配置文件"
