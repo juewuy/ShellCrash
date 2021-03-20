@@ -217,6 +217,7 @@ getlink2(){
 	read -p "请输入完整链接 > " link
 	test=$(echo $link | grep -iE "tp.*://" )
 	link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
+	link=`echo ${link//\&/\\\&}`   #为分隔符 & 添加转义
 	if [ -n "$link" -a -n "$test" ];then
 		echo -----------------------------------------------
 		echo -e 请检查输入的链接是否正确：
