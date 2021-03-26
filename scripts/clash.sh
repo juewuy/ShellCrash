@@ -310,7 +310,8 @@ setdns(){
 		webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
 		if [ "$result" != "200" ];then
 			echo -----------------------------------------------
-			echo -e "\033[31m当前设备未安装openssl服务或者没有根证书，无法启用！\033[0m"
+			echo -e "\033[31m当前设备缺少本地根证书，请先安装证书！\033[0m"
+			setcrt
 		else
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 			dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'

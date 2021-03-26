@@ -245,7 +245,7 @@ modify_yaml(){
 	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
 	b=$((b-1))
 	mkdir -p $tmpdir > /dev/null
-	sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
+	[ "$b" != "0" ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#添加配置
