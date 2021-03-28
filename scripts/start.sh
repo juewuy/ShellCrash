@@ -241,11 +241,9 @@ modify_yaml(){
 	yaml=$clashdir/config.yaml
 	tmpdir=/tmp/clash_$USER
 	#预删除需要添加的项目
-	a=$(grep -n "port:" $yaml | head -1 | cut -d ":" -f 1)
-	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
-	b=$((b-1))
+	a=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
 	mkdir -p $tmpdir > /dev/null
-	[ "$b" != "0" ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
+	tail -n +${a} $yaml > $tmpdir/proxy.yaml
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#添加配置
