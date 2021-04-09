@@ -541,8 +541,8 @@ clashcfg(){
 		echo -e "\033[36mTun及混合模式必须使用clashpre核心！\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 Redir模式：CPU以及内存\033[33m占用较低\033[0m"
-		echo -e "              但\033[31m不支持UDP\033[0m流量转发"
-		echo -e "              适合\033[32m非游戏用户\033[0m使用"
+		echo -e "              但\033[31m不支持UDP\033[0m，不支持fake-ip模式"
+		echo -e "              适合\033[32m非外服游戏用户\033[0m使用"
 		echo -e " 2 混合模式： 使用redir转发TCP，Tun转发UDP流量"
 		echo -e "              \033[33m速度较快\033[0m，\033[31m内存占用略高\033[0m"
 		echo -e "              适合\033[32m游戏用户、综合用户\033[0m"
@@ -560,6 +560,7 @@ clashcfg(){
 			i=
 		elif [ "$num" = 1 ]; then
 			redir_mod=Redir模式
+			dns_mod=redir_host
 			set_redir_config
 		elif [ "$num" = 3 ]; then
 			modinfo tun >/dev/null 2>&1
@@ -623,9 +624,9 @@ clashcfg(){
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
-		echo -e "                   可能与某些局域网设备有冲突"
+		echo -e "                   不支持Redir模式，兼容性略差"
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
-		echo -e "                   不支持Tun模式，可能存在DNS污染"
+		echo -e "                   不支持Tun模式，抗污染能力略差"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
@@ -633,10 +634,15 @@ clashcfg(){
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 1 ]; then
-			dns_mod=fake-ip
-			setconfig dns_mod $dns_mod 
-			echo -----------------------------------------------	
-			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+			if [ "$redir_mod" = "Redir模式" ];then
+				echo -----------------------------------------------	
+				echo -e "\033[36mfake-ip与Redir模式兼容性较差，请使用其他模式！！\033[0m"		
+			else
+				dns_mod=fake-ip
+				setconfig dns_mod $dns_mod 
+				echo -----------------------------------------------	
+				echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+			fi
 		elif [ "$num" = 2 ]; then
 			dns_mod=redir_host
 			setconfig dns_mod $dns_mod 
@@ -731,6 +737,7 @@ clashadv(){
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
+	[ -n "$(cat /etc/crontabs/root | grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
@@ -743,8 +750,9 @@ clashadv(){
 	echo -e " 5 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 6 手动指定相关端口、秘钥及本机host"
 	echo -e " 7 使用自定义配置"
+	[ -x /usr/sbin/otapredownload ] && echo -e " 8 \033[33m$mi_update\033[0m小米系统自动更新"
 	echo -----------------------------------------------
-	echo -e " 8 \033[31m重置\033[0m配置文件"
+	echo -e " 9 \033[31m重置\033[0m配置文件"
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -891,7 +899,14 @@ EOF
 		sleep 3
 		clashadv
 		
-	elif [ "$num" = 8 ]; then	
+	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 8 ]; then	
+		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
+		echo -----------------------------------------------
+		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"
+		sleep 1
+		clashadv
+		
+	elif [ "$num" = 9 ]; then	
 		read -p "确认重置配置文件？(1/0) > " res
 		if [ "$res" = "1" ];then
 			echo "versionsh_l=$versionsh_l" > $ccfg
@@ -938,6 +953,7 @@ clashcron(){
 							cronwords="$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname"
 							crontab -l > /tmp/conf
 							sed -i "/$cronname/d" /tmp/conf
+							sed -i '/^$/d' /tmp/conf
 							echo "$cronwords" >> /tmp/conf && crontab /tmp/conf
 							rm -f /tmp/conf
 							echo -----------------------------------------------

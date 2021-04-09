@@ -913,6 +913,13 @@ userguide(){
 		fi
 	}
 	forwhat
+	#检测IP转发
+	if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
+		echo -----------------------------------------------
+		echo -e "\033[33m检测到你的设备尚未开启ip转发，局域网设备将无法正常连接网络，是否立即开启？\033[0m"
+		read -p "是否开启？(1/0) > " res
+		[ "$res" = 1 ] && echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf && /etc/init.d/procps restart && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！"
+	fi
 	#检测小内存模式
 	dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
 	if [ "$dir_size" -lt 10240 ];then

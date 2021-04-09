@@ -26,7 +26,7 @@ getconfig(){
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
-	[ -z "$multiport" ] && multiport='53,587,465,995,993,143,80,443'
+	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
 	#是否代理常用端口
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	}
@@ -80,6 +80,7 @@ cronset(){
 	crondir=/tmp/cron_$USER
 	crontab -l > $crondir
 	sed -i "/$1/d" $crondir
+	sed -i '/^$/d' $crondir
 	echo "$2" >> $crondir
 	crontab $crondir
 	rm -f $crondir
