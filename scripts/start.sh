@@ -1,4 +1,4 @@
-#!/bin/sh
+﻿#!/bin/sh
 # Copyright (C) Juewuy
 
 #脚本内部工具
@@ -81,7 +81,8 @@ cronset(){
 	crontab -l > $crondir
 	sed -i "/$1/d" $crondir
 	sed -i '/^$/d' $crondir
-	echo "$2" >> $crondir
+	if [ -n "$2" ] && [ "$2" != "\n" ];then
+                	echo "$2" >> $crondir
 	crontab $crondir
 	rm -f $crondir
 }
