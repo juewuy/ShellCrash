@@ -83,6 +83,7 @@ cronset(){
 	sed -i '/^$/d' $crondir
 	if [ -n "$2" ] && [ "$2" != "\n" ];then
                 echo "$2" >> $crondir
+	fi
 	crontab $crondir
 	rm -f $crondir
 }
