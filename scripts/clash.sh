@@ -746,7 +746,7 @@ clashadv(){
 	echo -e " 1 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
-	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————启动时方下载核心及数据库文件"
+	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
 	echo -e " 5 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 6 手动指定相关端口、秘钥及本机host"
 	echo -e " 7 使用自定义配置"
@@ -921,6 +921,99 @@ EOF
 		errornum
 	fi
 }
+tools(){
+	ssh_tools(){
+		[ -n "$(cat /etc/firewall.user 2>1 | grep '启用外网访问SSH服务')" ] && ssh_ol=禁止 || ssh_ol=开启
+		[ -z "$ssh_port" ] && ssh_port=10022
+		echo -----------------------------------------------
+		echo -e "\033[33m此功能仅针对使用Openwrt系统的设备生效，且不依赖clash服务\033[0m"
+		echo -----------------------------------------------
+		echo -e " 1 \033[32m修改\033[0m外网访问端口：\033[36m$ssh_port\033[0m"
+		echo -e " 2 \033[32m修改\033[0mSSH访问密码(请连续输入2次后回车)"
+		echo -e " 3 \033[33m$ssh_ol\033[0m外网访问SSH"
+		echo -----------------------------------------------
+		echo -e " 0 返回上级菜单 \033[0m"
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num	
+			if [ -z "$num" ]; then
+				errornum
+			elif [ "$num" = 0 ]; then
+				i=
+				
+			elif [ "$num" = 1 ]; then
+				read -p "请输入端口号(1000-65535) > " num
+					if [ -z "$num" ]; then
+						errornum
+					elif [ $num -gt 65535 -o $num -le 999 ]; then
+						echo -e "\033[31m输入错误！请输入正确的数值(1000-65535)！\033[0m"
+					elif [ -n "$(netstat -ntul |grep :$num)" ];then
+						echo -e "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
+					else
+						ssh_port=$num
+						echo -e "\033[32m设置成功！！！\033[0m"
+					fi
+				sleep 1
+				ssh_tools
+				
+			elif [ "$num" = 2 ]; then
+				passwd
+				sleep 1
+				ssh_tools
+				
+			elif [ "$num" = 3 ]; then	 
+				if [ "$ssh_ol" = "开启" ];then
+					iptables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22
+					echo "iptables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 #启用外网访问SSH服务" >> /etc/firewall.user
+					echo -----------------------------------------------
+					echo -e "已开启外网访问SSH功能！"
+				else
+					sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
+					echo -----------------------------------------------
+					echo -e "已禁止外网访问SSH！"
+				fi
+			else
+				errornum
+			fi
+			}
+	#获取设置默认显示
+	[ -n "$(cat /etc/crontabs/root 2>1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
+	#
+	echo -----------------------------------------------
+	echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
+	echo -e "\033[33m本页工具可能无法兼容全部Linux设备，请酌情使用！\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 ShellClash测试菜单"
+	[ -f "/etc/firewall.user" ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
+	#echo -e " 3 配置DDNS服务:	\033[36m$ipv6_support\033[0m	————待施工"
+	[ -x /usr/sbin/otapredownload ] && echo -e " 3 \033[33m$mi_update\033[0m小米系统自动更新"
+	echo -----------------------------------------------
+	echo -e " 0 返回上级菜单 \033[0m"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then
+		errornum
+	elif [ "$num" = 0 ]; then
+		i=
+		
+	elif [ "$num" = 1 ]; then
+		source $clashdir/getdate.sh && testcommand  
+		
+	elif [ "$num" = 2 ]; then
+		ssh_tools
+		sleep 1
+		tools  
+		
+	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 3 ]; then	
+		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
+		echo -----------------------------------------------
+		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"
+		sleep 1
+		tools
+
+	else
+		errornum
+	fi
+}
 clashcron(){
 
 	setcron(){
@@ -1049,7 +1142,7 @@ clashsh(){
 	echo -e " 5 设置\033[33m定时任务\033[0m$cronoff"
 	echo -e " 6 导入\033[32m配置文件\033[0m"
 	echo -e " 7 clash\033[31m进阶设置\033[0m"
-	echo -e " 8 \033[35m测试菜单\033[0m"
+	echo -e " 8 \033[35m其他工具\033[0m"
 	echo -e " 9 \033[36m更新/卸载\033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 \033[0m退出脚本\033[0m"
@@ -1119,7 +1212,8 @@ clashsh(){
 		clashsh
 
 	elif [ "$num" = 8 ]; then
-		source $clashdir/getdate.sh && testcommand
+		tools
+		clashsh
 
 	elif [ "$num" = 9 ]; then
 		checkcfg=$(cat $ccfg)

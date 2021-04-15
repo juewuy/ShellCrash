@@ -651,6 +651,12 @@ getcrt(){
 	else
 		echo -----------------------------------------------
 		mv -f /tmp/ca-certificates.crt $crtdir
+		webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
+		if [ "$result" != "200" ];then
+			export CURL_CA_BUNDLE=$crtdir
+			echo "export CURL_CA_BUNDLE=$crtdir" >> /etc/profile
+		fi
+		rm -rf /tmp/ssl_test
 		echo -e "\033[32m证书安装成功！\033[0m"
 		sleep 1
 	fi
@@ -838,6 +844,7 @@ update(){
 			sed -i '/export clashdir=*/'d $profile
 			sed -i '/all_proxy/'d $profile
 			sed -i '/ALL_PROXY/'d $profile
+			sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
 			rm -rf $clashdir
 			rm -rf /etc/init.d/clash
 			rm -rf /etc/systemd/system/clash.service
