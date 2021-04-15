@@ -950,7 +950,9 @@ tools(){
 						echo -e "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
 					else
 						ssh_port=$num
-						echo -e "\033[32m设置成功！！！\033[0m"
+						setconfig ssh_port $ssh_port
+						sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
+						echo -e "\033[32m设置成功，请重新开启外网访问SSH功能！！！\033[0m"
 					fi
 				sleep 1
 				ssh_tools
