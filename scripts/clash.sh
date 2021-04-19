@@ -314,7 +314,7 @@ setdns(){
 			setcrt
 		else
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
-			dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
+			dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			setconfig dns_fallback \'"$dns_fallback"\' 
 			echo -e "\033[32m设置成功！！！\033[0m"
@@ -563,7 +563,7 @@ clashcfg(){
 			dns_mod=redir_host
 			set_redir_config
 		elif [ "$num" = 3 ]; then
-			modinfo tun >/dev/null 2>&1
+			ip tuntap >/dev/null 2>&1
 			if [ "$?" != 0 ];then
 				echo -----------------------------------------------
 				echo -e "\033[31m当前设备内核可能不支持开启Tun/混合模式！\033[0m"
@@ -575,17 +575,13 @@ clashcfg(){
 				else
 					set_redir_mod
 				fi
-			elif [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
-				echo -----------------------------------------------
-				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
-				sleep 1
 			else	
 				redir_mod=Tun模式
 				dns_mod=fake-ip
 				set_redir_config
 			fi
 		elif [ "$num" = 2 ]; then
-			modinfo tun >/dev/null 2>&1
+			ip tuntap >/dev/null 2>&1
 			if [ "$?" != 0 ];then
 				echo -e "\033[31m当前设备内核可能不支持开启Tun/混合模式！\033[0m"
 				read -p "是否强制开启？可能无法正常使用！(1/0) > " res
@@ -595,10 +591,6 @@ clashcfg(){
 				else
 					set_redir_mod
 				fi
-			elif [ "$clashcore" = "clash" ] || [ "$clashcore" = "clashr" ];then
-				echo -----------------------------------------------
-				echo -e "\033[31m当前核心不支持开启Tun模式！请先切换clash核心！！！\033[0m"
-				sleep 1
 			else	
 				redir_mod=混合模式	
 				set_redir_config

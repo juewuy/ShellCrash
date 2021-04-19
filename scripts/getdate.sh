@@ -45,6 +45,9 @@ linkconfig(){
 	echo 12	基础规则-仅Geoip CN+Final
 	echo 13	网易云解锁-仅规则分组
 	echo 14	ACL4SSR重度全分组+谷歌优化
+	echo 15	ACL4SSR通用版+LM-Firefly游戏规则
+	echo 16	ACL4SSR精简版+LM-Firefly游戏规则
+	echo 17	ACL4SSR重度+LM-Firefly游戏规则
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
@@ -52,7 +55,7 @@ linkconfig(){
 		errornum
 	elif [ "$num" = 0 ];then
 		echo 
-	elif [ "$num" -le 14 ];then
+	elif [ "$num" -le 17 ];then
 		#将对应标记值写入mark
 		rule_link=$num
 		setconfig rule_link $rule_link
@@ -65,10 +68,10 @@ linkserver(){
 	echo -e "\033[36m以下为互联网采集的第三方服务器，具体安全性请自行斟酌！\033[0m"
 	echo 当前使用后端为：$server_link
 	echo 1 subcon.dlj.tf
-	echo 2 subconverter.herokuapp.com
-	echo 3 subconverter-web.now.sh
-	echo 4 api.dler.io
-	echo 5 api.wcc.best
+	echo 2 api.dler.io
+	echo 3 api.wcc.best
+	echo 4 api2.tsutsu.cc
+	echo 5 api.v1.mk
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
@@ -869,7 +872,7 @@ userguide(){
 		echo -e "\033[33m是否需要代理UDP流量(主要用于游戏)？ \033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 \033[33m不代理UDP流量\033[0m(可能会导致一部分游戏/应用无法连接)"
-		modinfo tun >/dev/null 2>&1 && [ "$?" = 0 ] && \
+		ip tuntap >/dev/null 2>&1 && [ "$?" = 0 ] && \
 		echo -e " 2 \033[32m使用Tun虚拟网卡\033[0m代理UDP流量(更低的延迟但更多的CPU消耗)" || \
 		echo -e " - \033[0m使用Tun模式(你的设备不支持此模式，如为虚拟机运行请调整虚拟网卡设置)\033[0m"
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && \

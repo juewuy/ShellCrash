@@ -102,10 +102,10 @@ getyaml(){
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
 subcon.dlj.tf
-subconverter.herokuapp.com
-subconverter-web.now.sh
 api.dler.io
 api.wcc.best
+api2.tsutsu.cc
+api.v1.mk
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
@@ -122,6 +122,9 @@ https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/ra
 https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/basic.ini
 https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/netease.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Google.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Games.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Mini_Games.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.ini
 EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
@@ -249,6 +252,8 @@ modify_yaml(){
 	[ "$b" != "0" ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
+	#检测是否使用script规则
+	[ -n "$(cat $yaml | grep -E '^script:')" ] && mode='mode: Script'
 	#添加配置
 ###################################
 	cat > $tmpdir/set.yaml <<EOF
