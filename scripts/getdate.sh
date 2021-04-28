@@ -51,7 +51,7 @@ linkconfig(){
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ] || [ "$num" -gt 14 ];then
+	if [ -z "$num" ] || [ "$num" -gt 17 ];then
 		errornum
 	elif [ "$num" = 0 ];then
 		echo 
