@@ -359,6 +359,7 @@ gettar(){
 			mv $clashdir/clash.service $sysdir/clash.service
 			sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service
 			systemctl daemon-reload
+			useradd shellclash
 		else
 			#设为保守模式启动
 			sed -i '/start_old=*/'d $clashdir/mark
@@ -853,6 +854,7 @@ update(){
 			rm -rf /etc/systemd/system/clash.service
 			rm -rf /usr/lib/systemd/system/clash.service
 			rm -rf /www/clash
+			userdel -r shellclash
 			echo -----------------------------------------------
 			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
 			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"

@@ -471,8 +471,7 @@ localproxy(){
 	echo -----------------------------------------------
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置"
-	echo -e " 3 使用\033[32mGNOME桌面API\033[0m配置"
-	echo -e " 4 使用\033[32mKDE桌面API\033[0m配置"
+	echo -e " 3 使用\033[32miptables增强模式\033[0m配置（仅支持Linux系统）"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -506,20 +505,11 @@ localproxy(){
 		setconfig local_proxy_type $local_proxy_type
 		localproxy
 	elif [ "$num" = 3 ]; then
-		if  gsettings --version >/dev/null 2>&1 ;then
-			local_proxy_type="GNOME"
+		if  id shellclash >/dev/null 2>&1 ;then
+			local_proxy_type="iptables增强模式"
 			setconfig local_proxy_type $local_proxy_type
 		else
-			echo -e "\033[31m没有找到GNOME桌面，无法设置！\033[0m"
-			sleep 1
-		fi
-		localproxy
-	elif [ "$num" = 4 ]; then
-		if  kwriteconfig5 -h >/dev/null 2>&1 ;then
-			local_proxy_type="KDE"
-			setconfig local_proxy_type $local_proxy_type
-		else
-			echo -e "\033[31m没有找到KDE桌面，无法设置！\033[0m"
+			echo -e "\033[31m当前设备无法使用增强模式！\033[0m"
 			sleep 1
 		fi
 		localproxy
@@ -660,7 +650,7 @@ clashcfg(){
 	echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
 	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑名单/白名单进行过滤"
-	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或GUI/api配置本机代理"
+	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或iptables配置本机代理"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
