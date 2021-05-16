@@ -420,7 +420,7 @@ start_udp(){
 start_output(){
 	#流量过滤规则
 	iptables -t nat -N clash_out
-	iptables -t nat -A clash_out -m owner --uid-owner 7890 -j RETURN
+	iptables -t nat -A clash_out -m owner --gid-owner 7890 -j RETURN
 	iptables -t nat -A clash_out -d 0.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 10.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 127.0.0.0/8 -j RETURN
@@ -444,7 +444,7 @@ start_output(){
 	iptables -t nat -A OUTPUT -p tcp -j clash_out
 	#设置dns转发
 	iptables -t nat -N clash_dns_out
-	iptables -t nat -A clash_dns_out -m owner --uid-owner shellclash -j RETURN
+	iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
