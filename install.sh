@@ -78,7 +78,6 @@ gettar(){
 			mv $clashdir/clash.service $sysdir/clash.service
 			sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service
 			systemctl daemon-reload
-			useradd shellclash
 		else
 			#设为保守模式启动
 			sed -i '/start_old=*/'d $clashdir/mark

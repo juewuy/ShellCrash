@@ -420,7 +420,7 @@ start_udp(){
 start_output(){
 	#流量过滤规则
 	iptables -t nat -N clash_out
-	iptables -t nat -A clash_out -m owner --uid-owner shellclash -j RETURN
+	iptables -t nat -A clash_out -m owner --uid-owner 7890 -j RETURN
 	iptables -t nat -A clash_out -d 0.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 10.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 127.0.0.0/8 -j RETURN

@@ -492,6 +492,7 @@ localproxy(){
 				$clashdir/start.sh set_proxy $mix_port $db_port
 				echo -e "\033[32m已经成功使用$local_proxy_type方式配置本机代理~\033[0m"
 				[ "$local_proxy_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
+				[ "$local_proxy_type" = "iptables增强模式" ] && $clashdir/start.sh start
 			fi		
 		else
 			local_proxy=未开启
@@ -505,7 +506,21 @@ localproxy(){
 		setconfig local_proxy_type $local_proxy_type
 		localproxy
 	elif [ "$num" = 3 ]; then
-		if  id shellclash >/dev/null 2>&1 ;then
+		[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
+		[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
+		if [ -n "$servdir" ];then
+			#检测用户如无则创建并提权
+			if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
+				userdel shellclash 2>/dev/null
+				useradd shellclash -u 7890
+				sed -Ei s/7890:7890/0:7890/g /etc/passwd
+			fi
+			#停止clash服务
+			$clashdir/start.sh stop
+			#修改service文件，使用shellclash用户运行clash服务
+			setconfig ExecStart "su\ shellclash\ -c\ \"$bindir/clash\ -d\ $bindir\"" $servdir
+			systemctl daemon-reload
+			#修改模式变量
 			local_proxy_type="iptables增强模式"
 			setconfig local_proxy_type $local_proxy_type
 		else
