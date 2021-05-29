@@ -417,6 +417,50 @@ start_udp(){
 	fi
 	iptables -t mangle -A PREROUTING -p udp $lanhost -j clash
 }
+start_output(){
+	#流量过滤规则
+	iptables -t nat -N clash_out
+	iptables -t nat -A clash_out -m owner --gid-owner 7890 -j RETURN
+	iptables -t nat -A clash_out -d 0.0.0.0/8 -j RETURN
+	iptables -t nat -A clash_out -d 10.0.0.0/8 -j RETURN
+	iptables -t nat -A clash_out -d 127.0.0.0/8 -j RETURN
+	iptables -t nat -A clash_out -d 169.254.0.0/16 -j RETURN
+	iptables -t nat -A clash_out -d 172.16.0.0/12 -j RETURN
+	iptables -t nat -A clash_out -d 192.168.0.0/16 -j RETURN
+	iptables -t nat -A clash_out -d 224.0.0.0/4 -j RETURN
+	iptables -t nat -A clash_out -d 240.0.0.0/4 -j RETURN
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+		#mac白名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash_out -p tcp $ports -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+		done
+	else
+		#mac黑名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash_out -m mac --mac-source $mac -j RETURN
+		done
+		iptables -t nat -A clash_out -p tcp $ports -j REDIRECT --to-ports $redir_port
+	fi
+	iptables -t nat -A OUTPUT -p tcp -j clash_out
+	#设置dns转发
+	iptables -t nat -N clash_dns_out
+	iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+		#mac白名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash_dns_out -p udp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+			iptables -t nat -A clash_dns_out -p tcp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+		done
+	else
+		#mac黑名单
+		for mac in $(cat $clashdir/mac); do
+			iptables -t nat -A clash_dns_out -m mac --mac-source $mac -j RETURN
+		done	
+		iptables -t nat -A clash_dns_out -p udp --dport 53 -j REDIRECT --to $dns_port
+		iptables -t nat -A clash_dns_out -p tcp --dport 53 -j REDIRECT --to $dns_port
+	fi
+	iptables -t nat -A OUTPUT -p udp -j clash_dns_out
+}
 stop_iptables(){
 	gethost #获取本地局域网地址段
     #重置iptables规则
@@ -431,6 +475,13 @@ stop_iptables(){
 	iptables -t nat -F clash_dns 2> /dev/null
 	iptables -t nat -X clash_dns 2> /dev/null
 	iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
+	#重置output规则
+	iptables -t nat -D OUTPUT -p tcp -j clash_out 2> /dev/null
+	iptables -t nat -F clash_out 2> /dev/null
+	iptables -t nat -X clash_out 2> /dev/null	
+	iptables -t nat -D OUTPUT -p udp -j clash_dns_out 2> /dev/null
+	iptables -t nat -F clash_dns_out 2> /dev/null
+	iptables -t nat -X clash_dns_out 2> /dev/null
 	#重置udp规则
 	iptables -t mangle -D PREROUTING -p udp $lanhost -j clash 2> /dev/null
 	iptables -t mangle -F clash 2> /dev/null
@@ -682,14 +733,9 @@ cronset)
 	;;
 set_proxy)
 		getconfig
-		#GNOME配置
-		if  [ "$local_proxy_type" = "GNOME" ];then
-			gsettings set org.gnome.system.proxy autoconfig-url "http://127.0.0.1:$db_port/ui/pac"
-			gsettings set org.gnome.system.proxy mode "auto"
-		#KDE配置
-		elif  [ "$local_proxy_type" = "KDE" ];then
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "Proxy Config Script" "http://127.0.0.1:$db_port/ui/pac"
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 2
+		#iptables增强模式
+		if  [ "$local_proxy_type" = "iptables增强模式" ];then
+			start_output
 		#环境变量方式
 		else
 			[ -w ~/.bashrc ] && profile=~/.bashrc
@@ -698,16 +744,7 @@ set_proxy)
 			echo 'export ALL_PROXY=$all_proxy' >>  $profile
 		fi
 	;;
-unset_proxy)
-		#GNOME配置
-		if  gsettings --version >/dev/null 2>&1 ;then
-			gsettings set org.gnome.system.proxy mode "none"
-		fi
-		#KDE配置
-		if  kwriteconfig5 -h >/dev/null 2>&1 ;then
-			kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 0
-		fi
-		#环境变量方式
+unset_proxy)	
 		[ -w ~/.bashrc ] && profile=~/.bashrc
 		[ -w /etc/profile ] && profile=/etc/profile
 		sed -i '/all_proxy/'d  $profile

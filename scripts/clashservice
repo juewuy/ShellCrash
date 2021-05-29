@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 
-START=92
+START=101
 
 SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1

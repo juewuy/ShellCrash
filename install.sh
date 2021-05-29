@@ -37,7 +37,7 @@ webget(){
 url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
 if [ "$test" -gt 0 ];then 
 	url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master"
-	[ "$test" -eq 2 ] && url="http://192.168.31.31:8080/ShellClash"
+	[ "$test" -eq 2 ] && url="http://192.168.0.4:8080/ShellClash"
 	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
 else
 	webget /tmp/clashrelease $url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
