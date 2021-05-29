@@ -245,7 +245,7 @@ setport(){
 			setconfig host $host
 			echo -e "\033[32m已经移除自定义host地址，请重新运行脚本以自动获取host！！！\033[0m"
 			exit 0
-		elif [ -n "$(echo $host | grep -Po '(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|[1-9])(\.(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|\d)){3}')" ]; then
+		elif [ -n "$(echo $host | grep -oE '(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|[1-9])(\.(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|\d)){3}')" ]; then
 			setconfig host $host
 			echo -e "\033[32m设置成功！！！\033[0m"
 		else

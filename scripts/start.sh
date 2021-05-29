@@ -170,7 +170,7 @@ EOF`
 	else
 		Https=""
 		#检测节点或providers
-		if [ -z "$(cat $yamlnew | grep -E 'server:|proxy-providers:' | grep -v 'nameserver' | head -n 1)" ];then
+		if [ -z "$(cat $yamlnew | grep -E 'server|proxy-providers' | grep -v 'nameserver' | head -n 1)" ];then
 			echo -----------------------------------------------
 			logger "获取到了配置文件，但似乎并不包含正确的节点信息！" 31
 			echo -----------------------------------------------
@@ -251,7 +251,7 @@ modify_yaml(){
 	mkdir -p $tmpdir > /dev/null
 	[ "$b" != "0" ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
 	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i '10,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
+	[ "$skip_cert" = "已开启" ] && sed -i '1,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#检测是否使用script规则
 	[ -n "$(cat $yaml | grep -E '^script:')" ] && mode='mode: Script'
 	#添加配置

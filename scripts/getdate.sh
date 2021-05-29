@@ -279,11 +279,9 @@ clashlink(){
 			fi
 		fi
 		getlink
-		clashlink
 	  
 	elif [ "$num" = 2 ];then
 		getlink2
-		clashlink
 		
 	elif [ "$num" = 3 ];then
 		yamlbak=$yaml.bak
@@ -328,10 +326,8 @@ clashlink(){
 		
 	elif [ "$num" = 5 ];then
 		clashcron
-		clashlink
 	else
 		errornum
-		clashlink
 	fi
 }
 #下载更新相关
@@ -901,10 +897,8 @@ userguide(){
 		echo -e "\033[33m请先选择你的使用环境： \033[0m"
 		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
 		echo -----------------------------------------------
-		echo -e " 1 \033[32m各类路由设备\033[0m，配置局域网透明路由"
-		echo -e " 2 \033[36m桌面版Linux系统\033[0m，仅配置本机路由"
-		echo -e " 3 \033[32m服务器Linux系统\033[0m，仅配置本机路由"
-		echo -e " 4 \033[36m多功能设备\033[0m，配置本机及局域网路由"
+		echo -e " 1 \033[32m主(旁)路由\033[0m"
+		echo -e " 2 \033[36mLinux本机代理\033[0m"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ] || [ "$num" -gt 4 ];then
@@ -912,14 +906,12 @@ userguide(){
 			forwhat
 		elif [ "$num" = 1 ];then
 			whichmod
-		elif [ "$num" = 2 -o "$num" = 3 ];then
+		elif [ "$num" = 2 ];then
 			setconfig redir_mod "纯净模式"
 			setconfig clashcore "clash"
 			echo -----------------------------------------------
 			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
 			localproxy
-		elif [ "$num" = 4 ];then
-			whichmod
 		fi
 	}
 	forwhat
