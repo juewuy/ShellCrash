@@ -91,16 +91,20 @@ gettar(){
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	echo versionsh_l=$release_new >> $clashdir/mark
 	#设置环境变量
-	[ -w ~/.bashrc ] && profile=~/.bashrc
-	[ -w /etc/profile ] && profile=/etc/profile
-	if [ -n "$profile" ];then
-		sed -i '/alias clash=*/'d $profile
-		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
-		sed -i '/export clashdir=*/'d $profile
-		echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
+	if [ "$dir" = "/etc/storage" ];then
+		profile=/opt/etc/profile	
 	else
-		echo 无法写入环境变量！请检查安装权限！
-		exit 1
+		[ -w ~/.bashrc ] && profile=~/.bashrc
+		[ -w /etc/profile ] && profile=/etc/profile
+		if [ -n "$profile" ];then
+			sed -i '/alias clash=*/'d $profile
+			echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
+			sed -i '/export clashdir=*/'d $profile
+			echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
+		else
+			echo 无法写入环境变量！请检查安装权限！
+			exit 1
+		fi
 	fi
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
@@ -123,10 +127,11 @@ echo -----------------------------------------------
 setdir(){		
 echo -----------------------------------------------
 $echo "\033[33m安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"	
-$echo " 1 在\033[32m/etc目录\033[0m下安装(适合路由设备)"
-$echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合大多数设备)"
+$echo " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
+$echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux设备)"
 $echo " 3 在\033[32m当前用户目录\033[0m下安装(适合非root用户)"
-$echo " 4 手动设置安装目录"
+$echo " 4 在\033[32m/etc/storage目录\033[0m下安装(适合Padavan系统)"
+$echo " 5 手动设置安装目录"
 $echo " 0 退出安装"
 echo -----------------------------------------------
 read -p "请输入相应数字 > " num
@@ -142,6 +147,8 @@ elif [ "$num" = "3" ];then
 	dir=~/.local/share
 	mkdir -p ~/.config/systemd/user
 elif [ "$num" = "4" ];then
+	dir=/etc/storage
+elif [ "$num" = "5" ];then
 	echo -----------------------------------------------
 	echo '可用路径 剩余空间:'
 	df -h | awk '{print $6,$4}'| sed 1d 
