@@ -4,8 +4,8 @@
 #脚本内部工具
 getconfig(){
 	#加载配置文件
-	[ -n "/etc/storage/clash" ] && clashdir=/etc/storage/clash
-	[ -n "/jffs/clash" ] && clashdir=/etc/storage/clash
+	[ -d "/etc/storage/clash" ] && clashdir=/etc/storage/clash
+	[ -d "/jffs/clash" ] && clashdir=/jffs/clash
 	[ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 	[ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 	ccfg=$clashdir/mark
@@ -643,7 +643,7 @@ afstart(){
 		#设置本机代理
 		[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
 		#启用面板配置自动保存
-		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
+		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
@@ -708,11 +708,12 @@ restart)
         $0 start
         ;;
 init)
-        [ -n "/etc/storage/clash" ] && clashdir=/etc/storage/clash
-		[ -n "/jffs/clash" ] && clashdir=/etc/storage/clash
-		echo "alias clash=\"$clashdir/clash.sh\"" >> /opt/etc/profile
-		echo "export clashdir=\"$clashdir\"" >> /opt/etc/profile
+        [ -d "/etc/storage/clash" ] && clashdir=/etc/storage/clash && profile=/opt/etc/profile
+		[ -d "/jffs/clash" ] && clashdir=/jffs/clash && profile=/jffs/configs/profile.add
+		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
+		echo "export clashdir=\"$clashdir\"" >> $profile 
 		$0 start
+		crontab $clashdir/cron
         ;;
 getyaml)	
 		getconfig
@@ -735,7 +736,7 @@ web_restore)
 	;;
 daemon)
 		getconfig
-		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
+		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"\$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
 	;;
 cronset)
 		cronset $2 $3

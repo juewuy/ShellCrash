@@ -355,7 +355,6 @@ gettar(){
 			mv $clashdir/clash.service $sysdir/clash.service
 			sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service
 			systemctl daemon-reload
-			#useradd shellclash
 		else
 			#设为保守模式启动
 			sed -i '/start_old=*/'d $clashdir/mark
@@ -368,7 +367,9 @@ gettar(){
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	echo versionsh_l=$release_new >> $clashdir/mark
-	#设置环境变量
+	#设置环境变量	
+	[ -w /opt/etc/profile ] && profile=/opt/etc/profile
+	[ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
 	[ -w ~/.bashrc ] && profile=~/.bashrc
 	[ -w /etc/profile ] && profile=/etc/profile
 	if [ -n "$profile" ];then
@@ -380,6 +381,8 @@ gettar(){
 		echo 无法写入环境变量！请检查安装权限！
 		exit 1
 	fi
+	#华硕/Padavan额外设置
+	[ -n "$systype" ] && sed -i '/ShellClash初始化/'d $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clashservice
@@ -845,6 +848,8 @@ update(){
 			sed -i '/all_proxy/'d $profile
 			sed -i '/ALL_PROXY/'d $profile
 			sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
+			sed -i '/ShellClash初始化/'d /etc/storage/started_script.sh 2>/dev/null
+			sed -i '/ShellClash初始化/'d /jffs/.asusrouter 2>/dev/null
 			rm -rf $clashdir
 			rm -rf /etc/init.d/clash
 			rm -rf /etc/systemd/system/clash.service

@@ -985,6 +985,7 @@ tools(){
 	[ -f "/etc/firewall.user" ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
 	#echo -e " 3 配置DDNS服务:	\033[36m$ipv6_support\033[0m	————待施工"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 3 \033[33m$mi_update\033[0m小米系统自动更新"
+	[ -w "/etc/config/firewall" ] && echo -e " 4 \033[32修复\033[0mRedir_host模式Netflix访问"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -1008,7 +1009,15 @@ tools(){
 		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"
 		sleep 1
 		tools
-
+		
+	elif [ "$num" = 4 ]; then
+		sed -i "s/drop_invalid\ \'1\'/drop_invalid\ \'0\'/g" /etc/config/firewall
+		echo -----------------------------------------------
+		read -P "已修复，是否立即重启设备使其生效？(1/0) > " res
+		[ "$res" = 1 ] && reboot
+		sleep 1
+		tools
+		
 	else
 		errornum
 	fi
@@ -1043,11 +1052,13 @@ clashcron(){
 						read -p  "是否确认添加定时任务？(1/0) > " res
 						if [ "$res" = '1' ]; then
 							cronwords="$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname"
-							crontab -l > /tmp/conf
-							sed -i "/$cronname/d" /tmp/conf
-							sed -i '/^$/d' /tmp/conf
-							echo "$cronwords" >> /tmp/conf && crontab /tmp/conf
-							rm -f /tmp/conf
+							crondir=/tmp/cron_$USER
+							crontab -l > $crondir
+							sed -i "/$cronname/d" $crondir
+							sed -i '/^$/d' $crondir
+							echo "$cronwords" >> $crondir && crontab $crondir
+							#华硕/Padavan固件存档在本地,其他则删除
+							[ "$clashdir" = "/jffs/clash" -o "$clashdir" = "/etc/storage/clash" ] && mv -f $crondir $clashdir/cron || rm -f $crondir
 							echo -----------------------------------------------
 							echo -e "\033[31m定时任务已添加！！！\033[0m"
 						fi
@@ -1071,6 +1082,7 @@ clashcron(){
 			i=
 		elif [ "$num" = 9 ]; then
 			crontab -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && crontab /tmp/conf
+			sed -i "/$cronname/d" $clashdir/cron
 			rm -f /tmp/conf
 			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"

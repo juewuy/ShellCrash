@@ -93,6 +93,8 @@ gettar(){
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	echo versionsh_l=$release_new >> $clashdir/mark
 	#设置环境变量	
+	[ -w /opt/etc/profile ] && profile=/opt/etc/profile
+	[ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
 	[ -w ~/.bashrc ] && profile=~/.bashrc
 	[ -w /etc/profile ] && profile=/etc/profile
 	if [ -n "$profile" ];then
@@ -105,7 +107,7 @@ gettar(){
 		exit 1
 	fi
 	#华硕/Padavan额外设置
-	[ -n "$systype" ] && echo "$clashdir/start.sh init #运行ShellClash开机初始化脚本" >> $initdir
+	[ -n "$systype" ] && sed -i '/ShellClash初始化/'d $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clashservice
