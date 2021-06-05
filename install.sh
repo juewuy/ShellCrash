@@ -10,12 +10,14 @@ echo "**                ShellClash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
+[ -f "/etc/storage/started_script.sh" ] && systype=Padavan && initdir='/etc/storage/started_script.sh'
+[ -f "/jffs/.asusrouter" ] && systype=asusrouter && initdir='/jffs/.asusrouter'
 #检查root权限
-if [ "$USER" != "root" ];then
+if [ "$USER" != "root" -a -z "$systype" ];then
 	echo 当前用户:$USER
-	$echo "\033[31m请尽量使用root用户（但绝对不要使用sudo命令！）执行安装!\033[0m"
+	$echo "\033[31m请尽量使用root用户（不要直接使用sudo命令！）执行安装!\033[0m"
 	echo -----------------------------------------------
-	read -p "仍要安装？可能会产生大量未知错误！(1/0) > " res
+	read -p "仍要安装？可能会产生未知错误！(1/0) > " res
 	[ "$res" != "1" ] && exit
 fi
 webget(){
@@ -38,7 +40,7 @@ url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
 if [ "$test" -gt 0 ];then 
 	url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master"
 	[ "$test" -eq 2 ] && url="http://192.168.0.4:8080/ShellClash"
-	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/clash-for-Miwifi"
+	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/ShellClash"
 else
 	webget /tmp/clashrelease $url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
 	[ "$result" = "200" ] && release_new=$(cat /tmp/clashrelease | head -1)
@@ -90,22 +92,20 @@ gettar(){
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	echo versionsh_l=$release_new >> $clashdir/mark
-	#设置环境变量
-	if [ "$dir" = "/etc/storage" ];then
-		profile=/opt/etc/profile	
+	#设置环境变量	
+	[ -w ~/.bashrc ] && profile=~/.bashrc
+	[ -w /etc/profile ] && profile=/etc/profile
+	if [ -n "$profile" ];then
+		sed -i '/alias clash=*/'d $profile
+		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
+		sed -i '/export clashdir=*/'d $profile
+		echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
 	else
-		[ -w ~/.bashrc ] && profile=~/.bashrc
-		[ -w /etc/profile ] && profile=/etc/profile
-		if [ -n "$profile" ];then
-			sed -i '/alias clash=*/'d $profile
-			echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
-			sed -i '/export clashdir=*/'d $profile
-			echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
-		else
-			echo 无法写入环境变量！请检查安装权限！
-			exit 1
-		fi
+		echo 无法写入环境变量！请检查安装权限！
+		exit 1
 	fi
+	#华硕/Padavan额外设置
+	[ -n "$systype" ] && echo "$clashdir/start.sh init #运行ShellClash开机初始化脚本" >> $initdir
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clashservice
@@ -119,53 +119,55 @@ echo -----------------------------------------------
 gettar
 echo -----------------------------------------------
 echo ShellClash 已经安装成功!
-[ "$USER" != "root" ] && echo "请执行【source ~/.bashrc &> /dev/null】命令以加载环境变量！"
+[ "$profile" = "~/.bashrc" ] && echo "请执行【source ~/.bashrc &> /dev/null】命令以加载环境变量！"
 echo -----------------------------------------------
 $echo "\033[33m输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
 echo -----------------------------------------------
 }
-setdir(){		
-echo -----------------------------------------------
-$echo "\033[33m安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"	
-$echo " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
-$echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux设备)"
-$echo " 3 在\033[32m当前用户目录\033[0m下安装(适合非root用户)"
-$echo " 4 在\033[32m/etc/storage目录\033[0m下安装(适合Padavan系统)"
-$echo " 5 手动设置安装目录"
-$echo " 0 退出安装"
-echo -----------------------------------------------
-read -p "请输入相应数字 > " num
-#设置目录
-if [ -z $num ];then
-	echo 安装已取消
-	exit;
-elif [ "$num" = "1" ];then
-	dir=/etc
-elif [ "$num" = "2" ];then
-	dir=/usr/share
-elif [ "$num" = "3" ];then
-	dir=~/.local/share
-	mkdir -p ~/.config/systemd/user
-elif [ "$num" = "4" ];then
-	dir=/etc/storage
-elif [ "$num" = "5" ];then
-	echo -----------------------------------------------
-	echo '可用路径 剩余空间:'
-	df -h | awk '{print $6,$4}'| sed 1d 
-	echo '路径是必须带 / 的格式，写入虚拟内存(/tmp,/sys,..)的文件会在重启后消失！！！'
-	read -p "请输入自定义路径 > " dir
-	if [ -z "$dir" ];then
-		$echo "\033[31m路径错误！请重新设置！\033[0m"
-		setdir
-	fi
+setdir(){
+if [ -n "$systype" ];then
+	[ "$systype" = "Padavan" ] && dir=/etc/storage
+	[ "$systype" = "asusrouter" ] && dir=/jffs
 else
-	echo 安装已取消！！！
-	exit;
+	echo -----------------------------------------------
+	$echo "\033[33m安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"	
+	$echo " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
+	$echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux设备)"
+	$echo " 3 在\033[32m当前用户目录\033[0m下安装(适合非root用户)"
+	$echo " 4 手动设置安装目录"
+	$echo " 0 退出安装"
+	echo -----------------------------------------------
+	read -p "请输入相应数字 > " num
+	#设置目录
+	if [ -z $num ];then
+		echo 安装已取消
+		exit;
+	elif [ "$num" = "1" ];then
+		dir=/etc
+	elif [ "$num" = "2" ];then
+		dir=/usr/share
+	elif [ "$num" = "3" ];then
+		dir=~/.local/share
+		mkdir -p ~/.config/systemd/user
+	elif [ "$num" = "4" ];then
+		echo -----------------------------------------------
+		echo '可用路径 剩余空间:'
+		df -h | awk '{print $6,$4}'| sed 1d 
+		echo '路径是必须带 / 的格式，写入虚拟内存(/tmp,/sys,..)的文件会在重启后消失！！！'
+		read -p "请输入自定义路径 > " dir
+		if [ -z "$dir" ];then
+			$echo "\033[31m路径错误！请重新设置！\033[0m"
+			setdir
+		fi
+	else
+		echo 安装已取消！！！
+		exit;
+	fi
 fi
 if [ ! -w $dir ];then
 	$echo "\033[31m没有$dir目录写入权限！请重新设置！\033[0m" && sleep 1 && setdir
 else
-	echo 目标目录磁盘剩余：$(df -h $dir | awk '{print $4}' | sed 1d )
+	$echo "目标目录\033[32m$dir\033[0m空间剩余：$(df -h $dir | awk '{print $4}' | sed 1d )"
 	read -p "确认安装？(1/0) > " res
 	[ "$res" = "1" ] && clashdir=$dir/clash || setdir
 fi

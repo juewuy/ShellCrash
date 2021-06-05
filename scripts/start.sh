@@ -4,6 +4,8 @@
 #脚本内部工具
 getconfig(){
 	#加载配置文件
+	[ -n "/etc/storage/clash" ] && clashdir=/etc/storage/clash
+	[ -n "/jffs/clash" ] && clashdir=/etc/storage/clash
 	[ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 	[ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 	ccfg=$clashdir/mark
@@ -704,6 +706,13 @@ stop)
 restart)
         $0 stop
         $0 start
+        ;;
+init)
+        [ -n "/etc/storage/clash" ] && clashdir=/etc/storage/clash
+		[ -n "/jffs/clash" ] && clashdir=/etc/storage/clash
+		echo "alias clash=\"$clashdir/clash.sh\"" >> /opt/etc/profile
+		echo "export clashdir=\"$clashdir\"" >> /opt/etc/profile
+		$0 start
         ;;
 getyaml)	
 		getconfig
