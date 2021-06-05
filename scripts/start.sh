@@ -642,6 +642,8 @@ afstart(){
 		mark_time
 		#设置本机代理
 		[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
+		#加载定时任务
+		[ -f $clashdir/cron ] && crontab $clashdir/cron
 		#启用面板配置自动保存
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
@@ -713,7 +715,6 @@ init)
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
 		echo "export clashdir=\"$clashdir\"" >> $profile 
 		$0 start
-		crontab $clashdir/cron
         ;;
 getyaml)	
 		getconfig
