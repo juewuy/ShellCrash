@@ -50,21 +50,23 @@ webget(){
 	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
-	#参数【$5】代表验证证书
+	#参数【$5】代表验证证书，【$6】使用clash文件头
 	if curl --version > /dev/null 2>&1;then
 		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
 		[ "$4" = "rediroff" ] && redirect='' || redirect='-L'
 		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
-		result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
+		[ -n "$6" ] && agent='-A "clash"'
+		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
 		[ "$result" != "200" ] && export all_proxy="" && result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
 	else
 		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 		[ "$3" = "echoon" ] && progress=''
 		[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 		[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-		wget -Y on $progress $redirect $certificate --timeout=3 -O $1 $2 
+		[ -n "$6" ] && agent='--user-agent="clash"'
+		wget -Y on $agent $progress $redirect $certificate --timeout=3 -O $1 $2 
 		if [ "$?" != "0" ];then
-			wget $progress $redirect $certificate --timeout=3 -O $1 $2
+			wget $agent $progress $redirect $certificate --timeout=3 -O $1 $2
 			[ "$?" = "0" ] && result="200"
 		else
 			result="200"
@@ -130,6 +132,7 @@ https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.
 EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
+		[ -n "$(echo $Url | grep -o 'https://dler')" ] && Server='api.dler.io'
 		Https="https://$Server/sub?target=clash&insert=true&new_name=true&scv=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		markhttp=1
 	fi
@@ -142,7 +145,7 @@ EOF`
 	yaml=$clashdir/config.yaml
 	yamlnew=/tmp/clash_config_$USER.yaml
 	rm -rf $yamlnew
-	webget $yamlnew $Https
+	webget $yamlnew $Https 0 0 0 1
 	if [ "$result" != "200" ];then
 		if [ -z "$markhttp" ];then
 			echo -----------------------------------------------
@@ -725,7 +728,7 @@ updateyaml)
 		$0 restart
 		;;
 webget)
-		webget $2 $3 $4 $5
+		webget $2 $3 $4 $5 $6
 		;;
 web_save)
 		getconfig
