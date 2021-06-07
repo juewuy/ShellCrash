@@ -56,7 +56,7 @@ elif [ "$num" = "1" ];then
 		echo "无法切换版本，尝试安装测试版！"
 	fi
 fi
-webget /tmp/clashversion $url/bin/version echooff
+webget /tmp/clashversion "$url/bin/version" echooff
 [ "$result" = "200" ] && versionsh=$(cat /tmp/clashversion | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && release_new=$versionsh
 rm -rf /tmp/clashversion

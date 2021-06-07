@@ -21,13 +21,13 @@
 ~通过管理脚本在Shell环境下便捷使用[Clash](https://github.com/Dreamacro/clash)<br>
 ~支持在Shell环境下管理[Clash各种功能](https://lancellc.gitbook.io/clash)<br>
 ~支持在线导入[Clash](https://github.com/Dreamacro/clash)支持的分享、订阅及配置链接<br>~支持配置定时任务，支持配置文件定时更新<br>~支持在线安装及使用本地网页面板管理内置规则<br>
-~支持路由模式、本机模式等多种模式切换<br>~支持GNOME、KDE桌面自动配置本机模式<br>~支持在线更新<br>
+~支持路由模式、本机模式等多种模式切换<br>~支持在线更新<br>
 
 设备支持：
 --
 
 ~支持各种基于OpenWrt或使用OpenWrt二次定制开发的路由器设备<br>
-~支持各种运行标准Linux系统（如Debian/CenOS/Armbian等）的设备<br>~兼容Padavan固件（保守模式）、潘多拉固件<br>~兼容各类使用Linux内核定制开发的各类型设备<br>
+~支持各种运行标准Linux系统（如Debian/CenOS/Armbian等）的设备<br>~兼容Padavan固件（保守模式）、潘多拉固件以及华硕/梅林固件<br>~兼容各类使用Linux内核定制开发的各类型设备<br>
 
 ——————————<br>
 ~更多设备支持，请提issue或前往TG群反馈（需提供设备名称及运行uname -a返回的设备核心信息）<br>
@@ -47,12 +47,10 @@ opkg update && opkg install curl
 ~**使用curl安装**：<br>
 
 ```Shell
-#Release版本-github直连
-sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" && source /etc/profile &> /dev/null
-#Release版本-jsdelivrCDN源
-sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install.sh)" && source /etc/profile &> /dev/null
-#Test版本-github直连
-sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" -s 1 && source /etc/profile &> /dev/null
+#github直连
+export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -s $url/install_n.sh)" && source /etc/profile &> /dev/null
+#jsdelivrCDN源
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -s $url/install_n.sh)" && source /etc/profile &> /dev/null
 ```
 
 ~**使用wget安装**：<br>
