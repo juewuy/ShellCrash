@@ -57,8 +57,32 @@ export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(cu
 
 ```sh
 #Release版本-jsdelivrCDN源
-wget -q --no-check-certificate -O /tmp/install.sh https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
+
+~**使用低版本wget（提示不支持https）本地安装**：<br>
+
+首先在window下将项目克隆到本地（或[点击下载项目源码zip包](https://github.com/juewuy/ShellClash/archive/refs/heads/master.zip)到本地后解压）
+
+```sh
+git clone https://github.com/juewuy/ShellClash.git
+```
+
+之后打开/项目地址/ShellClash/bin/hfs/hfs.exe
+
+点击菜单-从磁盘添加目录-{找到ShellClash源码所在目录}-添加为真实目录
+
+点击菜单-IP地址-{选择你局域网的实际IP地址}
+
+点击ShellClash-点击复制到剪切板
+
+之后在SSH中使用如下命令安装
+
+```sh
+export url='将复制的地址粘贴在这里' && wget -q -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+```
+
+之后更新版本时需要先更新本地版本库并打开hfs服务，再在SSH菜单内进行更新，之后也可以通过hfs搭建本地服务器来实现上传更新yaml配置文件的功能
 
 ~**非root用户安装后**请额外执行以下命令以读取环境变量：<br>
 

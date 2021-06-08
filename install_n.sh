@@ -99,6 +99,9 @@ gettar(){
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	echo versionsh_l=$release_new >> $clashdir/mark
+	#设置更新地址
+	sed -i '/update_url=*/'d $clashdir/mark
+	echo update_url=$url >> $clashdir/mark
 	#设置环境变量	
 	[ -w /opt/etc/profile ] && profile=/opt/etc/profile
 	[ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
