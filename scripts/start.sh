@@ -371,6 +371,8 @@ start_dns(){
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
+	iptables -t nat -I PREROUTING -p udp -d 8.8.8.8 -j clash_dns
+	iptables -t nat -I PREROUTING -p udp -d 8.8.4.4 -j clash_dns
 	#ipv6DNS
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" ];then
