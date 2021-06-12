@@ -677,8 +677,8 @@ clashcfg(){
 	elif [ "$num" = 1 ]; then
 		if [ "$USER" != "root" -a "$USER" != "admin" ];then
 			echo -----------------------------------------------
-			echo -e "\033[33m非root用户无法启用静态路由，仅可以使用纯净模式！\033[0m"
-			sleep 1
+			read -p "非root用户可能无法正确配置其他模式！依然尝试吗？(1/0) > " res
+			[ "$res" = 1 ] && set_redir_mod
 		else
 			set_redir_mod
 		fi
