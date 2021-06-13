@@ -314,8 +314,8 @@ cn_ip_route(){
 	if [ -f $bindir/cn_ip.txt ];then
 	echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
 	awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> /tmp/cn_$USER.ipset
-	ipset -! flush cn_ip
-	ipset -! restore < /tmp/cn_$USER.ipset 2>/dev/null
+	ipset -! flush cn_ip 2>/dev/null
+	ipset -! restore < /tmp/cn_$USER.ipset
 	rm -rf cn_$USER.ipset
 	fi
 }
@@ -332,7 +332,7 @@ start_redir(){
 	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set china dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -428,7 +428,7 @@ start_udp(){
 	iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set china dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -455,7 +455,7 @@ start_output(){
 	iptables -t nat -A clash_out -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash_out -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash_out -d 240.0.0.0/4 -j RETURN
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash_out -m set --match-set china dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
