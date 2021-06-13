@@ -495,8 +495,8 @@ stop_iptables(){
 	ip route del local default dev lo table 100 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp $lanhost -j clash 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp -j clash_dns 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash_dns 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash 2> /dev/null
 	iptables -t nat -F clash 2> /dev/null
 	iptables -t nat -X clash 2> /dev/null
 	iptables -t nat -F clash_dns 2> /dev/null
