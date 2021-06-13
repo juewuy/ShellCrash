@@ -733,6 +733,7 @@ clashadv(){
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
+	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
 	[ -n "$(cat /etc/crontabs/root | grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	#
@@ -744,10 +745,10 @@ clashadv(){
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
-	echo -e " 5 配置内置DNS服务	\033[36m$dns_no\033[0m"
-	echo -e " 6 手动指定相关端口、秘钥及本机host"
+	echo -e " 5 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m	————实验性功能，可能不稳定"
+	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 7 使用自定义配置"
-	[ -x /usr/sbin/otapredownload ] && echo -e " 8 \033[33m$mi_update\033[0m小米系统自动更新"
+	echo -e " 8 手动指定相关端口、秘钥及本机host"
 	echo -----------------------------------------------
 	echo -e " 9 \033[31m重置\033[0m配置文件"
 	echo -e " 0 返回上级菜单 \033[0m"
@@ -841,6 +842,19 @@ clashadv(){
 		clashadv
 		
 	elif [ "$num" = 5 ]; then
+		echo -----------------------------------------------
+		if [ "$cn_ip_route" = "未开启" ]; then 
+			echo -e "\033[33m已开启CN_IP绕过内核功能！！\033[0m"
+			cn_ip_route=已开启
+			sleep 1
+		else
+			echo -e "\033[32m已禁用CN_IP绕过内核功能！！\033[0m"
+			cn_ip_route=未开启
+		fi
+		setconfig cn_ip_route $cn_ip_route
+		clashadv  	
+		
+	elif [ "$num" = 6 ]; then
 		source $ccfg
 		if [ "$dns_no" = "已禁用" ];then
 			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
@@ -853,7 +867,7 @@ clashadv(){
 		fi
 		clashadv	
 		
-	elif [ "$num" = 6 ]; then
+	elif [ "$num" = 8 ]; then
 		source $ccfg
 		if [ -n "$(pidof clash)" ];then
 			echo -----------------------------------------------
@@ -894,13 +908,6 @@ EOF
 		echo -e "其他设备请\n使用\033[32mscp命令\033[0m下载文件编辑后上传到$clashdir目录！\033[0m"
 		echo -e "如需自定义节点，可以在config.yaml文件中修改或者直接替换config.yaml文件！\033[0m"
 		sleep 3
-		clashadv
-		
-	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 8 ]; then	
-		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
-		echo -----------------------------------------------
-		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"
-		sleep 1
 		clashadv
 		
 	elif [ "$num" = 9 ]; then	

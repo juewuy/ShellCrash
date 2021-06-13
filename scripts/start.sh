@@ -26,6 +26,7 @@ getconfig(){
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
+	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
@@ -300,6 +301,20 @@ EOF
 	rm -f $tmpdir/proxy.yaml
 }
 #设置路由规则
+cn_ip_route(){	
+	if [ ! -f $clashdir/cn_ip.txt ];then
+		logger "未找到cn_ip列表，正在下载！" 33
+		webget $clashdir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
+		[ "$result" != 200 ] && rm -rf $clashdir/cn_ip.txt && logger "列表下载失败，已退出！" 31 && exit 1
+	fi
+	if [ -f $clashdir/cn_ip.txt ];then
+	echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
+	awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $clashdir/cn_ip.txt >> /tmp/cn_$USER.ipset
+	ipset -! flush cn_ip
+	ipset -! restore < /tmp/cn_$USER.ipset 2>/dev/null
+	rm -rf cn_$USER.ipset
+	fi
+}
 start_redir(){
 	#获取本地局域网地址段
 	gethost
@@ -313,6 +328,7 @@ start_redir(){
 	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set china dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -408,6 +424,7 @@ start_udp(){
 	iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set china dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -434,6 +451,7 @@ start_output(){
 	iptables -t nat -A clash_out -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash_out -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash_out -d 240.0.0.0/4 -j RETURN
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash_out -m set --match-set china dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -499,6 +517,8 @@ stop_iptables(){
 	ip6tables -t nat -F clashv6_dns 2> /dev/null
 	ip6tables -t nat -X clashv6_dns 2> /dev/null
 	ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
+	#清理ipset规则
+	ipset destroy cn_ip >/dev/null 2>&1
 }
 #面板配置保存相关
 web_save(){
@@ -595,7 +615,7 @@ bfstart(){
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
-			[ "$?" = 1 ] && logger "核心下载失败，已退出！" 31 && rm -f $bindir/clash && exit 1
+			[ "$result" != 200 ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
 			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
 			clashv=$($bindir/clash -v | awk '{print $2}')
 			setconfig clashv $clashv
@@ -609,7 +629,7 @@ bfstart(){
 			logger "未找到GeoIP数据库，正在下载！" 33
 			[ -z "$geotype" ] && geotype=cn_mini.mmdb
 			webget $bindir/Country.mmdb $update_url/bin/$geotype
-			[ "$?" = 1 ] && logger "数据库下载失败，已退出！" 31 && rm -f $bindir/Country.mmdb && exit 1
+			[ "$result" != 200 ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
 		fi
@@ -638,6 +658,7 @@ afstart(){
 	$bindir/clash -t -d $bindir >/dev/null
 	if [ "$?" = 0 ];then
 		#设置iptables转发规则
+		[ "$dns_mod" = "redir_host" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
 		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
 		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
