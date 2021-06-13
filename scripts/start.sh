@@ -302,14 +302,18 @@ EOF
 }
 #设置路由规则
 cn_ip_route(){	
-	if [ ! -f $clashdir/cn_ip.txt ];then
-		logger "未找到cn_ip列表，正在下载！" 33
-		webget $clashdir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
-		[ "$result" != 200 ] && rm -rf $clashdir/cn_ip.txt && logger "列表下载失败，已退出！" 31 && exit 1
+	if [ ! -f $bindir/cn_ip.txt ];then
+		if [ -f $clashdir/cn_ip.txt ];then
+			mv $clashdir/cn_ip.txt $bindir/cn_ip.txt
+		else
+			logger "未找到cn_ip列表，正在下载！" 33
+			webget $bindir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
+			[ "$result" != 200 ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败，已退出！" 31 && exit 1
+		fi
 	fi
-	if [ -f $clashdir/cn_ip.txt ];then
+	if [ -f $bindir/cn_ip.txt ];then
 	echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
-	awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $clashdir/cn_ip.txt >> /tmp/cn_$USER.ipset
+	awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> /tmp/cn_$USER.ipset
 	ipset -! flush cn_ip
 	ipset -! restore < /tmp/cn_$USER.ipset 2>/dev/null
 	rm -rf cn_$USER.ipset
