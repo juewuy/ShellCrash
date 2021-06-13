@@ -502,15 +502,15 @@ setcore(){
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	webget /tmp/Country.mmdb $update_url/bin/$geotype
+	webget /tmp/$geoname $update_url/bin/$geotype
 	if [ "$result" != "200" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		exit 1
 	else
-		mv -f /tmp/Country.mmdb $bindir/Country.mmdb
+		mv -f /tmp/$geoname $bindir/$geoname
 		echo -----------------------------------------------
-		echo -e "\033[32mGeoIP数据库文件下载成功！\033[0m"
+		echo -e "\033[32mGeoIP/CN_IP数据库文件下载成功！\033[0m"
 		Geo_v=$GeoIP_v
 		setconfig Geo_v $GeoIP_v
 		setconfig geotype $geotype
@@ -520,18 +520,25 @@ setgeo(){
 	echo -----------------------------------------------
 	[ "$geotype" = "Country.mmdb" ] && geo_type=全球版 || geo_type=精简版
 	[ -n "$geo_type" ] && echo -e "当前使用的是\033[47;30m$geo_type数据库\033[0m"
-	echo -e "\033[36m请选择需要更新的GeoIP数据库：\033[0m"
+	echo -e "\033[36m请选择需要更新的GeoIP/CN_IP数据库：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约4mb)"
 	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.1mb)"
+	echo -e " 3 由\033[32m17mon\033[0m提供的CN-IP文件(需启用CN_IP绕过内核功能，约0.1mb)"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ "$num" = '1' ]; then
 		geotype=Country.mmdb
+		geoname=Country.mmdb
 		getgeo
 	elif [ "$num" = '2' ]; then
 		geotype=cn_mini.mmdb
+		geoname=Country.mmdb
+		getgeo
+	elif [ "$num" = '3' ] && [ "$cn_ip_route" = "已开启" ]; then
+		geotype=china_ip_list.txt
+		geoname=cn_ip.txt
 		getgeo
 	else
 		update
@@ -782,7 +789,7 @@ update(){
 	echo -----------------------------------------------
 	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh\033[0m"
 	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_n\033[0m"
-	echo -e " 3 更新\033[32mGeoIP数据库	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
+	echo -e " 3 更新\033[32mGeoIP/CN_IP	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
 	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
