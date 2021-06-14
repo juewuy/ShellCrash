@@ -735,7 +735,6 @@ clashadv(){
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
-	[ -n "$(cat /etc/crontabs/root | grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
@@ -745,7 +744,7 @@ clashadv(){
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
-	echo -e " 5 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m	————实验性功能，可能不稳定"
+	echo -e " 5 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m	————不支持Fake-ip模式"
 	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 7 使用自定义配置"
 	echo -e " 8 手动指定相关端口、秘钥及本机host"
@@ -843,16 +842,21 @@ clashadv(){
 		
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		if [ "$cn_ip_route" = "未开启" ]; then 
-			echo -e "\033[33m已开启CN_IP绕过内核功能！！\033[0m"
-			cn_ip_route=已开启
+		if [ "$dns_mod" = "fake-ip" ];then
+			echo -e "\033[31m不支持fake-ip模式，请将DNS模式更换为Redir-host！！\033[0m"
 			sleep 1
 		else
-			echo -e "\033[32m已禁用CN_IP绕过内核功能！！\033[0m"
-			cn_ip_route=未开启
+			if [ "$cn_ip_route" = "未开启" ]; then 
+				echo -e "\033[33m已开启CN_IP绕过内核功能！！\033[0m"
+				cn_ip_route=已开启
+				sleep 1
+			else
+				echo -e "\033[32m已禁用CN_IP绕过内核功能！！\033[0m"
+				cn_ip_route=未开启
+			fi
+			setconfig cn_ip_route $cn_ip_route
 		fi
-		setconfig cn_ip_route $cn_ip_route
-		clashadv  	
+			clashadv  	
 		
 	elif [ "$num" = 6 ]; then
 		source $ccfg
@@ -992,7 +996,7 @@ tools(){
 	[ -f "/etc/firewall.user" ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
 	#echo -e " 3 配置DDNS服务:	\033[36m$ipv6_support\033[0m	————待施工"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 3 \033[33m$mi_update\033[0m小米系统自动更新"
-	[ -w "/etc/config/firewall" ] && echo -e " 4 \033[32修复\033[0mRedir_host模式Netflix访问"
+	#[ -w "/etc/config/firewall" ] && echo -e " 4 \033[32修复\033[0mRedir_host模式Netflix访问"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------

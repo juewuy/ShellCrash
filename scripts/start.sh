@@ -606,7 +606,7 @@ bfstart(){
 	#读取配置文件
 	getconfig
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
-	[ -z "$update_url" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master
+	[ -z "$update_url" ] || [ -n "$(echo $update_url | grep 'github')" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master
 	#检查clash核心
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
