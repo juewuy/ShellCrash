@@ -28,10 +28,15 @@ webget(){
 		[ -z "$4" ] && redirect='-L' || redirect=''
 		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
 	else
-		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		if wget --version > /dev/null 2>&1;then
+			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+			[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+			certificate='--no-check-certificate'
+			timeout='--timeout=3'
+		fi
 		[ "$3" = "echoon" ] && progress=''
-		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
-		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
+		[ "$3" = "echooff" ] && progress='-q'
+		wget $progress $redirect $certificate $timeout -O $1 $2 
 		[ $? -eq 0 ] && result="200"
 	fi
 }
