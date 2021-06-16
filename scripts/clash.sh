@@ -464,10 +464,10 @@ macfilter(){
 }
 localproxy(){
 	[ -z "$local_proxy" ] && local_proxy='未开启'
-	[ -z "$local_proxy_type" ] && local_proxy_type='环境变量'
+	[ -z "$local_type" ] && local_type='环境变量'
 	[ "$local_proxy" = "已开启" ] && proxy_set='禁用' || proxy_set='启用'
 	echo -----------------------------------------------
-	echo -e "\033[33m当前本机代理配置方式为：\033[32m$local_proxy_type\033[0m"
+	echo -e "\033[33m当前本机代理配置方式为：\033[32m$local_type\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置"
@@ -490,39 +490,28 @@ localproxy(){
 			else
 				local_proxy=已开启
 				$clashdir/start.sh set_proxy $mix_port $db_port
-				echo -e "\033[32m已经成功使用$local_proxy_type方式配置本机代理~\033[0m"
-				[ "$local_proxy_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
-				[ "$local_proxy_type" = "iptables增强模式" ] && $clashdir/start.sh start
+				echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
+				[ "$local_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
+				[ "$local_type" = "iptables增强模式" ] && $clashdir/start.sh start
 			fi		
 		else
 			local_proxy=未开启
-			$clashdir/start.sh unset_proxy
-			echo -e "\033[33m已经停用本机代理规则！！\033[0m"
-			[ "$local_proxy_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
+			$clashdir/start.sh stop
+			echo -e "\033[33m已经停用本机代理规则并停止clash服务！！\033[0m"
+			[ "$local_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
 		fi
 		setconfig local_proxy $local_proxy
 	elif [ "$num" = 2 ]; then
-		local_proxy_type="环境变量"
-		setconfig local_proxy_type $local_proxy_type
+		local_type="环境变量"
+		setconfig local_type $local_type
 		localproxy
 	elif [ "$num" = 3 ]; then
 		[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
 		[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
+		[ -x /bin/su ] && servdir=1
 		if [ -n "$servdir" ];then
-			#检测用户如无则创建并提权
-			if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
-				userdel shellclash 2>/dev/null
-				useradd shellclash -u 7890
-				sed -Ei s/7890:7890/0:7890/g /etc/passwd
-			fi
-			#停止clash服务
-			$clashdir/start.sh stop
-			#修改service文件，使用shellclash用户运行clash服务
-			setconfig ExecStart "su\ shellclash\ -c\ \"$bindir/clash\ -d\ $bindir\"" $servdir
-			systemctl daemon-reload
-			#修改模式变量
-			local_proxy_type="iptables增强模式"
-			setconfig local_proxy_type $local_proxy_type
+			local_type="iptables增强模式"
+			setconfig local_type $local_type
 		else
 			echo -e "\033[31m当前设备无法使用增强模式！\033[0m"
 			sleep 1
@@ -842,7 +831,10 @@ clashadv(){
 		
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		if [ "$dns_mod" = "fake-ip" ];then
+		if ipset -v >/dev/null 2>&1;then
+			echo -e "\033[31m当前设备缺少ipset模块，无法启用绕过功能！！\033[0m"
+			sleep 1
+		elif [ "$dns_mod" = "fake-ip" ];then
 			echo -e "\033[31m不支持fake-ip模式，请将DNS模式更换为Redir-host！！\033[0m"
 			sleep 1
 		else

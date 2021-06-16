@@ -520,7 +520,7 @@ setgeo(){
 	echo -----------------------------------------------
 	[ "$geotype" = "Country.mmdb" ] && geo_type=全球版 || geo_type=精简版
 	[ -n "$geo_type" ] && echo -e "当前使用的是\033[47;30m$geo_type数据库\033[0m"
-	echo -e "\033[36m请选择需要更新的GeoIP/CN_IP数据库：\033[0m"
+	echo -e "\033[36m请选择需要更新/切换的GeoIP/CN_IP数据库：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约4mb)"
 	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.1mb)"
@@ -536,10 +536,16 @@ setgeo(){
 		geotype=cn_mini.mmdb
 		geoname=Country.mmdb
 		getgeo
-	elif [ "$num" = '3' ] && [ "$cn_ip_route" = "已开启" ]; then
-		geotype=china_ip_list.txt
-		geoname=cn_ip.txt
-		getgeo
+	elif [ "$num" = '3' ]; then
+		if [ "$cn_ip_route" = "已开启" ]; then
+			geotype=china_ip_list.txt
+			geoname=cn_ip.txt
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m未开启绕过内核功能，无需更新CN-IP文件！！\033[0m"	
+			sleep 1
+		fi
 	else
 		update
 	fi
@@ -789,7 +795,7 @@ update(){
 	echo -----------------------------------------------
 	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh\033[0m"
 	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_n\033[0m"
-	echo -e " 3 更新\033[32mGeoIP/CN_IP	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
+	echo -e " 3 更新\033[32mGeoIP/CN-IP	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
 	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
@@ -839,6 +845,8 @@ update(){
 		echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
 		echo -e "感谢：\033[32msubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
 		echo -e "感谢：\033[32malecthw提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
+		echo -e "感谢：\033[32mHackl0us提供的GeoIP精简数据库\033[0m 项目地址：\033[32mhttps://github.com/Hackl0us/GeoIP2-CN\033[0m"
+		echo -e "感谢：\033[32m17mon提供的CN-IP列表\033[0m 项目地址：\033[32mhttps://github.com/17mon/china_ip_list\033[0m"
 		echo -e "感谢：\033[32myacd \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
 		echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
 		sleep 2
@@ -928,7 +936,19 @@ userguide(){
 			setconfig clashcore "clash"
 			echo -----------------------------------------------
 			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
-			localproxy
+			echo -e " 1 使用\033[32m环境变量\033[0m方式配置(不支持部分应用)"
+			echo -e " 2 使用\033[32miptables增强模式\033[0m配置(不支持OpenWrt)"
+			echo -e " 0 稍后设置"
+			read -p "请输入对应数字 > " num
+			if [ "$num" = 1 ]; then
+				local_proxy=已开启
+				local_type=环境变量
+			elif [ "$num" = 2 ]; then
+				local_proxy=已开启
+				local_type=iptables增强模式
+			fi
+			setconfig local_proxy $local_proxy
+			setconfig local_type $local_type
 		fi
 	}
 	forwhat

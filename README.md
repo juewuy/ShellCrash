@@ -37,19 +37,17 @@ opkg update && opkg install curl
 ##### ~Use curl:<br>
 
 ```Shell
-#Release version - by github
-sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" && source /etc/profile &> /dev/null
-#Release version - by jsdelivrCDN
-sh -c "$(curl -kfsSl https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install.sh)" && source /etc/profile &> /dev/null
-#Test version - by github
-sh -c "$(curl -kfsSl --resolve raw.githubusercontent.com:443:199.232.68.133 https://raw.githubusercontent.com/juewuy/ShellClash/master/install.sh)" -s 1 && source /etc/profile &> /dev/null
+#By github
+export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -s $url/install_n.sh)" && source /etc/profile &> /dev/null
+#By jsdelivrCDN
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -s $url/install_n.sh)" && source /etc/profile &> /dev/null
 ```
 
 ##### ~Use wget：<br>
 
 ```sh
-#Release version - by jsdelivrCDN
-wget -q --no-check-certificate -O /tmp/install.sh https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+#By jsdelivrCDN
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**After installation by non-root users**, please execute the following additional commands to read environment variables:<br>

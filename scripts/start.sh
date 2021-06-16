@@ -60,14 +60,18 @@ webget(){
 		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
 		[ "$result" != "200" ] && export all_proxy="" && result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
 	else
-		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		if wget --version > /dev/null 2>&1;then
+			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+			[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+			[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+			timeout='--timeout=3'
+		fi
 		[ "$3" = "echoon" ] && progress=''
-		[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
-		[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+		[ "$3" = "echooff" ] && progress='-q'
 		[ -n "$6" ] && agent='--user-agent="clash"'
-		wget -Y on $agent $progress $redirect $certificate --timeout=3 -O $1 $2 
+		wget -Y on $agent $progress $redirect $certificate $timeout -O $1 $2 
 		if [ "$?" != "0" ];then
-			wget $agent $progress $redirect $certificate --timeout=3 -O $1 $2
+			wget $agent $progress $redirect $certificate $timeout -O $1 $2
 			[ "$?" = "0" ] && result="200"
 		else
 			result="200"
@@ -276,7 +280,7 @@ secret: $secret
 $tun
 $exper
 $dns
-store-selected: false
+store-selected: $restore
 EOF
 ###################################
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
@@ -531,10 +535,6 @@ web_save(){
 			curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1"
 		elif [ -n "$(wget --help 2>&1|grep '\-\-method')" ];then
 			wget -q --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" -O - "$1"
-		else
-			logger 当前系统未安装curl且wget的版本太低，无法保存节点配置！ 31
-			getconfig
-			cronset '保存节点配置'
 		fi
 	}
 	#使用get_save获取面板节点设置
@@ -555,7 +555,7 @@ web_restore(){
 	put_save(){
 		if curl --version > /dev/null 2>&1;then
 			curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
-		else
+		elif wget --version > /dev/null 2>&1;then
 			wget -q --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
 		fi
 	}
@@ -642,7 +642,12 @@ bfstart(){
 	if [ -f $clashdir/ui/index.html -a ! -f $bindir/ui/index.html ];then
 		cp -rf $clashdir/ui $bindir
 	fi
-	catpac #生成pac文件
+	#检查curl或wget支持
+	curl --version > /dev/null 2>&1
+	[ "$?" = 1 ] && wget --version > /dev/null 2>&1
+	[ "$?" = 1 ] && restore=true || restore=false
+	#生成pac文件
+	catpac
 	#检查yaml配置文件
 	if [ ! -f $clashdir/config.yaml ];then
 		if [ -n "$Url" -o -n "$Https" ];then
@@ -652,6 +657,18 @@ bfstart(){
 		else
 			logger "未找到配置文件链接，请先导入配置文件！" 31
 			exit 1
+		fi
+	fi
+	#本机代理准备
+	if [ "$local_proxy" = "已开启" -a "$local_type" = "iptables增强模式" ];then
+		if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
+			userdel shellclash 2>/dev/null
+			useradd shellclash -u 7890
+			sed -Ei s/7890:7890/0:7890/g /etc/passwd
+		fi
+		if [ "$start_old" != "已开启" ];then
+			setconfig ExecStart "/bin/su\ shellclash\ -c\ \"$bindir/clash\ -d\ $bindir\"" $servdir
+			systemctl daemon-reload >/dev/null
 		fi
 	fi
 }
@@ -673,8 +690,10 @@ afstart(){
 		#加载定时任务
 		[ -f $clashdir/cron ] && crontab $clashdir/cron
 		#启用面板配置自动保存
-		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
-		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+		if [ "$restore" = false ];then
+			cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
+			[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+		fi
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
 		$bindir/clash -t -d $bindir
@@ -685,7 +704,11 @@ afstart(){
 }
 start_old(){
 	#使用传统后台执行二进制文件的方式执行
-	$bindir/clash -d $bindir >/dev/null &
+	if [ "$local_proxy" = "已开启" -a "$local_type" = "iptables增强模式" ];then
+		su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
+	else
+		$bindir/clash -d $bindir >/dev/null &
+	fi
 	afstart
 	$0 daemon
 }
@@ -719,7 +742,7 @@ start)
 	;;
 stop)	
 		getconfig
-		[ -n "$(pidof clash)" ] && web_save #保存面板配置
+		[ -n "$(pidof clash)" ] && [ "$restore" = false ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
 		cronset "clash保守模式守护进程"
 		cronset "保存节点配置"
@@ -731,7 +754,7 @@ stop)
 		fi
 		PID=$(pidof clash) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
 		stop_iptables #清理iptables
-		[ "$local_proxy" = "已开启" ] && $0 unset_proxy #禁用本机代理
+		$0 unset_proxy #禁用本机代理
         ;;
 restart)
         $0 stop
@@ -772,11 +795,7 @@ cronset)
 	;;
 set_proxy)
 		getconfig
-		#iptables增强模式
-		if  [ "$local_proxy_type" = "iptables增强模式" ];then
-			start_output
-		#环境变量方式
-		else
+		if  [ "$local_type" = "环境变量" ];then
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
 			echo 'export all_proxy=http://127.0.0.1:'"$mix_port" >> $profile
