@@ -669,6 +669,8 @@ bfstart(){
 			sed -Ei s/7890:7890/0:7890/g /etc/passwd
 		fi
 		if [ "$start_old" != "已开启" ];then
+			[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
+			[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
 			setconfig ExecStart "/bin/su\ shellclash\ -c\ \"$bindir/clash\ -d\ $bindir\"" $servdir
 			systemctl daemon-reload >/dev/null
 		fi

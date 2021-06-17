@@ -507,10 +507,7 @@ localproxy(){
 		setconfig local_type $local_type
 		localproxy
 	elif [ "$num" = 3 ]; then
-		[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
-		[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
-		[ -x /bin/su ] && servdir=1
-		if [ -n "$servdir" ];then
+		if [ -w /etc/systemd/system/clash.service -o -w /usr/lib/systemd/system/clash.service -o -x /bin/su ];then
 			local_type="iptables增强模式"
 			setconfig local_type $local_type
 		else
