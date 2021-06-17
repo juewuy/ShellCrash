@@ -48,7 +48,8 @@ compare(){
 	fi
 }
 webget(){
-	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
+	#设置临时http代理 
+	[ -n "$(pidof clash)" ] && getconfig && export all_proxy="http://$authentication@127.0.0.1:$mix_port"
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
 	#参数【$5】代表验证证书，【$6】使用clash文件头
@@ -71,14 +72,13 @@ webget(){
 		[ -n "$6" ] && agent='--user-agent="clash"'
 		wget -Y on $agent $progress $redirect $certificate $timeout -O $1 $2 
 		if [ "$?" != "0" ];then
-			wget $agent $progress $redirect $certificate $timeout -O $1 $2
+			wget -Y off $agent $progress $redirect $certificate $timeout -O $1 $2
 			[ "$?" = "0" ] && result="200"
 		else
 			result="200"
 		fi
 	fi
-	export all_proxy=""
-	[ "$result" = "200" ] && return 0 || return 1
+	[ "$result" = "200" ] || exit 1
 }
 logger(){
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
