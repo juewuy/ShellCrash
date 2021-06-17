@@ -58,8 +58,8 @@ webget(){
 		[ "$4" = "rediroff" ] && redirect='' || redirect='-L'
 		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
 		[ -n "$6" ] && agent='-A "clash"'
-		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
-		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
+		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$1" "$2")
+		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$1" "$2")
 	else
 		if wget --version > /dev/null 2>&1;then
 			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
@@ -70,9 +70,9 @@ webget(){
 		[ "$3" = "echoon" ] && progress=''
 		[ "$3" = "echooff" ] && progress='-q'
 		[ -n "$6" ] && agent='--user-agent="clash"'
-		wget -Y on $agent $progress $redirect $certificate $timeout -O $1 $2 
+		wget -Y on $agent $progress $redirect $certificate $timeout -O "$1" "$2"
 		if [ "$?" != "0" ];then
-			wget -Y off $agent $progress $redirect $certificate $timeout -O $1 $2
+			wget -Y off $agent $progress $redirect $certificate $timeout -O "$1" "$2"
 			[ "$?" = "0" ] && result="200"
 		else
 			result="200"
@@ -136,6 +136,7 @@ https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Games.ini
 https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Mini_Games.ini
 https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.ini
 EOF`
+	Https=$(echo ${Https//\%26/\&})   #将%26替换回&
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
 		#[ -n "$(echo $Url | grep -o 'https://dler')" ] && Server='api.dler.io'
