@@ -832,19 +832,20 @@ clashadv(){
 		
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		if ipset -v >/dev/null 2>&1;then
+		if ! ipset -v >/dev/null 2>&1;then
 			echo -e "\033[31m当前设备缺少ipset模块，无法启用绕过功能！！\033[0m"
 			sleep 1
 		elif [ "$dns_mod" = "fake-ip" ];then
 			echo -e "\033[31m不支持fake-ip模式，请将DNS模式更换为Redir-host！！\033[0m"
 			sleep 1
+			clashcfg
 		else
 			if [ "$cn_ip_route" = "未开启" ]; then 
-				echo -e "\033[33m已开启CN_IP绕过内核功能！！\033[0m"
+				echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
 				cn_ip_route=已开启
 				sleep 1
 			else
-				echo -e "\033[32m已禁用CN_IP绕过内核功能！！\033[0m"
+				echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
 				cn_ip_route=未开启
 			fi
 			setconfig cn_ip_route $cn_ip_route
@@ -900,9 +901,8 @@ EOF
 # - SRC-PORT,7777,DIRECT
 EOF
 		echo -e "\033[32m已经启用自定义配置功能！\033[0m"
-		echo -e "Shell下(部分旧设备可能不显示中文)可\n使用【\033[36mvi $clashdir/user.yaml\033[0m】编辑自定义设定文件;\n使用【\033[36mvi $clashdir/rules.yaml\033[0m】编辑自定义规则文件。"
 		echo -e "Windows下请\n使用\033[33mwinscp软件\033[0m进入$clashdir目录后手动编辑！\033[0m"
-		echo -e "其他设备请\n使用\033[32mscp命令\033[0m下载文件编辑后上传到$clashdir目录！\033[0m"
+		echo -e "Shell下(\033[31m部分旧设备可能不显示中文\033[0m)可\n使用【\033[36mvi $clashdir/user.yaml\033[0m】编辑自定义设定文件;\n使用【\033[36mvi $clashdir/rules.yaml\033[0m】编辑自定义规则文件。"
 		echo -e "如需自定义节点，可以在config.yaml文件中修改或者直接替换config.yaml文件！\033[0m"
 		sleep 3
 		clashadv

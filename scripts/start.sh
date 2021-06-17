@@ -58,13 +58,13 @@ webget(){
 		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
 		[ -n "$6" ] && agent='-A "clash"'
 		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
-		[ "$result" != "200" ] && export all_proxy="" && result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
+		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
 	else
 		if wget --version > /dev/null 2>&1;then
 			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 			[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 			[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-			timeout='--timeout=3'
+			timeout='--timeout=3 -t 2'
 		fi
 		[ "$3" = "echoon" ] && progress=''
 		[ "$3" = "echooff" ] && progress='-q'
@@ -78,6 +78,7 @@ webget(){
 		fi
 	fi
 	export all_proxy=""
+	[ "$result" = "200" ] && return 0 || return 1
 }
 logger(){
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
@@ -137,7 +138,7 @@ https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.
 EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		[ -n "$(echo $Url | grep -o 'https://dler')" ] && Server='api.dler.io'
+		#[ -n "$(echo $Url | grep -o 'https://dler')" ] && Server='api.dler.io'
 		Https="https://$Server/sub?target=clash&insert=true&new_name=true&scv=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		markhttp=1
 	fi
@@ -777,7 +778,7 @@ updateyaml)
 		$0 restart
 		;;
 webget)
-		webget $2 $3 $4 $5 $6
+		webget $2 $3 $4 $5 $6 $7
 		;;
 web_save)
 		getconfig

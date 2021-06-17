@@ -2,32 +2,8 @@
 # Copyright (C) Juewuy
 
 webget(){
-	[ -n "$(pidof clash)" ] && export all_proxy="http://$authentication@127.0.0.1:$mix_port" #设置临时http代理 
-	#参数【$1】代表下载目录，【$2】代表在线地址
-	#参数【$3】代表输出显示，【$4】不启用重定向
-	#参数【$5】代表验证证书，【$6】使用clash文件头
-	if curl --version > /dev/null 2>&1;then
-		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
-		[ "$4" = "rediroff" ] && redirect='' || redirect='-L'
-		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
-		[ -n "$6" ] && agent='-A "clash"'
-		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
-		[ "$result" != "200" ] && export all_proxy="" && result=$(curl -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o $1 $2)
-	else
-		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
-		[ "$3" = "echoon" ] && progress=''
-		[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
-		[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-		[ -n "$6" ] && agent='--user-agent="clash"'
-		wget -Y on $agent $progress $redirect $certificate --timeout=3 -O $1 $2 
-		if [ "$?" != "0" ];then
-			wget $agent $progress $redirect $certificate --timeout=3 -O $1 $2
-			[ "$?" = "0" ] && result="200"
-		else
-			result="200"
-		fi
-	fi
-	export all_proxy=""
+	$clashdir/start.sh webget $1 $2 $3 $4 $5 $6
+	[ "$?" = "0" ] && result=200
 }
 #导入订阅、配置文件相关
 linkconfig(){
@@ -777,7 +753,7 @@ if [ -z "$release_new" ];then
 		[ -z "$release_new" ] && release_new=master
 		update_url=$update_url@$release_new
 	fi
-	webget /tmp/clashversion $update_url/bin/version echooff
+	webget /tmp/clashversion $update_url/bin/version echooff 
 	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
 	[ -z "$release_new" ] && release_new=$versionsh
 	rm -rf /tmp/clashversion
