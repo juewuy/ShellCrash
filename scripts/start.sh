@@ -152,7 +152,7 @@ EOF`
 	yaml=$clashdir/config.yaml
 	yamlnew=/tmp/clash_config_$USER.yaml
 	rm -rf $yamlnew
-	webget $yamlnew $Https 0 0 0 1
+	$0 webget $yamlnew $Https 0 0 0 1
 	if [ "$result" != "200" ];then
 		if [ -z "$markhttp" ];then
 			echo -----------------------------------------------
@@ -313,7 +313,7 @@ cn_ip_route(){
 			mv $clashdir/cn_ip.txt $bindir/cn_ip.txt
 		else
 			logger "未找到cn_ip列表，正在下载！" 33
-			webget $bindir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
+			$0 webget $bindir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
 			[ "$result" != 200 ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败，已退出！" 31 && exit 1
 		fi
 	fi
@@ -620,7 +620,7 @@ bfstart(){
 			fi
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
-			webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
+			$0 webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
 			[ "$result" != 200 ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
 			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
 			clashv=$($bindir/clash -v | awk '{print $2}')
@@ -634,7 +634,7 @@ bfstart(){
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
 			[ -z "$geotype" ] && geotype=cn_mini.mmdb
-			webget $bindir/Country.mmdb $update_url/bin/$geotype
+			$0 webget $bindir/Country.mmdb $update_url/bin/$geotype
 			[ "$result" != 200 ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
