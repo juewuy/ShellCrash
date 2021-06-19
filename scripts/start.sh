@@ -66,10 +66,10 @@ webget(){
 			[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 			[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
 			timeout='--timeout=3 -t 2'
+			[ -n "$6" ] && agent='--user-agent="clash"'
 		fi
 		[ "$3" = "echoon" ] && progress=''
 		[ "$3" = "echooff" ] && progress='-q'
-		[ -n "$6" ] && agent='--user-agent="clash"'
 		wget -Y on $agent $progress $redirect $certificate $timeout -O "$1" "$2"
 		if [ "$?" != "0" ];then
 			wget -Y off $agent $progress $redirect $certificate $timeout -O "$1" "$2"
