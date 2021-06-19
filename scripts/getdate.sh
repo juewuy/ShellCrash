@@ -744,16 +744,14 @@ setserver(){
 checkupdate(){
 if [ -z "$release_new" ];then
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		$clashdir/start.sh webget /tmp/clashrelease $update_url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
-		[ "$?" = "0" ] && release_new=$(cat /tmp/clashrelease | head -1)
-		[ -z "$release_new" ] && release_new=master
+		$clashdir/start.sh webget /tmp/clashversion $update_url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
+		[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | head -1)
 		update_url=$update_url@$release_new
-	fi
+	fi	
 	$clashdir/start.sh webget /tmp/clashversion $update_url/bin/version echooff 
-	[ "$?" = "0" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
-	[ -z "$release_new" ] && release_new=$versionsh
+	[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | grep versionsh | awk -F'=' '{ print $2 }')
+	[ -n "$release_new" ] &&source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
 	rm -rf /tmp/clashversion
-	rm -rf /tmp/clashrelease
 fi
 }
 update(){
