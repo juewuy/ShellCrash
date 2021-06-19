@@ -47,39 +47,6 @@ compare(){
 		[ "$(cat $1)" = "$(cat $2)" ] && return 0 || return 1
 	fi
 }
-webget(){
-	#设置临时http代理 
-	[ -n "$(pidof clash)" ] && getconfig && export all_proxy="http://$authentication@127.0.0.1:$mix_port"
-	#参数【$1】代表下载目录，【$2】代表在线地址
-	#参数【$3】代表输出显示，【$4】不启用重定向
-	#参数【$5】代表验证证书，【$6】使用clash文件头
-	if curl --version > /dev/null 2>&1;then
-		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
-		[ "$4" = "rediroff" ] && redirect='' || redirect='-L'
-		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
-		[ -n "$6" ] && agent='-A "clash"'
-		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$1" "$2")
-		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$1" "$2")
-	else
-		if wget --version > /dev/null 2>&1;then
-			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
-			[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
-			[ "$5" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-			timeout='--timeout=3 -t 2'
-			[ -n "$6" ] && agent='--user-agent="clash"'
-		fi
-		[ "$3" = "echoon" ] && progress=''
-		[ "$3" = "echooff" ] && progress='-q'
-		wget -Y on $agent $progress $redirect $certificate $timeout -O "$1" "$2"
-		if [ "$?" != "0" ];then
-			wget -Y off $agent $progress $redirect $certificate $timeout -O "$1" "$2"
-			[ "$?" = "0" ] && result="200"
-		else
-			result="200"
-		fi
-	fi
-	[ "$result" = "200" ] || exit 1
-}
 logger(){
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
 	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
@@ -153,7 +120,7 @@ EOF`
 	yamlnew=/tmp/clash_config_$USER.yaml
 	rm -rf $yamlnew
 	$0 webget $yamlnew $Https 0 0 0 1
-	if [ "$result" != "200" ];then
+	if [ "$?" = "1" ];then
 		if [ -z "$markhttp" ];then
 			echo -----------------------------------------------
 			logger "配置文件获取失败！" 31
@@ -168,7 +135,7 @@ EOF`
 				retry=$((retry+1))
 				logger "配置文件获取失败！" 31
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在重试第$retry次/共5次！" 32
+				logger "正在重试第$retry次/共5次！" 33
 				sed -i '/server_link=*/'d $ccfg
 				if [ "$server_link" -ge 5 ]; then
 					server_link=0
@@ -314,7 +281,7 @@ cn_ip_route(){
 		else
 			logger "未找到cn_ip列表，正在下载！" 33
 			$0 webget $bindir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
-			[ "$result" != 200 ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败，已退出！" 31 && exit 1
+			[ "$?" = "1" ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败，已退出！" 31 && exit 1
 		fi
 	fi
 	if [ -f $bindir/cn_ip.txt ];then
@@ -621,7 +588,7 @@ bfstart(){
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			$0 webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
-			[ "$result" != 200 ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
+			[ "$?" = "1" ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
 			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
 			clashv=$($bindir/clash -v | awk '{print $2}')
 			setconfig clashv $clashv
@@ -635,7 +602,7 @@ bfstart(){
 			logger "未找到GeoIP数据库，正在下载！" 33
 			[ -z "$geotype" ] && geotype=cn_mini.mmdb
 			$0 webget $bindir/Country.mmdb $update_url/bin/$geotype
-			[ "$result" != 200 ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出！" 31 && exit 1
+			[ "$?" = "1" ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
 		fi
@@ -781,7 +748,37 @@ updateyaml)
 		$0 restart
 		;;
 webget)
-		webget $2 $3 $4 $5 $6 $7
+		#设置临时http代理 
+		[ -n "$(pidof clash)" ] && getconfig && export all_proxy="http://$authentication@127.0.0.1:$mix_port"
+		#参数【$2】代表下载目录，【$3】代表在线地址
+		#参数【$4】代表输出显示，【$4】不启用重定向
+		#参数【$6】代表验证证书，【$7】使用clash文件头
+		if curl --version > /dev/null 2>&1;then
+			[ "$4" = "echooff" ] && progress='-s' || progress='-#'
+			[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
+			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
+			[ -n "$7" ] && agent='-A "clash"'
+			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
+			[ "$?" != "0" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
+		else
+			if wget --version > /dev/null 2>&1;then
+				[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+				[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+				[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+				timeout='--timeout=3 -t 2'
+				[ -n "$7" ] && agent='--user-agent="clash"'
+			fi
+			[ "$4" = "echoon" ] && progress=''
+			[ "$4" = "echooff" ] && progress='-q'
+			wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$3"
+			if [ "$?" != "0" ];then
+				wget -Y off $agent $progress $redirect $certificate $timeout -O "$2" "$3"
+				[ "$?" = "0" ] && result="200"
+			else
+				result="200"
+			fi
+		fi
+		[ "$result" = "200" ] && exit 0 || exit 1
 		;;
 web_save)
 		getconfig

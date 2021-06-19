@@ -1,10 +1,6 @@
 #!/bin/bash
 # Copyright (C) Juewuy
 
-webget(){
-	$clashdir/start.sh webget $1 $2 $3 $4 $5 $6
-	[ "$?" = "0" ] && result=200
-}
 #导入订阅、配置文件相关
 linkconfig(){
 	echo -----------------------------------------------
@@ -310,8 +306,8 @@ clashlink(){
 }
 #下载更新相关
 gettar(){
-	webget /tmp/clashfm.tar.gz $tarurl
-	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
+	$clashdir/start.sh webget /tmp/clashfm.tar.gz $tarurl
+	[ "$?" = "1" ] && echo "文件下载失败！" && exit 1
 	#解压
 	echo -----------------------------------------------
 	echo 开始解压文件！
@@ -424,8 +420,8 @@ getcore(){
 	#获取在线clash核心文件
 	echo -----------------------------------------------
 	echo 正在在线获取clash核心文件……
-	webget /tmp/clash.new $corelink
-	if [ "$result" != "200" ];then
+	$clashdir/start.sh webget /tmp/clash.new $corelink
+	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 	else
 		echo -e "\033[32m$clashcore核心下载成功！\033[0m"
@@ -478,8 +474,8 @@ setcore(){
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	webget /tmp/$geoname $update_url/bin/$geotype
-	if [ "$result" != "200" ];then
+	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/$geotype
+	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		exit 1
@@ -541,8 +537,8 @@ getdb(){
 	dblink="${update_url}/bin/${db_type}.tar.gz"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	webget /tmp/clashdb.tar.gz $dblink
-	if [ "$result" != "200" ];then
+	$clashdir/start.sh webget /tmp/clashdb.tar.gz $dblink
+	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		echo -----------------------------------------------
@@ -638,15 +634,15 @@ getcrt(){
 	crtlink="${update_url}/bin/ca-certificates.crt"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	webget /tmp/ca-certificates.crt $crtlink
-	if [ "$result" != "200" ];then
+	$clashdir/start.sh webget /tmp/ca-certificates.crt $crtlink
+	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 	else
 		echo -----------------------------------------------
 		mv -f /tmp/ca-certificates.crt $crtdir
-		webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
-		if [ "$result" != "200" ];then
+		$clashdir/start.sh webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
+		if [ "$?" = "1" ];then
 			export CURL_CA_BUNDLE=$crtdir
 			echo "export CURL_CA_BUNDLE=$crtdir" >> /etc/profile
 		fi
@@ -723,7 +719,7 @@ setserver(){
 		fi
 	elif [ "$num" = 6 ]; then
 		echo -----------------------------------------------
-		webget /tmp/clashrelease https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/bin/release_version echooff rediroff 2>/tmp/clashrelease
+		$clashdir/start.sh webget /tmp/clashrelease https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/bin/release_version echooff rediroff 2>/tmp/clashrelease
 		echo -e "\033[32m请选择想要更新至的版本：\033[0m"
 		cat /tmp/clashrelease | awk '{print " "NR" "$1}'
 		echo -e " 0 返回上级菜单"
@@ -748,13 +744,13 @@ setserver(){
 checkupdate(){
 if [ -z "$release_new" ];then
 	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		webget /tmp/clashrelease $update_url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
-		[ "$result" = "200" ] && release_new=$(cat /tmp/clashrelease | head -1)
+		$clashdir/start.sh webget /tmp/clashrelease $update_url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
+		[ "$?" = "0" ] && release_new=$(cat /tmp/clashrelease | head -1)
 		[ -z "$release_new" ] && release_new=master
 		update_url=$update_url@$release_new
 	fi
-	webget /tmp/clashversion $update_url/bin/version echooff 
-	[ "$result" = "200" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
+	$clashdir/start.sh webget /tmp/clashversion $update_url/bin/version echooff 
+	[ "$?" = "0" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
 	[ -z "$release_new" ] && release_new=$versionsh
 	rm -rf /tmp/clashversion
 	rm -rf /tmp/clashrelease
@@ -961,8 +957,8 @@ userguide(){
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#设置加密DNS
-	webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
-	if [ "$result" = "200" ];then
+	$clashdir/start.sh webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
+	if [ "$?" = "0" ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
 		setconfig dns_nameserver \'"$dns_nameserver"\'
