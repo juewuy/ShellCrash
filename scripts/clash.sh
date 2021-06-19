@@ -414,10 +414,17 @@ macfilter(){
 	[ -z "$dhcpdir" ] && [ -f /tmp/dnsmasq.leases ] && dhcpdir='/tmp/dnsmasq.leases'
 	[ -z "$dhcpdir" ] && dhcpdir='/dev/null'
 	[ -z "$macfilter_type" ] && macfilter_type='黑名单' 
-	[ "$macfilter_type" = "黑名单" ] && macfilter_over='白名单' || macfilter_over='黑名单'
+	if [ "$macfilter_type" = "黑名单" ];then
+		macfilter_over='白名单'
+		macfilter_scrip='不'
+	else
+		macfilter_over='黑名单'
+		macfilter_scrip=''
+	fi
 	######
 	echo -e "\033[30;47m请在此添加或移除设备\033[0m"
 	echo -e "当前过滤方式为：\033[33m$macfilter_type模式\033[0m"
+	echo -e "仅列表内设备\033[36m$macfilter_scrip经过\033[0mClash内核"
 	if [ -n "$(cat $clashdir/mac)" ]; then
 		echo -----------------------------------------------
 		echo -e "当前已过滤设备为：\033[36m"
@@ -444,7 +451,7 @@ macfilter(){
 		macfilter_type=$macfilter_over
 		setconfig macfilter_type $macfilter_type
 		echo -----------------------------------------------
-		echo -e "\033[31m已切换为$macfilter_type模式！\033[0m"
+		echo -e "\033[32m已切换为$macfilter_type模式！\033[0m"
 		macfilter
 	elif [ "$num" = 2 ]; then	
 		add_mac
@@ -642,6 +649,7 @@ clashcfg(){
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
 	[ -z "$dns_over" ] && dns_over=已开启
+	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$(cat $clashdir/mac)" ] && mac_return=未开启 || mac_return=已启用
 	#
 	echo -----------------------------------------------
@@ -651,8 +659,9 @@ clashcfg(){
 	echo -e " 2 切换DNS运行模式：	\033[36m$dns_mod\033[0m"
 	echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
-	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑名单/白名单进行过滤"
-	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m	————使用环境变量或iptables配置本机代理"
+	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
+	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过clash内核"
+	echo -e " 7 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -708,6 +717,28 @@ clashcfg(){
 		sleep 1
 		clashcfg
 		
+	elif [ "$num" = 7 ]; then
+		echo -----------------------------------------------
+		if ! ipset -v >/dev/null 2>&1;then
+			echo -e "\033[31m当前设备缺少ipset模块，无法启用绕过功能！！\033[0m"
+			sleep 1
+		elif [ "$dns_mod" = "fake-ip" ];then
+			echo -e "\033[31m不支持fake-ip模式，请将DNS模式更换为Redir-host！！\033[0m"
+			sleep 1
+			clashcfg
+		else
+			if [ "$cn_ip_route" = "未开启" ]; then 
+				echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
+				cn_ip_route=已开启
+				sleep 1
+			else
+				echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
+				cn_ip_route=未开启
+			fi
+			setconfig cn_ip_route $cn_ip_route
+		fi
+			clashcfg  	
+		
 	elif [ "$num" = 9 ]; then	
 		clashstart
 	else
@@ -720,7 +751,7 @@ clashadv(){
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
-	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
+	[ -z "$public_support" ] && public_support=未开启
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
 	#
 	echo -----------------------------------------------
@@ -731,7 +762,7 @@ clashadv(){
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
-	echo -e " 5 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m	————不支持Fake-ip模式"
+	echo -e " 5 允许公网访问:	\033[36m$public_support\033[0m	————防火墙放行clash相关端口"
 	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 7 使用自定义配置"
 	echo -e " 8 手动指定相关端口、秘钥及本机host"
@@ -828,26 +859,20 @@ clashadv(){
 		clashadv
 		
 	elif [ "$num" = 5 ]; then
-		echo -----------------------------------------------
-		if ! ipset -v >/dev/null 2>&1;then
-			echo -e "\033[31m当前设备缺少ipset模块，无法启用绕过功能！！\033[0m"
+		if [ "$public_support" = "未开启" ]; then 
+			echo -e "\033[32m已开启公网访问Dashboard端口及Http/Sock5代理端口！！\033[0m"
+			echo -e "\033[33m安全起见建议设置相关访问密码！！\033[0m"
+			public_support=已开启
+			setconfig public_support $public_support
 			sleep 1
-		elif [ "$dns_mod" = "fake-ip" ];then
-			echo -e "\033[31m不支持fake-ip模式，请将DNS模式更换为Redir-host！！\033[0m"
-			sleep 1
-			clashcfg
 		else
-			if [ "$cn_ip_route" = "未开启" ]; then 
-				echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
-				cn_ip_route=已开启
-				sleep 1
-			else
-				echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
-				cn_ip_route=未开启
-			fi
-			setconfig cn_ip_route $cn_ip_route
+			echo -e "\033[32m已禁止公网访问Dashboard端口及Http/Sock5代理端口！！\033[0m"
+			echo -e "\033[33m如果你的防火墙默认放行公网流量，可能禁用失败！\033[0m"
+			public_support=未开启
+			setconfig public_support $public_support
+			sleep 1
 		fi
-			clashadv  	
+			clashadv
 		
 	elif [ "$num" = 6 ]; then
 		source $ccfg
@@ -932,7 +957,7 @@ tools(){
 		echo -----------------------------------------------
 		echo -e " 0 返回上级菜单 \033[0m"
 		echo -----------------------------------------------
-		read -p "请输入对应数字 > " num	
+		read -p "请输入对应数字 > " num
 			if [ -z "$num" ]; then
 				errornum
 			elif [ "$num" = 0 ]; then
@@ -1251,6 +1276,7 @@ case "$1" in
 		echo -----------------------------------------
 		echo "	-t 测试模式"
 		echo "	-h 帮助列表"
+		echo "	-u 卸载脚本"
 		echo -----------------------------------------
 		echo "在线求助：t.me/clashfm"
 		echo "官方博客：juewuy.github.io"
@@ -1261,8 +1287,37 @@ case "$1" in
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
 		$shtype -x $clashdir/clash.sh
 	;;
+	-u)
+		read -p "确认卸载ShellClash？（警告：该操作不可逆！）[1/0] " res
+		if [ "$res" = '1' ]; then
+			$clashdir/start.sh stop
+			$clashdir/start.sh cronset "clash服务"
+			$clashdir/start.sh cronset "订阅链接"
+			[ -w ~/.bashrc ] && profile=~/.bashrc
+			[ -w /etc/profile ] && profile=/etc/profile
+			sed -i '/alias clash=*/'d $profile
+			sed -i '/export clashdir=*/'d $profile
+			sed -i '/all_proxy/'d $profile
+			sed -i '/ALL_PROXY/'d $profile
+			sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
+			sed -i '/ShellClash初始化/'d /etc/storage/started_script.sh 2>/dev/null
+			sed -i '/ShellClash初始化/'d /jffs/.asusrouter 2>/dev/null
+			rm -rf $clashdir
+			rm -rf /etc/init.d/clash
+			rm -rf /etc/systemd/system/clash.service
+			rm -rf /usr/lib/systemd/system/clash.service
+			rm -rf /www/clash
+			sed -Ei s/0:7890/7890:7890/g /etc/passwd
+			userdel -r shellclash 2>/dev/null
+			echo -----------------------------------------------
+			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
+			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
+			echo -----------------------------------------------
+			exit
+		fi
+		echo -e "\033[31m操作已取消！\033[0m"
+	;;
 	*)
-		echo "	-t 测试模式"
-		echo "	-h 帮助列表"	
+		$0 -h
 	;;
 esac

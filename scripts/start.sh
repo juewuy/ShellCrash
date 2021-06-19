@@ -27,6 +27,7 @@ getconfig(){
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
+	[ -z "$public_support" ] && public_support=未开启
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
@@ -319,6 +320,10 @@ start_redir(){
 		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
 	fi
 	iptables -t nat -A PREROUTING -p tcp $lanhost -j clash
+	if [ "$public_support" = "已开启" ];then
+		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
+	fi
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash
@@ -467,6 +472,8 @@ stop_iptables(){
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp $lanhost -j clash 2> /dev/null
+	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash 2> /dev/null

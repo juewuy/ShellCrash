@@ -825,34 +825,7 @@ update(){
 		update
 		
 	elif [ "$num" = 9 ]; then
-		read -p "确认卸载ShellClash？（警告：该操作不可逆！）[1/0] " res
-		if [ "$res" = '1' ]; then
-			$clashdir/start.sh stop
-			$clashdir/start.sh cronset "clash服务"
-			$clashdir/start.sh cronset "订阅链接"
-			[ -w ~/.bashrc ] && profile=~/.bashrc
-			[ -w /etc/profile ] && profile=/etc/profile
-			sed -i '/alias clash=*/'d $profile
-			sed -i '/export clashdir=*/'d $profile
-			sed -i '/all_proxy/'d $profile
-			sed -i '/ALL_PROXY/'d $profile
-			sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
-			sed -i '/ShellClash初始化/'d /etc/storage/started_script.sh 2>/dev/null
-			sed -i '/ShellClash初始化/'d /jffs/.asusrouter 2>/dev/null
-			rm -rf $clashdir
-			rm -rf /etc/init.d/clash
-			rm -rf /etc/systemd/system/clash.service
-			rm -rf /usr/lib/systemd/system/clash.service
-			rm -rf /www/clash
-			sed -Ei s/0:7890/7890:7890/g /etc/passwd
-			userdel -r shellclash 2>/dev/null
-			echo -----------------------------------------------
-			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
-			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
-			echo -----------------------------------------------
-			exit
-		fi
-		echo -e "\033[31m操作已取消！\033[0m"
+		$0 -u
 		update
 	else
 		errornum
