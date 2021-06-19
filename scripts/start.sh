@@ -757,7 +757,7 @@ webget)
 			[ "$4" = "echooff" ] && progress='-s' || progress='-#'
 			[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
-			[ -n "$7" ] && agent='-A "clash"'
+			#[ -n "$7" ] && agent='-A "clash"'
 			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
 			[ "$?" != "0" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
 		else
@@ -766,7 +766,7 @@ webget)
 				[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 				[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
 				timeout='--timeout=3 -t 2'
-				[ -n "$7" ] && agent='--user-agent="clash"'
+				#[ -n "$7" ] && agent='--user-agent="clash"'
 			fi
 			[ "$4" = "echoon" ] && progress=''
 			[ "$4" = "echooff" ] && progress='-q'
