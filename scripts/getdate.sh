@@ -687,26 +687,30 @@ setserver(){
 		release_new=""
 	}
 	echo -----------------------------------------------
-	echo -e "\033[30;47m您可以在此处切换在线更新时使用的资源地址\033[0m"
-	echo -e "当前源：\033[4;32m$update_url\033[0m"
+	echo -e "\033[30;47m切换ShellClash版本及更新源地址\033[0m"
+	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 Jsdelivr-CDN源(test版本)"
-	echo -e " 2 Jsdelivr-CDN源(release版本)"
-	echo -e " 3 Github源(test版本，需开启clash服务)"
-	echo -e " 5 自定义输入(请务必确保路径正确)"
-	echo -e " 6 切换版本(仅支持切换至release分支)"
+	echo -e " 1 \033[32m正式版\033[0m&Jsdelivr-CDN源(推荐)"
+	echo -e " 2 \033[36m测试版\033[0m&Jsdelivr-CDN源"
+	echo -e " 3 \033[36m测试版\033[0m&Github源(需开启clash服务）"
+	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 4 \033[33mHttp专用源\033[0m@Qust.me(感谢\033[32m酱紫表\033[0m提供及维护)"
+	echo -e " 5 自定义源地址(用于本地源或自建源)"
+	echo -e " 6 \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
 		errornum
 	elif [ "$num" = 1 ]; then
-		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
+		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
 		saveserver
 	elif [ "$num" = 2 ]; then
-		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
+		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
 		saveserver
 	elif [ "$num" = 3 ]; then
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
+		saveserver
+	elif [ "$num" = 4 ]; then
+		update_url='http://sc.qust.me'
 		saveserver
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
@@ -720,7 +724,7 @@ setserver(){
 	elif [ "$num" = 6 ]; then
 		echo -----------------------------------------------
 		$clashdir/start.sh webget /tmp/clashrelease https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/bin/release_version echooff rediroff 2>/tmp/clashrelease
-		echo -e "\033[32m请选择想要更新至的版本：\033[0m"
+		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
 		cat /tmp/clashrelease | awk '{print " "NR" "$1}'
 		echo -e " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
@@ -736,7 +740,7 @@ setserver(){
 		fi
 		
 	elif [ "$num" = 9 ]; then
-		update_url='http://192.168.31.31:8080/ShellClash'
+		update_url='http://192.168.123.90:8080/ShellClash'
 	else
 		errornum
 	fi
@@ -770,7 +774,7 @@ update(){
 	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
 	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
 	echo -----------------------------------------------
-	echo -e " 7 切换\033[36m安装源\033[0m地址"
+	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
 	echo -e " 8 鸣谢"
 	echo -e " 9 \033[31m卸载\033[34mShellClash\033[0m"
 	echo -e " 0 返回上级菜单" 

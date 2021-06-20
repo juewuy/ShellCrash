@@ -306,11 +306,11 @@ setdns(){
 		echo -e "\033[33m已禁用内置DNS！！！\033[0m"
 		setdns
 	elif [ "$num" = 5 ]; then
-		source $clashdir/getdate.sh
-		webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
-		if [ "$result" != "200" ];then
+		$clashdir/start.sh webget /tmp/ssl_test https://www.baidu.com echooff rediron skipceroff
+		if [ "$？" = "1" ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m当前设备缺少本地根证书，请先安装证书！\033[0m"
+			source $clashdir/getdate.sh
 			setcrt
 		else
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
