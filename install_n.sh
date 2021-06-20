@@ -56,17 +56,18 @@ elif [ "$num" = "1" ];then
 	webget /tmp/clashrelease $url/bin/release_version echoon rediroff 2>/tmp/clashrelease
 	if [ "$result" = "200" ];then
 		release_new=$(cat /tmp/clashrelease | head -1)
-		url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_new"
+		url2="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_new"
 	else
 		echo "无法切换版本，尝试安装测试版！"
 	fi
 fi
-webget /tmp/clashversion "$url/bin/version" echooff
+[ -z "$url2" ] && url2=url
+webget /tmp/clashversion "$url2/bin/version" echooff
 [ "$result" = "200" ] && versionsh=$(cat /tmp/clashversion | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && release_new=$versionsh
 rm -rf /tmp/clashversion
 rm -rf /tmp/clashrelease
-tarurl=$url/bin/clashfm.tar.gz
+tarurl=$url2/bin/clashfm.tar.gz
 
 gettar(){
 	webget /tmp/clashfm.tar.gz $tarurl

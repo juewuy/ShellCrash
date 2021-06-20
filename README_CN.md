@@ -48,9 +48,9 @@ opkg update && opkg install curl
 
 ```Shell
 #github直连
-export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -s $url/install_n.sh)" && source /etc/profile &> /dev/null
+export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install_n.sh)" && source /etc/profile &> /dev/null
 #jsdelivrCDN源
-export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -s $url/install_n.sh)" && source /etc/profile &> /dev/null
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install_n.sh)" && source /etc/profile &> /dev/null
 ```
 
 ~**使用wget安装**：<br>
@@ -95,6 +95,7 @@ source ~/.bashrc &> /dev/null
 ```Shell
 clash #正常模式运行
 clash -h #脚本帮助及说明
+clash -u #卸载脚本
 clash -t #测试模式运行
 ```
 
@@ -130,9 +131,11 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 ### [详见博客](https://juewuy.github.io)
 
-## 捐赠此项目：
+## 请喝杯茶：
 
-### [前往页面](https://juewuy.github.io/yOF4Yf06Q/)
+​		支付宝										微信
+
+##### <img src="http://juewuy.github.io/post-images/1604390977172.png" style="zoom:50%;" /><img src="http://juewuy.github.io/post-images/1604391042406.png" style="zoom:50%;" />
 
 友情推广：
 --

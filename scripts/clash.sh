@@ -309,9 +309,13 @@ setdns(){
 		$clashdir/start.sh webget /tmp/ssl_test https://www.baidu.com echooff rediron skipceroff
 		if [ "$？" = "1" ];then
 			echo -----------------------------------------------
-			echo -e "\033[31m当前设备缺少本地根证书，请先安装证书！\033[0m"
-			source $clashdir/getdate.sh
-			setcrt
+			if openssl version >/dev/null 2>&1;then
+				echo -e "\033[31m当前设备缺少本地根证书，请先安装证书！\033[0m"
+				source $clashdir/getdate.sh
+				setcrt
+			else
+				echo -e "\033[31m当前设备未安装OpenSSL，无法启用加密DNS，Linux系统请自行搜索安装方式！\033[0m"
+			fi
 		else
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 			dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
@@ -762,7 +766,7 @@ clashadv(){
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
-	echo -e " 5 允许公网访问:	\033[36m$public_support\033[0m	————防火墙放行clash相关端口"
+	echo -e " 5 允许公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
 	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 7 使用自定义配置"
 	echo -e " 8 手动指定相关端口、秘钥及本机host"

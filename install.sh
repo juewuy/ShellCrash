@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 echo='echo -e' && [ -n "$(echo -e|grep e)" ] && echo=echo
-[ -z "$1" ] && test=0 || test=$1
+#[ -z "$1" ] && test=0 || test=$1
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
@@ -28,33 +28,46 @@ webget(){
 		[ -z "$4" ] && redirect='-L' || redirect=''
 		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
 	else
-		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		if wget --version > /dev/null 2>&1;then
+			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+			[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+			certificate='--no-check-certificate'
+			timeout='--timeout=3'
+		fi
 		[ "$3" = "echoon" ] && progress=''
-		[ -z "$4" ] && redirect='' || redirect='--max-redirect=0'
-		wget -Y on $progress $redirect --no-check-certificate --timeout=5 -O $1 $2 
+		[ "$3" = "echooff" ] && progress='-q'
+		wget $progress $redirect $certificate $timeout -O $1 $2 
 		[ $? -eq 0 ] && result="200"
 	fi
 }
 #检查更新
-url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
-if [ "$test" -gt 0 ];then 
-	url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master"
-	[ "$test" -eq 2 ] && url="https://raw.githubusercontent.com/juewuy/ShellClash/master"
-	[ "$test" -eq 3 ] && url="http://192.168.123.90:8080/ShellClash"
-else
-	webget /tmp/clashrelease $url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
-	[ "$result" = "200" ] && release_new=$(cat /tmp/clashrelease | head -1)
-	[ -z "$release_new" ] && release_new=master
-	url=$url@$release_new
+[ -z "$url" ] && url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
+#选择版本
+echo -----------------------------------------------
+$echo "\033[33m请选择想要安装的版本：\033[0m"	
+$echo " 1 \033[32mShellclash正式版\033[0m"
+$echo " 2 \033[31mShellclash测试版\033[0m"
+echo -----------------------------------------------
+read -p "请输入相应数字 > " num
+if [ -z $num ];then
+	echo 安装已取消
+	exit;
+elif [ "$num" = "1" ];then
+	webget /tmp/clashrelease $url/bin/release_version echoon rediroff 2>/tmp/clashrelease
+	if [ "$result" = "200" ];then
+		release_new=$(cat /tmp/clashrelease | head -1)
+		url2="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_new"
+	else
+		echo "无法切换版本，尝试安装测试版！"
+	fi
 fi
-webget /tmp/clashversion $url/bin/version echooff
+[ -z "$url2" ] && url2=url
+webget /tmp/clashversion "$url2/bin/version" echooff
 [ "$result" = "200" ] && versionsh=$(cat /tmp/clashversion | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && release_new=$versionsh
 rm -rf /tmp/clashversion
 rm -rf /tmp/clashrelease
-[ -z "$release_new" ] && echo "无法连接服务器！" && exit
-
-tarurl=$url/bin/clashfm.tar.gz
+tarurl=$url2/bin/clashfm.tar.gz
 
 gettar(){
 	webget /tmp/clashfm.tar.gz $tarurl
@@ -92,6 +105,9 @@ gettar(){
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
 	echo versionsh_l=$release_new >> $clashdir/mark
+	#设置更新地址
+	sed -i '/update_url=*/'d $clashdir/mark
+	echo update_url=$url >> $clashdir/mark
 	#设置环境变量	
 	[ -w /opt/etc/profile ] && profile=/opt/etc/profile
 	[ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
@@ -155,7 +171,7 @@ else
 		echo -----------------------------------------------
 		echo '可用路径 剩余空间:'
 		df -h | awk '{print $6,$4}'| sed 1d 
-		echo '路径是必须带 / 的格式，写入虚拟内存(/tmp,/sys,..)的文件会在重启后消失！！！'
+		echo '路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！'
 		read -p "请输入自定义路径 > " dir
 		if [ -z "$dir" ];then
 			$echo "\033[31m路径错误！请重新设置！\033[0m"
