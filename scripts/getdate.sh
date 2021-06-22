@@ -933,7 +933,7 @@ userguide(){
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#设置加密DNS
-	$clashdir/start.sh webget /tmp/ssl_test https://www,baidu.com echooff rediron skipceroff
+	$clashdir/start.sh webget /tmp/ssl_test https://www.baidu.com echooff rediron skipceroff
 	if [ "$?" = "0" ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
