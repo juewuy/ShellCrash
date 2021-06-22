@@ -259,12 +259,13 @@ EOF
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
 	if [ -f $clashdir/rules.yaml ];then
-		echo >> $clashdir/rules.yaml
+		sed -i '/^$/d' $clashdir/rules.yaml && echo >> $clashdir/rules.yaml #处理换行
+		space=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
 		while read line;do
 			[ -z "$(echo "$line " | grep '#')" ] && \
 			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
 			line=$(echo "$line" | sed 's#/#\\/#') && \
-			sed -i "/^rules:/a\ $line #自定义规则" $tmpdir/config.yaml
+			sed -i "/^rules:/a\\$space$line #自定义规则" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
 	fi
 	#如果没有使用小闪存模式
