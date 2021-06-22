@@ -259,6 +259,7 @@ EOF
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
 	if [ -f $clashdir/rules.yaml ];then
+		echo >> $clashdir/rules.yaml
 		while read line;do
 			[ -z "$(echo "$line " | grep '#')" ] && \
 			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
