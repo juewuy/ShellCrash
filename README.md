@@ -38,16 +38,16 @@ opkg update && opkg install curl
 
 ```Shell
 #By github
-export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install_n.sh)" && source /etc/profile &> /dev/null
+export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #By jsdelivrCDN
-export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install_n.sh)" && source /etc/profile &> /dev/null
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 ##### ~Use wget：<br>
 
 ```sh
 #By jsdelivrCDN
-export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**Use a low version of wget (prompt not to support https) local installation**:<br> First clone the project to the local under the window (or [click to download the project source code zip package](https://github.com/juewuy/ShellClash/archive/refs/heads/master.zip) to the local and decompress it) 
@@ -59,7 +59,7 @@ sh git clone https://github.com/juewuy/ShellClash.git
  Then open /project address/ShellClash/bin/hfs/hfs.exe Click menu-add directory from disk-{find the directory where ShellClash source code is located}-add as real directory Click on the menu-IP address-{choose the actual IP address of your LAN} Click ShellClash-click to copy to clipboard Then use the following command to install in SSH 
 
 ```sh
-sh export url='Paste the copied address here' && wget -q -O /tmp/install.sh $url/install_n.sh && sh /tmp/install.sh && source /etc/profile &> /dev/null
+sh export url='Paste the copied address here' && wget -q -O /tmp/install.sh $url/install.sh && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
  Later, when updating the version, you need to update the local version library and open the hfs service, and then update in the SSH menu, and then you can build a local server through hfs to realize the function of uploading and updating the yaml configuration file 

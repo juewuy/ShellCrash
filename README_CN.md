@@ -36,10 +36,10 @@
 --
 ~确认路由器设备已经开启SSH并获取root权限（带GUI桌面的Linux设备可使用自带终端安装）<br>
 ~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或Linux设备的SSH管理界面或终端界面，并切换到root用户<br>
-~确认设备已经安装curl或者wget下载工具。如未安装，LInux设备请[参考此处](https://www.howtoing.com/install-curl-in-linux)安装curl，基于OpenWrt（小米官方系统、潘多拉、高恪等）的设备请使用如下命令安装curl：<br>
+~确认设备已经安装curl或者wget下载工具。**如未安装**，LInux设备请[参考此处](https://www.howtoing.com/install-curl-in-linux)安装curl，基于OpenWrt（小米官方系统、潘多拉、高恪等）的设备请使用如下命令安装curl：<br>
 
 ```shell
-opkg update && opkg install curl
+opkg update && opkg install curl #如已安装请忽略
 ```
 
 ~之后在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
@@ -48,41 +48,24 @@ opkg update && opkg install curl
 
 ```Shell
 #github直连
-export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install_n.sh)" && source /etc/profile &> /dev/null
+export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #jsdelivrCDN源
-export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install_n.sh)" && source /etc/profile &> /dev/null
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 ~**使用wget安装**：<br>
 
 ```sh
 #Release版本-jsdelivrCDN源
-export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
-~**使用低版本wget（提示不支持https）本地安装**：<br>
-
-首先在window下将项目克隆到本地（或[点击下载项目源码zip包](https://github.com/juewuy/ShellClash/archive/refs/heads/master.zip)到本地后解压）
+~**使用低版本wget（提示不支持https）安装**：<br>
 
 ```sh
-git clone https://github.com/juewuy/ShellClash.git
+#Test版本-酱紫表私人http源
+export url='http://sc.qust.me/' && wget -q -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
-
-之后打开/项目地址/ShellClash/bin/hfs/hfs.exe
-
-点击菜单-从磁盘添加目录-{找到ShellClash源码所在目录}-添加为真实目录
-
-点击菜单-IP地址-{选择你局域网的实际IP地址}
-
-点击ShellClash-点击复制到剪切板
-
-之后在SSH中使用如下命令安装
-
-```sh
-export url='将复制的地址粘贴在这里' && wget -q -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
-```
-
-之后更新版本时需要先更新本地版本库并打开hfs服务，再在SSH菜单内进行更新，之后也可以通过hfs搭建本地服务器来实现上传更新yaml配置文件的功能
 
 ~**非root用户安装后**请额外执行以下命令以读取环境变量：<br>
 
