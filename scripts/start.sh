@@ -53,20 +53,20 @@ logger(){
 	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
 	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1,5d' $clashdir/log
 }
+croncmd(){
+	if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
+		crontab $1
+	else
+		crondir="$(crond -h 2>&1 | grep -oE 'Default:.*' | awk -F ":" '{print $2}')"
+		[ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
+		[ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
+		[ ! -w "$crondir" ] && crondir="/var/spool/cron"
+		[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请前往 https://t.me/clashfm 申请适配！"
+		[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
+		[ -f "$1" ] && cat $1 > $crondir/$USER
+	fi
+}
 cronset(){
-	croncmd(){
-		if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
-			crontab $1
-		else
-			crondir="$(crond -h 2>&1 | grep -oE 'Default:.*' | awk -F ":" '{print $2}')"
-			[ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
-			[ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
-			[ ! -w "$crondir" ] && crondir="/var/spool/cron"
-			[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请前往 https://t.me/clashfm 申请适配！"
-			[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
-			[ -f "$1" ] && cat $1 > $crondir/$USER
-		fi
-	}
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
 	tmpcron=/tmp/cron_$USER
 	croncmd -l > $tmpcron 
@@ -283,7 +283,7 @@ EOF
 	fi
 	#如果没有使用小闪存模式
 	if [ "$tmpdir" != "$bindir" ];then
-		compare $tmpdir/config.yaml $yaml
+		cmp -s $tmpdir/config.yaml $yaml >/dev/null 2>&1
 		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
 	fi
 	rm -f $tmpdir/set.yaml
@@ -685,7 +685,7 @@ afstart(){
 		#设置本机代理
 		[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
 		#加载定时任务
-		[ -f $clashdir/cron ] && crontab $clashdir/cron
+		[ -f $clashdir/cron ] && croncmd $clashdir/cron
 		#启用面板配置自动保存
 		if [ "$restore" = false ];then
 			cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
