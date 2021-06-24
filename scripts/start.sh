@@ -54,6 +54,7 @@ logger(){
 	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 30 ] && sed -i '1,5d' $clashdir/log
 }
 cronset(){
+	croncmd(){
 		if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
 			crontab $1
 		else
@@ -65,6 +66,7 @@ cronset(){
 			[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
 			[ -f "$1" ] && cat $1 > $crondir/$USER
 		fi
+	}
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
 	tmpcron=/tmp/cron_$USER
 	croncmd -l > $tmpcron 
