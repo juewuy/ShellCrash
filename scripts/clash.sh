@@ -1053,7 +1053,19 @@ tools(){
 	fi
 }
 clashcron(){
-
+	croncmd(){
+		if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
+			crontab $1
+		else
+			crondir="$(crond -h 2>&1 | grep -oE 'Default:.*' | awk -F ":" '{print $2}')"
+			[ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
+			[ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
+			[ ! -w "$crondir" ] && crondir="/var/spool/cron"
+			[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请前往 https://t.me/clashfm 申请适配！"
+			[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
+			[ -f "$1" ] && cat $1 > $crondir/$USER
+		fi
+	}
 	setcron(){
 		setcrontab(){
 			#设置具体时间
@@ -1082,13 +1094,14 @@ clashcron(){
 						read -p  "是否确认添加定时任务？(1/0) > " res
 						if [ "$res" = '1' ]; then
 							cronwords="$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname"
-							crondir=/tmp/cron_$USER
-							crontab -l > $crondir
-							sed -i "/$cronname/d" $crondir
-							sed -i '/^$/d' $crondir
-							echo "$cronwords" >> $crondir && crontab $crondir
+							tmpcron=/tmp/cron_$USER
+							croncmd -l > $tmpcron
+							sed -i "/$cronname/d" $tmpcron
+							sed -i '/^$/d' $tmpcron
+							echo "$cronwords" >> $tmpcron
+							croncmd $tmpcron
 							#华硕/Padavan固件存档在本地,其他则删除
-							[ "$clashdir" = "/jffs/clash" -o "$clashdir" = "/etc/storage/clash" ] && mv -f $crondir $clashdir/cron || rm -f $crondir
+							[ "$clashdir" = "/jffs/clash" -o "$clashdir" = "/etc/storage/clash" ] && mv -f $tmpcron $clashdir/cron || rm -f $tmpcron
 							echo -----------------------------------------------
 							echo -e "\033[31m定时任务已添加！！！\033[0m"
 						fi
@@ -1111,8 +1124,8 @@ clashcron(){
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 9 ]; then
-			crontab -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && crontab /tmp/conf
-			sed -i "/$cronname/d" $clashdir/cron
+			croncmd -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && croncmd /tmp/conf
+			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
 			rm -f /tmp/conf
 			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
@@ -1134,7 +1147,7 @@ clashcron(){
 	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
 	echo -----------------------------------------------
 	echo  -e "\033[33m已添加的定时任务：\033[36m"
-	crontab -l | grep -oE ' #.*' 
+	croncmd -l | grep -oE ' #.*' 
 	echo -e "\033[0m"-----------------------------------------------
 	echo -e " 1 设置\033[33m定时重启\033[0mclash服务"
 	echo -e " 2 设置\033[31m定时停止\033[0mclash服务"
