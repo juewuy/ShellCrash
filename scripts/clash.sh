@@ -1233,6 +1233,7 @@ clashsh(){
 			localproxy
 		elif [ "$autostart" = "enable_rc" ]; then
 			/etc/init.d/clash disable
+			cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
 		elif [ "$autostart" = "disable_rc" ]; then
 			/etc/init.d/clash enable
