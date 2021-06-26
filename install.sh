@@ -18,7 +18,7 @@ if [ "$USER" != "root" -a -z "$systype" ];then
 	$echo "\033[31m请尽量使用root用户（不要直接使用sudo命令！）执行安装!\033[0m"
 	echo -----------------------------------------------
 	read -p "仍要安装？可能会产生未知错误！(1/0) > " res
-	[ "$res" != "1" ] && exit
+	[ "$res" != "1" ] && exit 1
 fi
 webget(){
 	#参数【$1】代表下载目录，【$2】代表在线地址
@@ -51,7 +51,7 @@ echo -----------------------------------------------
 read -p "请输入相应数字 > " num
 if [ -z $num ];then
 	echo 安装已取消
-	exit;
+	exit 1;
 elif [ "$num" = "1" ];then
 	webget /tmp/clashrelease $url/bin/release_version echoon rediroff 2>/tmp/clashrelease
 	if [ "$result" = "200" ];then
@@ -159,7 +159,7 @@ else
 	#设置目录
 	if [ -z $num ];then
 		echo 安装已取消
-		exit;
+		exit 1;
 	elif [ "$num" = "1" ];then
 		dir=/etc
 	elif [ "$num" = "2" ];then
@@ -179,7 +179,7 @@ else
 		fi
 	else
 		echo 安装已取消！！！
-		exit;
+		exit 1;
 	fi
 fi
 if [ ! -w $dir ];then
@@ -217,7 +217,7 @@ if [ -n "$clashdir" ];then
 		install
 	else
 		$echo "\033[31m输入错误！已取消安装！\033[0m"
-		exit;
+		exit 1;
 	fi
 else
 	setdir
