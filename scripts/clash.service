@@ -9,6 +9,7 @@ ExecStart=/etc/clash/clash -d /etc/clash
 ExecStartPost=/etc/clash/start.sh afstart
 Restart=on-failure
 RestartSec=3s
+LimitNOFILE=999999
 
 
 [Install]
