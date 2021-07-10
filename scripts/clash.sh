@@ -544,7 +544,7 @@ clashcfg(){
 		echo -e "\033[36mTun及混合模式必须使用clashpre核心！\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 Redir模式：CPU以及内存\033[33m占用较低\033[0m"
-		echo -e "              但\033[31m不支持UDP\033[0m，不支持fake-ip模式"
+		echo -e "              但\033[31m不支持UDP\033[0m"
 		echo -e "              适合\033[32m非外服游戏用户\033[0m使用"
 		echo -e " 2 混合模式： 使用redir转发TCP，Tun转发UDP流量"
 		echo -e "              \033[33m速度较快\033[0m，\033[31m内存占用略高\033[0m"
@@ -619,7 +619,7 @@ clashcfg(){
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
-		echo -e "                   不支持Redir模式，兼容性略差"
+		echo -e "                   兼容性比较差，部分应用可能打不开"
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   不支持Tun模式，抗污染能力略差"
 		echo " 0 返回上级菜单"
@@ -629,15 +629,20 @@ clashcfg(){
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 1 ]; then
-			if [ "$redir_mod" = "Redir模式" ];then
-				echo -----------------------------------------------	
-				echo -e "\033[36mfake-ip与Redir模式兼容性较差，请使用其他模式！！\033[0m"		
-			else
+			set_fake_ip(){
 				dns_mod=fake-ip
 				setconfig dns_mod $dns_mod 
 				echo -----------------------------------------------	
 				echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+				}
+			if [ "$redir_mod" = "Redir模式" ];then
+				echo -----------------------------------------------	
+				read -p "fake-ip与Redir模式兼容性较差，是否依然强制使用？(1/0) > "	res
+				[ "$res" = 1 ] && set_fake_ip
+			else
+				set_fake_ip
 			fi
+
 		elif [ "$num" = 2 ]; then
 			dns_mod=redir_host
 			setconfig dns_mod $dns_mod 

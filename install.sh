@@ -72,6 +72,7 @@ tarurl=$url2/bin/clashfm.tar.gz
 gettar(){
 	webget /tmp/clashfm.tar.gz $tarurl
 	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
+	$clashdir/start.sh stop 2>/dev/null
 	#解压
 	echo -----------------------------------------------
 	echo 开始解压文件！
@@ -100,7 +101,7 @@ gettar(){
 		fi
 	fi
 	#修饰文件及版本号
-	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
+	shtype=sh && [ -n "$(ls -l /bin/sh|grep -oE 'dash|show|bash')" ] && shtype=bash 
 	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark

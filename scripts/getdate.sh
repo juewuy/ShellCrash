@@ -308,6 +308,7 @@ clashlink(){
 gettar(){
 	$clashdir/start.sh webget /tmp/clashfm.tar.gz $tarurl
 	[ "$?" = "1" ] && echo "文件下载失败！" && exit 1
+	$clashdir/start.sh stop
 	#解压
 	echo -----------------------------------------------
 	echo 开始解压文件！
@@ -336,7 +337,7 @@ gettar(){
 		fi
 	fi
 	#修饰文件及版本号
-	shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash 
+	shtype=sh && [ -n "$(ls -l /bin/sh|grep -oE 'dash|show|bash')" ] && shtype=bash 
 	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
 	chmod  777 $clashdir/start.sh
 	sed -i '/versionsh_l=*/'d $clashdir/mark
@@ -366,6 +367,7 @@ getsh(){
 	echo -----------------------------------------------
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
 	echo -e "最新脚本版本为：\033[32m $release_new \033[0m"
+	echo -e "注意更新时会停止clash服务！"
 	echo -----------------------------------------------
 	read -p "是否更新脚本？[1/0] > " res
 	if [ "$res" = '1' ]; then
