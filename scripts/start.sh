@@ -343,7 +343,7 @@ start_redir(){
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash
 	#Docker特殊处理
-	iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
+	[ "$local_proxy" = "已开启" ] && iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
 	#设置ipv6转发
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ];then
