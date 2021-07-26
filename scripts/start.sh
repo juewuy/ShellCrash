@@ -758,7 +758,15 @@ restart)
         $0 start
         ;;
 init)
-        [ -d "/etc/storage/clash" ] && clashdir=/etc/storage/clash && profile=/opt/etc/profile
+        if [ -d "/etc/storage/clash" ];then
+			clashdir=/etc/storage/clash
+			if [ -w "/opt/etc/profile" ];then
+				profile=/opt/etc/profile
+			else
+				profile=/etc/profile
+				sed -i '' $profile #将软链接转化为一般文件
+			fi
+		fi
 		[ -d "/jffs/clash" ] && clashdir=/jffs/clash && profile=/jffs/configs/profile.add
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
 		echo "export clashdir=\"$clashdir\"" >> $profile 
