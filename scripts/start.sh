@@ -658,6 +658,7 @@ bfstart(){
 		if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
 			userdel shellclash 2>/dev/null
 			useradd shellclash -u 7890
+			groupmod shellclash -g 7890
 			sed -Ei s/7890:7890/0:7890/g /etc/passwd
 		fi
 		if [ "$start_old" != "已开启" ];then
