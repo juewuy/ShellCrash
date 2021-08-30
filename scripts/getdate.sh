@@ -428,7 +428,7 @@ getcore(){
 	else
 		echo -e "\033[32m$clashcore核心下载成功！\033[0m"
 		mv -f /tmp/clash.new $bindir/clash
-		chmod  777 $bindir/clash  #授予权限
+		chmod 777 $bindir/clash  #授予权限
 		setconfig clashcore $clashcore
 		setconfig clashv $version
 	fi
@@ -449,7 +449,10 @@ setcore(){
 	echo "2 clashpre：  支持Tun模式、混合模式"
 	echo "(高级预览版)  内存占用更高"
 	echo
-	echo "3 手动指定处理器架构"
+	echo "3 clash.net： 支持vless/xtls"
+	echo "(.net定制版)  未测试，可能不稳定"
+	echo
+	echo "4 手动指定处理器架构"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
@@ -466,6 +469,10 @@ setcore(){
 			version=$clashpre_v
 			getcore
 		elif [ "$num" = 3 ]; then
+			clashcore=clash.net
+			version=$clash.net_v
+			getcore
+		elif [ "$num" = 4 ]; then
 			setcpucore
 			setcore
 		else
@@ -873,6 +880,7 @@ userguide(){
 		echo -----------------------------------------------
 		echo -e " 1 \033[32m主路由或旁路由\033[0m"
 		echo -e " 2 \033[36mLinux本机代理\033[0m"
+		[ -f "$ccfg.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ] || [ "$num" -gt 4 ];then
@@ -906,6 +914,11 @@ userguide(){
 			fi
 			setconfig local_proxy $local_proxy
 			setconfig local_type $local_type
+		elif [ "$num" = 3 ];then
+			mv -f $ccfg.bak $ccfg
+			echo -e "\033[32m脚本设置已还原！\033[0m"
+			echo -e "\033[33m请重新启动脚本！\033[0m"
+			exit 0
 		fi
 	}
 	forwhat

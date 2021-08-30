@@ -776,7 +776,7 @@ clashadv(){
 	echo -e " 7 使用自定义配置"
 	echo -e " 8 手动指定相关端口、秘钥及本机host"
 	echo -----------------------------------------------
-	echo -e " 9 \033[31m重置\033[0m配置文件"
+	echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -939,15 +939,34 @@ EOF
 		clashadv
 		
 	elif [ "$num" = 9 ]; then	
-		read -p "确认重置配置文件？(1/0) > " res
-		if [ "$res" = "1" ];then
-			echo "versionsh_l=$versionsh_l" > $ccfg
-			echo "start_time=$start_time" >> $ccfg
-			echo "#标识clash运行状态的文件，不明勿动！" >> $ccfg
-			echo -e "\033[33m配置文件已重置，请重新运行脚本！\033[0m"
-			exit
+		echo -e " 1 备份脚本设置"
+		echo -e " 2 还原脚本设置"
+		echo -e " 3 重置脚本设置"
+		echo -e " 0 返回上级菜单"
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num
+		if [ -z "$num" ]; then
+			errornum
+		elif [ "$num" = 0 ]; then
+			i=
+		elif [ "$num" = 1 ]; then
+			cp -f $ccfg $ccfg.bak
+			echo -e "\033[32m脚本设置已备份！\033[0m"
+		elif [ "$num" = 2 ]; then
+			if [ -f "$ccfg.bak" ];then
+				mv -f $ccfg $ccfg.bak2
+				mv -f $ccfg.bak $ccfg
+				mv -f $ccfg.bak2 $ccfg.bak
+				echo -e "\033[32m脚本设置已还原！(被覆盖的配置已备份！)\033[0m"
+			else
+				echo -e "\033[31m找不到备份文件，请先备份脚本设置！\033[0m"
+			fi
+		elif [ "$num" = 3 ]; then
+			mv -f $ccfg $ccfg.bak
+			echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
 		fi
-		clashadv
+		echo -e "\033[33m请重新启动脚本！\033[0m"
+		exit 0
 
 	else
 		errornum
