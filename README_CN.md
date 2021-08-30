@@ -64,7 +64,7 @@ export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --n
 
 ```sh
 #Test版本-酱紫表私人http源
-export url='http://sc.qust.me/' && wget -q -O /tmp/install.sh $url/install_n.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='http://sc.qust.me/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**非root用户安装后**请额外执行以下命令以读取环境变量：<br>
