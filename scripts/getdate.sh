@@ -772,6 +772,8 @@ update(){
 	echo -ne "\033[32m正在检查更新！\033[0m\r"
 	checkupdate
 	[ "$clashcore" = "clash" ] && clash_n=$clash_v || clash_n=$clashpre_v
+	[ "$clashcore" = "clashpre" ] && clash_n=$clashpre_v
+	[ "$clashcore" = "clash.net" ] && clash_n=$clashnet_v
 	clash_v=$($bindir/clash -v 2>/dev/null | awk '{print $2}')
 	[ -z "$clash_v" ] && clash_v=$clashv
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
