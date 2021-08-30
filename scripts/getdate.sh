@@ -470,7 +470,7 @@ setcore(){
 			getcore
 		elif [ "$num" = 3 ]; then
 			clashcore=clash.net
-			version=$clash.net_v
+			version=$clashnet_v
 			getcore
 		elif [ "$num" = 4 ]; then
 			setcpucore
