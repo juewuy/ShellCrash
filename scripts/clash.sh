@@ -139,11 +139,11 @@ setport(){
 	[ -z "$secret" ] && secret=未设置
 	[ -z "$authentication" ] && authentication=未设置
 	inputport(){
-		read -p "请输入端口号(1000-65535) > " portx
+		read -p "请输入端口号(1-65535) > " portx
 		if [ -z "$portx" ]; then
 			setport
-		elif [ $portx -gt 65535 -o $portx -le 999 ]; then
-			echo -e "\033[31m输入错误！请输入正确的数值(1000-65535)！\033[0m"
+		elif [ $portx -gt 65535 -o $portx -le 1 ]; then
+			echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
 			inputport
 		elif [ -n "$(echo $mix_port$redir_port$dns_port$db_port|grep $portx)" ]; then
 			echo -e "\033[31m输入错误！请不要输入重复的端口！\033[0m"
@@ -270,6 +270,7 @@ setdns(){
 	echo -e " 3 \033[33m重置\033[0mDNS配置"
 	echo -e " 4 禁用内置DNS(慎用)"
 	echo -e " 5 使用\033[32m加密DNS\033[0m"
+	echo -e " 6 使用\033[32mdnsmasq转发DNS\033[0m"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -326,11 +327,19 @@ setdns(){
 		rm -rf /tmp/ssl_test
 		sleep 1
 		setdns
+	elif [ "$num" = 6 ]; then
+		echo -----------------------------------------------
+		echo -e "\033[31m将使用OpenWrt中Dnsmasq插件自带的DNS转发功能转发DNS请求至clash内核！\033[0m"
+		echo -e "\033[32m启用后将禁用本插件自带的iptables转发功能\033[0m"
+		dns_redir=已开启
+		setconfig dns_redir $dns_redir
+		echo -e "\033[33m已启用Dnsmasq转发DNS功能！！！\033[0m"
+		setdns
 	fi
 }
 checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
-		if [ -n "$(netstat -ntul 2>&1 |grep :$portx)" ];then
+		if [ -n "$(netstat -ntul 2>&1 |grep \:$portx\ )" ];then
 			echo -----------------------------------------------
 			echo -e "检测到端口【$portx】被以下进程占用！clash可能无法正常启动！\033[33m"
 			echo $(netstat -ntulp | grep :$portx | head -n 1)
@@ -1319,6 +1328,10 @@ case "$1" in
 		echo "	-t 测试模式"
 		echo "	-h 帮助列表"
 		echo "	-u 卸载脚本"
+		echo -----------------------------------------
+		echo "	$clashdir/start.sh start	启动服务"
+		echo "	$clashdir/start.sh stop		停止服务"
+		echo "	$clashdir/start.sh init		写入服务"
 		echo -----------------------------------------
 		echo "在线求助：t.me/clashfm"
 		echo "官方博客：juewuy.github.io"

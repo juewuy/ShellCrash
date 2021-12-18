@@ -11,6 +11,7 @@ echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
 [ -f "/etc/storage/started_script.sh" ] && systype=Padavan && initdir='/etc/storage/started_script.sh'
+[ -d "/jffs/" ] && systype=asusrouter && initdir='/jffs/init-start'
 [ -f "/jffs/.asusrouter" ] && systype=asusrouter && initdir='/jffs/.asusrouter'
 #检查root权限
 if [ "$USER" != "root" -a -z "$systype" ];then

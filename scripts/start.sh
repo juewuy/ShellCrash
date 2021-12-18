@@ -26,6 +26,7 @@ getconfig(){
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
+	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$public_support" ] && public_support=未开启
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
@@ -95,8 +96,8 @@ getyaml(){
 subcon.dlj.tf
 api.dler.io
 api.wcc.best
-api2.tsutsu.cc
-api.v1.mk
+sub.lpy.pw
+sub.id9.cc
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
@@ -232,7 +233,7 @@ modify_yaml(){
 	if [ "$dns_mod" = "fake-ip" ];then
 		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	else
-		dns='dns: {enable: true, ipv6: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		dns='dns: {enable: true, '$ipv6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	fi
 	#设置目录
 	yaml=$clashdir/config.yaml
@@ -309,6 +310,11 @@ cn_ip_route(){
 	fi
 }
 start_redir(){
+	#允许tun网卡接受流量
+	if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
+		iptables -I FORWARD -o utun -j ACCEPT
+		[ "$ipv6_support" = "已开启" ] && ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	fi
 	#获取本地局域网地址段
 	gethost
 	#流量过滤规则
@@ -364,11 +370,6 @@ start_redir(){
 	fi
 }
 start_dns(){
-	#允许tun网卡接受流量
-	if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
-		iptables -I FORWARD -o utun -j ACCEPT
-		[ "$ipv6_support" = "已开启" ] && ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
-	fi
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
@@ -521,6 +522,10 @@ stop_iptables(){
 	ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 	#清理ipset规则
 	ipset destroy cn_ip >/dev/null 2>&1
+	#移除dnsmasq转发规则
+	uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
+	uci delete dhcp.@dnsmasq[0].cachesize >/dev/null 2>&1
+	/etc/init.d/dnsmasq restart >/dev/null 2>&1
 }
 #面板配置保存相关
 web_save(){
@@ -677,7 +682,17 @@ afstart(){
 	if [ "$?" = 0 ];then
 		#设置iptables转发规则
 		[ "$dns_mod" = "redir_host" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
-		[ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && start_dns
+		if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ];then
+			if [ "$dns_redir" != "已开启" ];then
+				start_dns
+			else
+				#openwrt使用dnsmasq转发
+				uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
+				uci delete dhcp.@dnsmasq[0].resolvfile 2>/dev/null
+				uci add_list dhcp.@dnsmasq[0].server=127.0.0.1#$dns_port > /dev/null 2>&1
+				/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			fi
+		fi
 		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output

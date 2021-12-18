@@ -503,9 +503,9 @@ setgeo(){
 	[ -n "$geo_type" ] && echo -e "当前使用的是\033[47;30m$geo_type数据库\033[0m"
 	echo -e "\033[36m请选择需要更新/切换的GeoIP/CN_IP数据库：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约4mb)"
-	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.1mb)"
-	echo -e " 3 由\033[32m17mon\033[0m提供的CN-IP文件(需启用CN_IP绕过内核功能，约0.1mb)"
+	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约6mb)"
+	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.2mb)"
+	echo -e " 3 由\033[32m17mon\033[0m提供的CN-IP文件(需启用CN_IP绕过内核功能，约0.2mb)"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
