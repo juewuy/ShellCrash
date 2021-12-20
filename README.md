@@ -37,7 +37,7 @@ opkg update && opkg install curl
 ##### ~Use curl:<br>
 
 ```Shell
-#By github
+#By github-CDN
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #By jsdelivrCDN
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
