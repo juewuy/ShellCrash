@@ -44,8 +44,8 @@ linkserver(){
 	echo 1 subcon.dlj.tf
 	echo 2 api.dler.io
 	echo 3 api.wcc.best
-	echo 4 api2.tsutsu.cc
-	echo 5 api.v1.mk
+	echo 4 sub.id9.cc
+	echo 5 sub.shellclash.ga
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
@@ -702,7 +702,7 @@ setserver(){
 	echo -e " 1 \033[32m正式版\033[0m&Jsdelivr-CDN源(推荐)"
 	echo -e " 2 \033[36m测试版\033[0m&Jsdelivr-CDN源"
 	echo -e " 3 \033[36m测试版\033[0m&Github源(需开启clash服务）"
-	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 4 \033[33mHttp专用源\033[0m@Qust.me(感谢\033[32m酱紫表\033[0m提供及维护)"
+	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 4 \033[33mHttp专用源\033[0m"
 	echo -e " 5 自定义源地址(用于本地源或自建源)"
 	echo -e " 6 \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
@@ -719,7 +719,7 @@ setserver(){
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
 		saveserver
 	elif [ "$num" = 4 ]; then
-		update_url='http://sc.qust.me'
+		update_url='http://shellclash.ga'
 		saveserver
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------

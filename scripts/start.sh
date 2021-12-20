@@ -96,8 +96,8 @@ getyaml(){
 subcon.dlj.tf
 api.dler.io
 api.wcc.best
-sub.lpy.pw
 sub.id9.cc
+sub.shellclash.ga
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
