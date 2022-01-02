@@ -93,11 +93,11 @@ getyaml(){
 	[ -z "$server_link" ] && server_link=1
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
-subcon.dlj.tf
-api.dler.io
-api.wcc.best
-sub.id9.cc
-sub.shellclash.ga
+https://subcon.dlj.tf
+https://api.dler.io
+https://api.wcc.best
+https://sub.id9.cc
+http://sub.shellclash.ga
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
@@ -122,7 +122,7 @@ EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
 		#[ -n "$(echo $Url | grep -o 'https://dler')" ] && Server='api.dler.io'
-		Https="https://$Server/sub?target=clash&insert=true&new_name=true&scv=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
+		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		markhttp=1
 	fi
 	#输出
@@ -638,7 +638,8 @@ bfstart(){
 		fi
 	fi
 	#检查dashboard文件
-	if [ -f $clashdir/ui/index.html -a ! -f $bindir/ui/index.html ];then
+	if [ -f $clashdir/ui/index.html ];then
+		rm -rf $bindir/ui
 		cp -rf $clashdir/ui $bindir
 	fi
 	#检查curl或wget支持
