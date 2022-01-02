@@ -544,6 +544,7 @@ getdb(){
 		if [ "$res" = 1 ]; then
 			rm -rf /www/clash
 			rm -rf $clashdir/ui
+			rm -rf $bindir/ui
 		fi
 	fi
 	dblink="${update_url}/bin/${db_type}.tar.gz"
@@ -634,6 +635,7 @@ setdb(){
 		if [ "$res" = 1 ];then
 			rm -rf /www/clash
 			rm -rf $clashdir/ui
+			rm -rf $bindir/ui
 			echo -----------------------------------------------
 			echo -e "\033[31m面板已经卸载！\033[0m"
 			sleep 1

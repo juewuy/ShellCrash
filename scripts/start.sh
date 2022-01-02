@@ -638,8 +638,7 @@ bfstart(){
 		fi
 	fi
 	#检查dashboard文件
-	if [ -f $clashdir/ui/index.html ];then
-		rm -rf $bindir/ui
+	if [ -f $clashdir/ui/index.html -a ! -f $bindir/ui/index.html ];then
 		cp -rf $clashdir/ui $bindir
 	fi
 	#检查curl或wget支持
