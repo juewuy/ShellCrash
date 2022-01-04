@@ -136,6 +136,7 @@ checkrestart(){
 }
 #功能相关
 setport(){
+	getconfig 
 	[ -z "$secret" ] && secret=未设置
 	[ -z "$authentication" ] && authentication=未设置
 	inputport(){
@@ -153,7 +154,6 @@ setport(){
 			inputport
 		else
 			setconfig $xport $portx 
-			$xport=$portx
 			echo -e "\033[32m设置成功！！！\033[0m"
 			setport
 		fi
