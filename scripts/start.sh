@@ -282,6 +282,10 @@ EOF
 			sed -i "/^rules:/a\\$space$line #自定义规则" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
 	fi
+	#tun/fake-ip防止流量回环
+	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$dns_mod" = "fake-ip" ];then
+		sed -i "/^rules:/a\\ - SRC-IP-CIDR,198.18.0.0/16,REJECT #自定义规则(防止回环)" $tmpdir/config.yaml
+	fi
 	#如果没有使用小闪存模式
 	if [ "$tmpdir" != "$bindir" ];then
 		cmp -s $tmpdir/config.yaml $yaml >/dev/null 2>&1

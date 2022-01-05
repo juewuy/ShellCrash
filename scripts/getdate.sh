@@ -453,9 +453,12 @@ setcore(){
 	echo "(高级预览版)  内存占用更高"
 	echo
 	echo "3 clash.net： 支持vless/xtls"
-	echo "(.net定制版)  未测试，可能不稳定"
+	echo "(.net定制版)  第三方定制内核"
 	echo
-	echo "4 手动指定处理器架构"
+	echo "4 clash.meta：支持vless/xtls"
+	echo "(meta定制版)  第三方定制内核"
+	echo
+	echo "5 手动指定处理器架构"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
@@ -476,6 +479,10 @@ setcore(){
 			version=$clashnet_v
 			getcore
 		elif [ "$num" = 4 ]; then
+			clashcore=clash.meta
+			version=$meta_v
+			getcore
+		elif [ "$num" = 5 ]; then
 			setcpucore
 			setcore
 		else
