@@ -92,19 +92,19 @@ getyaml(){
 	[ -z "$server_link" ] && server_link=1
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
-https://subcon.dlj.tf
 https://api.dler.io
+http://sub.shellclash.ga
 https://api.wcc.best
 https://sub.id9.cc
-http://sub.shellclash.ga
+https://sub.maoxiongnet.com
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash.ini
 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Mini.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_AdblockPlus.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Block.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Nano.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full_Block.ini
 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini
 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini
 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_pro.ini
@@ -639,6 +639,15 @@ bfstart(){
 			[ "$?" = "1" ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
+		fi
+	fi
+	if [ ! -f $bindir/geosite.dat ];then
+		if [ -f $clashdir/geosite.dat ];then
+			mv $clashdir/geosite.dat $bindir/geosite.dat
+		else
+			logger "未找到geosite数据库，正在下载！" 33
+			$0 webget $bindir/geosite.dat $update_url/bin/geosite.dat
+			[ "$?" = "1" ] && rm -rf $bindir/geosite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
 		fi
 	fi
 	#检查dashboard文件

@@ -5,23 +5,20 @@
 linkconfig(){
 	echo -----------------------------------------------
 	echo 当前使用规则为：$rule_link
-	echo 1	ACL4SSR通用版无去广告（推荐）
-	echo 2	ACL4SSR精简全能版（推荐）
-	echo 3	ACL4SSR通用版+去广告加强
-	echo 4	ACL4SSR精简版+去广告加强
-	echo 5	ACL4SSR重度全分组+奈飞分流
-	echo 6	ACL4SSR重度全分组+去广告加强
-	echo 7	洞主规则精简版（推荐）
-	echo 8	洞主规则重度完整版
-	echo 9	神机规则高级版
-	echo 10	神机规则-回国专用
-	echo 11	李哥规则-墙洞专用
-	echo 12	基础规则-仅Geoip CN+Final
-	echo 13	网易云解锁-仅规则分组
-	echo 14	ACL4SSR重度全分组+谷歌优化
-	echo 15	ACL4SSR通用版+LM-Firefly游戏规则
-	echo 16	ACL4SSR精简版+LM-Firefly游戏规则
-	echo 17	ACL4SSR重度+LM-Firefly游戏规则
+	echo " 1	Acl4SSR全能优化版（推荐）"
+	echo " 2	Acl4SSR精简优化版（推荐）"
+	echo " 3	Acl4SSR全能优化+去广告增强"
+	echo " 4	Acl4SSR极简版（适合自建节点）"
+	echo " 5	Acl4SSR分流&游戏增强"
+	echo " 6	Acl4SSR分流&游戏&去广告增强（低性能设备慎用）"
+	echo " 7	洞主规则精简版（推荐）"
+	echo " 8	洞主规则重度完整版"
+	echo " 9	神机规则高级版"
+	echo " 10	神机规则-回国专用"
+	echo " 11	李哥规则-墙洞专用"
+	echo " 12	基础规则-仅Geoip CN+Final"
+	echo " 13	网易云解锁-仅规则分组"
+	echo " 14	ACL4SSR重度全分组+谷歌优化"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
@@ -40,12 +37,13 @@ linkconfig(){
 linkserver(){
 	echo -----------------------------------------------
 	echo -e "\033[36m以下为互联网采集的第三方服务器，具体安全性请自行斟酌！\033[0m"
+	echo -e "\033[32m感谢以下作者的无私奉献！！！\033[0m"
 	echo 当前使用后端为：$server_link
-	echo 1 subcon.dlj.tf
-	echo 2 api.dler.io
-	echo 3 api.wcc.best
-	echo 4 sub.id9.cc
-	echo 5 sub.shellclash.ga
+	echo 1 api.dler.io			（墙洞提供）
+	echo 2 sub.shellclash.ga	（作者提供）
+	echo 3 api.wcc.best			（sub_web作者提供）
+	echo 4 sub.id9.cc			（品云提供）
+	echo 5 sub.maoxiongnet.com	（猫熊提供）
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
