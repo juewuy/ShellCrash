@@ -99,8 +99,8 @@ https://sub.id9.cc
 http://sub.shellclash.ga
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_NoReject.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiMode.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash.ini
+https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Mini.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_AdblockPlus.ini
 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Netflix.ini
