@@ -32,6 +32,10 @@ getconfig(){
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
+	#获取本机host地址
+	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
+	[ -z "$host" ] && host=127.0.0.1
 	#是否代理常用端口
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	}
@@ -81,11 +85,6 @@ mark_time(){
 	start_time=`date +%s`
 	sed -i '/start_time*/'d $clashdir/mark
 	echo start_time=$start_time >> $clashdir/mark
-}
-gethost(){
-	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	[ -n "$host" ] && lanhost="-s $(echo $host | grep -oE '^1(92|0|72)\.')0.0.0/8"
 }
 #配置文件相关
 getyaml(){
@@ -178,7 +177,7 @@ EOF`
 		if cat $yamlnew | grep 'Proxy Group:' >/dev/null;then
 			echo -----------------------------------------------
 			logger "已经停止对旧格式配置文件的支持！！！" 31
-			echo -e "请使用新格式或者使用【导入节点/链接】功能！"
+			echo -e "请使用新格式或者使用【在线生成配置文件】功能！"
 			echo -----------------------------------------------
 			exit 1
 		fi
@@ -192,9 +191,9 @@ EOF`
 		#检测是否存在高级版规则
 		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers')" ];then
 			echo -----------------------------------------------
-			logger "检测到高级版核心专属规则！将改为使用premium核心启动！" 33
+			logger "检测到高级版核心专属规则！将改为使用clash.net核心启动！" 33
 			rm -rf $bindir/clash
-			setconfig clashcore clashpre
+			setconfig clashcore clash.net
 			echo -----------------------------------------------
 		fi
 		#使用核心内置test功能检测
@@ -227,13 +226,19 @@ modify_yaml(){
 	[ "$ipv6_support" = "已开启" ] && ipv6='ipv6: true' || ipv6='ipv6: false'
 	external="external-controller: 0.0.0.0:$db_port"
 	[ -d $clashdir/ui ] && db_ui=ui
-	[ "$redir_mod" != "Redir模式" ] && tun='tun: {enable: true, stack: system}' || tun='tun: {enable: false}'
+	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
+		[ "$clashcore" = "clash.meta" ] && stack=gvisor || stack=system
+		tun='tun: {enable: true, stack: $stack}'
+	else
+		tun='tun: {enable: false}'
+	fi
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#dns配置
+	dns_default='114.114.114.114, 223.5.5.5'
 	if [ "$dns_mod" = "fake-ip" ];then
-		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	else
-		dns='dns: {enable: true, '$ipv6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		dns='dns: {enable: true, '$ipv6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	fi
 	#设置目录
 	yaml=$clashdir/config.yaml
@@ -272,9 +277,9 @@ EOF
 	cut -c 1- $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
+	space=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
 	if [ -f $clashdir/rules.yaml ];then
 		sed -i '/^$/d' $clashdir/rules.yaml && echo >> $clashdir/rules.yaml #处理换行
-		space=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
 		while read line;do
 			[ -z "$(echo "$line " | grep '#')" ] && \
 			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
@@ -284,7 +289,7 @@ EOF
 	fi
 	#tun/fake-ip防止流量回环
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$dns_mod" = "fake-ip" ];then
-		sed -i "/^rules:/a\\ - SRC-IP-CIDR,198.18.0.0/16,REJECT #自定义规则(防止回环)" $tmpdir/config.yaml
+		sed -i "/^rules:/a\\$space- SRC-IP-CIDR,198.18.0.0/16,REJECT #自定义规则(防止回环)" $tmpdir/config.yaml
 	fi
 	#如果没有使用小闪存模式
 	if [ "$tmpdir" != "$bindir" ];then
@@ -319,8 +324,6 @@ start_redir(){
 		iptables -I FORWARD -o utun -j ACCEPT
 		[ "$ipv6_support" = "已开启" ] && ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	fi
-	#获取本地局域网地址段
-	gethost
 	#流量过滤规则
 	iptables -t nat -N clash
 	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
@@ -344,7 +347,7 @@ start_redir(){
 		done
 		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
 	fi
-	iptables -t nat -A PREROUTING -p tcp $lanhost -j clash
+	iptables -t nat -A PREROUTING -p tcp -j clash
 	if [ "$public_support" = "已开启" ];then
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
@@ -416,7 +419,6 @@ start_dns(){
 	fi
 }
 start_udp(){
-	gethost	#获取本地局域网地址段
 	ip rule add fwmark 1 table 100
 	ip route add local default dev lo table 100
 	iptables -t mangle -N clash
@@ -441,7 +443,7 @@ start_udp(){
 		done
 		iptables -t mangle -A clash -p udp -j TPROXY --on-port $redir_port --tproxy-mark 1
 	fi
-	iptables -t mangle -A PREROUTING -p udp $lanhost -j clash
+	iptables -t mangle -A PREROUTING -p udp -j clash
 }
 start_output(){
 	#流量过滤规则
@@ -489,11 +491,10 @@ start_output(){
 	iptables -t nat -A OUTPUT -p udp -j clash_dns_out
 }
 stop_iptables(){
-	gethost #获取本地局域网地址段
     #重置iptables规则
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp $lanhost -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -j clash 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp -j clash_dns 2> /dev/null
@@ -513,7 +514,7 @@ stop_iptables(){
 	iptables -t nat -F clash_dns_out 2> /dev/null
 	iptables -t nat -X clash_dns_out 2> /dev/null
 	#重置udp规则
-	iptables -t mangle -D PREROUTING -p udp $lanhost -j clash 2> /dev/null
+	iptables -t mangle -D PREROUTING -p udp -j clash 2> /dev/null
 	iptables -t mangle -F clash 2> /dev/null
 	iptables -t mangle -X clash 2> /dev/null
 	#重置ipv6规则
@@ -584,7 +585,6 @@ web_restore(){
 }
 #启动相关
 catpac(){
-	gethost
 	cat > /tmp/clash_pac <<EOF
 function FindProxyForURL(url, host) {
 	if (
@@ -617,7 +617,7 @@ bfstart(){
 		else
 			logger "未找到clash核心，正在下载！" 33
 			if [ -z "$clashcore" ];then
-				[ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clashpre || clashcore=clash
+				[ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clash.net || clashcore=clash
 			fi
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
