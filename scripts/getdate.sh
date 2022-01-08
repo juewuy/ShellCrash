@@ -467,7 +467,7 @@ setcore(){
 	echo "(.net定制版)  第三方定制内核"
 	echo
 	echo "4 clash.meta：支持vless/xtls"
-	echo "(meta定制版)  第三方定制内核"
+	echo "(meta定制版)  需要额外4M空间占用"
 	echo
 	echo "5 手动指定处理器架构"
 	echo -----------------------------------------------

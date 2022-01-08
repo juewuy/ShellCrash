@@ -641,7 +641,7 @@ bfstart(){
 			setconfig Geo_v $Geo_v
 		fi
 	fi
-	if [ ! -f $bindir/geosite.dat ];then
+	if [ "$clashcore" = "clash.meta" -a ! -f $bindir/geosite.dat ];then
 		if [ -f $clashdir/geosite.dat ];then
 			mv $clashdir/geosite.dat $bindir/geosite.dat
 		else
