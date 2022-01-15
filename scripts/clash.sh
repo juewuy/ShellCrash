@@ -981,6 +981,82 @@ EOF
 		errornum
 	fi
 }
+streaming(){
+	[ -z "$netflix_pre" ] && netflix_pre=未开启
+	[ -z "$disneyP_pre" ] && disneyP_pre=未开启
+	[ -z "$streaming_int" ] && streaming_int=24
+	netflix_dir=$clashdir/streaming/Netflix_Domains.list
+	disneyp_dir=$clashdir/streaming/Disney_Plus_Domains.list
+	####
+	echo -e "\033[30;46m欢迎使用流媒体预解析功能：\033[0m"
+	echo -e "\033[33m感谢OpenClash项目提供相关域名数据库！\033[0m"
+	echo -e "\033[31m修改后需重启服务！\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 预解析\033[36mNetflix域名  	\033[33m$netflix_pre\033[0m"
+	echo -e " 2 预解析\033[36mDisney+域名  	\033[33m$disneyP_pre\033[0m"
+	echo -e " 3 设置预解析间隔	\033[32m$streaming_int小时\033[0m"
+	echo -e " 4 更新本地\033[32m域名数据库\033[0m"
+	echo -e " 0 返回上级菜单" 
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then
+		errornum
+	elif [ "$num" = 0 ]; then
+		i=
+	elif [ "$num" = 1 ]; then	
+		echo -----------------------------------------------
+		if [ "$netflix_pre" = "未开启" ] > /dev/null 2>&1; then
+			echo -e "\033[33m已启用Netflix域名预解析功能！！\033[0m"
+			netflix_pre=已开启
+			sleep 1
+		else
+			echo -e "\033[31m已停用Netflix域名预解析功能！！\033[0m"
+			[ -f "$netflix_dir" ] && rm -rf $netflix_dir
+			netflix_pre=未开启
+		fi
+		setconfig netflix_pre $netflix_pre
+		sleep 1
+		streaming
+	elif [ "$num" = 2 ]; then	
+		echo -----------------------------------------------
+		if [ "$disneyP_pre" = "未开启" ] > /dev/null 2>&1; then
+			echo -e "\033[33m已启用Disney+域名预解析功能！！\033[0m"
+			disneyP_pre=已开启
+			sleep 1
+		else
+			echo -e "\033[31m已停用Disney+域名预解析功能！！\033[0m"
+			[ -f "$disneyp_dir" ] && rm -rf $disneyp_dir
+			disneyP_pre=未开启
+		fi
+		setconfig disneyP_pre $disneyP_pre
+		sleep 1
+		streaming
+	elif [ "$num" = 3 ]; then	
+		echo -----------------------------------------------
+		read -p "请输入刷新间隔(1-24小时,不支持小数) > " num
+			if [ -z "$num" ]; then 
+				errornum
+			elif [ $num -gt 24 ] || [ $num -lt 1 ]; then 
+				errornum
+			else	
+				streaming_int=$num
+				setconfig streaming_int $streaming_int
+				echo -e "\033[32m设置成功！！！\033[0m"
+			fi
+			sleep 1
+			streaming
+	elif [ "$num" = 4 ]; then
+		[ -f "$netflix_dir" ] && rm -rf $netflix_dir
+		[ -f "$disneyp_dir" ] && rm -rf $disneyp_dir
+		echo -----------------------------------------------
+		echo -e "\033[32m本地文件已清理，将在下次刷新时自动更新数据库文件！！！\033[0m"
+		sleep 1
+		streaming
+	else
+		errornum
+		streaming
+	fi		
+}
 tools(){
 	ssh_tools(){
 		[ -n "$(cat /etc/firewall.user 2>1 | grep '启用外网访问SSH服务')" ] && ssh_ol=禁止 || ssh_ol=开启
@@ -1050,7 +1126,7 @@ tools(){
 	[ -f "/etc/firewall.user" ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
 	#echo -e " 3 配置DDNS服务:	\033[36m$ipv6_support\033[0m	————待施工"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 3 \033[33m$mi_update\033[0m小米系统自动更新"
-	#[ -w "/etc/config/firewall" ] && echo -e " 4 \033[32修复\033[0mRedir_host模式Netflix访问"
+	echo -e " 4 \033[32m流媒体预解析\033[0m————用于解决DNS解锁在TV应用上失效的问题"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -1076,11 +1152,21 @@ tools(){
 		tools
 		
 	elif [ "$num" = 4 ]; then
-		sed -i "s/drop_invalid\ \'1\'/drop_invalid\ \'0\'/g" /etc/config/firewall
-		echo -----------------------------------------------
-		read -P "已修复，是否立即重启设备使其生效？(1/0) > " res
-		[ "$res" = 1 ] && reboot
-		sleep 1
+		nslookup baidu.com > /dev/null 2>&1
+		if [ "$?" = 0 ];then
+			checkcfg=$(cat $ccfg)
+			streaming
+			if [ -n "$PID" ];then
+				checkcfg_new=$(cat $ccfg)
+				[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+			fi
+		else
+			echo -----------------------------------------------
+			echo "当前设备缺少nslookup命令，无法启用全媒体预解析功能！"
+			echo "Centos请尝试使用以下命令安装【yum -y install bind-utils】"
+			echo "Debian/Ubuntu等请尝试使用【sudo apt-get install dnsutils -y】"
+			sleep 1
+		fi
 		tools
 		
 	else

@@ -29,6 +29,7 @@ getconfig(){
 	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$public_support" ] && public_support=未开启
+	[ -z "$stearming_int" ] && stearming_int=24
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
@@ -228,7 +229,7 @@ modify_yaml(){
 	[ -d $clashdir/ui ] && db_ui=ui
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
 		[ "$clashcore" = "clash.meta" ] && stack=gvisor || stack=system
-		tun='tun: {enable: true, stack: $stack}'
+		tun="tun: {enable: true, stack: $stack}"
 	else
 		tun='tun: {enable: false}'
 	fi
@@ -715,6 +716,11 @@ afstart(){
 		[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
 		#加载定时任务
 		[ -f $clashdir/cron ] && croncmd $clashdir/cron
+		#流媒体预解析
+		if [ "$netflix_pre" = "已开启" -o "$disneyp_pre" = "已开启" ];then
+			cronset '#ShellClash流媒体预解析' "* */$stearming_int * * * $clashdir/start.sh steaming #ShellClash流媒体预解析"
+			$0 steaming & #后台执行流媒体预解析进程
+		fi		
 		#启用面板配置自动保存
 		if [ "$restore" = false ];then
 			cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
@@ -871,6 +877,36 @@ unset_proxy)
 		[ -w /etc/profile ] && profile=/etc/profile
 		sed -i '/all_proxy/'d  $profile
 		sed -i '/ALL_PROXY/'d  $profile
+	;;
+steaming)	
+		#设置循环检测clashDNS端口
+		i=1
+		while [ $i -lt 10 ];do
+			sleep 1
+			nslookup baidu.com 127.0.0.1:${dns_port} > /dev/null 2>&1
+			[ "$?" = 0 ] && i=10
+		done
+		getconfig
+		steaming_dns(){
+			steaming_dir=$clashdir/steaming/${steaming_type}_Domains.list
+			if [ ! -f "$steaming_dir" ];then
+				echo 未找到$steaming_type域名数据库，正在下载！
+				mkdir -p $clashdir/steaming
+				$0 webget "$steaming_dir" "$update_url/bin/${steaming_type}_Domains.list"
+				[ "$?" = "1" ] && logger "$steaming_type数据库文件下载失败"
+			fi
+			if [ -f "$steaming_dir" ];then
+				for line in $(cat $steaming_dir);do
+					[ -n "$line" ] && nslookup "$line" 127.0.0.1:${dns_port}
+				done >/dev/null 2>&1
+				echo "$steaming_type域名预解析完成！"
+			fi
+		}
+		echo
+		echo "正在后台进行流媒体预解析服务，请耐心等待！"
+		[ "$netflix_pre" = "已开启" ] && steaming_type=Netflix && steaming_dns
+		[ "$disneyP_pre" = "已开启" ] && steaming_type=Disney_Plus && steaming_dns
+		echo "请输入回车继续！"
 	;;
 esac
 
