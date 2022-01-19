@@ -259,6 +259,9 @@ setport(){
 setdns(){
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
+	[ -z "$dns_redir" ] && dns_redir=未开启
+	[ -z "$dns_no" ] && dns_no=未禁用
 	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
 	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
@@ -268,9 +271,10 @@ setdns(){
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
 	echo -e " 2 修改\033[36mfallback_DNS\033[0m"
 	echo -e " 3 \033[33m重置\033[0mDNS配置"
-	echo -e " 4 禁用内置DNS(慎用)"
-	echo -e " 5 使用\033[32m加密DNS\033[0m"
-	echo -e " 6 使用\033[32mdnsmasq转发DNS\033[0m"
+	echo -e " 4 一键配置\033[32m加密DNS\033[0m"
+	echo -e " 5 ipv6_dns解析：	\033[36m$ipv6_dns\033[0m	————建议开启"
+	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————用于解决dns劫持失败的问题"
+	echo -e " 7 禁用内置DNS：	\033[36m$dns_no\033[0m	————不明勿动"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -284,6 +288,7 @@ setdns(){
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		setdns
+		
 	elif [ "$num" = 2 ]; then
 		read -p "请输入新的DNS > " dns_fallback
 		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /g')
@@ -292,6 +297,7 @@ setdns(){
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		setdns
+		
 	elif [ "$num" = 3 ]; then
 		dns_nameserver=""
 		dns_fallback=""
@@ -299,14 +305,8 @@ setdns(){
 		setconfig dns_fallback
 		echo -e "\033[33mDNS配置已重置！！！\033[0m"
 		setdns
+		
 	elif [ "$num" = 4 ]; then
-		echo -----------------------------------------------
-		echo -e "\033[31m仅限搭配其他DNS服务(比如dnsmasq、smartDNS)时使用！\033[0m"
-		dns_no=已禁用
-		setconfig dns_no $dns_no
-		echo -e "\033[33m已禁用内置DNS！！！\033[0m"
-		setdns
-	elif [ "$num" = 5 ]; then
 		$clashdir/start.sh webget /tmp/ssl_test https://www.baidu.com echooff rediron skipceroff
 		if [ "$？" = "1" ];then
 			echo -----------------------------------------------
@@ -327,13 +327,48 @@ setdns(){
 		rm -rf /tmp/ssl_test
 		sleep 1
 		setdns
+		
+	elif [ "$num" = 5 ]; then
+		echo -----------------------------------------------
+		if [ "$ipv6_dns" = "未开启" ]; then 
+			echo -e "\033[32m开启成功！！\033[0m"
+			ipv6_dns=已开启
+		else
+			echo -e "\033[33m禁用成功！！\033[0m"
+			ipv6_dns=未开启
+		fi
+		sleep 1
+		setconfig ipv6_dns $ipv6_dns
+		setdns
+				
 	elif [ "$num" = 6 ]; then
 		echo -----------------------------------------------
-		echo -e "\033[31m将使用OpenWrt中Dnsmasq插件自带的DNS转发功能转发DNS请求至clash内核！\033[0m"
-		echo -e "\033[32m启用后将禁用本插件自带的iptables转发功能\033[0m"
-		dns_redir=已开启
+		if [ "$dns_redir" = "未开启" ]; then 
+			echo -e "\033[31m将使用OpenWrt中Dnsmasq插件自带的DNS转发功能转发DNS请求至clash内核！\033[0m"
+			echo -e "\033[33m启用后将禁用本插件自带的iptables转发功能\033[0m"
+			dns_redir=已开启
+			echo -e "\033[32m已启用Dnsmasq转发DNS功能！！！\033[0m"
+			sleep 1
+		else
+			echo -e "\033[33m禁用成功！！\033[0m"
+			dns_redir=未开启
+		fi
+		sleep 1
 		setconfig dns_redir $dns_redir
-		echo -e "\033[33m已启用Dnsmasq转发DNS功能！！！\033[0m"
+		setdns
+	
+	elif [ "$num" = 7 ]; then
+		echo -----------------------------------------------
+		if [ "$dns_no" = "未禁用" ]; then
+			echo -e "\033[31m仅限搭配其他DNS服务(比如dnsmasq、smartDNS)时使用！\033[0m"
+			dns_no=已禁用
+			echo -e "\033[32m已禁用内置DNS！！！\033[0m"
+		else
+			dns_no=未禁用
+			echo -e "\033[33m已启用内置DNS！！！\033[0m"
+		fi
+		sleep 1
+		setconfig dns_no $dns_no
 		setdns
 	fi
 }
