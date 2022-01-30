@@ -647,15 +647,15 @@ bfstart(){
 			setconfig Geo_v $Geo_v
 		fi
 	fi
-	if [ "$clashcore" = "clash.meta" -a ! -f $bindir/geosite.dat ];then
-		if [ -f $clashdir/geosite.dat ];then
-			mv $clashdir/geosite.dat $bindir/geosite.dat
-		else
-			logger "未找到geosite数据库，正在下载！" 33
-			$0 webget $bindir/geosite.dat $update_url/bin/geosite.dat
-			[ "$?" = "1" ] && rm -rf $bindir/geosite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
-		fi
-	fi
+	# if [ "$clashcore" = "clash.meta" -a ! -f $bindir/geosite.dat ];then
+		# if [ -f $clashdir/geosite.dat ];then
+			# mv $clashdir/geosite.dat $bindir/geosite.dat
+		# else
+			# logger "未找到geosite数据库，正在下载！" 33
+			# $0 webget $bindir/geosite.dat $update_url/bin/geosite.dat
+			# [ "$?" = "1" ] && rm -rf $bindir/geosite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
+		# fi
+	# fi
 	#检查dashboard文件
 	if [ -f $clashdir/ui/index.html -a ! -f $bindir/ui/index.html ];then
 		cp -rf $clashdir/ui $bindir
