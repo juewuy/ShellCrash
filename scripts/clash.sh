@@ -545,6 +545,7 @@ localproxy(){
 			else
 				local_proxy=已开启
 				setconfig local_proxy $local_proxy
+				setconfig local_type $local_type
 				echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
 				[ "$local_type" = "环境变量" ] && $clashdir/start.sh set_proxy $mix_port $db_port &&echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
 				[ "$local_type" = "iptables增强模式" ] && $clashdir/start.sh start
@@ -552,6 +553,7 @@ localproxy(){
 		else
 			local_proxy=未开启
 			setconfig local_proxy $local_proxy
+			setconfig local_type
 			$clashdir/start.sh stop
 			echo -e "\033[33m已经停用本机代理规则并停止clash服务！！\033[0m"
 			[ "$local_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1

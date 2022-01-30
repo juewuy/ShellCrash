@@ -20,7 +20,7 @@ getconfig(){
 	[ -z "$dns_over" ] && dns_over=已开启
 	[ -z "$modify_yaml" ] && modify_yaml=未开启
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
-	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
+	[ -z "$ipv6_dns" ] && ipv6_dns=$ipv6_support
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$mix_port" ] && mix_port=7890
@@ -122,7 +122,7 @@ EOF`
 	Https=$(echo ${Https//\%26/\&})   #将%26替换回&
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		#[ -n "$(echo $Url | grep -o 'https://dler')" ] && Server='api.dler.io'
+		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='http://sub.shellclash.ga'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		markhttp=1
 	fi
@@ -191,7 +191,7 @@ EOF`
 			exit 1
 		fi
 		#检测是否存在高级版规则
-		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers')" ];then
+		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers|vless')" ];then
 			echo -----------------------------------------------
 			logger "检测到高级版核心专属规则！将改为使用clash.net核心启动！" 33
 			rm -rf $bindir/clash
@@ -223,7 +223,7 @@ EOF`
 modify_yaml(){
 ##########需要变更的配置###########
 	lan='allow-lan: true'
-	mode='mode: Rule'
+	#mode='mode: Rule'
 	log='log-level: info'
 	[ "$ipv6_support" = "已开启" ] && ipv6='ipv6: true' || ipv6='ipv6: false'
 	[ "$ipv6_dns" = "已开启" ] && dns_v6='ipv6: true' || dns_v6=$ipv6
@@ -246,6 +246,9 @@ modify_yaml(){
 	#设置目录
 	yaml=$clashdir/config.yaml
 	tmpdir=/tmp/clash_$USER
+	#预读取变量
+	mode=$(grep "^mode" $yaml | head -1 | awk '{print $2}')
+	[ -z "$mode" ] && mode='Rule'
 	#预删除需要添加的项目
 	a=$(grep -n "port:" $yaml | head -1 | cut -d ":" -f 1)
 	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
@@ -263,7 +266,7 @@ mixed-port: $mix_port
 redir-port: $redir_port
 authentication: ["$authentication"]
 $lan
-$mode
+mode: $mode
 $log
 $ipv6
 external-controller: :$db_port
