@@ -51,19 +51,21 @@ opkg update && opkg install curl #如已安装请忽略
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #jsdelivrCDN源
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+#作者私人http源
+export url='http://shellclash.ga/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**使用wget安装**：<br>
 
 ```sh
-#Release版本-jsdelivrCDN源
+#jsdelivrCDN源
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**使用低版本wget（提示不支持https）安装**：<br>
 
 ```sh
-#Test版本-作者私人http源
+#作者私人http源
 export url='http://shellclash.ga/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
