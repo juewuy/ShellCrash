@@ -28,6 +28,7 @@ webget(){
 		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
 		[ -z "$4" ] && redirect='-L' || redirect=''
 		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
+		[ -z $(echo $result | grep -e ^2) && result="200"
 	else
 		if wget --version > /dev/null 2>&1;then
 			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
@@ -72,7 +73,7 @@ tarurl=$url2/bin/clashfm.tar.gz
 
 gettar(){
 	webget /tmp/clashfm.tar.gz $tarurl
-	[ "$result" != "200" ] && echo "文件下载失败！" && exit 1
+	[ "$result" != "200" ] && echo "文件下载失败,请尝试使用其他安装源！" && exit 1
 	$clashdir/start.sh stop 2>/dev/null
 	#解压
 	echo -----------------------------------------------
