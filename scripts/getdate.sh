@@ -463,11 +463,11 @@ setcore(){
 	echo "2 clashpre：  支持Tun模式、混合模式"
 	echo "(高级预览版)  内存占用更高"
 	echo
-	echo "3 clash.net： 支持vless/xtls"
+	echo "3 clash.net： 支持部分vless协议"
 	echo "(.net定制版)  第三方定制内核"
 	echo
-	echo "4 clash.meta：支持vless/xtls"
-	echo "(meta定制版)  需要额外4M空间占用"
+	echo "4 clash.meta：支持大部分vless协议"
+	echo "(meta定制版)  第三方定制内核"
 	echo
 	echo "5 手动指定处理器架构"
 	echo -----------------------------------------------

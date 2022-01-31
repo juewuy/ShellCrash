@@ -135,7 +135,7 @@ EOF`
 	yaml=$clashdir/config.yaml
 	yamlnew=/tmp/clash_config_$USER.yaml
 	rm -rf $yamlnew
-	$0 webget $yamlnew $Https 0 0 0 1
+	$0 webget $yamlnew $Https
 	if [ "$?" = "1" ];then
 		if [ -z "$markhttp" ];then
 			echo -----------------------------------------------
@@ -190,8 +190,16 @@ EOF`
 			echo -----------------------------------------------
 			exit 1
 		fi
+		#检测vless协议
+		if [ -n "$(cat $yamlnew | grep -E 'vless')" ] && [ "$clashcore" = "clash" -o "$clashcore" = "clashpre" ];then
+			echo -----------------------------------------------
+			logger "检测到vless协议！将改为使用clash.meta核心启动！" 33
+			rm -rf $bindir/clash
+			setconfig clashcore clash.meta
+			echo -----------------------------------------------
+		fi
 		#检测是否存在高级版规则
-		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers|vless')" ];then
+		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers')" ];then
 			echo -----------------------------------------------
 			logger "检测到高级版核心专属规则！将改为使用clash.net核心启动！" 33
 			rm -rf $bindir/clash
@@ -832,7 +840,7 @@ webget)
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
 			#[ -n "$7" ] && agent='-A "clash"'
 			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
-			[ "$?" != "0" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
+			[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
 		else
 			if wget --version > /dev/null 2>&1;then
 				[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
