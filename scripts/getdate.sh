@@ -132,6 +132,7 @@ getlink(){
 		echo -----------------------------------------------
 		read -p "请直接输入第${i}个链接或对应数字选项 > " link
 		test=$(echo $link | grep "://")
+		link=`echo ${link/\#*/''}`   #删除链接附带的注释内容
 		link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
 		link=`echo ${link/*\&url\=/""}`   #将clash完整链接还原成单一链接
 		link=`echo ${link/\&config\=*/""}`   #将clash完整链接还原成单一链接
