@@ -136,7 +136,7 @@ checkrestart(){
 }
 #功能相关
 setport(){
-	getconfig 
+	source $ccfg
 	[ -z "$secret" ] && secret=未设置
 	[ -z "$authentication" ] && authentication=未设置
 	inputport(){
@@ -377,7 +377,7 @@ checkport(){
 		if [ -n "$(netstat -ntul 2>&1 |grep \:$portx\ )" ];then
 			echo -----------------------------------------------
 			echo -e "检测到端口【$portx】被以下进程占用！clash可能无法正常启动！\033[33m"
-			echo $(netstat -ntulp | grep :$portx | head -n 1)
+			echo $(netstat -ntul | grep :$portx | head -n 1)
 			echo -e "\033[0m-----------------------------------------------"
 			echo -e "\033[36m请修改默认端口配置！\033[0m"
 			setport
