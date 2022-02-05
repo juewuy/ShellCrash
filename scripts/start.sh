@@ -265,8 +265,6 @@ modify_yaml(){
 	[ "$b" != "0" ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i '1,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
-	#检测是否使用script规则
-	[ -n "$(cat $yaml | grep -E '^script:')" ] && mode='mode: Script'
 	#添加配置
 ###################################
 	cat > $tmpdir/set.yaml <<EOF
