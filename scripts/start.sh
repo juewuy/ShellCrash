@@ -13,23 +13,16 @@ getconfig(){
 	#默认设置
 	[ -z "$bindir" ] && bindir=$clashdir
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
-	[ -z "$redir_mod" ] && redir_mod=Redir模式
+	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
-	[ -z "$dns_over" ] && dns_over=已开启
-	[ -z "$modify_yaml" ] && modify_yaml=未开启
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=$ipv6_support
-	[ -z "$start_old" ] && start_old=未开启
-	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
-	[ -z "$dns_redir" ] && dns_redir=未开启
-	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
-	[ -z "$public_support" ] && public_support=未开启
 	[ -z "$stearming_int" ] && stearming_int=24
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
@@ -429,6 +422,11 @@ start_dns(){
 		ip6tables -I INPUT -p tcp --dport 53 -j REJECT > /dev/null 2>&1
 		ip6tables -I INPUT -p udp --dport 53 -j REJECT > /dev/null 2>&1
 	fi
+	#屏蔽OpenWrt内置53端口转发
+	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
+	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
+	ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null	
 }
 start_udp(){
 	ip rule add fwmark 1 table 100
@@ -653,15 +651,6 @@ bfstart(){
 			setconfig Geo_v $Geo_v
 		fi
 	fi
-	# if [ "$clashcore" = "clash.meta" -a ! -f $bindir/geosite.dat ];then
-		# if [ -f $clashdir/geosite.dat ];then
-			# mv $clashdir/geosite.dat $bindir/geosite.dat
-		# else
-			# logger "未找到geosite数据库，正在下载！" 33
-			# $0 webget $bindir/geosite.dat $update_url/bin/geosite.dat
-			# [ "$?" = "1" ] && rm -rf $bindir/geosite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
-		# fi
-	# fi
 	#检查dashboard文件
 	if [ -f $clashdir/ui/index.html -a ! -f $bindir/ui/index.html ];then
 		cp -rf $clashdir/ui $bindir
@@ -681,6 +670,16 @@ bfstart(){
 		else
 			logger "未找到配置文件链接，请先导入配置文件！" 31
 			exit 1
+		fi
+	fi
+	#预下载Geosite数据库
+	if [ "$clashcore" = "clash.meta" ] && [ ! -f $bindir/geosite.dat ] && [ -n "$(cat $clashdir/config.yaml|grep -Ei 'geosite')" ];then
+		if [ -f $clashdir/geosite.dat ];then
+			mv $clashdir/geosite.dat $bindir/geosite.dat
+		else
+			logger "未找到geosite数据库，正在下载！" 33
+			$0 webget $bindir/geosite.dat $update_url/bin/geosite.dat
+			[ "$?" = "1" ] && rm -rf $bindir/geosite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
 		fi
 	fi
 	#本机代理准备
@@ -770,8 +769,6 @@ start)
 		#检测必须文件并下载
 		bfstart
 		stop_iptables #清理iptables
-		#使用内置规则强行覆盖config配置文件
-		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			start_old

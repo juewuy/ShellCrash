@@ -1096,6 +1096,10 @@ streaming(){
 }
 tools(){
 	ssh_tools(){
+		stop_iptables(){
+			iptables -t nat -D PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 >/dev/null 2>&1
+			ip6tables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 >/dev/null 2>&1
+		}
 		[ -n "$(cat /etc/firewall.user 2>1 | grep '启用外网访问SSH服务')" ] && ssh_ol=禁止 || ssh_ol=开启
 		[ -z "$ssh_port" ] && ssh_port=10022
 		echo -----------------------------------------------
@@ -1125,6 +1129,7 @@ tools(){
 						ssh_port=$num
 						setconfig ssh_port $ssh_port
 						sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
+						stop_iptables
 						echo -e "\033[32m设置成功，请重新开启外网访问SSH功能！！！\033[0m"
 					fi
 				sleep 1
@@ -1138,11 +1143,14 @@ tools(){
 			elif [ "$num" = 3 ]; then	 
 				if [ "$ssh_ol" = "开启" ];then
 					iptables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22
+					[ -n "$(command -v ip6tables)" ] && ip6tables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22
 					echo "iptables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 #启用外网访问SSH服务" >> /etc/firewall.user
+					[ -n "$(command -v ip6tables)" ] && echo "ip6tables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 #启用外网访问SSH服务" >> /etc/firewall.user
 					echo -----------------------------------------------
 					echo -e "已开启外网访问SSH功能！"
 				else
 					sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
+					stop_iptables
 					echo -----------------------------------------------
 					echo -e "已禁止外网访问SSH！"
 				fi

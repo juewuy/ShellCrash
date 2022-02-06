@@ -28,7 +28,7 @@ webget(){
 		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
 		[ -z "$4" ] && redirect='-L' || redirect=''
 		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
-		[ -z $(echo $result | grep -e ^2) && result="200"
+		[ -n "$(echo $result | grep -e ^2)" ] && result="200"
 	else
 		if wget --version > /dev/null 2>&1;then
 			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
@@ -44,7 +44,6 @@ webget(){
 }
 #检查更新
 [ -z "$url" ] && url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
-#选择版本
 echo -----------------------------------------------
 $echo "\033[33m请选择想要安装的版本：\033[0m"	
 $echo " 1 \033[32mShellclash正式版\033[0m"
@@ -52,8 +51,7 @@ $echo " 2 \033[31mShellclash测试版\033[0m"
 echo -----------------------------------------------
 read -p "请输入相应数字 > " num
 if [ -z $num ];then
-	echo 安装已取消
-	exit 1;
+	echo 安装已取消！ && exit 1;
 elif [ "$num" = "1" ];then
 	webget /tmp/clashrelease $url/bin/release_version echoon rediroff 2>/tmp/clashrelease
 	if [ "$result" = "200" ];then
