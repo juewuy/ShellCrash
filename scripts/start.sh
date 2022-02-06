@@ -356,6 +356,8 @@ start_redir(){
 	if [ "$public_support" = "已开启" ];then
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
+		[ -n "$(command -v ip6tables)" ] && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		[ -n "$(command -v ip6tables)" ] && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT
 	fi
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash
@@ -528,6 +530,8 @@ stop_iptables(){
 	iptables -t mangle -F clash 2> /dev/null
 	iptables -t mangle -X clash 2> /dev/null
 	#重置ipv6规则
+	ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
 	ip6tables -t nat -D PREROUTING -p udp -j clashv6_dns 2> /dev/null
 	ip6tables -t nat -F clashv6 2> /dev/null
