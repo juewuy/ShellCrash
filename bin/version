@@ -1,6 +1,6 @@
-clashnet_v=1.7.6
+clashnet_v=v1.7.6
 GeoIP_v=202201280303
-clashpre_v=1.7.1
-clash_v=1.7.1
-meta_v=1.9.0dev
+clashpre_v=2021.09.15
+clash_v=v1.7.1
+meta_v=develop-76dcceb
 versionsh=1.5.1
