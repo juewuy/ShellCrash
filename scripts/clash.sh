@@ -1167,9 +1167,9 @@ tools(){
 	echo -----------------------------------------------
 	echo -e " 1 ShellClash测试菜单"
 	[ -f "/etc/firewall.user" ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
-	#echo -e " 3 配置DDNS服务:	\033[36m$ipv6_support\033[0m	————待施工"
-	[ -x /usr/sbin/otapredownload ] && echo -e " 3 \033[33m$mi_update\033[0m小米系统自动更新"
+	[ -f "/etc/config/ddns" -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
 	echo -e " 4 \033[32m流媒体预解析\033[0m————用于解决DNS解锁在TV应用上失效的问题"
+	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -1187,7 +1187,24 @@ tools(){
 		sleep 1
 		tools  
 		
-	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 3 ]; then	
+	elif [ "$num" = 3 ]; then
+		echo -----------------------------------------------
+		if [ ! -f $clashdir/ShellDDNS.sh ];then
+			echo -e "正在获取在线脚本……"
+			$clashdir/start.sh webget /tmp/ShellDDNS.sh $update_url/tools/ShellDDNS.sh
+			if [ "$?" = "0" ];then
+				mv -f /tmp/ShellDDNS.sh $clashdir/ShellDDNS.sh
+				source $clashdir/ShellDDNS.sh
+			else
+				echo -e "\033[31m文件下载失败！\033[0m"
+			fi
+		else
+			source $clashdir/ShellDDNS.sh
+		fi
+		sleep 1
+		tools  
+		
+	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 5 ]; then	
 		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
 		echo -----------------------------------------------
 		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"

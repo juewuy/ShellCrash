@@ -84,6 +84,10 @@ clash -u #卸载脚本
 clash -t #测试模式运行
 ```
 
+~**DOCKER环境下安装：**<br>
+
+请参考https://github.com/echvoyager/shellclash_docker
+
 ~**运行时的额外依赖**：<br>
 
 `大部分的设备/系统都已经预装了以下的大部分依赖，使用时如无影响可以无视之`

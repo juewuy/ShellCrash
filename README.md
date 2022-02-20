@@ -81,6 +81,10 @@ clash -u #uninstall
 clash -t #test mode
 ```
 
+~**Install in Docker：**<br>
+
+Use: https://github.com/echvoyager/shellclash_docker
+
 ~**Additional dependencies at runtime**：<br>
 
 ```
