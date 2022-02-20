@@ -291,7 +291,9 @@ EOF
 		done < $hosts_dir
 	fi
 	#合并文件
-	cut -c 1- $tmpdir/set.yaml $tmpdir/hosts.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
+	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
+	[ -f $clashdir/hosts.yaml ] && yaml_hosts=$clashdir/hosts.yaml
+	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
 	space=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
