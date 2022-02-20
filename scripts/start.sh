@@ -275,18 +275,30 @@ $tun
 $exper
 $dns
 store-selected: $restore
+hosts:
 EOF
 ###################################
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
+	#读取本机hosts并生成配置文件
+	hosts_dir=/etc/hosts
+	if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && [ -f $hosts_dir ];then
+		while read line;do
+			[ -n "$(echo "$line")" ] && \
+			[ -z "$(echo "$line" | grep '#')" ] && \
+			hosts_ip=$(echo $line | awk '{print $1}')  && \
+			hosts_domain=$(echo $line | awk '{print $2}') && \
+			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
+		done < $hosts_dir
+	fi
 	#合并文件
-	cut -c 1- $tmpdir/set.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
+	cut -c 1- $tmpdir/set.yaml $tmpdir/hosts.yaml $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
 	space=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
 	if [ -f $clashdir/rules.yaml ];then
 		sed -i '/^$/d' $clashdir/rules.yaml && echo >> $clashdir/rules.yaml #处理换行
 		while read line;do
-			[ -z "$(echo "$line " | grep '#')" ] && \
+			[ -z "$(echo "$line" | grep '#')" ] && \
 			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
 			line=$(echo "$line" | sed 's#/#\\/#') && \
 			sed -i "/^rules:/a\\$space$line #自定义规则" $tmpdir/config.yaml
@@ -303,6 +315,7 @@ EOF
 	fi
 	rm -f $tmpdir/set.yaml
 	rm -f $tmpdir/proxy.yaml
+	rm -f $tmpdir/hosts.yaml
 }
 #设置路由规则
 cn_ip_route(){	
@@ -753,7 +766,8 @@ start_old(){
 	if [ "$local_proxy" = "已开启" -a "$local_type" = "iptables增强模式" ];then
 		su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
 	else
-		$bindir/clash -d $bindir >/dev/null &
+		[ -n "$(command -v nohup)" ] && nohup=nohup
+		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
 	fi
 	afstart
 	$0 daemon
@@ -773,6 +787,8 @@ start)
 		#检测必须文件并下载
 		bfstart
 		stop_iptables #清理iptables
+		#使用内置规则强行覆盖config配置文件
+		[ "$modify_yaml" != "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			start_old
@@ -790,6 +806,7 @@ stop)
 		#删除守护进程&面板配置自动保存
 		cronset "clash保守模式守护进程"
 		cronset "保存节点配置"
+		cronset "流媒体预解析"
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1

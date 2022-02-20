@@ -960,10 +960,8 @@ clashadv(){
 	elif [ "$num" = 7 ]; then
 		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
 #用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)，例如
+#新版已经支持直接读取系统hosts(/etc/hosts)并写入配置文件，无需在此处添加！
 #port: 7890
-#hosts:
-#   '*.clash.dev': 127.0.0.1 
-#   'alpha.clash.dev': ::1
 EOF
 		[ ! -f $clashdir/rules.yaml ] && cat > $clashdir/rules.yaml <<EOF
 #用于编写自定义规则(此处规则将优先生效)，(可参考https://lancellc.gitbook.io/clash/clash-config-file/rules)：

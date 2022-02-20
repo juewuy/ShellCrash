@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/etc/clash/clash -d /etc/clash
+ExecStart=/etc/clash/clash -d /etc/clash >/dev/null
 ExecStartPost=/etc/clash/start.sh afstart
 Restart=on-failure
 RestartSec=3s
