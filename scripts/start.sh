@@ -772,7 +772,7 @@ start_old(){
 		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
 	fi
 	afstart
-	$0 daemon
+	[ -z "$(crontab -l | grep ShellClash初始化)" ] && $0 daemon
 }
 
 case "$1" in
@@ -832,8 +832,20 @@ init)
 				profile=/etc/profile
 				sed -i '' $profile #将软链接转化为一般文件
 			fi
+		elif [ -d "/jffs/clash" ];then
+			clashdir=/jffs/clash
+			profile=/jffs/configs/profile.add
+		elif [ -d "/data/clash" ];then 
+			clashdir=/data/clash
+			profile=/etc/profile
+			#开启SSH
+			nvram set telnet_en=1
+			nvram set uart_en=1
+			nvram set ssh_en=1
+			nvram commit
+			sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
+			/etc/init.d/dropbear start
 		fi
-		[ -d "/jffs/clash" ] && clashdir=/jffs/clash && profile=/jffs/configs/profile.add
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
 		echo "export clashdir=\"$clashdir\"" >> $profile 
 		$0 start

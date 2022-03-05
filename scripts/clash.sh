@@ -1496,6 +1496,7 @@ case "$1" in
 			$clashdir/start.sh stop
 			$clashdir/start.sh cronset "clash服务"
 			$clashdir/start.sh cronset "订阅链接"
+			$clashdir/start.sh cronset "ShellClash初始化"
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
 			sed -i '/alias clash=*/'d $profile

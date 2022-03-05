@@ -13,6 +13,7 @@ echo "***********************************************"
 [ -f "/etc/storage/started_script.sh" ] && systype=Padavan && initdir='/etc/storage/started_script.sh'
 [ -d "/jffs/scripts" ] && systype=asusrouter && initdir='/jffs/scripts/net-start'
 [ -f "/jffs/.asusrouter" ] && systype=asusrouter && initdir='/jffs/.asusrouter'
+[ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot
 #检查root权限
 if [ "$USER" != "root" -a -z "$systype" ];then
 	echo 当前用户:$USER
@@ -124,7 +125,12 @@ gettar(){
 		exit 1
 	fi
 	#华硕/Padavan额外设置
-	[ -n "$systype" ] && sed -i '/ShellClash初始化/'d $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
+	[ -n "$initdir" ] && sed -i '/ShellClash初始化/'d $initdir && touch $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
+	#小米镜像化OpenWrt额外设置
+	[ "$systype" = "mi_snapshot" ] && echo "*/1 * * * * test -z \"\$(pidof clash)\" && $clashdir/start.sh init #ShellClash初始化及守护进程" >> /data/etc/crontabs/root
+	sed -i '/start_old=*/'d $clashdir/mark
+	echo start_old=已开启 >> $clashdir/mark
+	rm -rf /etc/init.d/clash
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clashservice
@@ -147,6 +153,7 @@ setdir(){
 if [ -n "$systype" ];then
 	[ "$systype" = "Padavan" ] && dir=/etc/storage
 	[ "$systype" = "asusrouter" ] && dir=/jffs
+	[ "$systype" = "mi_snapshot" ] && dir=/data
 else
 	echo -----------------------------------------------
 	$echo "\033[33m安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"	
