@@ -42,7 +42,7 @@ setconfig(){
 compare(){
 	if [ ! -f $1 -o ! -f $2 ];then
 		return 1
-	elif command -v cmp >/dev/null 2>&1;then
+	elif type cmp >/dev/null 2>&1;then
 		cmp -s $1 $2
 	else
 		[ "$(cat $1)" = "$(cat $2)" ] && return 0 || return 1
@@ -371,8 +371,8 @@ start_redir(){
 	if [ "$public_support" = "已开启" ];then
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
-		[ -n "$(command -v ip6tables)" ] && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-		[ -n "$(command -v ip6tables)" ] && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT
+		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT
 	fi
 	#Google home DNS特殊处理
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash
@@ -768,7 +768,7 @@ start_old(){
 	if [ "$local_proxy" = "已开启" -a "$local_type" = "iptables增强模式" ];then
 		su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
 	else
-		[ -n "$(command -v nohup)" ] && nohup=nohup
+		type nohup >/dev/null 2>&1 && nohup=nohup
 		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
 	fi
 	afstart
