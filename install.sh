@@ -44,7 +44,8 @@ webget(){
 	fi
 }
 #检查更新
-[ -z "$url" ] && url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
+url_cdn="https://cdn.jsdelivr.net/gh/juewuy/ShellClash"
+[ -z "$url" ] && url=$url_cdn
 echo -----------------------------------------------
 $echo "\033[33m请选择想要安装的版本：\033[0m"	
 $echo " 1 \033[32mShellclash正式版\033[0m"
@@ -54,21 +55,21 @@ read -p "请输入相应数字 > " num
 if [ -z $num ];then
 	echo 安装已取消！ && exit 1;
 elif [ "$num" = "1" ];then
-	webget /tmp/clashrelease $url/bin/release_version echoon rediroff 2>/tmp/clashrelease
+	webget /tmp/clashrelease $url_cdn@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
 	if [ "$result" = "200" ];then
 		release_new=$(cat /tmp/clashrelease | head -1)
-		url2="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_new"
+		url_dl="$url_cdn@$release_new"
 	else
 		echo "无法切换版本，尝试安装测试版！"
 	fi
 fi
-[ -z "$url2" ] && url2=$url
-webget /tmp/clashversion "$url2/bin/version" echooff
+[ -z "$url_dl" ] && url_dl=$url
+webget /tmp/clashversion "$url_dl/bin/version" echooff
 [ "$result" = "200" ] && versionsh=$(cat /tmp/clashversion | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && release_new=$versionsh
 rm -rf /tmp/clashversion
 rm -rf /tmp/clashrelease
-tarurl=$url2/bin/clashfm.tar.gz
+tarurl=$url_dl/bin/clashfm.tar.gz
 
 gettar(){
 	webget /tmp/clashfm.tar.gz $tarurl
