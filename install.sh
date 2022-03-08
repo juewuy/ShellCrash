@@ -9,11 +9,13 @@ echo "**                 欢迎使用                  **"
 echo "**                ShellClash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
-
+dir_avail(){
+	df -h $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep Ava |awk '{print $2}'
+}
 [ -f "/etc/storage/started_script.sh" ] && systype=Padavan && initdir='/etc/storage/started_script.sh'
 [ -d "/jffs/scripts" ] && systype=asusrouter && initdir='/jffs/scripts/net-start'
 [ -f "/jffs/.asusrouter" ] && systype=asusrouter && initdir='/jffs/.asusrouter'
-[ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot
+[ -f "/data/etc/crontabs/root" -a "$(dir_avail /etc)" = 0 ] && systype=mi_snapshot
 #检查root权限
 if [ "$USER" != "root" -a -z "$systype" ];then
 	echo 当前用户:$USER
@@ -22,6 +24,7 @@ if [ "$USER" != "root" -a -z "$systype" ];then
 	read -p "仍要安装？可能会产生未知错误！(1/0) > " res
 	[ "$res" != "1" ] && exit 1
 fi
+
 webget(){
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
@@ -191,10 +194,11 @@ else
 		exit 1;
 	fi
 fi
+
 if [ ! -w $dir ];then
 	$echo "\033[31m没有$dir目录写入权限！请重新设置！\033[0m" && sleep 1 && setdir
 else
-	$echo "目标目录\033[32m$dir\033[0m空间剩余：$(df -h $dir | awk '{print $4}' | sed 1d )"
+	$echo "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir)"
 	read -p "确认安装？(1/0) > " res
 	[ "$res" = "1" ] && clashdir=$dir/clash || setdir
 fi
