@@ -131,10 +131,12 @@ gettar(){
 	#华硕/Padavan额外设置
 	[ -n "$initdir" ] && sed -i '/ShellClash初始化/'d $initdir && touch $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
 	#小米镜像化OpenWrt额外设置
-	[ "$systype" = "mi_snapshot" ] && echo "*/1 * * * * test -z \"\$(pidof clash)\" && $clashdir/start.sh init #ShellClash初始化及守护进程" >> /data/etc/crontabs/root
-	sed -i '/start_old=*/'d $clashdir/mark
-	echo start_old=已开启 >> $clashdir/mark
-	rm -rf /etc/init.d/clash
+	if [ "$systype" = "mi_snapshot" ];then
+		echo "*/1 * * * * test -z \"\$(pidof clash)\" && $clashdir/start.sh init #ShellClash初始化及守护进程" >> /data/etc/crontabs/root
+		sed -i '/start_old=*/'d $clashdir/mark
+		echo start_old=已开启 >> $clashdir/mark
+		rm -rf /etc/init.d/clash
+	fi
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clashservice
