@@ -187,9 +187,9 @@ setport(){
 			setconfig authentication
 			echo 密码已移除！
 		else
-			if [ "$local_proxy" = "已开启" ];then
+			if [ "$local_proxy" = "已开启" -a "$local_type" = "环境变量" ];then
 				echo -----------------------------------------------
-				echo -e "\033[33m请先禁用本机代理功能！\033[0m"
+				echo -e "\033[33m请先禁用本机代理功能或使用增强模式！\033[0m"
 				sleep 1
 			else
 				authentication=$(echo $input | grep :)

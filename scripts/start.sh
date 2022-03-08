@@ -593,15 +593,16 @@ web_restore(){
 		fi
 	}
 	#设置循环检测clash面板端口
-	i=1
-	while [ $i -lt 10 ];do
+	while [ "$i" != 1 ];do
+		[ "$j" = 60 ] && exit 1
 		sleep 1
 		if curl --version > /dev/null 2>&1;then
 			test=$(curl -s http://localhost:${db_port})
 		else
 			test=$(wget -q -O - http://localhost:${db_port})
 		fi
-		[ -n "$test" ] && i=10
+		[ -n "$test" ] && i=1
+		j=$((j+1))
 	done
 	#发送数据
 	num=$(cat $clashdir/web_save | wc -l)
@@ -922,14 +923,15 @@ unset_proxy)
 		sed -i '/ALL_PROXY/'d  $profile
 	;;
 steaming)	
+		getconfig
 		#设置循环检测clashDNS端口
-		i=1
-		while [ $i -lt 10 ];do
+		while [ "$i" != 0 ];do
+			[ "$j" = 60 ] && exit 1
 			sleep 1
 			nslookup baidu.com 127.0.0.1:${dns_port} > /dev/null 2>&1
-			[ "$?" = 0 ] && i=10
+			i=$?
+			j=$((j+1))
 		done
-		getconfig
 		steaming_dns(){
 			steaming_dir=$clashdir/steaming/${steaming_type}_Domains.list
 			if [ ! -f "$steaming_dir" ];then

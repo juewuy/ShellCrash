@@ -992,22 +992,28 @@ userguide(){
 			sethost
 		fi
 	}
-	echo -----------------------------------------------
-	echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
-	echo -e "注意当前设备必须有公网IP才能从公网正常访问"
-	echo -e "此功能会增加暴露风险请谨慎使用！"
-	echo -e "vps设备可能还需要额外在服务商后台开启相关端口(默认为7890与9999)"
-	read -p "现在开启？(1/0) > " res
-	if [ "$res" = 1 ];then
-		host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
-		if [ -z "$host" ];then
-			sethost
-		fi	
-		public_support=已开启
-		setconfig host $host
-		setconfig public_support $public_support
+	if type systemd >/dev/null 2>&1 ;then
+		echo -----------------------------------------------
+		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
+		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
+		echo -e "\033[31m此功能会增加暴露风险请谨慎使用！\033[0m"
+		echo -e "vps设备可能还需要额外在服务商后台开启相关端口(默认为7890与9999)"
+		echo -e "启用后会自动设置面板访问秘钥(shellclash)以及Socks密码(shell:clash)"
+		read -p "现在开启？(1/0) > " res
+		if [ "$res" = 1 ];then
+			host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
+			if [ -z "$host" ];then
+				sethost
+			fi	
+			public_support=已开启
+			authentication=shell:clash
+			secret=shellclash
+			setconfig secret $secret
+			setconfig host $host
+			setconfig public_support $public_support
+			setconfig authentication \'$authentication\'
+		fi
 	fi
-	
 	#提示导入订阅或者配置文件
 	echo -----------------------------------------------
 	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
