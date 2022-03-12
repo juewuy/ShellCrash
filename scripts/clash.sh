@@ -1159,7 +1159,7 @@ tools(){
 			fi
 			}
 	#获取设置默认显示
-	[ -n "$(cat /etc/crontabs/root 2>1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
+	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	[ "$mi_autoSSH" = "禁用" ] && mi_autoSSH=启用 || mi_autoSSH=禁用
 	#
 	echo -----------------------------------------------
@@ -1172,7 +1172,7 @@ tools(){
 	[ -f /etc/firewall.user ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
 	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
 	echo -e " 4 \033[32m流媒体预解析\033[0m————用于解决DNS解锁在TV应用上失效的问题"
-	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新\n \
+	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新\n\
  6 \033[33m$mi_autoSSH\033[0m小米设备自动启用SSH(依赖clash服务)"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
