@@ -399,7 +399,7 @@ getsh(){
 getcpucore(){
 	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
-	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && cpucore="armv7"
+	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && [ ! -d /jffs/clash ] && cpucore="armv7"
 	[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="armv8"
 	[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
 	[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
@@ -715,6 +715,7 @@ setserver(){
 	saveserver(){
 		#写入mark文件
 		setconfig update_url \'$update_url\'
+		setconfig release_url \'$release_url\'
 		echo -----------------------------------------------
 		echo -e "\033[32m源地址更新成功！\033[0m"
 		release_new=""
@@ -723,29 +724,41 @@ setserver(){
 	echo -e "\033[30;47m切换ShellClash版本及更新源地址\033[0m"
 	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 \033[32m正式版\033[0m&Jsdelivr-CDN源(推荐)"
-	echo -e " 2 \033[36m测试版\033[0m&Jsdelivr-CDN源"
-	echo -e " 3 \033[36m测试版\033[0m&Github源(需开启clash服务）"
-	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 4 \033[33mHttp专用源\033[0m"
-	echo -e " 5 自定义源地址(用于本地源或自建源)"
-	echo -e " 6 \033[31m版本回退\033[0m"
+	echo -e " 1 \033[32m正式版\033[0m&Github源(ghproxy.com加速)"
+	echo -e " 2 \033[32m正式版\033[0m&Jsdelivr-CDN源"
+	echo -e " 3 \033[36m测试版\033[0m&Github源(本机clash服务加速)"
+	echo -e " 4 \033[36m测试版\033[0m&Github源(ghproxy.com加速)"
+	echo -e " 5 \033[36m测试版\033[0m&Github源(githubusercontents加速)"
+	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 6 \033[33mHttp专用源\033[0m"
+	echo -e " 7 自定义源地址(用于本地源或自建源)"
+	echo -e " 8 \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
 		errornum
 	elif [ "$num" = 1 ]; then
-		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
+		release_url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash'
 		saveserver
 	elif [ "$num" = 2 ]; then
-		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
+		release_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
 		saveserver
 	elif [ "$num" = 3 ]; then
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
+		release_url=''
 		saveserver
 	elif [ "$num" = 4 ]; then
-		update_url='http://shellclash.ga'
+		update_url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master'
+		release_url=''
 		saveserver
 	elif [ "$num" = 5 ]; then
+		update_url='https://raw.githubusercontents.com/juewuy/ShellClash/master'
+		release_url=''
+		saveserver
+	elif [ "$num" = 6 ]; then
+		update_url='http://shellclash.ga'
+		release_url=''
+		saveserver
+	elif [ "$num" = 7 ]; then
 		echo -----------------------------------------------
 		read -p "请输入个人源路径 > " update_url
 		if [ -z "$update_url" ];then
@@ -753,8 +766,9 @@ setserver(){
 			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 		else
 			saveserver
+			release_url=''
 		fi
-	elif [ "$num" = 6 ]; then
+	elif [ "$num" = 8 ]; then
 		echo -----------------------------------------------
 		$clashdir/start.sh webget /tmp/clashrelease https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/bin/release_version echooff rediroff 2>/tmp/clashrelease
 		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
@@ -767,27 +781,30 @@ setserver(){
 			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
 			update_url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_version"
 			saveserver
+			release_url=''
 		else
 			echo -----------------------------------------------
 			echo -e "\033[31m输入有误，请重新输入！\033[0m"
 		fi
-		
-	elif [ "$num" = 9 ]; then
-		update_url='http://192.168.123.90:8080/ShellClash'
 	else
 		errornum
 	fi
 }
 checkupdate(){
 if [ -z "$release_new" ];then
-	if [ "$update_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ];then
-		$clashdir/start.sh webget /tmp/clashversion $update_url@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
-		[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | head -1)
-		update_url=$update_url@$release_new
+	if [ -n "$release_url" ];then
+		[ "$release_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ] && check_url=$release_url@master || check_url=$release_url/master
+		$clashdir/start.sh webget /tmp/clashversion $check_url/bin/release_version echoon rediroff 2>/tmp/clashversion
+		release_new=$(cat /tmp/clashversion | head -1)
+		[ "$release_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ] && update_url=$release_url@$release_new || update_url=$release_url/$release_new
+		setconfig update_url \'$update_url\'
+		release_type=正式版
+	else
+		release_type=测试版
 	fi	
 	$clashdir/start.sh webget /tmp/clashversion $update_url/bin/version echooff 
 	[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | grep versionsh | awk -F'=' '{ print $2 }')
-	[ -n "$release_new" ] &&source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
+	[ -n "$release_new" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
 	rm -rf /tmp/clashversion
 fi
 }
@@ -803,7 +820,7 @@ update(){
 	[ -z "$clash_v" ] && clash_v=$clashv
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh\033[0m"
+	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh$release_type\033[0m"
 	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_n\033[0m"
 	echo -e " 3 更新\033[32mGeoIP/CN-IP	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
@@ -875,7 +892,7 @@ userguide(){
 		echo -----------------------------------------------
 		echo -e "\033[33m是否需要代理UDP流量(主要用于连接外服游戏)？ \033[0m"
 		echo -----------------------------------------------
-		echo -e " 1 \033[33m不代理UDP流量\033[0m(推荐)"
+		echo -e " 1 \033[33m不代理UDP流量(推荐)\033[0m"
 		ip tuntap >/dev/null 2>&1 && [ "$?" = 0 ] && \
 		echo -e " 2 \033[32m使用Tun虚拟网卡\033[0m代理UDP流量" || \
 		echo -e " - \033[0m使用Tun模式(你的设备不支持此模式，如为虚拟机运行请调整虚拟网卡设置)\033[0m"
@@ -905,8 +922,8 @@ userguide(){
 		echo -e "\033[33m请先选择你的使用环境： \033[0m"
 		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
 		echo -----------------------------------------------
-		echo -e " 1 \033[32m主路由或旁路由\033[0m"
-		echo -e " 2 \033[36mLinux本机代理\033[0m"
+		echo -e " 1 \033[32m路由设备配置局域网透明代理\033[0m"
+		echo -e " 2 \033[36mLinux设备仅配置本机代理\033[0m"
 		[ -f "$ccfg.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
@@ -998,16 +1015,16 @@ userguide(){
 		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
 		echo -e "\033[31m此功能会增加暴露风险请谨慎使用！\033[0m"
 		echo -e "vps设备可能还需要额外在服务商后台开启相关端口(默认为7890与9999)"
-		echo -e "启用后会自动设置面板访问秘钥(shellclash)以及Socks密码(shell:clash)"
 		read -p "现在开启？(1/0) > " res
 		if [ "$res" = 1 ];then
+			read -p "请先设置面板访问秘钥 > " secret
+			read -p "请先设置Socks服务密码(账号默认为clash) > " sec
+			[ -z "$sec" ] && authentication=clash:$sec
 			host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
 			if [ -z "$host" ];then
 				sethost
 			fi	
 			public_support=已开启
-			authentication=shell:clash
-			secret=shellclash
 			setconfig secret $secret
 			setconfig host $host
 			setconfig public_support $public_support
@@ -1035,9 +1052,9 @@ testcommand(){
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图发群\033[0m"
 	echo -----------------------------------------------
-	echo " 1 查看clash运行时的报错信息"
+	echo " 1 查看Clash运行时的报错信息(会停止clash服务)"
 	echo " 2 查看系统DNS端口(:53)占用 "
-	echo " 3 测试ssl加密（aes-128-gcm）跑分"
+	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看iptables端口转发详情"
 	echo " 5 查看config.yaml前40行"
 	echo " 6 测试代理服务器连通性（google.tw)"

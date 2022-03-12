@@ -22,6 +22,7 @@ getconfig(){
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
+	[ -z "$restore" ] && restore=false
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$stearming_int" ] && stearming_int=24
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
@@ -80,6 +81,15 @@ mark_time(){
 	start_time=`date +%s`
 	sed -i '/start_time*/'d $clashdir/mark
 	echo start_time=$start_time >> $clashdir/mark
+}
+autoSSH(){
+	#自动开启SSH
+	nvram set telnet_en=1
+	nvram set uart_en=1
+	nvram set ssh_en=1
+	nvram commit
+	sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
+	/etc/init.d/dropbear start
 }
 #配置文件相关
 getyaml(){
@@ -255,7 +265,7 @@ modify_yaml(){
 	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
 	b=$((b-1))
 	mkdir -p $tmpdir > /dev/null
-	[ "$b" != "0" ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml
+	[ "$b" -gt 0 ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml || cp -f $yaml $tmpdir/proxy.yaml
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i '1,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#添加配置
@@ -639,7 +649,7 @@ bfstart(){
 	#读取配置文件
 	getconfig
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
-	[ -z "$update_url" ] || [ -n "$(echo $update_url | grep 'github')" ] && update_url=https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master
+	update_url=https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master
 	#检查clash核心
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
@@ -747,15 +757,15 @@ afstart(){
 		#加载定时任务
 		[ -f $clashdir/cron ] && croncmd $clashdir/cron
 		#流媒体预解析
-		if [ "$netflix_pre" = "已开启" -o "$disneyp_pre" = "已开启" ];then
+		if [ "$netflix_pre" = "已开启" -o "$disneyP_pre" = "已开启" ];then
 			cronset '#ShellClash流媒体预解析' "* */$stearming_int * * * $clashdir/start.sh steaming #ShellClash流媒体预解析"
 			$0 steaming & #后台执行流媒体预解析进程
 		fi		
 		#启用面板配置自动保存
-		if [ "$restore" = false ];then
-			cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
-			[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
-		fi
+		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
+		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+		#自动开启SSH
+		[ "$autoSSH" = "禁用" ] && [ -z "$(pidof sshd)" -o -z "$(netstat -ntul | grep :22)" ] && autoSSH 2>/dev/null
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
 		$bindir/clash -t -d $bindir
@@ -840,12 +850,7 @@ init)
 			clashdir=/data/clash
 			profile=/etc/profile
 			#开启SSH
-			nvram set telnet_en=1
-			nvram set uart_en=1
-			nvram set ssh_en=1
-			nvram commit
-			sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
-			/etc/init.d/dropbear start
+			autoSSH 2>/dev/null
 		fi
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
 		echo "export clashdir=\"$clashdir\"" >> $profile 
@@ -925,10 +930,16 @@ unset_proxy)
 steaming)	
 		getconfig
 		#设置循环检测clashDNS端口
+		ns_type=$(nslookup -version 2>&1 | grep -io busybox)
+		ns_lookup(){
+			[ -n "$ns_type" ] && \
+			nslookup $1 127.0.0.1:${dns_port} > /dev/null 2>&1 || \
+			nslookup -port=${dns_port} $1 127.0.0.1 > /dev/null 2>&1
+		}
 		while [ "$i" != 0 ];do
 			[ "$j" = 60 ] && exit 1
-			sleep 1
-			nslookup baidu.com 127.0.0.1:${dns_port} > /dev/null 2>&1
+			sleep 1	
+			ns_lookup baidu.com
 			i=$?
 			j=$((j+1))
 		done
@@ -942,7 +953,7 @@ steaming)
 			fi
 			if [ -f "$steaming_dir" ];then
 				for line in $(cat $steaming_dir);do
-					[ -n "$line" ] && nslookup "$line" 127.0.0.1:${dns_port}
+					[ -n "$line" ] && ns_lookup "$line"
 				done >/dev/null 2>&1
 				echo "$steaming_type域名预解析完成！"
 			fi

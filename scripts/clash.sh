@@ -525,8 +525,8 @@ localproxy(){
 	echo -e "\033[33m当前本机代理配置方式为：\033[32m$local_type\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
-	echo -e " 2 使用\033[32m环境变量\033[0m方式配置"
-	echo -e " 3 使用\033[32miptables增强模式\033[0m配置（仅支持Linux系统）"
+	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
+	echo -e " 3 使用\033[32miptables增强模式\033[0m配置(仅支持Linux系统)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -813,7 +813,7 @@ clashadv(){
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 	echo -e "\033[33m如您并不了解clash的运行机制，请勿更改本页面功能！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 使用保守方式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
+	echo -e " 1 使用保守模式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
 	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
@@ -857,9 +857,11 @@ clashadv(){
 		else
 			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
 				echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
+				$clashdir/start.sh cronset "ShellClash初始化"
 				start_old=未开启
 				setconfig start_old $start_old
 				$clashdir/start.sh stop
+				
 			else
 				echo -e "\033[31m当前设备不支持以其他模式启动！！\033[0m"
 				sleep 1
@@ -1158,6 +1160,7 @@ tools(){
 			}
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
+	[ "$mi_autoSSH" = "禁用" ] && mi_autoSSH=启用 || mi_autoSSH=禁用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
@@ -1166,10 +1169,11 @@ tools(){
 	du -sh $clashdir
 	echo -----------------------------------------------
 	echo -e " 1 ShellClash测试菜单"
-	[ -f "/etc/firewall.user" ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
-	[ -f "/etc/config/ddns" -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
+	[ -f /etc/firewall.user ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
+	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
 	echo -e " 4 \033[32m流媒体预解析\033[0m————用于解决DNS解锁在TV应用上失效的问题"
-	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
+	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新\n \
+	6 \033[33m$mi_autoSSH\033[0m小米设备自动启用SSH(依赖clash服务)"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -1204,13 +1208,6 @@ tools(){
 		sleep 1
 		tools  
 		
-	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 5 ]; then	
-		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
-		echo -----------------------------------------------
-		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"
-		sleep 1
-		tools
-		
 	elif [ "$num" = 4 ]; then
 		nslookup baidu.com > /dev/null 2>&1
 		if [ "$?" = 0 ];then
@@ -1229,6 +1226,21 @@ tools(){
 		fi
 		tools
 		
+	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 5 ]; then	
+		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
+		echo -----------------------------------------------
+		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"
+		sleep 1
+		tools	
+		
+	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 6 ]; then
+		[ "$mi_autoSSH" = "禁用" ] && mi_autoSSH=启用 || mi_autoSSH=禁用
+		setconfig mi_autoSSH $mi_autoSSH
+		echo -----------------------------------------------
+		echo -e "\033[32m本功能仅对已固化设备生效！未固化设备请先自行固化SSH！\033[0m"
+		echo -e "已\033[33m$mi_autoSSH\033[0m小米路由相关设备升级后自动启用SSH功能！"
+		sleep 1
+		tools		
 	else
 		errornum
 	fi
@@ -1511,6 +1523,7 @@ case "$1" in
 			rm -rf /etc/systemd/system/clash.service
 			rm -rf /usr/lib/systemd/system/clash.service
 			rm -rf /www/clash
+			rm -rf /tmp/clash_$USER
 			sed -Ei s/0:7890/7890:7890/g /etc/passwd
 			userdel -r shellclash 2>/dev/null
 			echo -----------------------------------------------
