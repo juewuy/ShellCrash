@@ -1100,7 +1100,7 @@ tools(){
 			iptables -t nat -D PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 >/dev/null 2>&1
 			ip6tables -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 >/dev/null 2>&1
 		}
-		[ -n "$(cat /etc/firewall.user 2>1 | grep '启用外网访问SSH服务')" ] && ssh_ol=禁止 || ssh_ol=开启
+		[ -n "$(cat /etc/firewall.user 2>&1 | grep '启用外网访问SSH服务')" ] && ssh_ol=禁止 || ssh_ol=开启
 		[ -z "$ssh_port" ] && ssh_port=10022
 		echo -----------------------------------------------
 		echo -e "\033[33m此功能仅针对使用Openwrt系统的设备生效，且不依赖clash服务\033[0m"
@@ -1173,7 +1173,7 @@ tools(){
 	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
 	echo -e " 4 \033[32m流媒体预解析\033[0m————用于解决DNS解锁在TV应用上失效的问题"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新\n \
-	6 \033[33m$mi_autoSSH\033[0m小米设备自动启用SSH(依赖clash服务)"
+ 6 \033[33m$mi_autoSSH\033[0m小米设备自动启用SSH(依赖clash服务)"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
