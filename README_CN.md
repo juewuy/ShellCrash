@@ -47,12 +47,12 @@ opkg update && opkg install curl #如已安装请忽略
 ~**使用curl安装**：<br>
 
 ```Shell
+#ghproxy.com加速
+export url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #github-CDN源
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #jsdelivrCDN源
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
-#作者私人http源
-export url='http://shellclash.ga/' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 ~**使用wget安装**：<br>
