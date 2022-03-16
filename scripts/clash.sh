@@ -1226,13 +1226,22 @@ tools(){
 		tools	
 		
 	elif [ -f /usr/sbin/otapredownload ] && [ "$num" = 6 ]; then
-		[ "$mi_autoSSH" = "已启用" ] && mi_autoSSH=禁用 || mi_autoSSH=已启用
+		if [ "$mi_autoSSH" = "已启用" ];then
+			mi_autoSSH=禁用
+		else
+			echo -----------------------------------------------
+			echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
+			echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"
+			echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/clashfm\033[0m"
+			mi_autoSSH=已启用
+			if [ "$systype" = "mi_snapshot" ];then
+				cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
+				echo -e "\033[32m检测当前为小米镜像化系统，已将SSH秘钥备份到脚本安装目录！\033[0m"
+				echo -e "\033[32mClash会在启动时自动还原已备份的秘钥文件！\033[0m"
+			fi
+			sleep 2
+		fi
 		setconfig mi_autoSSH $mi_autoSSH
-		echo -----------------------------------------------
-		echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
-		echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"
-		echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/clashfm\033[0m"
-		sleep 2
 		tools		
 	else
 		errornum

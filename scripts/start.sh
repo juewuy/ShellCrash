@@ -121,15 +121,17 @@ steaming(){
 }
 autoSSH(){
 	#自动开启SSH
-	echo `date`ssh状态设置 >> /data/clash/ui/log
-	nvram set telnet_en=1
-	nvram set ssh_en=1
-	nvram set uart_en=1
-	nvram commit
-    uci -c /usr/share/xiaoqiang set xiaoqiang_version.version.CHANNEL='stable'
+	[ "$(nvram get ssh_en)" = 0 ] && nvram set ssh_en=1 && nvram commit
+    [ "`uci -c /usr/share/xiaoqiang get xiaoqiang_version.version.CHANNEL`" != 'stable' ] && {
+	uci -c /usr/share/xiaoqiang set xiaoqiang_version.version.CHANNEL='stable' 
     uci -c /usr/share/xiaoqiang commit xiaoqiang_version.version
+	}
+	[ -z "$(pidof dropbear)" -o -z "$(netstat -ntul | grep :22)" ] && {
 	sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
 	/etc/init.d/dropbear restart
+	}
+	#备份还原SSH秘钥
+	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 }
 #配置文件相关
 getyaml(){
@@ -805,7 +807,7 @@ afstart(){
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 		#自动开启SSH
-		[ "$mi_autoSSH" = "已启用" ] && [ -z "$(pidof dropbear)" -o -z "$(netstat -ntul | grep :22)" ] && autoSSH 2>/dev/null
+		[ "$mi_autoSSH" = "已启用" ] && autoSSH 2>/dev/null
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
 		$bindir/clash -t -d $bindir
@@ -967,6 +969,9 @@ unset_proxy)
 	;;
 steaming)	
 		steaming
+	;;
+db)	
+		$2
 	;;
 esac
 
