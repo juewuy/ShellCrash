@@ -894,7 +894,7 @@ init)
 		fi
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
 		echo "export clashdir=\"$clashdir\"" >> $profile 
-		[ -f $clashdir/.dis_startup ] || $0 start
+		[ -f $clashdir/.dis_startup ] && cronset "clash保守模式守护进程" || $0 start
         ;;
 getyaml)	
 		getconfig
