@@ -82,14 +82,54 @@ mark_time(){
 	sed -i '/start_time*/'d $clashdir/mark
 	echo start_time=$start_time >> $clashdir/mark
 }
+steaming(){
+	getconfig
+	#设置循环检测clashDNS端口
+	ns_type=$(nslookup -version 2>&1 | grep -io busybox)
+	ns_lookup(){
+		[ -n "$ns_type" ] && \
+		nslookup $1 127.0.0.1:${dns_port} > /dev/null 2>&1 || \
+		nslookup -port=${dns_port} $1 127.0.0.1 > /dev/null 2>&1
+	}
+	while [ "$i" != 0 ];do
+		[ "$j" = 60 ] && exit 1
+		sleep 1	
+		ns_lookup baidu.com
+		i=$?
+		j=$((j+1))
+	done
+	steaming_dns(){
+		steaming_dir=$clashdir/steaming/${steaming_type}_Domains.list
+		if [ ! -f "$steaming_dir" ];then
+			echo 未找到$steaming_type域名数据库，正在下载！
+			mkdir -p $clashdir/steaming
+			$0 webget "$steaming_dir" "$update_url/bin/${steaming_type}_Domains.list"
+			[ "$?" = "1" ] && logger "$steaming_type数据库文件下载失败"
+		fi
+		if [ -f "$steaming_dir" ];then
+			for line in $(cat $steaming_dir);do
+				[ -n "$line" ] && ns_lookup "$line"
+			done >/dev/null 2>&1
+			echo "$steaming_type域名预解析完成！"
+		fi
+	}
+	echo
+	echo "正在后台进行流媒体预解析服务，请耐心等待！"
+	[ "$netflix_pre" = "已开启" ] && steaming_type=Netflix && steaming_dns
+	[ "$disneyP_pre" = "已开启" ] && steaming_type=Disney_Plus && steaming_dns
+	echo "请输入回车继续！"
+}
 autoSSH(){
 	#自动开启SSH
+	echo `date`ssh状态设置 >> /data/clash/ui/log
 	nvram set telnet_en=1
-	nvram set uart_en=1
 	nvram set ssh_en=1
+	nvram set uart_en=1
 	nvram commit
+    uci -c /usr/share/xiaoqiang set xiaoqiang_version.version.CHANNEL='stable'
+    uci -c /usr/share/xiaoqiang commit xiaoqiang_version.version
 	sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
-	/etc/init.d/dropbear start
+	/etc/init.d/dropbear restart
 }
 #配置文件相关
 getyaml(){
@@ -765,7 +805,7 @@ afstart(){
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 		#自动开启SSH
-		[ "$autoSSH" = "禁用" ] && [ -z "$(pidof sshd)" -o -z "$(netstat -ntul | grep :22)" ] && autoSSH 2>/dev/null
+		[ "$mi_autoSSH" = "已启用" ] && [ -z "$(pidof dropbear)" -o -z "$(netstat -ntul | grep :22)" ] && autoSSH 2>/dev/null
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
 		$bindir/clash -t -d $bindir
@@ -846,15 +886,13 @@ init)
 		elif [ -d "/jffs/clash" ];then
 			clashdir=/jffs/clash
 			profile=/jffs/configs/profile.add
-		elif [ -d "/data/clash" ];then 
-			clashdir=/data/clash
+		else
+			clashdir=$(echo $0 | grep -oE '.*clash')
 			profile=/etc/profile
-			#开启SSH
-			autoSSH 2>/dev/null
 		fi
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
 		echo "export clashdir=\"$clashdir\"" >> $profile 
-		$0 start
+		[ -f $clashdir/.dis_startup ] || $0 start
         ;;
 getyaml)	
 		getconfig
@@ -928,41 +966,7 @@ unset_proxy)
 		sed -i '/ALL_PROXY/'d  $profile
 	;;
 steaming)	
-		getconfig
-		#设置循环检测clashDNS端口
-		ns_type=$(nslookup -version 2>&1 | grep -io busybox)
-		ns_lookup(){
-			[ -n "$ns_type" ] && \
-			nslookup $1 127.0.0.1:${dns_port} > /dev/null 2>&1 || \
-			nslookup -port=${dns_port} $1 127.0.0.1 > /dev/null 2>&1
-		}
-		while [ "$i" != 0 ];do
-			[ "$j" = 60 ] && exit 1
-			sleep 1	
-			ns_lookup baidu.com
-			i=$?
-			j=$((j+1))
-		done
-		steaming_dns(){
-			steaming_dir=$clashdir/steaming/${steaming_type}_Domains.list
-			if [ ! -f "$steaming_dir" ];then
-				echo 未找到$steaming_type域名数据库，正在下载！
-				mkdir -p $clashdir/steaming
-				$0 webget "$steaming_dir" "$update_url/bin/${steaming_type}_Domains.list"
-				[ "$?" = "1" ] && logger "$steaming_type数据库文件下载失败"
-			fi
-			if [ -f "$steaming_dir" ];then
-				for line in $(cat $steaming_dir);do
-					[ -n "$line" ] && ns_lookup "$line"
-				done >/dev/null 2>&1
-				echo "$steaming_type域名预解析完成！"
-			fi
-		}
-		echo
-		echo "正在后台进行流媒体预解析服务，请耐心等待！"
-		[ "$netflix_pre" = "已开启" ] && steaming_type=Netflix && steaming_dns
-		[ "$disneyP_pre" = "已开启" ] && steaming_type=Disney_Plus && steaming_dns
-		echo "请输入回车继续！"
+		steaming
 	;;
 esac
 

@@ -35,26 +35,19 @@ getconfig(){
 	[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
 	#开机自启检测
 	if [ -f /etc/rc.common ];then
-		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable_rc || autostart=disable_rc
+		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable || autostart=disable
 	elif [ -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
-		[ -n "$(systemctl is-enabled clash.service 2>&1 | grep enable)" ] && autostart=enable_sys || autostart=disable_sys
+		[ -n "$(systemctl is-enabled clash.service 2>&1 | grep enable)" ] && autostart=enable || autostart=disable
 	fi
 	#开机自启描述
-	if [ "$start_old" = "已开启" ]; then
-		auto="\033[32m保守模式\033[0m"
-		auto1="代理本机：\033[36m$local_proxy\033[0m"
-	elif [ "$autostart" = "enable_rc" -o "$autostart" = "enable_sys" ]; then
-		auto="\033[32m已设置开机启动！\033[0m"
-		auto1="\033[36m禁用\033[0mclash开机启动"
-	elif [ "$autostart" = "disable_rc" -o "$autostart" = "disable_sys" ]; then
+	if [ "$autostart" = "disable" -o -f $clashdir/.dis_startup ]; then
 		auto="\033[31m未设置开机启动！\033[0m"
 		auto1="\033[36m允许\033[0mclash开机启动"
 	else
-		auto="\033[32m保守模式\033[0m"
-		auto1="代理本机：\033[36m$local_proxy\033[0m"
+		auto="\033[32m已设置开机启动！\033[0m"
+		auto1="\033[36m禁用\033[0mclash开机启动"
 	fi
 	#获取运行模式
-	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	#获取运行状态
 	PID=$(pidof clash)
@@ -830,6 +823,28 @@ clashadv(){
 		errornum
 	elif [ "$num" = 0 ]; then
 		i=
+	elif [ "$num" = 1 ]; then	
+		echo -----------------------------------------------
+		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
+			echo -e "\033[33m改为使用保守模式启动clash服务！！\033[0m"
+			echo -e "\033[31m注意：部分设备保守模式可能无法禁用开机启动！！\033[0m"
+			start_old=已开启
+			setconfig start_old $start_old
+			$clashdir/start.sh stop
+		else
+			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
+				echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
+				$clashdir/start.sh cronset "ShellClash初始化"
+				start_old=未开启
+				setconfig start_old $start_old
+				$clashdir/start.sh stop
+				
+			else
+				echo -e "\033[31m当前设备不支持以其他模式启动！！\033[0m"
+			fi
+		fi
+		sleep 1
+		clashadv 
 		
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
@@ -843,31 +858,7 @@ clashadv(){
 			ipv6_support=未开启
 		fi
 		setconfig ipv6_support $ipv6_support
-		clashadv  
-		
-	elif [ "$num" = 1 ]; then	
-		echo -----------------------------------------------
-		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
-			echo -e "\033[33m改为使用保守方式启动clash服务！！\033[0m"
-			echo -e "\033[36m此模式兼容性更好但无法禁用开机启动！！\033[0m"
-			start_old=已开启
-			setconfig start_old $start_old
-			$clashdir/start.sh stop
-			sleep 2
-		else
-			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
-				echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
-				$clashdir/start.sh cronset "ShellClash初始化"
-				start_old=未开启
-				setconfig start_old $start_old
-				$clashdir/start.sh stop
-				
-			else
-				echo -e "\033[31m当前设备不支持以其他模式启动！！\033[0m"
-				sleep 1
-			fi
-		fi
-		clashadv  
+		clashadv   
 		
 	elif [ "$num" = 3 ]; then	
 		echo -----------------------------------------------
@@ -1104,6 +1095,7 @@ tools(){
 		[ -z "$ssh_port" ] && ssh_port=10022
 		echo -----------------------------------------------
 		echo -e "\033[33m此功能仅针对使用Openwrt系统的设备生效，且不依赖clash服务\033[0m"
+		echo -e "\033[31m本功能不支持红米AX6S等镜像化系统设备，请勿尝试！\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 \033[32m修改\033[0m外网访问端口：\033[36m$ssh_port\033[0m"
 		echo -e " 2 \033[32m修改\033[0mSSH访问密码(请连续输入2次后回车)"
@@ -1160,7 +1152,7 @@ tools(){
 			}
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
-	[ "$mi_autoSSH" = "禁用" ] && mi_autoSSH=启用 || mi_autoSSH=禁用
+	[ "$mi_autoSSH" = "已启用" ] && mi_autoSSH_type=32m已启用 || mi_autoSSH_type=31m未启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
@@ -1172,10 +1164,10 @@ tools(){
 	[ -f /etc/firewall.user ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
 	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
 	echo -e " 4 \033[32m流媒体预解析\033[0m————用于解决DNS解锁在TV应用上失效的问题"
-	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新\n\
- 6 \033[33m$mi_autoSSH\033[0m小米设备自动启用SSH(依赖clash服务)"
+	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
+	[ -f /usr/sbin/otapredownload ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
 	echo -----------------------------------------------
-	echo -e " 0 返回上级菜单 \033[0m"
+	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
@@ -1233,13 +1225,14 @@ tools(){
 		sleep 1
 		tools	
 		
-	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 6 ]; then
-		[ "$mi_autoSSH" = "禁用" ] && mi_autoSSH=启用 || mi_autoSSH=禁用
+	elif [ -f /usr/sbin/otapredownload ] && [ "$num" = 6 ]; then
+		[ "$mi_autoSSH" = "已启用" ] && mi_autoSSH=禁用 || mi_autoSSH=已启用
 		setconfig mi_autoSSH $mi_autoSSH
 		echo -----------------------------------------------
-		echo -e "\033[32m本功能仅对已固化设备生效！未固化设备请先自行固化SSH！\033[0m"
-		echo -e "已\033[33m$mi_autoSSH\033[0m小米路由相关设备升级后自动启用SSH功能！"
-		sleep 1
+		echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
+		echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"
+		echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/clashfm\033[0m"
+		sleep 2
 		tools		
 	else
 		errornum
@@ -1422,23 +1415,16 @@ clashsh(){
 
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
-		if [ "$start_old" = "已开启" ];then
-			localproxy
-		elif [ "$autostart" = "enable_rc" ]; then
-			/etc/init.d/clash disable
-			cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
+		if [ "$autostart" = "enable" ]; then
+			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
+			type systemctl >/dev/null 2>&1 && systemctl disable clash.service > /dev/null 2>&1
+			touch $clashdir/.dis_startup
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
-		elif [ "$autostart" = "disable_rc" ]; then
-			/etc/init.d/clash enable
+		elif [ "$autostart" = "disable" ]; then
+			[ -f /etc/rc.common ] && /etc/init.d/clash enable
+			type systemctl >/dev/null 2>&1 && systemctl enable clash.service > /dev/null 2>&1
+			rm -rf $clashdir/.dis_startup
 			echo -e "\033[32m已设置Clash开机启动！\033[0m"
-		elif [ "$autostart" = "enable_sys" ]; then
-			systemctl disable clash.service > /dev/null 2>&1
-			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
-		elif [ "$autostart" = "disable_sys" ]; then
-			systemctl enable clash.service > /dev/null 2>&1
-			echo -e "\033[32m已设置Clash开机启动！\033[0m"
-		else
-			echo -e "\033[32m当前系统不支持设置开启启动！\033[0m"
 		fi
 		clashsh
 

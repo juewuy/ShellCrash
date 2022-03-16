@@ -322,8 +322,8 @@ clashlink(){
 #下载更新相关
 gettar(){
 	$clashdir/start.sh webget /tmp/clashfm.tar.gz $tarurl
-	[ "$?" = "1" ] && echo "文件下载失败！" && exit 1
-	$clashdir/start.sh stop
+	[ "$?" != "0" ] && echo "文件下载失败,请尝试使用其他安装源！" && exit 1
+	$clashdir/start.sh stop 2>/dev/null
 	#解压
 	echo -----------------------------------------------
 	echo 开始解压文件！
@@ -335,8 +335,8 @@ gettar(){
 	#判断系统类型写入不同的启动文件
 	if [ -f /etc/rc.common ];then
 			#设为init.d方式启动
-			mv $clashdir/clashservice /etc/init.d/clash
-			chmod  777 /etc/init.d/clash
+			cp -f $clashdir/clashservice /etc/init.d/clash
+			chmod 755 /etc/init.d/clash
 	else
 		[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 		[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
@@ -347,16 +347,16 @@ gettar(){
 			systemctl daemon-reload
 		else
 			#设为保守模式启动
-			sed -i '/start_old=*/'d $clashdir/mark
-			echo start_old=已开启 >> $clashdir/mark
+			setconfig start_old 已开启
 		fi
 	fi
 	#修饰文件及版本号
 	shtype=sh && [ -n "$(ls -l /bin/sh|grep -oE 'dash|show|bash')" ] && shtype=bash 
 	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
-	chmod  777 $clashdir/start.sh
-	sed -i '/versionsh_l=*/'d $clashdir/mark
-	echo versionsh_l=$release_new >> $clashdir/mark
+	chmod 755 $clashdir/start.sh
+	setconfig versionsh_l $release_new
+	#设置更新地址
+	[ -n "$url" ] && setconfig update_url $url
 	#设置环境变量	
 	[ -w /opt/etc/profile ] && profile=/opt/etc/profile
 	[ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
@@ -372,10 +372,25 @@ gettar(){
 		exit 1
 	fi
 	#华硕/Padavan额外设置
-	[ -n "$systype" ] && sed -i '/ShellClash初始化/'d $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
+	[ -n "$initdir" ] && {
+		sed -i '/ShellClash初始化/'d $initdir && touch $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
+		setconfig initdir $initdir
+		}
+	#小米镜像化OpenWrt额外设置
+	if [ "$systype" = "mi_snapshot" ];then
+		chmod 755 $clashdir/misnap_init.sh
+		uci set firewall.ShellClash=include
+		uci set firewall.ShellClash.type='script'
+		uci set firewall.ShellClash.path='/data/clash/misnap_init.sh'
+		uci set firewall.ShellClash.enabled='1'
+		uci commit firewall
+		setconfig systype $systype
+	else
+		rm -rf $clashdir/misnap_init.sh
+		rm -rf $clashdir/clashservice
+	fi
 	#删除临时文件
 	rm -rf /tmp/clashfm.tar.gz 
-	rm -rf $clashdir/clashservice
 	rm -rf $clashdir/clash.service
 }
 getsh(){
