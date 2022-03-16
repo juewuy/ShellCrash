@@ -1201,8 +1201,7 @@ tools(){
 		tools  
 		
 	elif [ "$num" = 4 ]; then
-		nslookup baidu.com > /dev/null 2>&1
-		if [ "$?" = 0 ];then
+		if type nslookup > /dev/null 2>&1;then
 			checkcfg=$(cat $ccfg)
 			streaming
 			if [ -n "$PID" ];then
@@ -1211,7 +1210,7 @@ tools(){
 			fi
 		else
 			echo -----------------------------------------------
-			echo "当前设备缺少nslookup命令，无法启用全媒体预解析功能！"
+			echo "当前设备缺少nslookup命令，无法启用流媒体预解析功能！"
 			echo "Centos请尝试使用以下命令安装【yum -y install bind-utils】"
 			echo "Debian/Ubuntu等请尝试使用【sudo apt-get install dnsutils -y】"
 			sleep 1

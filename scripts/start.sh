@@ -24,7 +24,7 @@ getconfig(){
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$restore" ] && restore=false
 	[ -z "$dns_port" ] && dns_port=1053
-	[ -z "$stearming_int" ] && stearming_int=24
+	[ -z "$streaming_int" ] && streaming_int=24
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
@@ -82,7 +82,7 @@ mark_time(){
 	sed -i '/start_time*/'d $clashdir/mark
 	echo start_time=$start_time >> $clashdir/mark
 }
-steaming(){
+streaming(){
 	getconfig
 	#设置循环检测clashDNS端口
 	ns_type=$(nslookup -version 2>&1 | grep -io busybox)
@@ -98,26 +98,26 @@ steaming(){
 		i=$?
 		j=$((j+1))
 	done
-	steaming_dns(){
-		steaming_dir=$clashdir/steaming/${steaming_type}_Domains.list
-		if [ ! -f "$steaming_dir" ];then
-			echo 未找到$steaming_type域名数据库，正在下载！
-			mkdir -p $clashdir/steaming
-			$0 webget "$steaming_dir" "$update_url/bin/${steaming_type}_Domains.list"
-			[ "$?" = "1" ] && logger "$steaming_type数据库文件下载失败"
+	streaming_dns(){
+		streaming_dir=$clashdir/streaming/${streaming_type}_Domains.list
+		rm -rf $clashdir/steaming
+		if [ ! -s "$streaming_dir" ];then
+			echo 未找到$streaming_type域名数据库，正在下载！
+			mkdir -p $clashdir/streaming
+			$0 webget "$streaming_dir" "$update_url/bin/${streaming_type}_Domains.list"
+			[ "$?" = "1" ] && logger "$streaming_type数据库文件下载失败"
 		fi
-		if [ -f "$steaming_dir" ];then
-			for line in $(cat $steaming_dir);do
+		if [ -f "$streaming_dir" ];then
+			for line in $(cat $streaming_dir);do
 				[ -n "$line" ] && ns_lookup "$line"
 			done >/dev/null 2>&1
-			echo "$steaming_type域名预解析完成！"
+			echo "$streaming_type域名预解析完成！"
 		fi
 	}
-	echo
 	echo "正在后台进行流媒体预解析服务，请耐心等待！"
-	[ "$netflix_pre" = "已开启" ] && steaming_type=Netflix && steaming_dns
-	[ "$disneyP_pre" = "已开启" ] && steaming_type=Disney_Plus && steaming_dns
-	echo "请输入回车继续！"
+	[ "$netflix_pre" = "已开启" ] && streaming_type=Netflix && streaming_dns
+	[ "$disneyP_pre" = "已开启" ] && streaming_type=Disney_Plus && streaming_dns
+	echo "请输入回车以继续！"
 }
 autoSSH(){
 	#自动开启SSH
@@ -797,17 +797,18 @@ afstart(){
 		#设置本机代理
 		[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
 		#加载定时任务
-		[ -f $clashdir/cron ] && croncmd $clashdir/cron
-		#流媒体预解析
-		if [ "$netflix_pre" = "已开启" -o "$disneyP_pre" = "已开启" ];then
-			cronset '#ShellClash流媒体预解析' "* */$stearming_int * * * $clashdir/start.sh steaming #ShellClash流媒体预解析"
-			$0 steaming & #后台执行流媒体预解析进程
-		fi		
+		[ -f $clashdir/cron ] && croncmd $clashdir/cron	
 		#启用面板配置自动保存
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 		#自动开启SSH
 		[ "$mi_autoSSH" = "已启用" ] && autoSSH 2>/dev/null
+		#流媒体预解析
+		if [ "$netflix_pre" = "已开启" -o "$disneyP_pre" = "已开启" ];then
+			cronset '#ShellClash流媒体预解析' "* */$streaming_int * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh streaming #ShellClash流媒体预解析"
+			sleep 1
+			$0 streaming & #后台执行流媒体预解析进程
+		fi
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
 		$bindir/clash -t -d $bindir
@@ -825,7 +826,7 @@ start_old(){
 		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
 	fi
 	afstart
-	[ -z "$(crontab -l | grep ShellClash初始化)" ] && $0 daemon
+	$0 daemon
 }
 
 case "$1" in
@@ -967,8 +968,8 @@ unset_proxy)
 		sed -i '/all_proxy/'d  $profile
 		sed -i '/ALL_PROXY/'d  $profile
 	;;
-steaming)	
-		steaming
+streaming)	
+		streaming
 	;;
 db)	
 		$2
