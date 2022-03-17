@@ -536,13 +536,15 @@ getgeo(){
 }
 setgeo(){
 	echo -----------------------------------------------
-	[ "$geotype" = "Country.mmdb" ] && geo_type=全球版 || geo_type=精简版
+	[ "$geotype" = "cn_mini.mmdb" ] && geo_type=精简版 || geo_type=全球版
 	[ -n "$geo_type" ] && echo -e "当前使用的是\033[47;30m$geo_type数据库\033[0m"
 	echo -e "\033[36m请选择需要更新/切换的GeoIP/CN_IP数据库：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约6mb)"
 	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.2mb)"
 	echo -e " 3 由\033[32m17mon\033[0m提供的CN-IP文件(需启用CN_IP绕过内核功能，约0.2mb)"
+	[ "$clashcore" = "clash.meta" ] && \
+	echo -e " 4 由\033[32mLoyalsoldier\033[0m提供的GeoSite数据库(限Meta内核，约4.5mb)"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -564,6 +566,10 @@ setgeo(){
 			echo -e "\033[31m未开启绕过内核功能，无需更新CN-IP文件！！\033[0m"	
 			sleep 1
 		fi
+	elif [ "$num" = '4' ]; then
+		geotype=geosite.dat
+		geoname=geosite.dat
+		getgeo
 	else
 		update
 	fi
@@ -612,7 +618,6 @@ getdb(){
 		setconfig hostdir \'$hostdir\'
 		echo -----------------------------------------------
 		echo -e "\033[32m面板安装成功！\033[0m"
-		echo -e "\033[36m请使用\033[32;4mhttp://$host$hostdir\033[0;36m访问面板\033[0m"
 		rm -rf /tmp/clashdb.tar.gz
 		sleep 1
 	fi

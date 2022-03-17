@@ -129,6 +129,7 @@ autoSSH(){
 	[ -z "$(pidof dropbear)" -o -z "$(netstat -ntul | grep :22)" ] && {
 	sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
 	/etc/init.d/dropbear restart
+	[ -n "$mi_autoSSH_pwd" ] && echo -e "$mi_autoSSH_pwd\n$mi_autoSSH_pwd" | passwd root
 	}
 	#备份还原SSH秘钥
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
