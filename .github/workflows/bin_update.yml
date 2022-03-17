@@ -58,6 +58,5 @@ jobs:
     - name: Commit and push
       run: |-
         git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
-        git diff
         git add . && git commit -m "自动同步最新版本Dashboard面板、数据库及根证书文件" || exit 0
         git push 
