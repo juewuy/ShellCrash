@@ -19,6 +19,10 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
+    
+    - name: Checkout
+      uses: actions/checkout@master
+ 
     - name: Apt Update
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -28,6 +32,8 @@ jobs:
         
     - name: Update Dashboard
       run: |
+        ls -l
+        cd \bin
         echo 下载官方面板
         curl -kfSL -o clashdb.zip  https://github.com/Dreamacro/clash-dashboard/archive/gh-pages.zip
         echo 下载yacd面板
@@ -56,8 +62,7 @@ jobs:
 
 
     - name: Commit and push
-      run: |-
+      run: |
         git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
-        git diff
         git add . && git commit -m "自动同步最新版本Dashboard面板、数据库及根证书文件" || exit 0
-        git push 
+        git push
