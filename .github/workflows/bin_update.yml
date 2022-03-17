@@ -12,7 +12,7 @@ on:
         - cron: 0 1 * * 2
 #   watch:
 #       types: [started]
-    workflow_dispatch
+    workflow_dispatch:
 
 jobs:
   update:
