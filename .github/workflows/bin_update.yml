@@ -67,7 +67,7 @@ jobs:
         curl -kfSL -O https://cdn.jsdelivr.net/gh/P3TERX/ca-certificates.crt@download/ca-certificates.crt
         curl -kfSL -O https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat
         sed -i '/GeoIP_v*/'d version
-        echo GeoIP_v=$version_new >> version
+        echo GeoIP_v=`date '+%Y%m%d'` >> version
         echo IP数据库及根证书文件更新完成！
       
     - name: Commit and push
