@@ -37,6 +37,8 @@ opkg update && opkg install curl
 ##### ~Use curl:<br>
 
 ```Shell
+#by fastgit.org
+export url='https://raw.fastgit.org/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/
 #by ghproxy.com
 export url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #by github
