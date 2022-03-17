@@ -1,0 +1,63 @@
+name: bin_update
+
+on: 
+#   release:
+#       types: [published]
+#   push:
+#       tags:
+#       - 'v*'
+#   branches: 
+#       - master
+    schedule:
+        - cron: 0 1 * * 2
+#   watch:
+#       types: [started]
+    workflow_dispatch
+
+jobs:
+  update:
+    runs-on: ubuntu-18.04
+
+    steps:
+    - name: Apt Update
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install unzip curl git tar
+        
+    - name: Update Dashboard
+      run: |
+        echo 下载官方面板
+        curl -kfSL -o clashdb.zip  https://github.com/Dreamacro/clash-dashboard/archive/gh-pages.zip
+        echo 下载yacd面板
+        curl -kfSL -o yacd.zip  https://github.com/haishanh/yacd/archive/gh-pages.zip
+        echo 下载成功!
+        echo 解压缩
+        unzip -o clashdb.zip > /dev/null
+        unzip -o yacd.zip > /dev/null
+        echo 压缩
+        cd \clash-dashboard-gh-pages
+        tar -zcvf clashdb.tar.gz * > /dev/null
+        mv -f clashdb.tar.gz ../
+        cd ..
+        cd \yacd-gh-pages
+        echo yacd特殊处理
+        find -name '*.map' | xargs  rm -rf
+        rm -rf report.html
+        tar -zcvf yacd.tar.gz * > /dev/null
+        mv -f yacd.tar.gz ../
+        cd ..
+        rm -rf clashdb.zip
+        rm -rf yacd.zip
+        rm -rf \clash-dashboard-gh-pages
+        rm -rf \yacd-gh-pages
+        echo 解压完成！
+
+
+    - name: Commit and push
+      run: |-
+        git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
+        git diff
+        git add . && git commit -m "自动同步最新版本Dashboard面板、数据库及根证书文件" || exit 0
+        git push 
