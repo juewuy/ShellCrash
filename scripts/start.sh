@@ -891,7 +891,7 @@ init)
 			clashdir=/jffs/clash
 			profile=/jffs/configs/profile.add
 		else
-			clashdir=$(echo $0 | grep -oE '.*clash')
+			clashdir=$(cd $(dirname $0);pwd)
 			profile=/etc/profile
 		fi
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
