@@ -691,7 +691,34 @@ clashcfg(){
 			errornum
 		fi
 	}
-	
+	fake_ip_filter(){
+		echo -e "\033[32m用于解决Fake-ip模式下部分地址或应用无法连接的问题\033[0m"
+		echo -e "\033[31m脚本已经内置了大量地址，你只需要添加出现问题的地址！\033[0m"
+		echo -e "\033[36m示例：a.b.com"
+		echo -e "示例：*.b.com"
+		echo -e "示例：*.*.b.com\033[0m"
+		echo -----------------------------------------------
+		if [ -f $clashdir/fake_ip_filter ];then
+			echo -e "\033[33m已添加Fake-ip过滤地址：\033[0m"
+			cat $clashdir/fake_ip_filter | awk '{print NR" "$1}'
+		else
+			echo -e "\033[33m你还未添加Fake-ip过滤地址\033[0m" 
+		fi
+		echo -----------------------------------------------
+		echo -e "\033[32m输入数字直接移除对应地址，输入地址直接添加！\033[0m"
+		read -p "请输入数字或地址 > " input
+		if [ -z "$input" -o "input" = 0 ];then
+			i=
+		elif [ "$input" -le "$(cat $clashdir/fake_ip_filter | wc -l)" ];then
+			sed -i "${input}d" $clashdir/fake_ip_filter	2>/dev/null
+			echo -e "\033[32m移除成功！\033[0m"	
+			fake_ip_filter
+		else
+			echo -e "你输入的地址是：\033[32m$input\033[0m"	
+			read -p "确认添加？(1/0) > " res
+			[ "$res" = 1 ] && echo $input >> $clashdir/fake_ip_filter || fake_ip_filter
+		fi
+	}
 	#获取设置默认显示
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$common_ports" ] && common_ports=已开启
@@ -709,6 +736,8 @@ clashcfg(){
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
 	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
 	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过clash内核"
+	[ "$dns_mod" = "fake-ip" ] && \
+	echo -e " 7 管理Fake-ip过滤列表" || \
 	echo -e " 7 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
@@ -767,25 +796,26 @@ clashcfg(){
 		
 	elif [ "$num" = 7 ]; then
 		echo -----------------------------------------------
-		if ! ipset -v >/dev/null 2>&1;then
-			echo -e "\033[31m当前设备缺少ipset模块，无法启用绕过功能！！\033[0m"
-			sleep 1
-		elif [ "$dns_mod" = "fake-ip" ];then
-			echo -e "\033[31m不支持fake-ip模式，请将DNS模式更换为Redir-host！！\033[0m"
-			sleep 1
+		if [ "$dns_mod" = "fake-ip" ];then
+			fake_ip_filter
 			clashcfg
 		else
-			if [ "$cn_ip_route" = "未开启" ]; then 
-				echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
-				cn_ip_route=已开启
+			if ! ipset -v >/dev/null 2>&1;then
+				echo -e "\033[31m当前设备缺少ipset模块，无法启用绕过功能！！\033[0m"
 				sleep 1
 			else
-				echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
-				cn_ip_route=未开启
+				if [ "$cn_ip_route" = "未开启" ]; then 
+					echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
+					cn_ip_route=已开启
+					sleep 1
+				else
+					echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
+					cn_ip_route=未开启
+				fi
+				setconfig cn_ip_route $cn_ip_route
 			fi
-			setconfig cn_ip_route $cn_ip_route
 		fi
-			clashcfg  	
+		clashcfg  	
 		
 	elif [ "$num" = 9 ]; then	
 		clashstart
@@ -1228,16 +1258,16 @@ tools(){
 		if [ "$mi_autoSSH" = "已启用" ];then
 			mi_autoSSH=禁用
 		else
-			echo -----------------------------------------------
-			echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
-			echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"
-			echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/clashfm\033[0m"
-			read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
-			mi_autoSSH=已启用
 			if [ "$systype" = "mi_snapshot" ];then
+				echo -----------------------------------------------
+				echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
+				echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"
+				echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/clashfm\033[0m"
+				read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
+				mi_autoSSH=已启用
 				cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
-				echo -e "\033[32m检测当前为小米镜像化系统，已将SSH秘钥备份到脚本安装目录！\033[0m"
-				echo -e "\033[32mClash会在启动时自动还原已备份的秘钥文件！\033[0m"
+			else
+				echo 不支持的设备！
 			fi
 			echo -e "\033[32m设置成功！\033[0m"
 		fi

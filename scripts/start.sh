@@ -34,6 +34,8 @@ getconfig(){
 	[ -z "$host" ] && host=127.0.0.1
 	#是否代理常用端口
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
+	#默认fake-ip过滤列表
+	fake_ft_df='"*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"'
 	}
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -292,8 +294,13 @@ modify_yaml(){
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#dns配置
 	dns_default='114.114.114.114, 223.5.5.5'
+	if [ -f $clashdir/fake_ip_filter ];then
+		while read line;do
+			fake_ft_ad=$fake_ft_ad,\"$line\"
+		done < $clashdir/fake_ip_filter
+	fi
 	if [ "$dns_mod" = "fake-ip" ];then
-		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ["*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	else
 		dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	fi
@@ -345,7 +352,7 @@ EOF
 	fi
 	#合并文件
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
-	[ -f $clashdir/hosts.yaml ] && yaml_hosts=$clashdir/hosts.yaml
+	[ -f $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
 	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
@@ -402,6 +409,7 @@ start_redir(){
 	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
 	iptables -t nat -A clash -d 10.0.0.0/8 -j RETURN
 	iptables -t nat -A clash -d 127.0.0.0/8 -j RETURN
+	iptables -t nat -A clash -d 100.64.0.0/10 -j RETURN
 	iptables -t nat -A clash -d 169.254.0.0/16 -j RETURN
 	iptables -t nat -A clash -d 172.16.0.0/12 -j RETURN
 	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
@@ -505,6 +513,7 @@ start_udp(){
 	iptables -t mangle -A clash -d 0.0.0.0/8 -j RETURN
 	iptables -t mangle -A clash -d 10.0.0.0/8 -j RETURN
 	iptables -t mangle -A clash -d 127.0.0.0/8 -j RETURN
+	iptables -t mangle -A clash -d 100.64.0.0/10 -j RETURN
 	iptables -t mangle -A clash -d 169.254.0.0/16 -j RETURN
 	iptables -t mangle -A clash -d 172.16.0.0/12 -j RETURN
 	iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
@@ -532,6 +541,7 @@ start_output(){
 	iptables -t nat -A clash_out -d 0.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 10.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 127.0.0.0/8 -j RETURN
+	iptables -t nat -A clash_out -d 100.64.0.0/10 -j RETURN
 	iptables -t nat -A clash_out -d 169.254.0.0/16 -j RETURN
 	iptables -t nat -A clash_out -d 172.16.0.0/12 -j RETURN
 	iptables -t nat -A clash_out -d 192.168.0.0/16 -j RETURN
@@ -627,8 +637,8 @@ web_save(){
 	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
 	while read line ;do
 		def=$(echo $line | awk -F "[[,]" '{print $2}')
-		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g'| sed 's/,//g')
-		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g'| sed 's/"//g' >> /tmp/clash_web_save_$USER
+		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g' | sed 's/"type":.*//g' |  sed 's/,//g')
+		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> /tmp/clash_web_save_$USER
 	done < /tmp/clash_web_check_$USER
 	rm -rf /tmp/clash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
@@ -881,12 +891,11 @@ restart)
 init)
         if [ -d "/etc/storage/clash" ];then
 			clashdir=/etc/storage/clash
-			if [ -w "/opt/etc/profile" ];then
-				profile=/opt/etc/profile
-			else
-				profile=/etc/profile
-				sed -i '' $profile #将软链接转化为一般文件
-			fi
+			while [ ! -w "/etc/profile" -a "$i" -lt 60 ];do
+				sleep 1 && i=$((i+1))
+			done
+			profile=/etc/profile
+			sed -i '' $profile #将软链接转化为一般文件
 		elif [ -d "/jffs/clash" ];then
 			clashdir=/jffs/clash
 			profile=/jffs/configs/profile.add
