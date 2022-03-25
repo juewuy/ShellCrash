@@ -254,6 +254,17 @@ EOF`
 			setconfig clashcore clash.net
 			echo -----------------------------------------------
 		fi
+		#检测并去除无效节点组
+		cat $clashdir/config.yaml | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' > /tmp/clash_proxies_$USER
+		while read line ;do
+			proxies=$(echo $line | awk -F '#' '{print $2}')
+			proxies_name=$(echo $line | awk -F '#' '{print $1}')
+			if [ "$proxies" = 'DIRECT' ];then
+				sed -i "/- $proxies_name/d" $yamlnew
+				sed -i "/- name: $proxies_name/,/- DIRECT/d" $yamlnew
+			fi
+		done < /tmp/clash_proxies_$USER
+		rm -rf /tmp/clash_proxies_$USER
 		#使用核心内置test功能检测
 		if [ -x $bindir/clash ];then
 			$bindir/clash -t -d $bindir -f $yamlnew >/dev/null
@@ -272,7 +283,6 @@ EOF`
 			mv -f $yamlnew $yaml
 		fi
 		echo -e "\033[32m已成功获取配置文件！\033[0m"
-		rm -rf $yamlnew
 		exit 0
 	fi
 }
@@ -656,16 +666,15 @@ web_restore(){
 		fi
 	}
 	#设置循环检测clash面板端口
-	while [ "$i" != 1 ];do
-		[ "$j" = 60 ] && exit 1
+	i=1
+	while [ -z "$test" -a "$i" -lt 60 ];do
 		sleep 1
 		if curl --version > /dev/null 2>&1;then
 			test=$(curl -s http://localhost:${db_port})
 		else
 			test=$(wget -q -O - http://localhost:${db_port})
 		fi
-		[ -n "$test" ] && i=1
-		j=$((j+1))
+		i=$((i+1))
 	done
 	#发送数据
 	num=$(cat $clashdir/web_save | wc -l)
@@ -710,7 +719,7 @@ bfstart(){
 		else
 			logger "未找到clash核心，正在下载！" 33
 			if [ -z "$clashcore" ];then
-				[ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clash.net || clashcore=clash
+				[ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clash.meta || clashcore=clash
 			fi
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
@@ -718,6 +727,7 @@ bfstart(){
 			[ "$?" = "1" ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
 			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
 			clashv=$($bindir/clash -v | awk '{print $2}')
+			setconfig clashcore $clashcore
 			setconfig clashv $clashv
 		fi
 	fi
@@ -891,6 +901,7 @@ restart)
 init)
         if [ -d "/etc/storage/clash" ];then
 			clashdir=/etc/storage/clash
+			i=1
 			while [ ! -w "/etc/profile" -a "$i" -lt 60 ];do
 				sleep 1 && i=$((i+1))
 			done

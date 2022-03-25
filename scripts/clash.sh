@@ -574,6 +574,11 @@ clashcfg(){
 		set_redir_config(){
 			setconfig redir_mod $redir_mod
 			setconfig dns_mod $dns_mod 
+			if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && [ "$clashcore" = "clash" ];then
+				rm -rf $bindir/clash
+				rm -rf $clashdir/clash
+				setconfig clashcore clash.meta
+			fi
 			echo -----------------------------------------------	
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
