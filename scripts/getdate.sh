@@ -706,6 +706,7 @@ getcrt(){
 }
 setcrt(){
 	openssldir=$(openssl version -a 2>&1 | grep OPENSSLDIR | awk -F "\"" '{print $2}')
+	[ -z "$openssldir" ] && openssldir=/etc/ssl
 	if [ -n "$openssldir" ];then
 		crtdir="$openssldir/certs/ca-certificates.crt"
 		echo -----------------------------------------------
