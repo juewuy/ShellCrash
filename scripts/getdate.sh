@@ -745,41 +745,37 @@ setserver(){
 	echo -e "\033[30;47m切换ShellClash版本及更新源地址\033[0m"
 	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 \033[32m正式版\033[0m&Github源(ghproxy.com加速)"
-	echo -e " 2 \033[32m正式版\033[0m&Jsdelivr-CDN源"
-	echo -e " 3 \033[36m测试版\033[0m&Github源(本机clash服务加速)"
-	echo -e " 4 \033[36m测试版\033[0m&Github源(ghproxy.com加速)"
-	echo -e " 5 \033[36m测试版\033[0m&Github源(githubusercontents加速)"
-	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 6 \033[33mHttp专用源\033[0m"
-	echo -e " 7 自定义源地址(用于本地源或自建源)"
-	echo -e " 8 \033[31m版本回退\033[0m"
+	echo -e " 1 \033[32m正式版\033[0m&Jsdelivr-CDN源"
+	echo -e " 2 \033[36m测试版\033[0m&Github源(本机clash服务加速)"
+	echo -e " 3 \033[36m测试版\033[0m&Jsdelivr-CDN源"
+	echo -e " 4 \033[36m测试版\033[0m&Github源(githubusercontents加速)"
+	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 5 \033[33mHttp专用源\033[0m"
+	echo -e " 8 自定义源地址(用于本地源或自建源)"
+	echo -e " 9 \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if	[ -z "$num" ]; then 
 		errornum
 	elif [ "$num" = 1 ]; then
-		release_url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash'
-		saveserver
-	elif [ "$num" = 2 ]; then
 		release_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
 		saveserver
-	elif [ "$num" = 3 ]; then
+	elif [ "$num" = 2 ]; then
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
-	elif [ "$num" = 4 ]; then
-		update_url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master'
+	elif [ "$num" = 3 ]; then
+		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
 		release_url=''
 		saveserver
-	elif [ "$num" = 5 ]; then
+	elif [ "$num" = 4 ]; then
 		update_url='https://raw.githubusercontents.com/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
-	elif [ "$num" = 6 ]; then
+	elif [ "$num" = 5 ]; then
 		update_url='http://shellclash.ga'
 		release_url=''
 		saveserver
-	elif [ "$num" = 7 ]; then
+	elif [ "$num" = 8 ]; then
 		echo -----------------------------------------------
 		read -p "请输入个人源路径 > " update_url
 		if [ -z "$update_url" ];then
@@ -789,7 +785,7 @@ setserver(){
 			saveserver
 			release_url=''
 		fi
-	elif [ "$num" = 8 ]; then
+	elif [ "$num" = 9 ]; then
 		echo -----------------------------------------------
 		$clashdir/start.sh webget /tmp/clashrelease https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/bin/release_version echooff rediroff 2>/tmp/clashrelease
 		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
