@@ -1533,6 +1533,10 @@ case "$1" in
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
 		$shtype -x $clashdir/clash.sh
 	;;
+	-st)
+		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
+		$shtype -x $clashdir/start.sh $2 $3 $4 $5 $6
+	;;
 	-u)
 		read -p "确认卸载ShellClash？（警告：该操作不可逆！）[1/0] " res
 		if [ "$res" = '1' ]; then

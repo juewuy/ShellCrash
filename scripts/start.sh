@@ -255,7 +255,7 @@ EOF`
 			echo -----------------------------------------------
 		fi
 		#检测并去除无效节点组
-		cat $clashdir/config.yaml | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' > /tmp/clash_proxies_$USER
+		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' > /tmp/clash_proxies_$USER
 		while read line ;do
 			proxies=$(echo $line | awk -F '#' '{print $2}')
 			proxies_name=$(echo $line | awk -F '#' '{print $1}')
