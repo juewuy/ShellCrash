@@ -257,8 +257,8 @@ EOF`
 		#检测并去除无效节点组
 		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 		while read line ;do
-			sed -i "/- $proxies_name/d" $yamlnew
-			sed -i "/- name: $proxies_name/,/- DIRECT/d" $yamlnew
+			sed -i "/- $line/d" $yamlnew
+			sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
 		done < /tmp/clash_proxies_$USER
 		rm -rf /tmp/clash_proxies_$USER
 		#使用核心内置test功能检测
