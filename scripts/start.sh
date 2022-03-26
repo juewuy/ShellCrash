@@ -255,14 +255,10 @@ EOF`
 			echo -----------------------------------------------
 		fi
 		#检测并去除无效节点组
-		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' > /tmp/clash_proxies_$USER
+		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 		while read line ;do
-			proxies=$(echo $line | awk -F '#' '{print $2}')
-			proxies_name=$(echo $line | awk -F '#' '{print $1}')
-			if [ "$proxies" = 'DIRECT' ];then
-				sed -i "/- $proxies_name/d" $yamlnew
-				sed -i "/- name: $proxies_name/,/- DIRECT/d" $yamlnew
-			fi
+			sed -i "/- $proxies_name/d" $yamlnew
+			sed -i "/- name: $proxies_name/,/- DIRECT/d" $yamlnew
 		done < /tmp/clash_proxies_$USER
 		rm -rf /tmp/clash_proxies_$USER
 		#使用核心内置test功能检测
