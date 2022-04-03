@@ -38,14 +38,16 @@ getconfig(){
 		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable || autostart=disable
 	elif [ -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
 		[ -n "$(systemctl is-enabled clash.service 2>&1 | grep enable)" ] && autostart=enable || autostart=disable
+	else
+		[ -f $clashdir/.dis_startup ] && autostart=disable || autostart=enable
 	fi
 	#开机自启描述
-	if [ "$autostart" = "disable" -o -f $clashdir/.dis_startup ]; then
-		auto="\033[31m未设置开机启动！\033[0m"
-		auto1="\033[36m允许\033[0mclash开机启动"
-	else
+	if [ "$autostart" = "enable" ]; then
 		auto="\033[32m已设置开机启动！\033[0m"
 		auto1="\033[36m禁用\033[0mclash开机启动"
+	else
+		auto="\033[31m未设置开机启动！\033[0m"
+		auto1="\033[36m允许\033[0mclash开机启动"
 	fi
 	#获取运行模式
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
