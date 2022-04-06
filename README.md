@@ -87,9 +87,7 @@ Use: https://github.com/echvoyager/shellclash_docker
 
 ~**Additional dependencies at runtime**：<br>
 
-```
-Most of the equipment/systems are pre-installed with most of the following dependencies, you can ignore them if there is no impact when you use them.
-```
+> Most of the equipment/systems are pre-installed with most of the following dependencies, you can ignore them if there is no impact when you use them.
 
 ```Text
 bash/ash		necessary		Cannot install and run scripts when all are missing
