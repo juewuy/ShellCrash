@@ -47,7 +47,7 @@ opkg update && opkg install curl #如已安装请忽略
 ~**使用curl安装**：<br>
 
 ```Shell
-#GitHub-CDN源
+#GitHub源
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #jsDelivrCDN源
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
@@ -56,7 +56,7 @@ export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(cu
 ~**使用wget安装**：<br>
 
 ```Shell
-#GitHub-CDN源
+#GitHub源
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 #jsDelivrCDN源
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
