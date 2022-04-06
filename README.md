@@ -28,7 +28,7 @@ How to use:
 
 ~Confirm that the router device has enabled SSH and obtained root privileges (Linux devices with GUI desktops can be installed using their own terminal)<br>~Use SSH connection tools (such as putty, JuiceSSH, system built-in terminal, etc.) router or Linux device SSH management interface or terminal interface, and switch to the root user<br>~Confirm that the curl or wget download tool has been installed on the device. If not installed, please [refer to here](https://www.howtoforge.com/install-curl-in-linux) for LInux devices to install curl. For devices based on OpenWrt (Xiaomi official system, Pandora, Gaoke, etc.), please Use the following command to install curl:<br>
 
-```sh
+```Shell
 opkg update && opkg install curl
 ```
 
@@ -37,30 +37,30 @@ opkg update && opkg install curl
 ##### ~Use curl:<br>
 
 ```Shell
-#by ghproxy.com
-export url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
-#by github
+#by GitHub
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
-#by jsdelivrCDN
+#by jsDelivrCDN
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 ##### ~Use wget：<br>
 
-```sh
-#By jsdelivrCDN
+```Shell
+#by GitHub
+export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+#By jsDelivrCDN
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**Use a low version of wget (prompt not to support https) local installation**:<br> First clone the project to the local under the window (or [click to download the project source code zip package](https://github.com/juewuy/ShellClash/archive/refs/heads/master.zip) to the local and decompress it) 
 
-```sh
+```Shell
 sh git clone https://github.com/juewuy/ShellClash.git
 ```
 
  Then open /project address/ShellClash/bin/hfs/hfs.exe Click menu-add directory from disk-{find the directory where ShellClash source code is located}-add as real directory Click on the menu-IP address-{choose the actual IP address of your LAN} Click ShellClash-click to copy to clipboard Then use the following command to install in SSH 
 
-```sh
+```Shell
 sh export url='Paste the copied address here' && wget -q -O /tmp/install.sh $url/install.sh && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
@@ -68,7 +68,7 @@ sh export url='Paste the copied address here' && wget -q -O /tmp/install.sh $url
 
 ~**After installation by non-root users**, please execute the following additional commands to read environment variables:<br>
 
-```shell
+```Shell
 source ~/.bashrc &> /dev/null
 ```
 
@@ -91,7 +91,7 @@ Use: https://github.com/echvoyager/shellclash_docker
 Most of the equipment/systems are pre-installed with most of the following dependencies, you can ignore them if there is no impact when you use them.
 ```
 
-```sh
+```Text
 bash/ash		necessary		Cannot install and run scripts when all are missing
 curl/wget		necessary		When all are missing, it cannot be installed and updated online
 iptables		important		Only use pure mode when missing
