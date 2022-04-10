@@ -732,6 +732,7 @@ clashcfg(){
 	[ -z "$dns_mod" ] && dns_mod=redir_host
 	[ -z "$dns_over" ] && dns_over=已开启
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
+	[ -z "$quic_rj" ] && quic_rj=未开启
 	[ -z "$(cat $clashdir/mac)" ] && mac_return=未开启 || mac_return=已启用
 	#
 	echo -----------------------------------------------
@@ -743,9 +744,10 @@ clashcfg(){
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
 	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
 	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过clash内核"
+	echo -e " 7 屏蔽QUIC流量:	\033[36m$quic_rj\033[0m   ————优化视频性能"
 	[ "$dns_mod" = "fake-ip" ] && \
-	echo -e " 7 管理Fake-ip过滤列表" || \
-	echo -e " 7 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
+	echo -e " 8 管理Fake-ip过滤列表" || \
+	echo -e " 8 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -782,7 +784,7 @@ clashcfg(){
 	
 	elif [ "$num" = 4 ]; then	
 		echo -----------------------------------------------	
-		if [ "$common_ports" = "未开启" ] > /dev/null 2>&1; then 
+		if [ "$common_ports" = "未开启" ]; then 
 			echo -e "\033[33m已设为仅代理【$multiport】等常用端口！！\033[0m"
 			common_ports=已开启
 		else
@@ -801,7 +803,23 @@ clashcfg(){
 		sleep 1
 		clashcfg
 		
-	elif [ "$num" = 7 ]; then
+	elif [ "$num" = 7 ]; then	
+		echo -----------------------------------------------
+		if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$tproxy_mod" = "已开启" ];then
+			if [ "$quic_rj" = "未开启" ]; then 
+				echo -e "\033[33m已禁止QUCI流量通过clash内核！！\033[0m"
+				quic_rj=已启用
+			else
+				echo -e "\033[33m已取消禁止QUIC协议流量！！\033[0m"
+				quic_rj=未开启
+			fi
+			setconfig quic_rj $quic_rj
+		else
+			echo -e "\033[33m当前模式默认不会代理UDP流量，无需设置！！\033[0m"
+		fi
+		clashcfg	
+		
+	elif [ "$num" = 8 ]; then
 		echo -----------------------------------------------
 		if [ "$dns_mod" = "fake-ip" ];then
 			fake_ip_filter

@@ -41,7 +41,7 @@ linkserver(){
 	echo 当前使用后端为：$server_link
 	echo 1 api.dler.io			（墙洞提供）
 	echo 2 sub.shellclash.ga	（作者提供）
-	echo 3 api.wcc.best			（sub_web作者提供）
+	echo 3 sub.xeton.dev		（SUB作者T大提供）
 	echo 4 sub.id9.cc			（品云提供）
 	echo 5 sub.maoxiongnet.com	（猫熊提供）
 	echo -----------------------------------------------
@@ -749,7 +749,8 @@ setserver(){
 	echo -e " 2 \033[36m测试版\033[0m&Github源(本机clash服务加速)"
 	echo -e " 3 \033[36m测试版\033[0m&Jsdelivr-CDN源"
 	echo -e " 4 \033[36m测试版\033[0m&Github源(githubusercontents加速)"
-	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 5 \033[33mHttp专用源\033[0m"
+	echo -e " 4 \033[36m测试版\033[0m&Github源(fastgit.org加速)"
+	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 7 \033[33mHttp专用源\033[0m"
 	echo -e " 8 自定义源地址(用于本地源或自建源)"
 	echo -e " 9 \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
@@ -772,6 +773,10 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 5 ]; then
+		update_url='https://raw.fastgit.org/juewuy/ShellClash/master'
+		release_url=''
+		saveserver
+	elif [ "$num" = 7 ]; then
 		update_url='http://shellclash.ga'
 		release_url=''
 		saveserver

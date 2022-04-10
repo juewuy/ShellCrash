@@ -144,7 +144,7 @@ getyaml(){
 	Server=`sed -n ""$server_link"p"<<EOF
 https://api.dler.io
 http://sub.shellclash.ga
-https://api.wcc.best
+https://sub.xeton.dev
 https://sub.id9.cc
 https://sub.maoxiongnet.com
 EOF`
@@ -172,7 +172,7 @@ EOF`
 	if [ -z "$Https" ];then
 		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='http://sub.shellclash.ga'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
-		markhttp=1
+		url_type=true
 	fi
 	#输出
 	echo -----------------------------------------------
@@ -185,7 +185,7 @@ EOF`
 	rm -rf $yamlnew
 	$0 webget $yamlnew $Https
 	if [ "$?" = "1" ];then
-		if [ -z "$markhttp" ];then
+		if [ -z "$url_type" ];then
 			echo -----------------------------------------------
 			logger "配置文件获取失败！" 31
 			echo -e "\033[31m请尝试使用【在线生成配置文件】功能！\033[0m"
@@ -255,12 +255,14 @@ EOF`
 			echo -----------------------------------------------
 		fi
 		#检测并去除无效节点组
+		[ -n "$url_type" ] && type xargs >/dev/null 2>&1 && {
 		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 		while read line ;do
 			sed -i "/- $line/d" $yamlnew
 			sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
 		done < /tmp/clash_proxies_$USER
 		rm -rf /tmp/clash_proxies_$USER
+		}
 		#使用核心内置test功能检测
 		if [ -x $bindir/clash ];then
 			$bindir/clash -t -d $bindir -f $yamlnew >/dev/null
@@ -292,8 +294,8 @@ modify_yaml(){
 	external="external-controller: 0.0.0.0:$db_port"
 	[ -d $clashdir/ui ] && db_ui=ui
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
-		[ "$clashcore" = "clash.meta" ] && stack=gvisor || stack=system
-		tun="tun: {enable: true, stack: $stack}"
+		#[ "$clashcore" = "clash.meta" ] && stack=gvisor || stack=system
+		tun="tun: {enable: true, stack: system}"
 	else
 		tun='tun: {enable: false}'
 	fi
@@ -446,6 +448,11 @@ start_redir(){
 	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash
 	#Docker特殊处理
 	[ "$local_proxy" = "已开启" ] && iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
+	#禁用QUIC
+	if [ "$quic_rj" = 已启用 ] && [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$tproxy_mod" = "已开启" ];then
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+	fi
 	#设置ipv6转发
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ];then
@@ -613,6 +620,8 @@ stop_iptables(){
 	iptables -t mangle -D PREROUTING -p udp -j clash 2> /dev/null
 	iptables -t mangle -F clash 2> /dev/null
 	iptables -t mangle -X clash 2> /dev/null
+	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -j REJECT >/dev/null 2>&1
+	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -m set ! --match-set cn_ip dst -j REJECT >/dev/null 2>&1
 	#重置ipv6规则
 	ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
@@ -674,11 +683,12 @@ web_restore(){
 	done
 	#发送数据
 	num=$(cat $clashdir/web_save | wc -l)
-	for i in `seq $num`;
-	do
+	i=1
+	while [ "$i" -le "$num" ];do
 		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' $clashdir/web_save | sed 's/ /%20/g')
 		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $clashdir/web_save)
 		put_save http://localhost:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
+		i=$((i+1))
 	done
 }
 #启动相关
@@ -715,7 +725,7 @@ bfstart(){
 		else
 			logger "未找到clash核心，正在下载！" 33
 			if [ -z "$clashcore" ];then
-				[ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clash.meta || clashcore=clash
+				[ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && clashcore=clashpre || clashcore=clash
 			fi
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore

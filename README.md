@@ -37,9 +37,11 @@ opkg update && opkg install curl
 ##### ~Use curl:<br>
 
 ```Shell
+#by fastgit.org
+export url='https://raw.fastgit.org/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 #by GitHub
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
-#by jsDelivrCDN
+#by jsDelivr-CDN
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
@@ -52,19 +54,12 @@ export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && wget 
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
-~**Use a low version of wget (prompt not to support https) local installation**:<br> First clone the project to the local under the window (or [click to download the project source code zip package](https://github.com/juewuy/ShellClash/archive/refs/heads/master.zip) to the local and decompress it) 
+~**Use a low version of wget (prompt not to support https) local installation**:<br>
 
 ```Shell
-sh git clone https://github.com/juewuy/ShellClash.git
+#by shellclash.ga
+export url='http://shellclash.ga/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
-
- Then open /project address/ShellClash/bin/hfs/hfs.exe Click menu-add directory from disk-{find the directory where ShellClash source code is located}-add as real directory Click on the menu-IP address-{choose the actual IP address of your LAN} Click ShellClash-click to copy to clipboard Then use the following command to install in SSH 
-
-```Shell
-sh export url='Paste the copied address here' && wget -q -O /tmp/install.sh $url/install.sh && sh /tmp/install.sh && source /etc/profile &> /dev/null
-```
-
- Later, when updating the version, you need to update the local version library and open the hfs service, and then update in the SSH menu, and then you can build a local server through hfs to realize the function of uploading and updating the yaml configuration file 
 
 ~**After installation by non-root users**, please execute the following additional commands to read environment variables:<br>
 
