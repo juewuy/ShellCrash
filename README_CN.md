@@ -38,7 +38,7 @@
 ~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或Linux设备的SSH管理界面或终端界面，并切换到root用户<br>
 ~确认设备已经安装curl或者wget下载工具。**如未安装**，LInux设备请[参考此处](https://www.howtoing.com/install-curl-in-linux)安装curl，基于OpenWrt（小米官方系统、潘多拉、高恪等）的设备请使用如下命令安装curl：<br>
 
-```shell
+```Shell
 opkg update && opkg install curl #如已安装请忽略
 ```
 
@@ -47,31 +47,31 @@ opkg update && opkg install curl #如已安装请忽略
 ~**使用curl安装**：<br>
 
 ```Shell
-#ghproxy.com加速
-export url='https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
-#github-CDN源
+#GitHub源
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
-#jsdelivrCDN源
+#jsDelivrCDN源
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 ~**使用wget安装**：<br>
 
-```sh
-#jsdelivrCDN源
+```Shell
+#GitHub源
+export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+#jsDelivrCDN源
 export url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**使用低版本wget（提示不支持https）安装**：<br>
 
-```sh
+```Shell
 #作者私人http源
 export url='http://shellclash.ga/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**非root用户安装后**请额外执行以下命令以读取环境变量：<br>
 
-```shell
+```Shell
 source ~/.bashrc &> /dev/null
 ```
 
@@ -90,9 +90,9 @@ clash -t #测试模式运行
 
 ~**运行时的额外依赖**：<br>
 
-`大部分的设备/系统都已经预装了以下的大部分依赖，使用时如无影响可以无视之`
+> 大部分的设备/系统都已经预装了以下的大部分依赖，使用时如无影响可以无视之
 
-```sh
+```Text
 bash/ash		必须		全部缺少时无法安装及运行脚本
 curl/wget		必须		全部缺少时无法在线安装及更新，无法使用节点保存功能
 iptables		重要		缺少时只能使用纯净模式
