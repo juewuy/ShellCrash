@@ -1218,7 +1218,7 @@ tools(){
 	echo -e " 1 ShellClash测试菜单"
 	[ -f /etc/firewall.user ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
 	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
-	echo -e " 4 \033[32m流媒体预解析\033[0m————用于解决DNS解锁在TV应用上失效的问题"
+	echo -e " 4 \033[32m流媒体增强\033[0m————用于解决流媒体解锁在TV应用上失效的问题"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
 	[ -f /usr/sbin/otapredownload ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
 	echo -----------------------------------------------
@@ -1256,19 +1256,39 @@ tools(){
 		tools  
 		
 	elif [ "$num" = 4 ]; then
-		if type nslookup > /dev/null 2>&1;then
-			checkcfg=$(cat $ccfg)
-			streaming
-			if [ -n "$PID" ];then
-				checkcfg_new=$(cat $ccfg)
-				[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-			fi
-		else
+		checkcfg=$(cat $ccfg)
+		echo -----------------------------------------------
+		echo -e "\033[36m请选择实现方式(不建议同时开启)：\033[0m"
+		echo -e " 1 定时预解析流媒体DNS"
+		echo -e " 2 Meta内核专属tls域名嗅探(推荐) \033[33m$sniffer\033[0m"
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num
+		if [ -z "$num" ]; then
+			errornum
+		elif [ "$num" = 0 ]; then
+			i=
+		elif [ "$num" = 1 ]; then
+			steaming
+		elif [ "$num" = 2 ]; then
 			echo -----------------------------------------------
-			echo "当前设备缺少nslookup命令，无法启用流媒体预解析功能！"
-			echo "Centos请尝试使用以下命令安装【yum -y install bind-utils】"
-			echo "Debian/Ubuntu等请尝试使用【sudo apt-get install dnsutils -y】"
+			if [ "$sniffer" = "未启用" ];then
+				if [ "$clashcore" != "clash.meta" ];then
+					rm -rf $bindir/clash
+					clashcore=clash.meta
+					setconfig clashcore $clashcore
+					echo "已将clash内核切换为Meta内核！"
+				fi
+				sniffer=已启用
+			else
+				sniffer=未启用
+			fi
+			setconfig sniffer $sniffer
+			echo -e "\033[32m设置成功！\033[0m"
 			sleep 1
+		fi
+		if [ -n "$PID" ];then
+			checkcfg_new=$(cat $ccfg)
+			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
 		tools
 		

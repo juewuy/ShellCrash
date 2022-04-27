@@ -312,6 +312,10 @@ modify_yaml(){
 	else
 		dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 	fi
+	#meta专属功能
+	if [ "$clashcore" = "clash.meta" -a "$sniffer" = "已启用" ];then
+		sniffer_set="sniffer: {enable: true, force: false, sniffing: [tls]}"
+	fi
 	#设置目录
 	yaml=$clashdir/config.yaml
 	tmpdir=/tmp/clash_$USER
@@ -342,6 +346,7 @@ secret: $secret
 $tun
 $exper
 $dns
+$sniffer_set
 store-selected: $restore
 hosts:
 EOF
@@ -436,7 +441,12 @@ start_redir(){
 		done
 		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
 	fi
-	iptables -t nat -A PREROUTING -p tcp -j clash
+	#获取局域网host地址
+	host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE '\ 1(92|0|72)\.' | grep -oE '1(92|0|72)' | head -n 1)
+	[ -n "$host_lan" ] && host_lan=${host_lan}.0.0.0/8
+	#将PREROUTING链指向clash链
+	iptables -t nat -A PREROUTING -p tcp -s $host_lan -j clash
+	#公网访问功能
 	if [ "$public_support" = "已开启" ];then
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
@@ -478,18 +488,19 @@ start_dns(){
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash_dns -p udp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
-			iptables -t nat -A clash_dns -p tcp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+			iptables -t nat -A clash_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
+			iptables -t nat -A clash_dns -p tcp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 		done
 	else
 		#mac黑名单
 		for mac in $(cat $clashdir/mac); do
 			iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
 		done	
-		iptables -t nat -A clash_dns -p udp --dport 53 -j REDIRECT --to $dns_port
-		iptables -t nat -A clash_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
+		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
+		iptables -t nat -A clash_dns -p tcp -j REDIRECT --to $dns_port
 	fi
-	iptables -t nat -A PREROUTING -p udp -j clash_dns
+	iptables -t nat -A PREROUTING -p udp --dport 53 -j clash_dns
+	iptables -t nat -A PREROUTING -p tcp --dport 53 -j clash_dns
 	#ipv6DNS
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" ];then
@@ -497,18 +508,19 @@ start_dns(){
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
 			for mac in $(cat $clashdir/mac); do
-				ip6tables -t nat -A clashv6_dns -p udp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
-				ip6tables -t nat -A clashv6_dns -p tcp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+				ip6tables -t nat -A clashv6_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
+				ip6tables -t nat -A clashv6_dns -p tcp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 			done
 		else
 			#mac黑名单
 			for mac in $(cat $clashdir/mac); do
 				ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN
 			done	
-			ip6tables -t nat -A clashv6_dns -p udp --dport 53 -j REDIRECT --to $dns_port
-			ip6tables -t nat -A clashv6_dns -p tcp --dport 53 -j REDIRECT --to $dns_port
+			ip6tables -t nat -A clashv6_dns -p udp -j REDIRECT --to $dns_port
+			ip6tables -t nat -A clashv6_dns -p tcp -j REDIRECT --to $dns_port
 		fi
-		ip6tables -t nat -A PREROUTING -p udp -j clashv6_dns
+		ip6tables -t nat -A PREROUTING -p udp --dport 53 -j clashv6_dns
+		ip6tables -t nat -A PREROUTING -p tcp --dport 53 -j clashv6_dns
 	else
 		ip6tables -I INPUT -p tcp --dport 53 -j REJECT > /dev/null 2>&1
 		ip6tables -I INPUT -p udp --dport 53 -j REJECT > /dev/null 2>&1
@@ -694,6 +706,7 @@ web_restore(){
 #启动相关
 catpac(){
 	cat > /tmp/clash_pac <<EOF
+//如看见此处内容，请重新安装本地面板！
 function FindProxyForURL(url, host) {
 	if (
 		isInNet(host, "0.0.0.0", "255.0.0.0")||
@@ -719,6 +732,8 @@ bfstart(){
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
 	update_url=https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master
 	#检查clash核心
+	$bindir/clash -v >/dev/null 2>&1
+	[ "$?" != 0 ] && rm -rf $bindir/clash
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
 			mv $clashdir/clash $bindir/clash && chmod +x $bindir/clash
