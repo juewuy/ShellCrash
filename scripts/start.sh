@@ -416,11 +416,6 @@ cn_ip_route(){
 	fi
 }
 start_redir(){
-	#允许tun网卡接受流量
-	if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
-		iptables -I FORWARD -o utun -j ACCEPT
-		[ "$ipv6_support" = "已开启" ] && ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
-	fi
 	#流量过滤规则
 	iptables -t nat -N clash
 	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
@@ -456,9 +451,6 @@ start_redir(){
 		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT
 		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT
 	fi
-	#Google home DNS特殊处理
-	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash
-	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash
 	#Docker特殊处理
 	[ "$local_proxy" = "已开启" ] && iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
 	#禁用QUIC
@@ -504,6 +496,9 @@ start_dns(){
 	fi
 	iptables -t nat -A PREROUTING -p udp --dport 53 -j clash_dns
 	iptables -t nat -A PREROUTING -p tcp --dport 53 -j clash_dns
+	#Google home DNS特殊处理
+	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
+	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
 	#ipv6DNS
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" ];then
@@ -618,8 +613,8 @@ stop_iptables(){
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp --dport 53 -j clash_dns 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -s 172.16.0.0/12  -j clash 2> /dev/null
 	iptables -t nat -F clash 2> /dev/null
 	iptables -t nat -X clash 2> /dev/null
@@ -835,6 +830,10 @@ afstart(){
 				uci add_list dhcp.@dnsmasq[0].server=127.0.0.1#$dns_port > /dev/null 2>&1
 				/etc/init.d/dnsmasq restart >/dev/null 2>&1
 			fi
+		fi
+		if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
+			iptables -I FORWARD -o utun -j ACCEPT
+			ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 		fi
 		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
