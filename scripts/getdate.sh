@@ -749,7 +749,7 @@ setserver(){
 	echo -e " 2 \033[36m测试版\033[0m&Github源(本机clash服务加速)"
 	echo -e " 3 \033[36m测试版\033[0m&Jsdelivr-CDN源"
 	echo -e " 4 \033[36m测试版\033[0m&Github源(githubusercontents加速)"
-	echo -e " 4 \033[36m测试版\033[0m&Github源(fastgit.org加速)"
+	echo -e " 5 \033[36m测试版\033[0m&Github源(fastgit.org加速)"
 	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 7 \033[33mHttp专用源\033[0m"
 	echo -e " 8 自定义源地址(用于本地源或自建源)"
 	echo -e " 9 \033[31m版本回退\033[0m"

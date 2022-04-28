@@ -136,6 +136,10 @@ autoSSH(){
 	#备份还原SSH秘钥
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 }
+host_lan(){
+	host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE '\ 1(92|0|72)\.' | grep -oE '1(92|0|72)' | head -n 1)
+	[ -n "$host_lan" ] && host_lan="-s ${host_lan}.0.0.0/8"
+}
 #配置文件相关
 getyaml(){
 	[ -z "$rule_link" ] && rule_link=1
@@ -442,10 +446,9 @@ start_redir(){
 		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
 	fi
 	#获取局域网host地址
-	host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE '\ 1(92|0|72)\.' | grep -oE '1(92|0|72)' | head -n 1)
-	[ -n "$host_lan" ] && host_lan=${host_lan}.0.0.0/8
+	host_lan
 	#将PREROUTING链指向clash链
-	iptables -t nat -A PREROUTING -p tcp -s $host_lan -j clash
+	iptables -t nat -A PREROUTING -p tcp $host_lan -j clash
 	#公网访问功能
 	if [ "$public_support" = "已开启" ];then
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
@@ -606,13 +609,15 @@ start_output(){
 	iptables -t nat -A OUTPUT -p udp -j clash_dns_out
 }
 stop_iptables(){
+	host_lan
     #重置iptables规则
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp $host_lan -j clash 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-	iptables -t nat -D PREROUTING -p udp -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp --dport 53 -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash 2> /dev/null
 	iptables -t nat -D PREROUTING -s 172.16.0.0/12  -j clash 2> /dev/null
