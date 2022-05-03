@@ -298,7 +298,7 @@ modify_yaml(){
 	external="external-controller: 0.0.0.0:$db_port"
 	[ -d $clashdir/ui ] && db_ui=ui
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
-		tun="tun: {enable: true, stack: system, device: utun, auto-route: false, auto-detect-interface: true}"
+		tun="tun: {enable: true, stack: system, device: utun, auto-route: false}"
 	else
 		tun='tun: {enable: false}'
 	fi
