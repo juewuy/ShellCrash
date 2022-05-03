@@ -594,6 +594,14 @@ start_output(){
 	fi
 	iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
 }
+start_tun(){
+	iptables -I FORWARD -o utun -j ACCEPT
+	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	if [ "$clashcore" = 'clash.meta' ];then
+		sleep 3
+		ip route add 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1
+	fi
+}
 stop_iptables(){
 	host_lan
     #重置iptables规则
@@ -820,14 +828,10 @@ afstart(){
 				/etc/init.d/dnsmasq restart >/dev/null 2>&1
 			fi
 		fi
-		if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
-			ip route add 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1
-			iptables -I FORWARD -o utun -j ACCEPT
-			ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
-		fi
 		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
+		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && start_tun &
 		#标记启动时间
 		mark_time
 		#设置本机代理
