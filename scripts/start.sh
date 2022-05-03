@@ -298,8 +298,7 @@ modify_yaml(){
 	external="external-controller: 0.0.0.0:$db_port"
 	[ -d $clashdir/ui ] && db_ui=ui
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
-		#[ "$clashcore" = "clash.meta" ] && stack=gvisor || stack=system
-		tun="tun: {enable: true, stack: system}"
+		tun="tun: {enable: true, stack: system, device: utun, auto-route: false, auto-detect-interface: true}"
 	else
 		tun='tun: {enable: false}'
 	fi
@@ -431,19 +430,19 @@ start_redir(){
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash -p tcp $ports -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+			iptables -t nat -A clash -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 		done
 	else
 		#mac黑名单
 		for mac in $(cat $clashdir/mac); do
 			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 		done
-		iptables -t nat -A clash -p tcp $ports -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A clash -p tcp -j REDIRECT --to-ports $redir_port
 	fi
 	#获取局域网host地址
 	host_lan
 	#将PREROUTING链指向clash链
-	iptables -t nat -A PREROUTING -p tcp $host_lan -j clash
+	iptables -t nat -A PREROUTING -p tcp $ports $host_lan -j clash
 	#公网访问功能
 	if [ "$public_support" = "已开启" ];then
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
@@ -484,7 +483,6 @@ start_dns(){
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
 			iptables -t nat -A clash_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
-			iptables -t nat -A clash_dns -p tcp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 		done
 	else
 		#mac黑名单
@@ -492,13 +490,11 @@ start_dns(){
 			iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
 		done	
 		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
-		iptables -t nat -A clash_dns -p tcp -j REDIRECT --to $dns_port
 	fi
 	iptables -t nat -A PREROUTING -p udp --dport 53 -j clash_dns
-	iptables -t nat -A PREROUTING -p tcp --dport 53 -j clash_dns
 	#Google home DNS特殊处理
-	iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
-	iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
+	# iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
+	# iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
 	#ipv6DNS
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" ];then
@@ -507,7 +503,6 @@ start_dns(){
 			#mac白名单
 			for mac in $(cat $clashdir/mac); do
 				ip6tables -t nat -A clashv6_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
-				ip6tables -t nat -A clashv6_dns -p tcp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 			done
 		else
 			#mac黑名单
@@ -515,12 +510,9 @@ start_dns(){
 				ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN
 			done	
 			ip6tables -t nat -A clashv6_dns -p udp -j REDIRECT --to $dns_port
-			ip6tables -t nat -A clashv6_dns -p tcp -j REDIRECT --to $dns_port
 		fi
 		ip6tables -t nat -A PREROUTING -p udp --dport 53 -j clashv6_dns
-		ip6tables -t nat -A PREROUTING -p tcp --dport 53 -j clashv6_dns
 	else
-		ip6tables -I INPUT -p tcp --dport 53 -j REJECT > /dev/null 2>&1
 		ip6tables -I INPUT -p udp --dport 53 -j REJECT > /dev/null 2>&1
 	fi
 	#屏蔽OpenWrt内置53端口转发
@@ -533,6 +525,7 @@ start_udp(){
 	ip rule add fwmark 1 table 100
 	ip route add local default dev lo table 100
 	iptables -t mangle -N clash
+	iptables -t mangle -A clash -p udp --dport 53 -j RETURN
 	iptables -t mangle -A clash -d 0.0.0.0/8 -j RETURN
 	iptables -t mangle -A clash -d 10.0.0.0/8 -j RETURN
 	iptables -t mangle -A clash -d 127.0.0.0/8 -j RETURN
@@ -574,47 +567,43 @@ start_output(){
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash_out -p tcp $ports -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+			iptables -t nat -A clash_out -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 		done
 	else
 		#mac黑名单
 		for mac in $(cat $clashdir/mac); do
 			iptables -t nat -A clash_out -m mac --mac-source $mac -j RETURN
 		done
-		iptables -t nat -A clash_out -p tcp $ports -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A clash_out -p tcp -j REDIRECT --to-ports $redir_port
 	fi
-	iptables -t nat -A OUTPUT -p tcp -j clash_out
+	iptables -t nat -A OUTPUT -p tcp $ports -j clash_out
 	#设置dns转发
 	iptables -t nat -N clash_dns_out
 	iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash_dns_out -p udp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
-			iptables -t nat -A clash_dns_out -p tcp --dport 53 -m mac --mac-source $mac -j REDIRECT --to $dns_port
+			iptables -t nat -A clash_dns_out -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 		done
 	else
 		#mac黑名单
 		for mac in $(cat $clashdir/mac); do
 			iptables -t nat -A clash_dns_out -m mac --mac-source $mac -j RETURN
 		done	
-		iptables -t nat -A clash_dns_out -p udp --dport 53 -j REDIRECT --to $dns_port
-		iptables -t nat -A clash_dns_out -p tcp --dport 53 -j REDIRECT --to $dns_port
+		iptables -t nat -A clash_dns_out -p udp -j REDIRECT --to $dns_port
 	fi
-	iptables -t nat -A OUTPUT -p udp -j clash_dns_out
+	iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
 }
 stop_iptables(){
 	host_lan
     #重置iptables规则
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp $host_lan -j clash 2> /dev/null
+	ip route del 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp $ports $host_lan -j clash 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp --dport 53 -j clash_dns 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.8.8 -j clash_dns 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -d 8.8.4.4 -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -s 172.16.0.0/12  -j clash 2> /dev/null
 	iptables -t nat -F clash 2> /dev/null
 	iptables -t nat -X clash 2> /dev/null
@@ -625,7 +614,7 @@ stop_iptables(){
 	iptables -t nat -D OUTPUT -p tcp -j clash_out 2> /dev/null
 	iptables -t nat -F clash_out 2> /dev/null
 	iptables -t nat -X clash_out 2> /dev/null	
-	iptables -t nat -D OUTPUT -p udp -j clash_dns_out 2> /dev/null
+	iptables -t nat -D OUTPUT -p udp --dport 53 -j clash_dns_out 2> /dev/null
 	iptables -t nat -F clash_dns_out 2> /dev/null
 	iptables -t nat -X clash_dns_out 2> /dev/null
 	#重置udp规则
@@ -638,7 +627,7 @@ stop_iptables(){
 	ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
-	ip6tables -t nat -D PREROUTING -p udp -j clashv6_dns 2> /dev/null
+	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j clashv6_dns 2> /dev/null
 	ip6tables -t nat -F clashv6 2> /dev/null
 	ip6tables -t nat -X clashv6 2> /dev/null
 	ip6tables -t nat -F clashv6_dns 2> /dev/null
@@ -832,6 +821,7 @@ afstart(){
 			fi
 		fi
 		if [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ];then
+			ip route add 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1
 			iptables -I FORWARD -o utun -j ACCEPT
 			ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 		fi

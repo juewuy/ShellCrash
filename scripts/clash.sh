@@ -22,7 +22,7 @@ getconfig(){
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
-	[ -z "$multiport" ] && multiport='53,587,465,995,993,143,80,443'
+	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	#检查mac地址记录
 	[ ! -f $clashdir/mac ] && touch $clashdir/mac
@@ -1268,7 +1268,7 @@ tools(){
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 1 ]; then
-			steaming
+			streaming
 		elif [ "$num" = 2 ]; then
 			echo -----------------------------------------------
 			if [ "$sniffer" = "未启用" ];then
@@ -1311,10 +1311,11 @@ tools(){
 				read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
 				mi_autoSSH=已启用
 				cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
+				echo -e "\033[32m设置成功！\033[0m"
+				sleep 1
 			else
 				echo 不支持的设备！
 			fi
-			echo -e "\033[32m设置成功！\033[0m"
 		fi
 		setconfig mi_autoSSH $mi_autoSSH
 		setconfig mi_autoSSH_pwd $mi_autoSSH_pwd
