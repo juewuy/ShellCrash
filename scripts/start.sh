@@ -644,9 +644,11 @@ stop_iptables(){
 	#清理ipset规则
 	ipset destroy cn_ip >/dev/null 2>&1
 	#移除dnsmasq转发规则
-	uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
-	uci delete dhcp.@dnsmasq[0].cachesize >/dev/null 2>&1
-	/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	[ "$dns_redir" = "已开启" ] && {
+		uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
+		uci delete dhcp.@dnsmasq[0].cachesize >/dev/null 2>&1
+		/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	}
 }
 #面板配置保存相关
 web_save(){
