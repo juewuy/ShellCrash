@@ -298,7 +298,8 @@ modify_yaml(){
 	external="external-controller: 0.0.0.0:$db_port"
 	[ -d $clashdir/ui ] && db_ui=ui
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
-		tun="tun: {enable: true, stack: system, device: utun, auto-route: false}"
+		[ "$clashcore" = 'clash.meta' ] && tun_meta=', device: utun, auto-route: false'
+		tun="tun: {enable: true, stack: system$tun_meta}"
 	else
 		tun='tun: {enable: false}'
 	fi
@@ -477,6 +478,11 @@ start_redir(){
 	fi
 }
 start_dns(){
+	#屏蔽OpenWrt内置53端口转发
+	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
+	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
+	ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null	
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
@@ -491,7 +497,7 @@ start_dns(){
 		done	
 		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
 	fi
-	iptables -t nat -A PREROUTING -p udp --dport 53 -j clash_dns
+	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
 	#Google home DNS特殊处理
 	# iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	# iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
@@ -511,15 +517,11 @@ start_dns(){
 			done	
 			ip6tables -t nat -A clashv6_dns -p udp -j REDIRECT --to $dns_port
 		fi
-		ip6tables -t nat -A PREROUTING -p udp --dport 53 -j clashv6_dns
+		ip6tables -t nat -I PREROUTING -p udp --dport 53 -j clashv6_dns
 	else
 		ip6tables -I INPUT -p udp --dport 53 -j REJECT > /dev/null 2>&1
 	fi
-	#屏蔽OpenWrt内置53端口转发
-	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-	ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null	
+
 }
 start_udp(){
 	ip rule add fwmark 1 table 100
