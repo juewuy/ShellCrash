@@ -428,7 +428,7 @@ setcpucore(){
 	echo -e "当前可供在线下载的处理器架构为："
 	echo $cpucore_list | awk -F " " '{for(i=1;i<=NF;i++) {print i" "$i }}'
 	echo -e "如果您的CPU架构未在以上列表中，请运行【uname -a】命令,并复制好返回信息"
-	echo -e "之后前往 t.me/clashfm 群提交或 github.com/juewuy/ShellClash 提交issue"
+	echo -e "之后前往 t.me/ShellClash 群提交或 github.com/juewuy/ShellClash 提交issue"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	setcpucore=$(echo $cpucore_list | awk '{print $"'"$num"'"}' )

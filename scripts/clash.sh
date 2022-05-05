@@ -75,7 +75,7 @@ getconfig(){
 	if [ -n "$PID" ];then
 		echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
 	fi
-	echo -e "TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
+	echo -e "TG群：\033[36;4mhttps://t.me/ShellClash\033[0m"
 	echo -----------------------------------------------
 	#检查新手引导
 	if [ -z "$userguide" ];then
@@ -1307,7 +1307,7 @@ tools(){
 				echo -----------------------------------------------
 				echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
 				echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"
-				echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/clashfm\033[0m"
+				echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
 				read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
 				mi_autoSSH=已启用
 				cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
@@ -1333,7 +1333,7 @@ clashcron(){
 			[ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
 			[ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
 			[ ! -w "$crondir" ] && crondir="/var/spool/cron"
-			[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请前往 https://t.me/clashfm 申请适配！"
+			[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请前往 https://t.me/ShellClash 申请适配！"
 			[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
 			[ -f "$1" ] && cat $1 > $crondir/$USER
 		fi
@@ -1416,7 +1416,7 @@ clashcron(){
 	#定时任务菜单
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用定时任务功能：\033[0m"
-	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/clashfm \033[0m"
+	echo -e "\033[44m 实验性功能，遇问题请加TG群反馈：\033[42;30m t.me/ShellClash \033[0m"
 	echo -----------------------------------------------
 	echo  -e "\033[33m已添加的定时任务：\033[36m"
 	croncmd -l | grep -oE ' #.*' 
@@ -1565,7 +1565,7 @@ case "$1" in
 		echo "	$clashdir/start.sh stop		停止服务"
 		echo "	$clashdir/start.sh init		写入服务"
 		echo -----------------------------------------
-		echo "在线求助：t.me/clashfm"
+		echo "在线求助：t.me/ShellClash"
 		echo "官方博客：juewuy.github.io"
 		echo "发布页面：github.com/juewuy/ShellClash"
 		echo -----------------------------------------
