@@ -116,7 +116,8 @@ ubus/iproute-doc	minimal		The host address of the machine cannot be obtained nor
 
 ##### <img src="http://juewuy.github.io/post-images/1604390977172.png" style="zoom:50%;" /><img src="http://juewuy.github.io/post-images/1604391042406.png" style="zoom:50%;" />
 
-## Friendly promotion: 
-
-### [Top 8K Airport-Dler](https://dler.best/auth/register?affid=89698)
+机场推荐：
+--
+#### [Catnet](https://dash.catnet.uk/#/register?code=KOhfH9qD)<br>
+#### [Dler](https://dler.best/auth/register?affid=89698)<br>
 
