@@ -17,7 +17,7 @@
 
 ## Function introduction: 
 
-~Convenient use in Shell environment through management script [Clash](https://github.com/Dreamacro/clash)<br>~Support management of [Clash functions](https://lancellc.gitbook.io/clash)<br>~Support online import [Clash](https://github.com/Dreamacro/clash) supports sharing, subscription and configuration links<br>~Support configuration timing tasks, support configuration file timing updates<br>~Support online installation and Use local web panel to manage built-in rules<br>~Support routing mode, native mode and other mode switching<br>~Support GNOME, KDE desktop automatic configuration native mode<br>~Support online update<br>
+~Convenient use in Shell environment through management script [Clash](https://github.com/Dreamacro/clash)<br>~Support management of [Clash functions](https://lancellc.gitbook.io/clash)<br>~Support online import [Clash](https://github.com/Dreamacro/clash) supports sharing, subscription and configuration links<br>~Support configuration timing tasks, support configuration file timing updates<br>~Support online installation and Use local web panel to manage built-in rules<br>~Support routing mode, native mode and other mode switching<br>~Support online update<br>
 
 ## Equipment support:
 
@@ -104,7 +104,7 @@ ubus/iproute-doc	minimal		The host address of the machine cannot be obtained nor
 
 ## Exchange feedback: 
 
-### [TG Discussion Group](https://t.me/clashfm)
+### [TG Discussion Group](https://t.me/ShellClash)
 
 ## Related Q&A:
 
