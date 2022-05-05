@@ -119,7 +119,7 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 交流反馈：
 --
-### [TG讨论组](https://t.me/clashfm) 
+### [TG讨论组](https://t.me/ShellClash) 
 
 相关Q&A：
 --
