@@ -119,7 +119,7 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 交流反馈：
 --
-### [TG讨论组](https://t.me/clashfm) 
+### [TG讨论组](https://t.me/ShellClash) 
 
 相关Q&A：
 --
@@ -132,6 +132,7 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 ##### <img src="http://juewuy.github.io/post-images/1604390977172.png" style="zoom:50%;" /><img src="http://juewuy.github.io/post-images/1604391042406.png" style="zoom:50%;" />
 
-友情推广：
+机场推荐：
 --
-### [顶级8K专线机场-墙洞](https://dler.best/auth/register?affid=89698)
+#### [梦迪-高速专线，流媒体解锁，月付推荐](https://dash.catnet.uk/#/register?code=KOhfH9qD)<br>
+#### [墙洞-老牌稳定，流媒体解锁，年付推荐](https://dler.best/auth/register?affid=89698)<br>

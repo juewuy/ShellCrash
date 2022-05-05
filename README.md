@@ -17,7 +17,7 @@
 
 ## Function introduction: 
 
-~Convenient use in Shell environment through management script [Clash](https://github.com/Dreamacro/clash)<br>~Support management of [Clash functions](https://lancellc.gitbook.io/clash)<br>~Support online import [Clash](https://github.com/Dreamacro/clash) supports sharing, subscription and configuration links<br>~Support configuration timing tasks, support configuration file timing updates<br>~Support online installation and Use local web panel to manage built-in rules<br>~Support routing mode, native mode and other mode switching<br>~Support GNOME, KDE desktop automatic configuration native mode<br>~Support online update<br>
+~Convenient use in Shell environment through management script [Clash](https://github.com/Dreamacro/clash)<br>~Support management of [Clash functions](https://lancellc.gitbook.io/clash)<br>~Support online import [Clash](https://github.com/Dreamacro/clash) supports sharing, subscription and configuration links<br>~Support configuration timing tasks, support configuration file timing updates<br>~Support online installation and Use local web panel to manage built-in rules<br>~Support routing mode, native mode and other mode switching<br>~Support online update<br>
 
 ## Equipment support:
 
@@ -104,7 +104,7 @@ ubus/iproute-doc	minimal		The host address of the machine cannot be obtained nor
 
 ## Exchange feedback: 
 
-### [TG Discussion Group](https://t.me/clashfm)
+### [TG Discussion Group](https://t.me/ShellClash)
 
 ## Related Q&A:
 
@@ -116,7 +116,8 @@ ubus/iproute-doc	minimal		The host address of the machine cannot be obtained nor
 
 ##### <img src="http://juewuy.github.io/post-images/1604390977172.png" style="zoom:50%;" /><img src="http://juewuy.github.io/post-images/1604391042406.png" style="zoom:50%;" />
 
-## Friendly promotion: 
-
-### [Top 8K Airport-Dler](https://dler.best/auth/register?affid=89698)
+机场推荐：
+--
+#### [Catnet](https://dash.catnet.uk/#/register?code=KOhfH9qD)<br>
+#### [Dler](https://dler.best/auth/register?affid=89698)<br>
 
