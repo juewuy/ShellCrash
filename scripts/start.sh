@@ -15,28 +15,19 @@ getconfig(){
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
-	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=$ipv6_support
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
-	[ -z "$restore" ] && restore=false
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$streaming_int" ] && streaming_int=24
-	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
-	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
-	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
-	#获取本机host地址
-	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	[ -z "$host" ] && host=127.0.0.1
 	#是否代理常用端口
+	[ -z "$common_ports" ] && common_ports=已开启
+	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
-	#默认fake-ip过滤列表
-	fake_ft_df='"*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"'
-	}
+}
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
@@ -137,7 +128,7 @@ autoSSH(){
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 }
 host_lan(){
-	host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE '\ 1(92|0|72)\.' | grep -oE '1(92|0|72)' | head -n 1)
+	host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE '\ 1(92|0|72)\.' | grep -oE '1(92|0|72)' | head -n 1)
 	[ -n "$host_lan" ] && host_lan="-s ${host_lan}.0.0.0/8"
 }
 #配置文件相关
@@ -147,7 +138,7 @@ getyaml(){
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
 https://api.dler.io
-http://sub.shellclash.ga
+https://sub.shellclash.ga
 https://sub.xeton.dev
 https://sub.id9.cc
 https://sub.maoxiongnet.com
@@ -174,7 +165,7 @@ EOF`
 	Https=$(echo ${Https//\%26/\&})   #将%26替换回&
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='http://sub.shellclash.ga'
+		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='https://sub.shellclash.ga'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
 	fi
@@ -290,6 +281,11 @@ EOF`
 }
 modify_yaml(){
 ##########需要变更的配置###########
+	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
+	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	[ -z "$skip_cert" ] && skip_cert=已开启
+	#默认fake-ip过滤列表
+	fake_ft_df='"*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"'
 	lan='allow-lan: true'
 	#mode='mode: Rule'
 	log='log-level: info'
@@ -600,7 +596,7 @@ start_tun(){
 	iptables -I FORWARD -o utun -j ACCEPT
 	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	if [ "$clashcore" = 'clash.meta' ];then
-		sleep 3
+		sleep 10
 		ip route add 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1
 	fi
 }
@@ -706,6 +702,9 @@ web_restore(){
 }
 #启动相关
 catpac(){
+	#获取本机host地址
+	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	cat > /tmp/clash_pac <<EOF
 //如看见此处内容，请重新安装本地面板！
 function FindProxyForURL(url, host) {
