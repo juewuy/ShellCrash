@@ -128,12 +128,10 @@ autoSSH(){
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 }
 host_lan(){
-	[ -n "$host" ] && host="$host/16"
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/
-[0-9]{1,2}" | head -n 1)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/
-[0-9]{1,2}" | head -n 1)
-	[ -n "$host" ] && host_lan="-s ${host}"
+	[ -n "$host" ] && host_lan="$host/16"
+	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
+	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
+	[ -n "$host_lan" ] && host_ipt="-s ${host_lan}"
 }
 #配置文件相关
 getyaml(){
@@ -443,7 +441,7 @@ start_redir(){
 	#获取局域网host地址
 	host_lan
 	#将PREROUTING链指向clash链
-	iptables -t nat -A PREROUTING -p tcp $ports $host_lan -j clash
+	iptables -t nat -A PREROUTING -p tcp $ports $host_ipt -j clash
 	#Docker特殊处理
 	[ "$local_proxy" = "已开启" ] && iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
 	#禁用QUIC
@@ -543,7 +541,7 @@ start_udp(){
 		done
 		iptables -t mangle -A clash -p udp -j TPROXY --on-port $redir_port --tproxy-mark 1
 	fi
-	iptables -t mangle -A PREROUTING -p udp $host_lan -j clash
+	iptables -t mangle -A PREROUTING -p udp $host_ipt -j clash
 }
 start_output(){
 	#流量过滤规则
@@ -598,7 +596,7 @@ stop_iptables(){
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
 	ip route del 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp $ports $host_lan -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp $ports $host_ipt -j clash 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
@@ -618,13 +616,13 @@ stop_iptables(){
 	iptables -t nat -F clash_dns_out 2> /dev/null
 	iptables -t nat -X clash_dns_out 2> /dev/null
 	#重置udp规则
-	iptables -t mangle -D PREROUTING -p udp $host_lan -j clash 2> /dev/null
+	iptables -t mangle -D PREROUTING -p udp $host_ipt -j clash 2> /dev/null
 	iptables -t mangle -F clash 2> /dev/null
 	iptables -t mangle -X clash 2> /dev/null
 	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -j REJECT >/dev/null 2>&1
 	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -m set ! --match-set cn_ip dst -j REJECT >/dev/null 2>&1
 	#重置公网访问规则
-	iptables -D INPUT -p tcp $host_lan --dport $mix_port -j ACCEPT 2> /dev/null
+	iptables -D INPUT -p tcp $host_ipt --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
@@ -705,8 +703,8 @@ web_restore(){
 #启动相关
 catpac(){
 	#获取本机host地址
-	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
+	[ -z "$host" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	cat > /tmp/clash_pac <<EOF
 //如看见此处内容，请重新安装本地面板！
 function FindProxyForURL(url, host) {
@@ -722,7 +720,7 @@ function FindProxyForURL(url, host) {
 	)
 		return "DIRECT";
 	else
-		return "PROXY $host:$mix_port; DIRECT; SOCKS5 $host:$mix_port"
+		return "PROXY $host_pac:$mix_port; DIRECT; SOCKS5 $host_pac:$mix_port"
 }
 EOF
 	compare /tmp/clash_pac $bindir/ui/pac
@@ -839,7 +837,7 @@ afstart(){
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && start_tun &
 		#公网访问功能
 		host_lan
-		[ -n "$host_lan" ] && type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp $host_lan --dport $mix_port -j ACCEPT
+		[ -n "$host_ipt" ] && type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp $host_ipt --dport $mix_port -j ACCEPT
 		type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $mix_port -j REJECT
 		type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT
 		if [ "$public_support" = "已开启" ];then
