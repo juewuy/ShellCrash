@@ -130,7 +130,8 @@ autoSSH(){
 host_lan(){
 	[ -n "$host" ] && host_lan="$host/16"
 	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
-	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
+	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "1(92|0)\.([0-9]{1,3}[\.]){2}1/[0-9]{1,2}" | head -n 1)
+	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "1(92|0|72)\.([0-9]{1,3}[\.]){2}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
 	[ -n "$host_lan" ] && host_ipt="-s ${host_lan}"
 }
 #配置文件相关
@@ -550,35 +551,14 @@ start_output(){
 	iptables -t nat -A clash_out -d 127.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 172.16.0.0/12 -j RETURN
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		#mac白名单
-		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash_out -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
-		done
-	else
-		#mac黑名单
-		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash_out -m mac --mac-source $mac -j RETURN
-		done
-		iptables -t nat -A clash_out -p tcp -j REDIRECT --to-ports $redir_port
-	fi
-	iptables -t nat -A OUTPUT -p tcp $ports -s 127.0.0.0/8 -j clash_out
-	iptables -t nat -A OUTPUT -p tcp $ports -s 172.16.0.0/12 -j clash_out
+	iptables -t nat -A clash_out -p tcp -j REDIRECT --to-ports $redir_port
+	iptables -t nat -A OUTPUT -p tcp -s 127.0.0.0/8 -j clash_out
+	iptables -t nat -A OUTPUT -p tcp -s 172.16.0.0/12 -j clash_out
+	iptables -t nat -A OUTPUT -p tcp -d 198.18.0.0/16 -j clash_out
 	#设置dns转发
 	iptables -t nat -N clash_dns_out
 	iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		#mac白名单
-		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash_dns_out -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
-		done
-	else
-		#mac黑名单
-		for mac in $(cat $clashdir/mac); do
-			iptables -t nat -A clash_dns_out -m mac --mac-source $mac -j RETURN
-		done	
-		iptables -t nat -A clash_dns_out -p udp -j REDIRECT --to $dns_port
-	fi
+	iptables -t nat -A clash_dns_out -p udp -j REDIRECT --to $dns_port
 	iptables -t nat -A OUTPUT -p udp --dport 53 -s 127.0.0.0/8 -j clash_dns_out
 	iptables -t nat -A OUTPUT -p udp --dport 53 -s 172.16.0.0/12 -j clash_dns_out
 }
@@ -607,8 +587,9 @@ stop_iptables(){
 	iptables -t nat -X clash_dns 2> /dev/null
 	iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 	#重置output规则
-	iptables -t nat -D OUTPUT -p tcp $ports -s 127.0.0.0/8 -j clash_out 2> /dev/null
-	iptables -t nat -D OUTPUT -p tcp $ports -s 172.16.0.0/12 -j clash_out 2> /dev/null
+	iptables -t nat -D OUTPUT -p tcp -s 127.0.0.0/8 -j clash_out 2> /dev/null
+	iptables -t nat -D OUTPUT -p tcp -s 172.16.0.0/12 -j clash_out 2> /dev/null
+	iptables -t nat -D OUTPUT -p tcp -d 198.18.0.0/16 -j clash_out 2> /dev/null
 	iptables -t nat -F clash_out 2> /dev/null
 	iptables -t nat -X clash_out 2> /dev/null	
 	iptables -t nat -D OUTPUT -p udp --dport 53 -s 127.0.0.0/8 -j clash_dns_out 2> /dev/null
@@ -703,7 +684,8 @@ web_restore(){
 #启动相关
 catpac(){
 	#获取本机host地址
-	[ -z "$host" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -n "$host" ] && host_pac=$host
+	[ -z "$host_pac" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	cat > /tmp/clash_pac <<EOF
 //如看见此处内容，请重新安装本地面板！
@@ -831,19 +813,20 @@ afstart(){
 				/etc/init.d/dnsmasq restart >/dev/null 2>&1
 			fi
 		fi
-		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
-		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
-		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
-		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && start_tun &
 		#公网访问功能
 		host_lan
 		[ -n "$host_ipt" ] && type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp $host_ipt --dport $mix_port -j ACCEPT
 		type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $mix_port -j REJECT
+		iptables -A INPUT -p tcp --dport 7890 -j REJECT
 		type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 		if [ "$public_support" = "已开启" ];then
 			type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $db_port -j ACCEPT
 			type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 		fi
+		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
+		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
+		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
+		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && start_tun &
 		#标记启动时间
 		mark_time
 		#设置本机代理
