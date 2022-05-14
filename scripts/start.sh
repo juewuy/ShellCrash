@@ -129,8 +129,10 @@ autoSSH(){
 }
 host_lan(){
 	[ -n "$host" ] && host="$host/16"
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE '[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}/[1-9]\d{0,1}' | head -n 1)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE '[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}/[1-9]\d{0,1}' | head -n 1)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/
+[0-9]{1,2}" | head -n 1)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/
+[0-9]{1,2}" | head -n 1)
 	[ -n "$host" ] && host_lan="-s ${host}"
 }
 #配置文件相关
@@ -843,9 +845,6 @@ afstart(){
 		if [ "$public_support" = "已开启" ];then
 			type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $db_port -j ACCEPT
 			type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $db_port -j ACCEPT
-		else
-			type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $db_port -j REJECT
-			type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $db_port -j REJECT
 		fi
 		#标记启动时间
 		mark_time
