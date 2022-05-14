@@ -128,8 +128,10 @@ autoSSH(){
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 }
 host_lan(){
-	host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE '[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}/[1-9]\d{0,1}' | head -n 1)
-	[ -n "$host_lan" ] && host_lan="-s ${host_lan}"
+	[ -n "$host" ] && host="$host/16"
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE '[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}/[1-9]\d{0,1}' | head -n 1)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE '[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}\.[1-9]\d{0,2}/[1-9]\d{0,1}' | head -n 1)
+	[ -n "$host" ] && host_lan="-s ${host}"
 }
 #配置文件相关
 getyaml(){
