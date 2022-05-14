@@ -839,10 +839,10 @@ afstart(){
 		host_lan
 		[ -n "$host_ipt" ] && type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp $host_ipt --dport $mix_port -j ACCEPT
 		type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-		type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT
+		type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 		if [ "$public_support" = "已开启" ];then
 			type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $db_port -j ACCEPT
-			type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $db_port -j ACCEPT
+			type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 		fi
 		#标记启动时间
 		mark_time
