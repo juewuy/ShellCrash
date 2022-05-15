@@ -128,9 +128,9 @@ autoSSH(){
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 }
 host_lan(){
-	[ -n "$host" ] && host_lan="$host/16"
-	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE  "([0-9]{1,3}[\.]){3}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
-	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "1(92|0)\.([0-9]{1,3}[\.]){2}1/[0-9]{1,2}" | head -n 1)
+	[ -n "$(echo $host | grep -oE "1(92|0|72)\.[0-9]{1,3}" )" ] && host_lan="$(echo $host | grep -oE "1(92|0|72)\.[0-9]{1,3}").0.0/16"
+	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE  "1(92|0|72)\.([0-9]{1,3}[\.]){2}1/[0-9]{1,2}" | head -n 1)
+	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global eth' | grep -oE  "1(92|0|72)\.([0-9]{1,3}[\.]){2}1/[0-9]{1,2}" | head -n 1)
 	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "1(92|0|72)\.([0-9]{1,3}[\.]){2}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
 	[ -n "$host_lan" ] && host_ipt="-s ${host_lan}"
 }
@@ -489,7 +489,8 @@ start_dns(){
 		done	
 		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
 	fi
-	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
+	host_lan
+	iptables -t nat -I PREROUTING -p udp $host_ipt --dport 53 -j clash_dns
 	#Google home DNS特殊处理
 	# iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
 	# iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
@@ -565,21 +566,16 @@ start_output(){
 start_tun(){
 	iptables -I FORWARD -o utun -j ACCEPT
 	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
-	if [ "$clashcore" = 'clash.meta' ];then
-		sleep 10
-		ip route add 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1
-	fi
 }
 stop_iptables(){
 	host_lan
     #重置iptables规则
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
-	ip route del 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.1 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp $ports $host_ipt -j clash 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p udp $host_ipt --dport 53 -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -s 172.16.0.0/12  -j clash 2> /dev/null
 	iptables -t nat -F clash 2> /dev/null
 	iptables -t nat -X clash 2> /dev/null
@@ -728,8 +724,9 @@ bfstart(){
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			$0 webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
 			[ "$?" = "1" ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
-			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
-			clashv=$($bindir/clash -v | awk '{print $2}')
+			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限1
+			clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+			[ -z "$clashv" ] && rm -rf $bindir/clash && logger "核心下载失败，请重新运行或更换安装源！" 31 && exit 1
 			setconfig clashcore $clashcore
 			setconfig clashv $clashv
 		fi
