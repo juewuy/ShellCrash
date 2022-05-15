@@ -34,7 +34,7 @@ jobs:
       run: |
         cd \bin
         echo 下载官方面板
-        curl -kfSL -o clashdb.zip  https://github.com/Dreamacro/clash-dashboard/archive/gh-pages.zip
+        curl -kfSL -o clashdb.zip  https://github.com/MetaCubeX/clash-dashboard/archive/gh-pages.zip
         echo 下载yacd面板
         curl -kfSL -o yacd.zip  https://github.com/haishanh/yacd/archive/gh-pages.zip
         echo 解压缩
