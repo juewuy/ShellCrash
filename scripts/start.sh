@@ -128,11 +128,7 @@ autoSSH(){
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 }
 host_lan(){
-	[ -n "$(echo $host | grep -oE "1(92|0|72)\.[0-9]{1,3}" )" ] && host_lan="$(echo $host | grep -oE "1(92|0|72)\.[0-9]{1,3}").0.0/16"
-	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global br-lan' | grep -oE  "1(92|0|72)\.([0-9]{1,3}[\.]){2}1/[0-9]{1,2}" | head -n 1)
-	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global eth' | grep -oE  "1(92|0|72)\.([0-9]{1,3}[\.]){2}1/[0-9]{1,2}" | head -n 1)
-	[ -z "$host_lan" ] && host_lan=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -oE  "1(92|0|72)\.([0-9]{1,3}[\.]){2}[0-9]{1,3}/[0-9]{1,2}" | head -n 1)
-	[ -n "$host_lan" ] && host_ipt="-s ${host_lan}"
+	[ -n "$(echo $host | grep -oE "([0-9]{1,3}[\.]){3}[0-9]{1,3}" )" ] && host_lan="$(echo $host | grep -oE "([0-9]{1,3}[\.]){3}")0/24"
 }
 #配置文件相关
 getyaml(){
@@ -415,6 +411,8 @@ cn_ip_route(){
 	fi
 }
 start_redir(){
+	#获取局域网host地址
+	host_lan
 	#流量过滤规则
 	iptables -t nat -N clash
 	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
@@ -426,6 +424,7 @@ start_redir(){
 	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
+	[ -n "$host_lan" ] && iptables -t nat -A clash -d $host_lan -j RETURN
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
@@ -437,12 +436,12 @@ start_redir(){
 		for mac in $(cat $clashdir/mac); do
 			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 		done
-		iptables -t nat -A clash -p tcp -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A clash -p tcp -s 192.168.0.0/16 -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A clash -p tcp -s 10.0.0.0/8 -j REDIRECT --to-ports $redir_port
+		[ -n "$host_lan" ] && iptables -t nat -A clash -p tcp -s $host_lan -j REDIRECT --to-ports $redir_port
 	fi
-	#获取局域网host地址
-	host_lan
 	#将PREROUTING链指向clash链
-	iptables -t nat -A PREROUTING -p tcp $ports $host_ipt -j clash
+	iptables -t nat -A PREROUTING -p tcp $ports -j clash
 	#Docker特殊处理
 	[ "$local_proxy" = "已开启" ] && iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
 	#禁用QUIC
@@ -489,11 +488,7 @@ start_dns(){
 		done	
 		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
 	fi
-	host_lan
-	iptables -t nat -I PREROUTING -p udp $host_ipt --dport 53 -j clash_dns
-	#Google home DNS特殊处理
-	# iptables -t nat -I PREROUTING -p tcp -d 8.8.8.8 -j clash_dns
-	# iptables -t nat -I PREROUTING -p tcp -d 8.8.4.4 -j clash_dns
+	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
 	#ipv6DNS
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" ];then
@@ -517,6 +512,8 @@ start_dns(){
 
 }
 start_udp(){
+	#获取局域网host地址
+	host_lan
 	ip rule add fwmark 1 table 100
 	ip route add local default dev lo table 100
 	iptables -t mangle -N clash
@@ -530,6 +527,7 @@ start_udp(){
 	iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
 	iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
+	[ -n "$host_lan" ] && iptables -t mangle -A clash -d $host_lan -j RETURN
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
@@ -541,9 +539,11 @@ start_udp(){
 		for mac in $(cat $clashdir/mac); do
 			iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 		done
-		iptables -t mangle -A clash -p udp -j TPROXY --on-port $redir_port --tproxy-mark 1
+		iptables -t mangle -A clash -p udp -s 192.168.0.0/16 -j TPROXY --on-port $redir_port --tproxy-mark 1
+		iptables -t mangle -A clash -p udp -s 10.0.0.0/8 -j TPROXY --on-port $redir_port --tproxy-mark 1
+		[ -n "$host_lan" ] && iptables -t mangle -A clash -p udp -s $host_lan -j TPROXY --on-port $redir_port --tproxy-mark 1
 	fi
-	iptables -t mangle -A PREROUTING -p udp $host_ipt -j clash
+	iptables -t mangle -A PREROUTING -p udp -j clash
 }
 start_output(){
 	#流量过滤规则
@@ -567,15 +567,28 @@ start_tun(){
 	iptables -I FORWARD -o utun -j ACCEPT
 	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 }
+start_wan(){
+	[ "$mix_port" = "7890" -o -z "$authentication" ] && {
+	iptables -A INPUT -p tcp -s 10.0.0.0/8 --dport $mix_port -j ACCEPT
+	iptables -A INPUT -p tcp -s 127.0.0.0/8 --dport $mix_port -j ACCEPT
+	iptables -A INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT
+	iptables -A INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT
+	iptables -A INPUT -p tcp --dport $mix_port -j REJECT
+	type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+	}
+	if [ "$public_support" = "已开启" ];then
+		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
+		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+	fi
+}
 stop_iptables(){
-	host_lan
     #重置iptables规则
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp $ports $host_ipt -j clash 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp $ports -j clash 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-	iptables -t nat -D PREROUTING -p udp $host_ipt --dport 53 -j clash_dns 2> /dev/null
+	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
 	iptables -t nat -D PREROUTING -s 172.16.0.0/12  -j clash 2> /dev/null
 	iptables -t nat -F clash 2> /dev/null
 	iptables -t nat -X clash 2> /dev/null
@@ -593,19 +606,20 @@ stop_iptables(){
 	iptables -t nat -F clash_dns_out 2> /dev/null
 	iptables -t nat -X clash_dns_out 2> /dev/null
 	#重置udp规则
-	iptables -t mangle -D PREROUTING -p udp $host_ipt -j clash 2> /dev/null
+	iptables -t mangle -D PREROUTING -p udp -j clash 2> /dev/null
 	iptables -t mangle -F clash 2> /dev/null
 	iptables -t mangle -X clash 2> /dev/null
 	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -j REJECT >/dev/null 2>&1
 	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -m set ! --match-set cn_ip dst -j REJECT >/dev/null 2>&1
 	#重置公网访问规则
-	iptables -D INPUT -p tcp $host_ipt --dport $mix_port -j ACCEPT 2> /dev/null
+	iptables -D INPUT -p tcp -s 10.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
+	iptables -D INPUT -p tcp -s 127.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
+	iptables -D INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT 2> /dev/null
+	iptables -D INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-	iptables -D INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null
-	ip6tables -D INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null
 	#重置ipv6规则
 	ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
@@ -810,20 +824,11 @@ afstart(){
 				/etc/init.d/dnsmasq restart >/dev/null 2>&1
 			fi
 		fi
-		#公网访问功能
-		host_lan
-		[ -n "$host_ipt" ] && type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp $host_ipt --dport $mix_port -j ACCEPT
-		type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-		iptables -A INPUT -p tcp --dport 7890 -j REJECT
-		type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
-		if [ "$public_support" = "已开启" ];then
-			type iptables >/dev/null 2>&1 && iptables -A INPUT -p tcp --dport $db_port -j ACCEPT
-			type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-		fi
 		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
 		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
-		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && start_tun &
+		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && start_tun
+		type iptables >/dev/null 2>&1 && start_wan
 		#标记启动时间
 		mark_time
 		#设置本机代理
