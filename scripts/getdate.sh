@@ -1036,10 +1036,11 @@ userguide(){
 		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
 		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
 		echo -e "\033[31m此功能会增加暴露风险请谨慎使用！\033[0m"
-		echo -e "vps设备可能还需要额外在服务商后台开启相关端口(默认为7890与9999)"
+		echo -e "vps设备可能还需要额外在服务商后台开启相关端口"
 		read -p "现在开启？(1/0) > " res
 		if [ "$res" = 1 ];then
 			read -p "请先设置面板访问秘钥 > " secret
+			read -p "请先修改Socks服务端口(1-65535) > " mix_port
 			read -p "请先设置Socks服务密码(账号默认为clash) > " sec
 			[ -z "$sec" ] && authentication=clash:$sec
 			host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
@@ -1048,6 +1049,7 @@ userguide(){
 			fi	
 			public_support=已开启
 			setconfig secret $secret
+			setconfig mix_port $mix_port
 			setconfig host $host
 			setconfig public_support $public_support
 			setconfig authentication \'$authentication\'
