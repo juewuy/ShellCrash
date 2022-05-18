@@ -609,8 +609,6 @@ getdb(){
 			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
 			#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
 		fi
-		#如果clash在运行则重启clash服务
-		[ "$dbdir" != "/www/clash" ] && [ -n "$PID" ] && $clashdir/start.sh restart
 		#写入配置文件
 		setconfig hostdir \'$hostdir\'
 		echo -----------------------------------------------

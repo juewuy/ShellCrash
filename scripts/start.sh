@@ -445,7 +445,7 @@ start_redir(){
 	#Docker特殊处理
 	[ "$local_proxy" = "已开启" ] && iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
 	#禁用QUIC
-	if [ "$quic_rj" = 已启用 ] && [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$tproxy_mod" = "已开启" ];then
+	if [ "$quic_rj" = 已启用 ] && [ "$tproxy_mod" = "已开启" ];then
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	fi
@@ -564,8 +564,12 @@ start_output(){
 	iptables -t nat -A OUTPUT -p udp --dport 53 -s 172.16.0.0/12 -j clash_dns_out
 }
 start_tun(){
-	iptables -I FORWARD -o utun -j ACCEPT
-	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	if [ "$quic_rj" = 已启用 ];then
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
+	fi
+	iptables -A FORWARD -o utun -j ACCEPT
+	#ip6tables -A FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 }
 start_wan(){
 	[ "$mix_port" = "7890" -o -z "$authentication" ] && {
@@ -577,6 +581,10 @@ start_wan(){
 	type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	}
 	if [ "$public_support" = "已开启" ];then
+		[ "$mix_port" != "7890" -a -n "$authentication" ] && {
+		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+		}
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
 		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	fi
@@ -595,6 +603,10 @@ stop_iptables(){
 	iptables -t nat -F clash_dns 2> /dev/null
 	iptables -t nat -X clash_dns 2> /dev/null
 	iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
+	#重置屏蔽QUIC规则
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+	iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	#重置output规则
 	iptables -t nat -D OUTPUT -p tcp -s 127.0.0.0/8 -j clash_out 2> /dev/null
 	iptables -t nat -D OUTPUT -p tcp -s 172.16.0.0/12 -j clash_out 2> /dev/null
@@ -618,6 +630,8 @@ stop_iptables(){
 	iptables -D INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+	ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	#重置ipv6规则
