@@ -44,6 +44,8 @@ opkg update && opkg install curl #如已安装请忽略
 
 ~之后在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
 
+（**如无法连接或出现SSL连接错误，请尝试更换各种不同的安装源！**）<br>
+
 ~**使用curl安装**：<br>
 
 ```Shell
