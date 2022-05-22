@@ -741,12 +741,12 @@ setserver(){
 	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m正式版\033[0m&Jsdelivr-CDN源"
-	echo -e " 2 \033[36m公测版\033[0m&Github源(本机clash服务加速)"
-	echo -e " 3 \033[36m公测版\033[0m&Jsdelivr-CDN源"
-	echo -e " 4 \033[36m公测版\033[0m&Github源(githubusercontents加速)"
-	echo -e " 5 \033[36m公测版\033[0m&Github源(fastgit.org加速)"
-	echo -e " 6 \033[33m内测版\033[0m(请加TG讨论组:\033[4;36mhttps://t.me/ShellClash\033[0m)"
-	[ -z "$(curl -V 2>/dev/null)" ] && [ -n "$(wget -V 2>&1 | grep BusyBox)" ] && echo -e " 7 \033[33mHttp专用源\033[0m"
+	echo -e " 2 \033[32m正式版\033[0m&fastgit.org源"
+	echo -e " 3 \033[36m公测版\033[0m&Github源(本机clash服务加速)"
+	echo -e " 4 \033[36m公测版\033[0m&ShellClash源"
+	echo -e " 5 \033[36m公测版\033[0m&githubusercontents加速"
+	echo -e " 6 \033[36m公测版\033[0m&fastgit.org源"
+	echo -e " 7 \033[33m内测版\033[0m(请加TG讨论组:\033[4;36mhttps://t.me/ShellClash\033[0m)"
 	echo -e " 8 自定义源地址(用于本地源或自建源)"
 	echo -e " 9 \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
@@ -754,30 +754,29 @@ setserver(){
 	if	[ -z "$num" ]; then 
 		errornum
 	elif [ "$num" = 1 ]; then
-		release_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash'
+		release_url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash'
 		saveserver
 	elif [ "$num" = 2 ]; then
+		release_url='https://raw.fastgit.org/juewuy/ShellClash'
+		saveserver
+	elif [ "$num" = 3 ]; then
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
-	elif [ "$num" = 3 ]; then
-		update_url='https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master'
-		release_url=''
-		saveserver
 	elif [ "$num" = 4 ]; then
-		update_url='https://raw.githubusercontents.com/juewuy/ShellClash/master'
+		update_url='https://gh.shellclash.ga/master'
 		release_url=''
 		saveserver
 	elif [ "$num" = 5 ]; then
-		update_url='https://raw.fastgit.org/juewuy/ShellClash/master'
+		update_url='https://raw.githubusercontents.com/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
 	elif [ "$num" = 6 ]; then
-		update_url='http://test.shellclash.ga'
+		update_url='https://raw.fastgit.org/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
 	elif [ "$num" = 7 ]; then
-		update_url='http://shellclash.ga'
+		update_url='http://test.shellclash.ga'
 		release_url=''
 		saveserver
 	elif [ "$num" = 8 ]; then
@@ -792,7 +791,7 @@ setserver(){
 		fi
 	elif [ "$num" = 9 ]; then
 		echo -----------------------------------------------
-		$clashdir/start.sh webget /tmp/clashrelease https://cdn.jsdelivr.net/gh/juewuy/ShellClash@master/bin/release_version echooff rediroff 2>/tmp/clashrelease
+		$clashdir/start.sh webget /tmp/clashrelease https://raw.githubusercontents.com/juewuy/ShellClash/master/bin/release_version echooff rediroff 2>/tmp/clashrelease
 		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
 		cat /tmp/clashrelease | awk '{print " "NR" "$1}'
 		echo -e " 0 返回上级菜单"
@@ -801,7 +800,7 @@ setserver(){
 			setserver
 		elif [ $num -le $(cat /tmp/clashrelease | awk 'END{print NR}') 2>/dev/null ]; then
 			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
-			update_url="https://cdn.jsdelivr.net/gh/juewuy/ShellClash@$release_version"
+			update_url="https://raw.githubusercontents.com/juewuy/ShellClash/master/$release_version"
 			saveserver
 			release_url=''
 		else
@@ -815,18 +814,18 @@ setserver(){
 checkupdate(){
 if [ -z "$release_new" ];then
 	if [ -n "$release_url" ];then
-		[ "$release_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ] && check_url=$release_url@master || check_url=$release_url/master
+		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && check_url=$release_url@master || check_url=$release_url/master
 		$clashdir/start.sh webget /tmp/clashversion $check_url/bin/release_version echoon rediroff 2>/tmp/clashversion
 		release_new=$(cat /tmp/clashversion | head -1)
-		[ "$release_url" = "https://cdn.jsdelivr.net/gh/juewuy/ShellClash" ] && update_url=$release_url@$release_new || update_url=$release_url/$release_new
+		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && update_url=$release_url@$release_new || update_url=$release_url/$release_new
 		setconfig update_url \'$update_url\'
 		release_type=正式版
 	else
 		release_type=测试版
 	fi	
 	$clashdir/start.sh webget /tmp/clashversion $update_url/bin/version echooff 
-	[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | grep versionsh | awk -F'=' '{ print $2 }')
-	[ -n "$release_new" ] && source /tmp/clashversion || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
+	[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
+	[ -n "$release_new" ] && source /tmp/clashversion 2>/dev/null || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
 	rm -rf /tmp/clashversion
 fi
 }
