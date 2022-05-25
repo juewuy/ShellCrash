@@ -3,13 +3,16 @@ name: bin_update
 on: 
 #   release:
 #       types: [published]
-#   push:
-#       tags:
-#       - 'v*'
-#   branches: 
-#       - master
+    push:
+      branches: 
+        - master
+      paths:
+        - 'bin/clash.meta/**'
+        - 'bin/clash.net/**'
+        - 'bin/clash/**'
+        - 'bin/clashpre/**'
     schedule:
-        - cron: 0 1 * * 2
+        - cron: 0 1 */3 * *
 #   watch:
 #       types: [started]
     workflow_dispatch:
