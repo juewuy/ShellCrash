@@ -517,7 +517,7 @@ setcore(){
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/$geotype
+	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/$geo_type
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -528,13 +528,15 @@ getgeo(){
 		echo -e "\033[32mGeoIP/CN_IP数据库文件下载成功！\033[0m"
 		Geo_v=$GeoIP_v
 		setconfig Geo_v $GeoIP_v
-		setconfig geotype $geotype
+		if [ "$geoname" = "Country.mmdb" ];then
+			geotype=$geo_type
+			setconfig geotype $geotype
+		fi
 	fi
 }
 setgeo(){
 	echo -----------------------------------------------
-	[ "$geotype" = "cn_mini.mmdb" ] && geo_type=精简版 || geo_type=全球版
-	[ -n "$geo_type" ] && echo -e "当前使用的是\033[47;30m$geo_type数据库\033[0m"
+	[ "$geotype" = "cn_mini.mmdb" ] && echo -e "当前使用的是\033[47;30m精简版数据库\033[0m" || echo -e "当前使用的是\033[47;30m全球版数据库\033[0m"
 	echo -e "\033[36m请选择需要更新/切换的GeoIP/CN_IP数据库：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约6mb)"
@@ -546,16 +548,16 @@ setgeo(){
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ "$num" = '1' ]; then
-		geotype=Country.mmdb
+		geo_type=Country.mmdb
 		geoname=Country.mmdb
 		getgeo
 	elif [ "$num" = '2' ]; then
-		geotype=cn_mini.mmdb
+		geo_type=cn_mini.mmdb
 		geoname=Country.mmdb
 		getgeo
 	elif [ "$num" = '3' ]; then
 		if [ "$cn_ip_route" = "已开启" ]; then
-			geotype=china_ip_list.txt
+			geo_type=china_ip_list.txt
 			geoname=cn_ip.txt
 			getgeo
 		else
@@ -564,7 +566,7 @@ setgeo(){
 			sleep 1
 		fi
 	elif [ "$num" = '4' ]; then
-		geotype=geosite.dat
+		geo_type=geosite.dat
 		geoname=geosite.dat
 		getgeo
 	else

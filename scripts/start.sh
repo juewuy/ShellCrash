@@ -300,7 +300,7 @@ modify_yaml(){
 	fi
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#dns配置
-	dns_default='114.114.114.114, 223.5.5.5'
+	dns_default='114.114.114.114, 223.5.5.5, https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
 	if [ -f $clashdir/fake_ip_filter ];then
 		while read line;do
 			fake_ft_ad=$fake_ft_ad,\"$line\"
