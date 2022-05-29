@@ -300,7 +300,8 @@ modify_yaml(){
 	fi
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#dns配置
-	dns_default='114.114.114.114, 223.5.5.5, https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
+	[ "$clashcore" = 'clash.meta' ] && dns_default_meta=', https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
+	dns_default="114.114.114.114, 223.5.5.5$dns_default_meta"
 	if [ -f $clashdir/fake_ip_filter ];then
 		while read line;do
 			fake_ft_ad=$fake_ft_ad,\"$line\"
@@ -765,8 +766,7 @@ bfstart(){
 			mv $clashdir/Country.mmdb $bindir/Country.mmdb
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			[ -z "$geotype" ] && geotype=cn_mini.mmdb
-			$0 webget $bindir/Country.mmdb $update_url/bin/$geotype
+			$0 webget $bindir/Country.mmdb $update_url/bin/cn_mini.mmdb
 			[ "$?" = "1" ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v

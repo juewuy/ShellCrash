@@ -517,7 +517,7 @@ setcore(){
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/$geo_type
+	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/$geotype
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -529,7 +529,7 @@ getgeo(){
 		Geo_v=$GeoIP_v
 		setconfig Geo_v $GeoIP_v
 		if [ "$geoname" = "Country.mmdb" ];then
-			geotype=$geo_type
+			geotype=$geotype
 			setconfig geotype $geotype
 		fi
 	fi
@@ -548,16 +548,16 @@ setgeo(){
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ "$num" = '1' ]; then
-		geo_type=Country.mmdb
+		geotype=Country.mmdb
 		geoname=Country.mmdb
 		getgeo
 	elif [ "$num" = '2' ]; then
-		geo_type=cn_mini.mmdb
+		geotype=cn_mini.mmdb
 		geoname=Country.mmdb
 		getgeo
 	elif [ "$num" = '3' ]; then
 		if [ "$cn_ip_route" = "已开启" ]; then
-			geo_type=china_ip_list.txt
+			geotype=china_ip_list.txt
 			geoname=cn_ip.txt
 			getgeo
 		else
@@ -566,7 +566,7 @@ setgeo(){
 			sleep 1
 		fi
 	elif [ "$num" = '4' ]; then
-		geo_type=geosite.dat
+		geotype=geosite.dat
 		geoname=geosite.dat
 		getgeo
 	else
@@ -653,8 +653,10 @@ setdb(){
 	echo -e "请选择面板\033[33m安装类型：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 安装\033[32m官方面板\033[0m(约500kb)"
-	echo -e " 2 安装\033[32mYacd面板\033[0m(约1.1mb)"
-	echo -e " 3 卸载\033[33m本地面板\033[0m"
+	echo -e " 2 安装\033[32mMeta面板\033[0m(约800kb)"
+	echo -e " 3 安装\033[32mYacd面板\033[0m(约1.1mb)"
+	echo -e " 4 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
+	echo -e " 5 卸载\033[33m本地面板\033[0m"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 
@@ -663,10 +665,18 @@ setdb(){
 		dbdir
 		getdb
 	elif [ "$num" = '2' ]; then
-		db_type=yacd
+		db_type=meta_db
 		dbdir
 		getdb
 	elif [ "$num" = '3' ]; then
+		db_type=yacd
+		dbdir
+		getdb
+	elif [ "$num" = '4' ]; then
+		db_type=meta_yacd
+		dbdir
+		getdb
+	elif [ "$num" = '5' ]; then
 		read -p "确认卸载本地面板？(1/0) > " res
 		if [ "$res" = 1 ];then
 			rm -rf /www/clash
