@@ -521,7 +521,7 @@ localproxy(){
 	echo -----------------------------------------------
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
-	echo -e " 3 使用\033[32miptables增强模式\033[0m配置(仅支持Linux系统)"
+	echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -542,13 +542,19 @@ localproxy(){
 				setconfig local_proxy $local_proxy
 				setconfig local_type $local_type
 				echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
-				[ "$local_type" = "环境变量" ] && $clashdir/start.sh set_proxy $mix_port $db_port &&echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
-				[ "$local_type" = "iptables增强模式" ] && $clashdir/start.sh start
+				if [ "$local_type" = "环境变量" ];then
+					$clashdir/start.sh set_proxy $mix_port $db_port
+					echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+				else
+					echo -e "\033[36m请重新启动clash服务！\033[0m"
+				fi
+				sleep 1
 			fi		
 		else
 			local_proxy=未开启
 			setconfig local_proxy $local_proxy
 			setconfig local_type
+			sed -i '/user shellclash/d' /etc/init.d/clash 2>/dev/null
 			$clashdir/start.sh stop
 			echo -e "\033[33m已经停用本机代理规则并停止clash服务！！\033[0m"
 			[ "$local_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1

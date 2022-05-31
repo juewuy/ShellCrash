@@ -604,7 +604,7 @@ getdb(){
 			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
 		fi
 		#修改默认host和端口
-		if [ "$db_type" = "clashdb" ];then
+		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" ];then
 			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
 			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
 		else
@@ -812,7 +812,7 @@ setserver(){
 			setserver
 		elif [ $num -le $(cat /tmp/clashrelease | awk 'END{print NR}') 2>/dev/null ]; then
 			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
-			update_url="https://raw.githubusercontents.com/juewuy/ShellClash/master/$release_version"
+			update_url="https://raw.githubusercontents.com/juewuy/ShellClash/$release_version"
 			saveserver
 			release_url=''
 		else

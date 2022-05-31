@@ -443,8 +443,6 @@ start_redir(){
 	fi
 	#将PREROUTING链指向clash链
 	iptables -t nat -A PREROUTING -p tcp $ports -j clash
-	#Docker特殊处理
-	[ "$local_proxy" = "已开启" ] && iptables -t nat -I PREROUTING -s 172.16.0.0/12  -j clash
 	#禁用QUIC
 	if [ "$quic_rj" = 已启用 ] && [ "$tproxy_mod" = "已开启" ];then
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
@@ -547,7 +545,7 @@ start_udp(){
 	iptables -t mangle -A PREROUTING -p udp -j clash
 }
 start_output(){
-	#流量过滤规则
+	#流量过滤
 	iptables -t nat -N clash_out
 	iptables -t nat -A clash_out -m owner --gid-owner 7890 -j RETURN
 	iptables -t nat -A clash_out -d 0.0.0.0/8 -j RETURN
@@ -555,21 +553,31 @@ start_output(){
 	iptables -t nat -A clash_out -d 100.64.0.0/10 -j RETURN
 	iptables -t nat -A clash_out -d 127.0.0.0/8 -j RETURN
 	iptables -t nat -A clash_out -d 169.254.0.0/16 -j RETURN
-	iptables -t nat -A clash_out -d 172.16.0.0/12 -j RETURN
-	iptables -t nat -A clash_out -d 192.0.0.0/24 -j RETURN
 	iptables -t nat -A clash_out -d 192.168.0.0/16 -j RETURN
 	iptables -t nat -A clash_out -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash_out -d 240.0.0.0/4 -j RETURN
-	iptables -t nat -A clash_out -d 255.255.255.255/32 -j RETURN
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+	iptables -t nat -A clash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
 	iptables -t nat -A clash_out -p tcp -j REDIRECT --to-ports $redir_port
+	#
 	iptables -t nat -A OUTPUT -p tcp -j clash_out
 	#设置dns转发
 	[ "$dns_no" != "已禁用" ] && {
-		iptables -t nat -N clash_dns_out
-		iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
-		iptables -t nat -A clash_dns_out -p udp -j REDIRECT --to $dns_port
-		iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
+	iptables -t nat -N clash_dns_out
+	iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
+	iptables -t nat -A clash_dns_out -p udp -j REDIRECT --to $dns_port
+	iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
+	}
+	#Docker转发
+	type docker &>/dev/null && {
+	iptables -t nat -N clash_docker
+	iptables -t nat -A clash_docker -d 10.0.0.0/8 -j RETURN
+	iptables -t nat -A clash_docker -d 127.0.0.0/8 -j RETURN
+	iptables -t nat -A clash_docker -d 172.16.0.0/12 -j RETURN
+	iptables -t nat -A clash_docker -d 192.168.0.0/16 -j RETURN
+	iptables -t nat -A clash_docker -p tcp -j REDIRECT --to-ports $redir_port
+	iptables -t nat -A PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker
+	[ "$dns_no" != "已禁用" ] && iptables -t nat -A PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port
 	}
 }
 start_tun(){
@@ -606,7 +614,6 @@ stop_iptables(){
 	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
-	iptables -t nat -D PREROUTING -s 172.16.0.0/12  -j clash 2> /dev/null
 	iptables -t nat -F clash 2> /dev/null
 	iptables -t nat -X clash 2> /dev/null
 	iptables -t nat -F clash_dns 2> /dev/null
@@ -617,17 +624,17 @@ stop_iptables(){
 	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	#重置output规则
-	iptables -t nat -D OUTPUT -p tcp -s 127.0.0.0/8 -j clash_out 2> /dev/null
-	iptables -t nat -D OUTPUT -p tcp -s 172.16.0.0/12 -j clash_out 2> /dev/null
-	iptables -t nat -D OUTPUT -p tcp -d 198.18.0.0/16 -j clash_out 2> /dev/null
 	iptables -t nat -D OUTPUT -p tcp -j clash_out 2> /dev/null
 	iptables -t nat -F clash_out 2> /dev/null
 	iptables -t nat -X clash_out 2> /dev/null	
-	iptables -t nat -D OUTPUT -p udp --dport 53 -s 127.0.0.0/8 -j clash_dns_out 2> /dev/null
-	iptables -t nat -D OUTPUT -p udp --dport 53 -s 172.16.0.0/12 -j clash_dns_out 2> /dev/null
 	iptables -t nat -D OUTPUT -p udp --dport 53 -j clash_dns_out 2> /dev/null
 	iptables -t nat -F clash_dns_out 2> /dev/null
 	iptables -t nat -X clash_dns_out 2> /dev/null
+	#重置docker规则
+	iptables -t nat -F clash_docker 2> /dev/null
+	iptables -t nat -X clash_docker 2> /dev/null
+	iptables -t nat -D PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker 2> /dev/null
+	iptables -t nat -D PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port 2> /dev/null
 	#重置udp规则
 	iptables -t mangle -D PREROUTING -p udp -j clash 2> /dev/null
 	iptables -t mangle -F clash 2> /dev/null
@@ -816,24 +823,22 @@ bfstart(){
 	#本机代理准备
 	if [ "$local_proxy" = "已开启" -a "$local_type" = "iptables增强模式" ];then
 		if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
-			if [ -z "$(command -v useradd 2>/dev/null)" -o -z "$(command -v groupmod 2>/dev/null)" ]; then
-				grep -qw shellclash /etc/passwd || echo "shellclash:x:0:7890:::" >> /etc/passwd
-			else
+			if type userdel useradd groupmod &>/dev/null; then
 				userdel shellclash 2>/dev/null
 				useradd shellclash -u 7890
 				groupmod shellclash -g 7890
 				sed -Ei s/7890:7890/0:7890/g /etc/passwd
+			else
+				grep -qw shellclash /etc/passwd || echo "shellclash:x:0:7890:::" >> /etc/passwd
 			fi
 		fi
 		if [ "$start_old" != "已开启" ];then
+			[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
+			[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
 			if [ -w /etc/init.d/clash ]; then
-				[ "$systype" = "mi_snapshot" ] && servdir=$clashdir/clashservice || servdir=/etc/init.d/clash
-				[ -z "$(grep 'procd_set_param user shellclash' $servdir)" ] && {
-    				sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellclash' $servdir
-				}
-			else
-				[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
-				[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
+				[ -z "$(grep 'procd_set_param user shellclash' /etc/init.d/clash)" ] && \
+    			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellclash' /etc/init.d/clash
+			elif [ -w "$servdir" ]; then
 				setconfig ExecStart "/bin/su\ shellclash\ -c\ \"$bindir/clash\ -d\ $bindir\"" $servdir
 				systemctl daemon-reload >/dev/null
 			fi
