@@ -562,6 +562,9 @@ localproxy(){
 		if [ -w /etc/systemd/system/clash.service -o -w /usr/lib/systemd/system/clash.service -o -x /bin/su ];then
 			local_type="iptables增强模式"
 			setconfig local_type $local_type
+		elif [ -f /etc/rc.common -a -w /etc/passwd ]; then
+			local_type="iptables增强模式"
+			setconfig local_type $local_type
 		else
 			echo -e "\033[31m当前设备无法使用增强模式！\033[0m"
 			sleep 1
