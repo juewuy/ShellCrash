@@ -1304,7 +1304,7 @@ tools(){
 	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 5 ]; then	
 		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
 		echo -----------------------------------------------
-		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动启动，如未生效，请在官方APP中同步设置！"
+		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动更新，如未生效，请在官方APP中同步设置！"
 		sleep 1
 		tools	
 		
