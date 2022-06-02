@@ -16,11 +16,11 @@ jobs:
     - name: Clone Repository
       uses: actions/checkout@main
     - name: Init Dependencies
-      env:
-        DEBIAN_FRONTEND: noninteractive
       run: |
-        sudo apt-get update
-        sudo apt-get install -y upx-ucl
+        wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+        wget https://github.com/upx/upx/releases/download/v3.93/upx-3.93-amd64_linux.tar.xz
+        tar xf upx-3.96-amd64_linux.tar.xz
+        tar xf upx-3.93-amd64_linux.tar.xz
     - name: Download Core
       run: |
         archs="386 amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat"
@@ -29,9 +29,14 @@ jobs:
           wget "${download_url}/${download_version}/clash-linux-${arch}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${arch}
           chmod +x ./tmp/clash-linux-${arch}
           if [ "${arch}" != "armv5" ];then
-            upx ./tmp/clash-linux-${arch}
+            if [ "${arch}" = "mips-softfloat" ];then
+              ./upx-3.93-amd64_linux/upx ./tmp/clash-linux-${arch}
+            else
+              ./upx-3.96-amd64_linux/upx ./tmp/clash-linux-${arch}
+            fi
           fi
         done
+        rm -fr upx*
     - name: Update
       run: |
         rm -fr ./bin/clash/*

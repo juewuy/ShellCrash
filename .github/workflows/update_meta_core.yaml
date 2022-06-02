@@ -17,11 +17,11 @@ jobs:
     - name: Clone Repository
       uses: actions/checkout@main
     - name: Init Dependencies
-      env:
-        DEBIAN_FRONTEND: noninteractive
       run: |
-        sudo apt-get update
-        sudo apt-get install -y upx-ucl
+        wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+        wget https://github.com/upx/upx/releases/download/v3.93/upx-3.93-amd64_linux.tar.xz
+        tar xf upx-3.96-amd64_linux.tar.xz
+        tar xf upx-3.93-amd64_linux.tar.xz
     - name: Download Core
       run: |
         if [ "${download_tag}" = "Prerelease-Alpha" ] || [ "${download_tag}" = "Prerelease-Beta" ];then
@@ -37,9 +37,14 @@ jobs:
           wget "${download_url}/${download_tag}/Clash.Meta-linux-${archs[i]}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${new_name[i]}
           chmod +x ./tmp/clash-linux-${new_name[i]}
           if [ "${archs[i]}" != "armv5" ];then
-            upx ./tmp/clash-linux-${new_name[i]}
+            if [ "${archs[i]}" = "mips-softfloat" ];then
+              ./upx-3.93-amd64_linux/upx ./tmp/clash-linux-${new_name[i]}
+            else
+              ./upx-3.96-amd64_linux/upx ./tmp/clash-linux-${new_name[i]}
+            fi
           fi
         done
+        rm -fr upx*
     - name: Update
       run: |
         rm -fr ./bin/clash.meta/*
