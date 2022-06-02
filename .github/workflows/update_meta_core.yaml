@@ -37,7 +37,7 @@ jobs:
           wget "${download_url}/${download_tag}/Clash.Meta-linux-${archs[i]}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${new_name[i]}
           chmod +x ./tmp/clash-linux-${new_name[i]}
           if [ "${archs[i]}" != "armv5" ];then
-            if [ "${archs[i]}" = "mips-softfloat" ];then
+            if [[ ${archs[i]} = mips* ]];then
               ./upx-3.93-amd64_linux/upx ./tmp/clash-linux-${new_name[i]}
             else
               ./upx-3.96-amd64_linux/upx ./tmp/clash-linux-${new_name[i]}

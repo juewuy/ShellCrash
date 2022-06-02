@@ -29,7 +29,7 @@ jobs:
           wget "${download_url}/${download_version}/clash-linux-${arch}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${arch}
           chmod +x ./tmp/clash-linux-${arch}
           if [ "${arch}" != "armv5" ];then
-            if [ "${arch}" = "mips-softfloat" ];then
+            if [[ ${arch} == mips* ]];then
               ./upx-3.93-amd64_linux/upx ./tmp/clash-linux-${arch}
             else
               ./upx-3.96-amd64_linux/upx ./tmp/clash-linux-${arch}
