@@ -1,0 +1,46 @@
+name: Update Premium Core
+on: 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'version of Clash Premium, such as 2022.05.18'
+        required: true
+        type: string
+env:
+  download_version: ${{ github.event.inputs.version }}
+  download_url: https://release.dreamacro.workers.dev
+jobs:
+  Update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@main
+    - name: Init Dependencies
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y upx-ucl
+    - name: Download Core
+      run: |
+        archs="386 amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat"
+        mkdir tmp
+        for arch in ${archs};do
+          wget "${download_url}/${download_version}/clash-linux-${arch}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${arch}
+          chmod +x ./tmp/clash-linux-${arch}
+          if [ "${arch}" != "armv5" ];then
+            upx ./tmp/clash-linux-${arch}
+          fi
+        done
+    - name: Update
+      run: |
+        rm -fr ./bin/clashpre/*
+        cp ./tmp/* ./bin/clashpre/
+        rm -fr ./tmp
+        sed -i "s/clashpre_v=.*/clashpre_v=$(./bin/clashpre/clash-linux-amd64 -v 2>/dev/null | sed 's/ linux.*//;s/.* //')/" bin/version
+    - name: Commit and push
+      run: |
+        git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
+        git add . && git commit -m "更新Premium内核至${download_version}" || exit 0
+        git push
+        
