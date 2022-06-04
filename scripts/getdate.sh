@@ -333,7 +333,7 @@ gettar(){
 	if [ -f /etc/rc.common ];then
 			#设为init.d方式启动
 			cp -f $clashdir/clashservice /etc/init.d/clash
-			chmod 755 /etc/init.d/clash
+			chmod +x /etc/init.d/clash
 	else
 		[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 		[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
@@ -350,7 +350,7 @@ gettar(){
 	#修饰文件及版本号
 	shtype=sh && [ -n "$(ls -l /bin/sh|grep -oE 'dash|show|bash')" ] && shtype=bash 
 	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
-	chmod 755 $clashdir/start.sh
+	chmod +x $clashdir/start.sh
 	setconfig versionsh_l $release_new
 	#设置更新地址
 	[ -n "$url" ] && setconfig update_url $url
@@ -375,7 +375,7 @@ gettar(){
 		}
 	#小米镜像化OpenWrt额外设置
 	if [ "$systype" = "mi_snapshot" ];then
-		chmod 755 $clashdir/misnap_init.sh
+		chmod +x $clashdir/misnap_init.sh
 		uci set firewall.ShellClash=include
 		uci set firewall.ShellClash.type='script'
 		uci set firewall.ShellClash.path='/data/clash/misnap_init.sh'
@@ -454,14 +454,14 @@ getcore(){
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 		rm -rf /tmp/clash.new
 	else
-		chmod -x /tmp/clash.new && /tmp/clash.new -v >/dev/null 2>&1
+		chmod +x /tmp/clash.new && /tmp/clash.new -v >/dev/null 2>&1
 		if [ "$?" != 0 ];then
 			echo -e "\033[31m核心文件下载失败！\033[0m"
 			rm -rf /tmp/clash.new
 		else
 			echo -e "\033[32m$clashcore核心下载成功！\033[0m"
 			mv -f /tmp/clash.new $bindir/clash
-			chmod -x $bindir/clash 
+			chmod +x $bindir/clash 
 			setconfig clashcore $clashcore
 			setconfig clashv $version
 		fi
