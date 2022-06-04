@@ -1,0 +1,59 @@
+name: Update Meta Core
+on: 
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'tag of Clash Meta, such as Prerelease-Alpha, Prerelease-Beta, v1.11.1'
+        required: true
+        type: string
+env:
+  download_tag: ${{ github.event.inputs.tag }}
+  download_version: ''
+  download_url: https://github.com/MetaCubeX/Clash.Meta/releases/download
+jobs:
+  Update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@main
+    - name: Init Dependencies
+      run: |
+        wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+        wget https://github.com/upx/upx/releases/download/v3.93/upx-3.93-amd64_linux.tar.xz
+        tar xf upx-3.96-amd64_linux.tar.xz
+        tar xf upx-3.93-amd64_linux.tar.xz
+    - name: Download Core
+      run: |
+        if [ "${download_tag}" = "Prerelease-Alpha" ] || [ "${download_tag}" = "Prerelease-Beta" ];then
+          download_version=$(curl -sL https://api.github.com/repos/MetaCubeX/Clash.Meta/releases/tags/${download_tag} | grep linux-arm64 | head -n 1 | sed 's_.gz.*__;s_.*arm64-__')
+        else
+          download_version=${download_tag}
+        fi
+        echo "download_version=${download_version}" >> ${GITHUB_ENV}
+        archs=(amd64v1 armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat)
+        new_name=(amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat)
+        mkdir tmp
+        for((i=0;i<7;i++));do
+          wget "${download_url}/${download_tag}/Clash.Meta-linux-${archs[i]}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${new_name[i]}
+          chmod +x ./tmp/clash-linux-${new_name[i]}
+          if [ "${archs[i]}" != "armv5" ];then
+            if [[ ${archs[i]} = mips* ]];then
+              ./upx-3.93-amd64_linux/upx ./tmp/clash-linux-${new_name[i]}
+            else
+              ./upx-3.96-amd64_linux/upx ./tmp/clash-linux-${new_name[i]}
+            fi
+          fi
+        done
+        rm -fr upx*
+    - name: Update
+      run: |
+        rm -fr ./bin/clash.meta/*
+        cp ./tmp/* ./bin/clash.meta/
+        rm -fr ./tmp
+        sed -i "s/meta_v=.*/meta_v=$(./bin/clash.meta/clash-linux-amd64 -v 2>/dev/null | sed 's/ linux.*//;s/.* //')/" bin/version
+    - name: Commit and push
+      run: |
+        git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
+        git add . && git commit -m "更新Meta内核至${download_version}" || exit 0
+        git push
+        
