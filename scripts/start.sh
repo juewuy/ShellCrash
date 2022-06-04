@@ -137,7 +137,7 @@ getyaml(){
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
 https://api.dler.io
-https://sub.shellclash.ga
+https://sub.shellclash.cf
 https://sub.xeton.dev
 https://sub.id9.cc
 https://sub.maoxiongnet.com
@@ -164,7 +164,7 @@ EOF`
 	Https=$(echo ${Https//\%26/\&})   #将%26替换回&
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='https://sub.shellclash.ga'
+		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='https://sub.shellclash.cf'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
 	fi
@@ -756,8 +756,6 @@ bfstart(){
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
 	update_url=https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master
 	#检查clash核心
-	$bindir/clash -v >/dev/null 2>&1
-	[ "$?" != 0 ] && rm -rf $bindir/clash
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
 			mv $clashdir/clash $bindir/clash && chmod +x $bindir/clash

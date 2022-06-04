@@ -57,8 +57,8 @@ export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q 
 ~**Use a low version of wget (prompt not to support https) local installation**:<br>
 
 ```Shell
-#by shellclash.ga
-export url='http://shellclash.ga/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+#by shellclash.cf
+export url='http://shellclash.cf/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**After installation by non-root users**, please execute the following additional commands to read environment variables:<br>

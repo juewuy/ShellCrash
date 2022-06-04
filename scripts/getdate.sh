@@ -37,7 +37,7 @@ linkserver(){
 	echo -e "\033[32m感谢以下作者的无私奉献！！！\033[0m"
 	echo 当前使用后端为：$server_link
 	echo 1 api.dler.io			（墙洞提供）
-	echo 2 sub.shellclash.ga	（作者提供）
+	echo 2 sub.shellclash.cf	（作者提供）
 	echo 3 sub.xeton.dev		（SUB作者T大提供）
 	echo 4 sub.id9.cc			（品云提供）
 	echo 5 sub.maoxiongnet.com	（猫熊提供）
@@ -452,12 +452,19 @@ getcore(){
 	$clashdir/start.sh webget /tmp/clash.new $corelink
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
+		rm -rf /tmp/clash.new
 	else
-		echo -e "\033[32m$clashcore核心下载成功！\033[0m"
-		mv -f /tmp/clash.new $bindir/clash
-		chmod 777 $bindir/clash  #授予权限
-		setconfig clashcore $clashcore
-		setconfig clashv $version
+		chmod -x /tmp/clash.new && /tmp/clash.new -v >/dev/null 2>&1
+		if [ "$?" != 0 ];then
+			echo -e "\033[31m核心文件下载失败！\033[0m"
+			rm -rf /tmp/clash.new
+		else
+			echo -e "\033[32m$clashcore核心下载成功！\033[0m"
+			mv -f /tmp/clash.new $bindir/clash
+			chmod -x $bindir/clash 
+			setconfig clashcore $clashcore
+			setconfig clashv $version
+		fi
 	fi
 }
 setcore(){
@@ -776,7 +783,7 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 4 ]; then
-		update_url='https://gh.shellclash.ga/master'
+		update_url='https://gh.shellclash.cf/master'
 		release_url=''
 		saveserver
 	elif [ "$num" = 5 ]; then
@@ -788,7 +795,7 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 7 ]; then
-		update_url='http://test.shellclash.ga'
+		update_url='http://test.shellclash.cf'
 		release_url=''
 		saveserver
 	elif [ "$num" = 8 ]; then
