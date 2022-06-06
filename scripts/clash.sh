@@ -1018,6 +1018,7 @@ clashadv(){
 		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
 #用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)，例如
 #新版已经支持直接读取系统hosts(/etc/hosts)并写入配置文件，无需在此处添加！
+#新版meta内核已经支持yaml-v3，所有能在脚本中修改的条目请勿在此处配置以免报错！
 #port: 7890
 EOF
 		[ ! -f $clashdir/rules.yaml ] && cat > $clashdir/rules.yaml <<EOF

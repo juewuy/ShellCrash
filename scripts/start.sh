@@ -286,7 +286,6 @@ modify_yaml(){
 	#默认fake-ip过滤列表
 	fake_ft_df='"*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"'
 	lan='allow-lan: true'
-	#mode='mode: Rule'
 	log='log-level: info'
 	[ "$ipv6_support" = "已开启" ] && ipv6='ipv6: true' || ipv6='ipv6: false'
 	[ "$ipv6_dns" = "已开启" ] && dns_v6='ipv6: true' || dns_v6=$ipv6
@@ -351,13 +350,12 @@ store-selected: $restore
 hosts:
 EOF
 ###################################
-	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
 	#读取本机hosts并生成配置文件
 	hosts_dir=/etc/hosts
 	if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && [ -f $hosts_dir ];then
 		while read line;do
-			[ -n "$(echo "$line")" ] && \
-			[ -z "$(echo "$line" | grep '#')" ] && \
+			[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}" )" ] && \
+			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
 			hosts_ip=$(echo $line | awk '{print $1}')  && \
 			hosts_domain=$(echo $line | awk '{print $2}') && \
 			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
