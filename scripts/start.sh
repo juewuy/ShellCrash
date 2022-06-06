@@ -70,6 +70,13 @@ cronset(){
 	croncmd $tmpcron
 	rm -f $tmpcron
 }
+put_save(){
+	if curl --version > /dev/null 2>&1;then
+		curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
+	elif wget --version > /dev/null 2>&1;then
+		wget -q --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
+	fi
+}
 mark_time(){
 	start_time=`date +%s`
 	sed -i '/start_time*/'d $clashdir/mark
@@ -275,7 +282,6 @@ EOF`
 			mv -f $yamlnew $yaml
 		fi
 		echo -e "\033[32m已成功获取配置文件！\033[0m"
-		exit 0
 	fi
 }
 modify_yaml(){
@@ -693,13 +699,7 @@ web_save(){
 	fi
 }
 web_restore(){
-	put_save(){
-		if curl --version > /dev/null 2>&1;then
-			curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
-		elif wget --version > /dev/null 2>&1;then
-			wget -q --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
-		fi
-	}
+
 	#设置循环检测clash面板端口
 	i=1
 	while [ -z "$test" -a "$i" -lt 60 ];do
@@ -975,8 +975,10 @@ getyaml)
 		getyaml
 		;;
 updateyaml)	
-		$0 getyaml
-		$0 restart
+		getconfig
+		getyaml
+		modify_yaml
+		put_save http://localhost:${db_port}/configs "{\"path\":\"${clashdir}/config.yaml\"}"
 		;;
 webget)
 		#设置临时http代理 
