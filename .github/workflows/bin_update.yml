@@ -9,7 +9,7 @@ on:
 #   branches: 
 #       - master
     schedule:
-        - cron: 0 1 * * 2
+        - cron: 0 9 * * 2,6
 #   watch:
 #       types: [started]
     workflow_dispatch:
