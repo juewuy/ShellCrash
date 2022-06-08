@@ -17,8 +17,11 @@ setconfig(){
 	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 [ -f "/etc/storage/started_script.sh" ] && systype=Padavan && initdir='/etc/storage/started_script.sh'
-[ -d "/jffs/scripts" ] && systype=asusrouter && initdir='/jffs/scripts/net-start'
-[ -f "/jffs/.asusrouter" ] && systype=asusrouter && initdir='/jffs/.asusrouter'
+[ -d "/jffs" ] && systype=asusrouter && { 
+	[ -f "/jffs/.asusrouter" ] && initdir='/jffs/.asusrouter'
+	[ -d "/jffs/scripts" ] && initdir='/jffs/scripts/nat-start' 
+	[ -z "$initdir" ] && initdir='/jffs/scripts/nat-start' && mkdir -p '/jffs/scripts'
+	}
 [ -f "/data/etc/crontabs/root" -a "$(dir_avail /etc)" = 0 ] && systype=mi_snapshot
 #检查root权限
 if [ "$USER" != "root" -a -z "$systype" ];then
