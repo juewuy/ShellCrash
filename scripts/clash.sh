@@ -1434,6 +1434,7 @@ clashcron(){
 	echo -e " 2 设置\033[31m定时停止\033[0mclash服务"
 	echo -e " 3 设置\033[32m定时开启\033[0mclash服务"
 	echo -e " 4 设置\033[33m定时更新\033[0m订阅并重启服务"
+	echo -e " 5 设置\033[33m定时更新\033[0m订阅但不重启服务"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单" 
 	read -p "请输入对应数字 > " num
@@ -1458,6 +1459,11 @@ clashcron(){
 		clashcron
 	elif [ "$num" = 4 ]; then	
 		cronname=更新订阅链接
+		cronset="$clashdir/start.sh getyaml && $clashdir/start.sh restart"
+		setcron	
+		clashcron
+	elif [ "$num" = 5 ]; then	
+		cronname=更新订阅但不重启
 		cronset="$clashdir/start.sh updateyaml"
 		setcron	
 		clashcron
