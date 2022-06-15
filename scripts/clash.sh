@@ -313,7 +313,7 @@ setdns(){
 				echo -e "\033[31m当前设备未安装OpenSSL，无法启用加密DNS，Linux系统请自行搜索安装方式！\033[0m"
 			fi
 		else
-			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
+			dns_nameserver='tls://1.12.12.12, https://223.5.5.5/dns-query, tls://dns.rubyfish.cn:853'
 			dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			setconfig dns_fallback \'"$dns_fallback"\' 
