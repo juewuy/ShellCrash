@@ -30,7 +30,7 @@ jobs:
           download_version=${download_tag}
         fi
         echo "download_version=${download_version}" >> ${GITHUB_ENV}
-        archs=(amd64v1 armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat)
+        archs=(amd64-compatible armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat)
         new_name=(amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat)
         mkdir tmp
         for((i=0;i<7;i++));do
