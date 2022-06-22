@@ -51,10 +51,19 @@ opkg update && opkg install curl #如已安装请忽略
 ```Shell
 #fastgit.org加速
 export url='https://raw.fastgit.org/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+```
+
+```shell
 #GitHub源
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+```
+
+```shell
 #jsDelivrCDN源
 export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+```
+
+```shell
 #作者私人源
 export url='https://shellclash.cf' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
@@ -64,10 +73,16 @@ export url='https://shellclash.cf' && sh -c "$(curl -kfsSl $url/install.sh)" && 
 ```Shell
 #GitHub源
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+```
+
+```shell
 #jsDelivrCDN源
 export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
-#作者私人源
-export url='http://shellclash.cf/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+```
+
+```shell
+#fastgit.org加速
+export url='https://raw.fastgit.org/juewuy/ShellClash/master' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**使用低版本wget（提示不支持https）安装**：<br>
