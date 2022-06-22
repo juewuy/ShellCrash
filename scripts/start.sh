@@ -491,7 +491,9 @@ start_dns(){
 		done	
 		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
 	fi
-	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
+	if [ "$hijack_DNS" = "已开启" ] || [ -z $hijack_DNS ]; then
+		iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
+	fi
 	#ipv6DNS
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" ];then

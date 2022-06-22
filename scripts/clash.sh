@@ -743,6 +743,7 @@ clashcfg(){
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$quic_rj" ] && quic_rj=未开启
 	[ -z "$(cat $clashdir/mac)" ] && mac_return=未开启 || mac_return=已启用
+	[ -z "$hijack_DNS" ] && hijack_DNS=已开启
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
@@ -757,6 +758,7 @@ clashcfg(){
 	[ "$dns_mod" = "fake-ip" ] && \
 	echo -e " 8 管理Fake-ip过滤列表" || \
 	echo -e " 8 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
+	echo -e " 9 挟持DNS流量至Clash: \033[36m$hijack_DNS\033[0m   ————关闭可支持外置DNS程序"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -850,8 +852,17 @@ clashcfg(){
 			fi
 		fi
 		clashcfg  	
-		
-	elif [ "$num" = 9 ]; then	
+	elif [ "$num" = 9 ]; then
+		echo ----------------------------	-------------------
+		if [ $hijack_DNS = "已开启" ]; then
+			echo -e "\033[32m已关闭挟持 DNS 流量至 Clash，需要手动设置上游 DNS 端口至 $dns_port，否则 Clash 不可用！！\033[0m"
+			hijack_DNS=已关闭
+		else
+			echo -e "\033[32m开启挟持 DNS 流量至 Clash！！\033[0m"
+			hijack_DNS=已开启
+		fi
+		setconfig hijack_DNS $hijack_DNS
+	elif [ "$num" = 10 ]; then
 		clashstart
 	else
 		errornum
