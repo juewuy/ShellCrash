@@ -1321,6 +1321,7 @@ tools(){
 				read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
 				mi_autoSSH=已启用
 				cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
+				cp -f /etc/dropbear/authorized_keys $clashdir/authorized_keys 2>/dev/null
 				echo -e "\033[32m设置成功！\033[0m"
 				sleep 1
 			else
