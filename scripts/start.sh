@@ -918,7 +918,7 @@ start)
 		bfstart
 		stop_iptables #清理iptables
 		#使用内置规则强行覆盖config配置文件
-		[ "$modify_yaml" != "已开启" ] && modify_yaml
+		[ "$modify_yaml" = "已开启" ] && modify_yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			start_old
