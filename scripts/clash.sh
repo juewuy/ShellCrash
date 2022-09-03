@@ -260,6 +260,7 @@ setdns(){
 	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
 	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
+	echo -e "fallback域名：\033[36m$fallback_domain\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m“|”\033[0m或者\033[30;47m“, ”\033[0m分隔输入"
 	echo -e "\033[33m必须拥有本地根证书文件才能使用dot/doh类型的加密dns\033[0m"
 	echo -----------------------------------------------
@@ -270,6 +271,7 @@ setdns(){
 	echo -e " 5 ipv6_dns解析：	\033[36m$ipv6_dns\033[0m	————建议开启"
 	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————用于解决dns劫持失败的问题"
 	echo -e " 7 禁用内置DNS：	\033[36m$dns_no\033[0m	————不明勿动"
+	echo -e " 8 修改\033[36mfallback-filter domain\033[0m	————强制自定义域名走\033[36mfallback_DNS\033[0m解析"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -296,8 +298,10 @@ setdns(){
 	elif [ "$num" = 3 ]; then
 		dns_nameserver=""
 		dns_fallback=""
+		fallback_domain=""
 		setconfig dns_nameserver
 		setconfig dns_fallback
+		setconfig fallback_domain
 		echo -e "\033[33mDNS配置已重置！！！\033[0m"
 		setdns
 		
@@ -364,6 +368,15 @@ setdns(){
 		fi
 		sleep 1
 		setconfig dns_no $dns_no
+		setdns
+
+	elif [ "$num" = 8 ]; then
+		read -p "请输入强制fallback的域名 > " fallback_domain
+		fallback_domain=$(echo $fallback_domain | sed 's/|/\,\ /g')
+		if [ -n "$fallback_domain" ]; then
+			setconfig fallback_domain \'"$fallback_domain"\' 
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi
 		setdns
 	fi
 }

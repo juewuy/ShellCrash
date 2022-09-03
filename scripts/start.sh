@@ -314,9 +314,9 @@ modify_yaml(){
 		done < $clashdir/fake_ip_filter
 	fi
 	if [ "$dns_mod" = "fake-ip" ];then
-		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true, domain: ['$fallback_domain']}}'
 	else
-		dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true, domain: ['$fallback_domain']}}'
 	fi
 	#meta专属功能
 	if [ "$clashcore" = "clash.meta" -a "$sniffer" = "已启用" ];then
