@@ -139,6 +139,9 @@ host_lan(){
 	[ -n "$(echo $host | grep -oE "([0-9]{1,3}[\.]){3}[0-9]{1,3}" )" ] && host_lan="$(echo $host | grep -oE "([0-9]{1,3}[\.]){3}")0/24"
 }
 #配置文件相关
+urldecode() {
+  printf -v REPLY '%b' "${1//%/\\x}"
+}
 getyaml(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
@@ -169,7 +172,7 @@ https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Games.ini
 https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Mini_Games.ini
 https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.ini
 EOF`
-	Https=$(echo ${Https//\%26/\&})   #将%26替换回&
+	Https=$(echo $(urldecode $Https ))  #URL解码
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
 		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='https://sub.shellclash.cf'

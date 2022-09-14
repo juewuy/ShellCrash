@@ -106,6 +106,11 @@ getyaml(){
 		fi
 	fi
 }
+urlencode() {
+    local data
+    data="$(curl -s -o /dev/null -w %{url_effective} --get --data-urlencode "$1" "")"
+    echo "${data##/?}"
+}
 getlink(){
 	echo -----------------------------------------------
 	echo -e "\033[30;47m 欢迎使用在线生成配置文件功能！\033[0m"
@@ -133,7 +138,7 @@ getlink(){
 		link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
 		link=`echo ${link/*\&url\=/""}`   #将clash完整链接还原成单一链接
 		link=`echo ${link/\&config\=*/""}`   #将clash完整链接还原成单一链接
-		link=`echo ${link//\&/\%26}`   #将分隔符 & 替换成urlcode：%26
+		link=`echo $(urlencode $link)`   #URL编码
 		if [ -n "$test" ];then
 			if [ -z "$Url_link" ];then
 				Url_link="$link"
@@ -194,7 +199,7 @@ getlink2(){
 	read -p "请输入完整链接 > " link
 	test=$(echo $link | grep -iE "tp.*://" )
 	link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
-	link=`echo ${link//\&/\%26}`   #将分隔符 & 替换成urlcode：%26
+	link=`echo $(urlencode $link)`   #URL编码
 	if [ -n "$link" -a -n "$test" ];then
 		echo -----------------------------------------------
 		echo -e 请检查输入的链接是否正确：
