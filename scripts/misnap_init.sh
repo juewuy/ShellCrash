@@ -5,9 +5,12 @@ clashdir=/data/clash
 profile=/etc/profile
 
 #h初始化环境变量
-echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
-echo "export clashdir=\"$clashdir\"" >> $profile 
-
+if [ `type -t clash` != "alias" ];then
+	echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
+fi
+if [ -z $clashdir ];then
+	echo "export clashdir=\"$clashdir\"" >> $profile 
+fi
 #设置init.d服务并启动clash服务
 ln -sf $clashdir/clashservice /etc/init.d/clash
 chmod 755 /etc/init.d/clash
