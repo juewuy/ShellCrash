@@ -384,6 +384,37 @@ EOF
 			sed -i "/^rules:/a\\$space$line #自定义规则" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
 	fi
+
+	#插入自定义代理
+	sed -i "/#自定义代理/d" $tmpdir/config.yaml
+	space=$(sed -n '/^proxies:/{n;p}' $tmpdir/config.yaml | grep -oE '^\ *') #获取空格数
+	if [ -f $clashdir/proxies.yaml ];then
+		sed -i '/^$/d' $clashdir/proxies.yaml && echo >> $clashdir/proxies.yaml #处理换行
+		while read line;do
+			[ -z "$(echo "$line" | grep '^proxies:')" ] && \
+			[ -z "$(echo "$line" | grep '#')" ] && \
+			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
+			line=$(echo "$line" | sed 's#/#\\/#') && \
+			sed -i "/^proxies:/a\\$space$line #自定义代理" $tmpdir/config.yaml
+		done < $clashdir/proxies.yaml
+	fi
+
+	#插入自定义策略组
+	sed -i "/#自定义策略组/d" $tmpdir/config.yaml
+	space=$(sed -n '/^proxy-groups:/{n;p}' $tmpdir/config.yaml | grep -oE '^\ *') #获取原始配置空格数
+	if [ -f $clashdir/proxy-groups.yaml ];then
+		c_space=$(sed -n '/^proxy-groups:/{n;p}' $clashdir/proxy-groups.yaml | grep -oE '^\ *') #获取自定义配置空格数
+		sed -i "s/$c_space/$space/g" $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理缩进空格数
+		sed -i '/^$/d' $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理换行
+		cat $clashdir/proxy-groups.yaml | awk '{array[NR]=$0} END { for(i=NR;i>0;i--){print array[i];} }' | while IFS= read line;do
+			[ -z "$(echo "$line" | grep '^proxy-groups:')" ] && \
+			[ -n "${line// /}" ] && \
+			[ -z "$(echo "$line" | grep '#')" ] && \
+			line=$(echo "$line" | sed 's#/#\\/#') && \
+			sed -i "/^proxy-groups:/a\\$line #自定义策略组" $tmpdir/config.yaml
+		done
+	fi
+
 	#tun/fake-ip防止流量回环
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$dns_mod" = "fake-ip" ];then
 		sed -i "/^rules:/a\\$space- SRC-IP-CIDR,198.18.0.0/16,REJECT #自定义规则(防止回环)" $tmpdir/config.yaml

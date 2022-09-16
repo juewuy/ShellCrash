@@ -1033,9 +1033,21 @@ EOF
 # - DST-PORT,80,DIRECT
 # - SRC-PORT,7777,DIRECT
 EOF
+		[ ! -f $clashdir/proxies.yaml ] && cat > $clashdir/proxies.yaml <<EOF
+#proxies:
+#  - {name: "test", server: 192.168.1.1, port: 9050, type: socks5, udp: true}
+EOF
+		[ ! -f $clashdir/proxy-groups.yaml ] && cat > $clashdir/proxy-groups.yaml <<EOF
+#proxy-groups:
+#  - name: OFFICE
+#    type: select
+#    proxies:
+#      - office-router
+EOF
 		echo -e "\033[32m已经启用自定义配置功能！\033[0m"
 		echo -e "Windows下请\n使用\033[33mwinscp软件\033[0m进入$clashdir目录后手动编辑！\033[0m"
 		echo -e "Shell下(\033[31m部分旧设备可能不显示中文\033[0m)可\n使用【\033[36mvi $clashdir/user.yaml\033[0m】编辑自定义设定文件;\n使用【\033[36mvi $clashdir/rules.yaml\033[0m】编辑自定义规则文件。"
+		echo -e "使用【\033[36mvi $clashdir/proxies.yaml\033[0m】编辑自定义代理文件;\n使用【\033[36mvi $clashdir/proxy-groups.yaml\033[0m】编辑自定义策略组文件。"
 		echo -e "如需自定义节点，可以在config.yaml文件中修改或者直接替换config.yaml文件！\033[0m"
 		sleep 3
 		clashadv
