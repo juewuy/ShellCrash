@@ -703,6 +703,7 @@ stop_iptables(){
 	#移除dnsmasq转发规则
 	[ "$dns_redir" = "已开启" ] && {
 		uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
+		uci set dhcp.@dnsmasq[0].noresolv=0 2>/dev/null
 		uci commit dhcp >/dev/null 2>&1
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
 	}
@@ -889,6 +890,7 @@ afstart(){
 				uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
 				uci delete dhcp.@dnsmasq[0].resolvfile 2>/dev/null
 				uci add_list dhcp.@dnsmasq[0].server=127.0.0.1#$dns_port > /dev/null 2>&1
+				uci set dhcp.@dnsmasq[0].noresolv=1 2>/dev/null
 				uci commit dhcp >/dev/null 2>&1
 				/etc/init.d/dnsmasq restart >/dev/null 2>&1
 			fi
