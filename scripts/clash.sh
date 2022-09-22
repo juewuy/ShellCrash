@@ -1630,6 +1630,8 @@ case "$1" in
 			rm -rf /tmp/clash_$USER
 			sed -Ei s/0:7890/7890:7890/g /etc/passwd
 			userdel -r shellclash 2>/dev/null
+			nvram set script_usbmount="" 2>/dev/null
+			nvram commit 2>/dev/null
 			echo -----------------------------------------------
 			echo -e "\033[36m已卸载ShellClash相关文件！有缘再会！\033[0m"
 			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"

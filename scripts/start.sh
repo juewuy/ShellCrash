@@ -986,21 +986,28 @@ restart)
         $0 start
         ;;
 init)
+		sleep 30
         if [ -d "/etc/storage/clash" ];then
 			clashdir=/etc/storage/clash
 			i=1
-			while [ ! -w "/etc/profile" -a "$i" -lt 60 ];do
-				sleep 1 && i=$((i+1))
+			while [ ! -w "/etc/profile" -a "$i" -lt 7 ];do
+				sleep 5 && i=$((i+1))
 			done
 			profile=/etc/profile
 			sed -i '' $profile #将软链接转化为一般文件
 		elif [ -d "/jffs/clash" ];then
 			clashdir=/jffs/clash
-			profile=/jffs/configs/profile.add
+			if [ -w /etc/profile ];then
+				profile=/etc/profile
+			else
+				profile=$(cat /etc/profile | grep -oE '\-f.*jffs.*profile' | awk '{print $2}')
+			fi
 		else
 			clashdir=$(cd $(dirname $0);pwd)
 			profile=/etc/profile
 		fi
+		sed -i "/alias clash/d" $profile 
+		sed -i "/export clashdir/d" $profile 
 		echo "alias clash=\"$clashdir/clash.sh\"" >> $profile 
 		echo "export clashdir=\"$clashdir\"" >> $profile 
 		[ -f $clashdir/.dis_startup ] && cronset "clash保守模式守护进程" || $0 start
