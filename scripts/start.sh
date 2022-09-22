@@ -371,17 +371,18 @@ EOF
 	#合并文件
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
 	[ -f $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
-	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $tmpdir/proxy.yaml > $tmpdir/config.yaml
+	[ -f $tmpdir/proxy.yaml ] && yaml_proxy=$tmpdir/proxy.yaml
+	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_proxy > $tmpdir/config.yaml
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
-	space=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
+	space_rules=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
 	if [ -f $clashdir/rules.yaml ];then
 		sed -i '/^$/d' $clashdir/rules.yaml && echo >> $clashdir/rules.yaml #处理换行
 		while read line;do
 			[ -z "$(echo "$line" | grep '#')" ] && \
 			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
 			line=$(echo "$line" | sed 's#/#\\/#') && \
-			sed -i "/^rules:/a\\$space$line #自定义规则" $tmpdir/config.yaml
+			sed -i "/^rules:/a\\$space_rules$line #自定义规则" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
 	fi
 
@@ -417,7 +418,7 @@ EOF
 
 	#tun/fake-ip防止流量回环
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$dns_mod" = "fake-ip" ];then
-		sed -i "/^rules:/a\\$space- SRC-IP-CIDR,198.18.0.0/16,REJECT #自定义规则(防止回环)" $tmpdir/config.yaml
+		sed -i "/^rules:/a\\$space_rules- SRC-IP-CIDR,198.18.0.0/16,REJECT #自定义规则(防止回环)" $tmpdir/config.yaml
 	fi
 	#如果没有使用小闪存模式
 	if [ "$tmpdir" != "$bindir" ];then
