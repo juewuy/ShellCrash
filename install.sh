@@ -26,7 +26,7 @@ setconfig(){
 	[ -f "/jffs/.asusrouter" ] && initdir='/jffs/.asusrouter'
 	[ -d "/jffs/scripts" ] && initdir='/jffs/scripts/nat-start' 
 	}
-[ -f "/data/etc/crontabs/root" ] && systype=mi_wifi #小米设备
+[ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 #检查root权限
 if [ "$USER" != "root" -a -z "$systype" ];then
 	echo 当前用户:$USER
@@ -144,7 +144,7 @@ gettar(){
 		setconfig initdir $initdir
 		}
 	#小米镜像化OpenWrt额外设置
-	if [ "$systype" = "mi_wifi" ];then
+	if [ "$systype" = "mi_snapshot" ];then
 		chmod 755 $clashdir/misnap_init.sh
 		uci set firewall.ShellClash=include
 		uci set firewall.ShellClash.type='script'
@@ -193,7 +193,7 @@ setdir(){
 echo -----------------------------------------------
 if [ -n "$systype" ];then
 	[ "$systype" = "Padavan" ] && dir=/etc/storage
-	[ "$systype" = "mi_wifi" ] && {
+	[ "$systype" = "mi_snapshot" ] && {
 		$echo "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"	
 		$echo " 1 安装到/data目录(推荐，支持软固化功能)"
 		$echo " 2 安装到USB设备(支持软固化功能)"

@@ -405,7 +405,7 @@ EOF
 	space=$(sed -n '/^proxy-groups:/{n;p}' $tmpdir/config.yaml | grep -oE '^\ *') #获取原始配置空格数
 	if [ -f $clashdir/proxy-groups.yaml ];then
 		c_space=$(sed -n '/^proxy-groups:/{n;p}' $clashdir/proxy-groups.yaml | grep -oE '^\ *') #获取自定义配置空格数
-		sed -i "s/$c_space/$space/g" $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理缩进空格数
+		[ -n "$c_space" ] && sed -i "s/$c_space/$space/g" $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理缩进空格数
 		sed -i '/^$/d' $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理换行
 		cat $clashdir/proxy-groups.yaml | awk '{array[NR]=$0} END { for(i=NR;i>0;i--){print array[i];} }' | while IFS= read line;do
 			[ -z "$(echo "$line" | grep '^proxy-groups:')" ] && \
