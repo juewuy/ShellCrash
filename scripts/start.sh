@@ -365,7 +365,7 @@ EOF
 			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
 			hosts_ip=$(echo $line | awk '{print $1}')  && \
 			hosts_domain=$(echo $line | awk '{print $2}') && \
-			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
+			echo "  '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
 		done < $hosts_dir
 	fi
 	#合并文件
