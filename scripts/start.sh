@@ -437,15 +437,8 @@ cn_ip_route(){
 		else
 			logger "未找到cn_ip列表，正在下载！" 33
 			$0 webget $bindir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
-			[ "$?" = "1" ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败，已退出！" 31 && exit 1
+			[ "$?" = "1" ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败！" 31 
 		fi
-	fi
-	if [ -f $bindir/cn_ip.txt ];then
-	echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
-	awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> /tmp/cn_$USER.ipset
-	ipset -! flush cn_ip 2>/dev/null
-	ipset -! restore < /tmp/cn_$USER.ipset
-	rm -rf cn_$USER.ipset
 	fi
 }
 start_redir(){
@@ -463,7 +456,15 @@ start_redir(){
 	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
 	[ -n "$host_lan" ] && iptables -t nat -A clash -d $host_lan -j RETURN
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
+	#绕过CN_IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
+		echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
+		awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> /tmp/cn_$USER.ipset
+		ipset -! flush cn_ip 2>/dev/null
+		ipset -! restore < /tmp/cn_$USER.ipset
+		rm -rf cn_$USER.ipset
+		iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 
+	}
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -504,7 +505,7 @@ start_redir(){
 		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
 	fi
 }
-start_dns(){
+start_dns_redir(){
 	#屏蔽OpenWrt内置53端口转发
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
@@ -547,7 +548,7 @@ start_dns(){
 	fi
 
 }
-start_udp(){
+start_tproxy(){
 	#获取局域网host地址
 	host_lan
 	ip rule add fwmark 1 table 100
@@ -568,18 +569,18 @@ start_udp(){
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
-			iptables -t mangle -A clash -p udp -m mac --mac-source $mac -j TPROXY --on-port $redir_port --tproxy-mark 1
+			iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $redir_port --tproxy-mark 1
 		done
 	else
 		#mac黑名单
 		for mac in $(cat $clashdir/mac); do
 			iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 		done
-		iptables -t mangle -A clash -p udp -s 192.168.0.0/16 -j TPROXY --on-port $redir_port --tproxy-mark 1
-		iptables -t mangle -A clash -p udp -s 10.0.0.0/8 -j TPROXY --on-port $redir_port --tproxy-mark 1
-		[ -n "$host_lan" ] && iptables -t mangle -A clash -p udp -s $host_lan -j TPROXY --on-port $redir_port --tproxy-mark 1
+		iptables -t mangle -A clash -p $1 -s 192.168.0.0/16 -j TPROXY --on-port $redir_port --tproxy-mark 1
+		iptables -t mangle -A clash -p $1 -s 10.0.0.0/8 -j TPROXY --on-port $redir_port --tproxy-mark 1
+		[ -n "$host_lan" ] && iptables -t mangle -A clash -p $1 -s $host_lan -j TPROXY --on-port $redir_port --tproxy-mark 1
 	fi
-	iptables -t mangle -A PREROUTING -p udp -j clash
+	iptables -t mangle -A PREROUTING -p $1 -j clash
 }
 start_output(){
 	#流量过滤
@@ -624,6 +625,53 @@ start_tun(){
 	fi
 	iptables -A FORWARD -o utun -j ACCEPT
 	#ip6tables -A FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+}
+start_nft(){
+	#设置策略路由
+	ip rule add fwmark 1 table 100 
+	ip route add local 0.0.0.0/0 dev lo table 100
+	#IPV6
+	[ "$ipv6_support" = "已开启" ] && {
+		ip -6 rule add fwmark 1 table 101
+		ip -6 route add local ::/0 dev lo table 101
+	}
+	nft add table shellclash
+	nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
+	#保留地址
+	nft define RESERVED_IP = {0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4}
+	#创建nft表和链
+	nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
+	nft add rule shellclash prerouting ip daddr $RESERVED_IP return
+	#过滤CN-IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
+		CN_IP=$(awk '{printf "%s, ",$1}' $bindir/cn_ip.txt)
+		nft define CN_IP = $CN_IP
+		nft add rule shellclash prerouting ip daddr $CN_IP return
+	}
+	#过滤常用端口
+	[ "$common_ports" = "已开启" ] && {
+		ports=$(echo $multiport | sed 's/,/, /g')
+		nft add rule shellclash prerouting tcp dport != {$ports} return
+	}
+	#过滤局域网设备 ether saddr
+	[ -n "$(cat $clashdir/mac)" ] && {
+		MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
+		nft define MAC = $MAC
+		[ "$macfilter_type" = "黑名单" ] && nft add rule shellclash prerouting ether saddr {$MAC} return
+		[ "$macfilter_type" = "白名单" ] && nft add rule shellclash prerouting ether saddr != {$MAC} return
+	}
+	#代理局域网设备
+	nft add rule shellclash prerouting udp dport 53 redirect to :$dns_port accept
+	nft add rule shellclash prerouting tcp dport 53 redirect to :$dns_port accept
+	nft add rule shellclash prerouting meta l4proto {$1} mark set 1 tproxy to :$redir_port accept
+	#代理本机
+	[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && {
+	nft add chain shellclash output { type filter hook prerouting priority 0 \; }
+	nft add rule shellclash output meta skuid clash return
+	[ "$common_ports" = "已开启" ] && nft add rule shellclash output tcp dport != {$ports} return
+	nft add rule shellclash output ip daddr $RESERVED_IP return
+	nft add rule shellclash output meta l4proto {$1} mark set 1 accept # 重路由至 prerouting
+	}
 }
 start_wan(){
 	[ "$mix_port" = "7890" -o -z "$authentication" ] && {
@@ -882,24 +930,30 @@ afstart(){
 	$bindir/clash -t -d $bindir >/dev/null
 	if [ "$?" = 0 ];then
 		#设置iptables转发规则
-		[ "$dns_mod" = "redir_host" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
-		if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ];then
-			if [ "$dns_redir" != "已开启" ];then
-				start_dns
-			else
-				#openwrt使用dnsmasq转发
-				uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
-				uci delete dhcp.@dnsmasq[0].resolvfile 2>/dev/null
-				uci add_list dhcp.@dnsmasq[0].server=127.0.0.1#$dns_port > /dev/null 2>&1
-				uci set dhcp.@dnsmasq[0].noresolv=1 2>/dev/null
-				uci commit dhcp >/dev/null 2>&1
-				/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		start_dns(){
+			[ "$dns_mod" = "redir_host" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
+			if [ "$dns_no" != "已禁用" ];then
+				if [ "$dns_redir" != "已开启" ];then
+					start_dns_redir
+				else
+					#openwrt使用dnsmasq转发
+					uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
+					uci delete dhcp.@dnsmasq[0].resolvfile 2>/dev/null
+					uci add_list dhcp.@dnsmasq[0].server=127.0.0.1#$dns_port > /dev/null 2>&1
+					uci set dhcp.@dnsmasq[0].noresolv=1 2>/dev/null
+					uci commit dhcp >/dev/null 2>&1
+					/etc/init.d/dnsmasq restart >/dev/null 2>&1
+				fi
 			fi
-		fi
-		[ "$redir_mod" != "纯净模式" ] && [ "$redir_mod" != "Tun模式" ] && start_redir
-		[ "$redir_mod" = "Redir模式" ] && [ "$tproxy_mod" = "已开启" ] && start_udp
+		}
+		[ "$redir_mod" = "Redir模式" ] && start_dns && start_redir 	
+		[ "$redir_mod" = "混合模式" ] && start_dns && start_redir && start_tun
+		[ "$redir_mod" = "Tproxy混合" ] && start_dns && start_redir && start_tproxy udp
+		[ "$redir_mod" = "Tun模式" ] && start_dns && start_tun
+		[ "$redir_mod" = "Tproxy模式" ] && start_dns && start_tproxy all
+		[ "$redir_mod" = "Nft模式1" ] && start_nft 'tcp, icmp'
+		[ "$redir_mod" = "Nft模式2" ] && start_nft 'tcp, udp, icmp'
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
-		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && start_tun
 		type iptables >/dev/null 2>&1 && start_wan
 		#标记启动时间
 		mark_time

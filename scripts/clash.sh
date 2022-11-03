@@ -593,23 +593,21 @@ clashcfg(){
 			echo -----------------------------------------------	
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
+		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
+		ip tuntap >/dev/null 2>&1 && sup_tun=1
+		type nftables >/dev/null 2>&1 && sup_nft=1
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
-		echo -e "\033[36mTun及混合模式必须使用clashpre核心！\033[0m"
 		echo -----------------------------------------------
-		echo -e " 1 Redir模式：CPU以及内存\033[33m占用较低\033[0m"
-		echo -e "              但\033[31m不支持UDP\033[0m"
-		echo -e "              适合\033[32m非外服游戏用户\033[0m使用"
-		echo -e " 2 混合模式： 使用redir转发TCP，Tun转发UDP流量"
-		echo -e "              \033[33m速度较快\033[0m，\033[31m内存占用略高\033[0m"
-		echo -e "              适合\033[32m游戏用户、综合用户\033[0m"
-		echo -e " 3 Tun模式：  \033[33m支持UDP转发\033[0m且延迟最低"
-		echo -e "              \033[31mCPU占用极高\033[0m，只支持fake-ip模式"
-		echo -e "              \033[33m如非必要不推荐使用\033[0m"
-		echo -e " 4 纯净模式： 不设置iptables静态路由"
-		echo -e "              必须\033[33m手动配置\033[0mhttp/sock5代理"
-		echo -e "              或使用内置的PAC文件配置代理"
+		echo -e " 1 Redir模式： Redir转发TCP，不转发UDP"
+		[ -n "$sup_tun" ] && echo -e " 2 混合模式：  Redir转发TCP，Tun转发UDP"
+		[ -n "$sup_tp" ] && echo -e " 3 Tproxy混合： Redir转发TCP，Tproxy转发UDP"
+		[ -n "$sup_tun" ] && echo -e " 4 Tun模式：   使用Tun转发TCP&UDP(占用高)"
+		[ -n "$sup_tp" ] && echo -e " 5 Tproxy模式： 使用Tproxy转发TCP&UDP"
+		[ -n "$sup_nft" ] && echo -e " 6 Nft模式1：   使用nftables转发TCP，不转发UDP"
+		[ -n "$sup_nft" ] && echo -e " 7 Nft模式2：   使用nftables转发TCP&UDP"
+		echo -e " 8 纯净模式：  不设置流量转发"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
 		if [ -z "$num" ]; then
@@ -620,40 +618,33 @@ clashcfg(){
 			redir_mod=Redir模式
 			dns_mod=redir_host
 			set_redir_config
-		elif [ "$num" = 3 ]; then
-			ip tuntap >/dev/null 2>&1
-			if [ "$?" != 0 ];then
-				echo -----------------------------------------------
-				echo -e "\033[31m当前设备内核可能不支持开启Tun/混合模式！\033[0m"
-				read -p "是否强制开启？可能无法正常使用！(1/0) > " res
-				if [ "$res" = 1 ];then
-					redir_mod=Tun模式
-					dns_mod=fake-ip
-					set_redir_config
-				else
-					set_redir_mod
-				fi
-			else	
-				redir_mod=Tun模式
-				dns_mod=fake-ip
-				set_redir_config
-			fi
+
 		elif [ "$num" = 2 ]; then
-			ip tuntap >/dev/null 2>&1
-			if [ "$?" != 0 ];then
-				echo -e "\033[31m当前设备内核可能不支持开启Tun/混合模式！\033[0m"
-				read -p "是否强制开启？可能无法正常使用！(1/0) > " res
-				if [ "$res" = 1 ];then
-					redir_mod=混合模式
-					set_redir_config
-				else
-					set_redir_mod
-				fi
-			else	
-				redir_mod=混合模式	
-				set_redir_config
-			fi
+			redir_mod=混合模式	
+			set_redir_config
+			
+		elif [ "$num" = 3 ]; then
+			redir_mod=Tproxy混合	
+			set_redir_config
+			
 		elif [ "$num" = 4 ]; then
+			redir_mod=Tun模式
+			dns_mod=fake-ip
+			set_redir_config
+			
+		elif [ "$num" = 5 ]; then
+			redir_mod=Tproxy模式	
+			set_redir_config
+			
+		elif [ "$num" = 6 ]; then
+			redir_mod=Nft模式1	
+			set_redir_config
+			
+		elif [ "$num" = 7 ]; then
+			redir_mod=Nft模式2	
+			set_redir_config	
+			
+		elif [ "$num" = 8 ]; then
 			redir_mod=纯净模式	
 			set_redir_config		
 			echo -----------------------------------------------
