@@ -141,7 +141,7 @@ setport(){
 		elif [ $portx -gt 65535 -o $portx -le 1 ]; then
 			echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
 			inputport
-		elif [ -n "$(echo $mix_port$redir_port$dns_port$db_port|grep $portx)" ]; then
+		elif [ -n "$(echo "|$mix_port|$redir_port|$dns_port|$db_port|" | grep "|$portx|")" ]; then
 			echo -e "\033[31m输入错误！请不要输入重复的端口！\033[0m"
 			inputport
 		elif [ -n "$(netstat -ntul |grep :$portx)" ];then
