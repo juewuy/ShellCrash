@@ -522,6 +522,7 @@ localproxy(){
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
 	echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
+	[ -n "$(type nft)" ] && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -572,7 +573,17 @@ localproxy(){
 			local_type="iptables增强模式"
 			setconfig local_type $local_type
 		else
-			echo -e "\033[31m当前设备无法使用增强模式！\033[0m"
+			echo -e "\033[31m当前设备无法使用iptables增强模式！\033[0m"
+			sleep 1
+		fi
+		localproxy
+		
+	elif [ "$num" = 4 ]; then
+		if [ -n "$(echo $redir_mod|grep Nft)" ];then
+			local_type="nftables增强模式"
+			setconfig local_type $local_type
+		else
+			echo -e "\033[31m请先启用任意nftable相关模式！\033[0m"
 			sleep 1
 		fi
 		localproxy
@@ -594,20 +605,21 @@ clashcfg(){
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
-		ip tuntap >/dev/null 2>&1 && sup_tun=1
-		type nftables >/dev/null 2>&1 && sup_nft=1
+		[ -n "$(lsmod | grep '^tun')" ] && sup_tun=1
+		[ -n "$(type nft)" ] && sup_nft=1
+		[ -n "$(type nft)" -a -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
-		echo -e " 1 Redir模式： Redir转发TCP，不转发UDP"
-		[ -n "$sup_tun" ] && echo -e " 2 混合模式：  Redir转发TCP，Tun转发UDP"
-		[ -n "$sup_tp" ] && echo -e " 3 Tproxy混合： Redir转发TCP，Tproxy转发UDP"
-		[ -n "$sup_tun" ] && echo -e " 4 Tun模式：   使用Tun转发TCP&UDP(占用高)"
-		[ -n "$sup_tp" ] && echo -e " 5 Tproxy模式： 使用Tproxy转发TCP&UDP"
-		[ -n "$sup_nft" ] && echo -e " 6 Nft模式1：   使用nftables转发TCP，不转发UDP"
-		[ -n "$sup_nft" ] && echo -e " 7 Nft模式2：   使用nftables转发TCP&UDP"
-		echo -e " 8 纯净模式：  不设置流量转发"
+		echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
+		[ -n "$sup_tun" ] && echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
+		[ -n "$sup_tp" ] && echo -e " 3 \033[32mTproxy混合\033[0m：   Redir转发TCP，Tproxy转发UDP"
+		[ -n "$sup_tun" ] && echo -e " 4 \033[33mTun模式\033[0m：      使用Tun转发TCP&UDP(占用高)"
+		[ -n "$sup_tp" ] && echo -e " 5 \033[32mTproxy模式\033[0m：   使用Tproxy转发TCP&UDP"
+		[ -n "$sup_nft" ] && echo -e " 6 \033[36mNft基础\033[0m：      使用nftables转发TCP，不转发UDP"
+		[ "$sup_nft" = '2' ] && echo -e " 7 \033[32mNft混合\033[0m：      使用nft_tproxy转发TCP&UDP"
+		echo -e " 8 \033[36m纯净模式\033[0m：     不设置流量转发"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
 		if [ -z "$num" ]; then
@@ -637,11 +649,11 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 6 ]; then
-			redir_mod=Nft模式1	
+			redir_mod=Nft基础
 			set_redir_config
 			
 		elif [ "$num" = 7 ]; then
-			redir_mod=Nft模式2	
+			redir_mod=Nft混合
 			set_redir_config	
 			
 		elif [ "$num" = 8 ]; then
@@ -863,7 +875,6 @@ clashadv(){
 	echo -----------------------------------------------
 	echo -e " 1 使用保守模式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
 	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
-	echo -e " 3 Redir模式udp转发:	\033[36m$tproxy_mod\033[0m	————依赖iptables-mod-tproxy"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
 	echo -e " 5 允许公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
 	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
@@ -914,24 +925,6 @@ clashadv(){
 		fi
 		setconfig ipv6_support $ipv6_support
 		clashadv   
-		
-	elif [ "$num" = 3 ]; then	
-		echo -----------------------------------------------
-		if [ "$tproxy_mod" = "未开启" ]; then 
-			if [ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ];then
-				tproxy_mod=已开启
-				echo -e "\033[32m已经为Redir模式启用udp转发功能！\033[0m"
-			else
-				tproxy_mod=未开启
-				echo -e "\033[31m您的设备不支持tproxy模式，无法开启！\033[0m"
-			fi
-		else
-			tproxy_mod=未开启
-			echo -e "\033[33m已经停止使用tproxy转发udp流量！！\033[0m"
-		fi
-		setconfig tproxy_mod $tproxy_mod
-		sleep 1
-		clashadv 	
 		
 	elif [ "$num" = 4 ]; then	
 		echo -----------------------------------------------
