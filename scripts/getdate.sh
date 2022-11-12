@@ -1134,6 +1134,8 @@ testcommand(){
 		echo -----------------------------------------------
 		iptables  -t nat  -L clash --line-numbers
 		echo -----------------------------------------------
+		iptables  -t mangle -L clash --line-numbers
+		echo -----------------------------------------------
 		iptables  -t nat  -L clash_dns --line-numbers
 		echo -----------------------------------------------
 		ip6tables  -t nat  -L PREROUTING --line-numbers

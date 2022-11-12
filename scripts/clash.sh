@@ -521,7 +521,7 @@ localproxy(){
 	echo -----------------------------------------------
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
-	echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
+	[ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
 	[ -n "$(type nft)" ] && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------

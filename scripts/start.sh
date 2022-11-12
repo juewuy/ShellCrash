@@ -20,6 +20,7 @@ getconfig(){
 	[ -z "$ipv6_dns" ] && ipv6_dns=$ipv6_support
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
+	[ -z "$tproxy_port" ] && tproxy_port=7893
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$streaming_int" ] && streaming_int=24
@@ -234,7 +235,7 @@ EOF`
 			exit 1
 		fi
 		#检测不支持的加密协议
-		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
+		if cat $yamlnew | grep 'cipher:\ chacha20,' >/dev/null;then
 			echo -----------------------------------------------
 			logger "已停止支持chacha20加密，请更换更安全的节点加密协议！" 31
 			echo -----------------------------------------------
@@ -258,7 +259,7 @@ EOF`
 		fi
 		#检测并去除无效节点组
 		[ -n "$url_type" ] && type xargs >/dev/null 2>&1 && {
-		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
+		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT\ $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 		while read line ;do
 			sed -i "/- $line/d" $yamlnew
 			sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
@@ -341,7 +342,7 @@ modify_yaml(){
 	cat > $tmpdir/set.yaml <<EOF
 mixed-port: $mix_port
 redir-port: $redir_port
-tproxy-port: 7893
+tproxy-port: $tproxy_port
 authentication: ["$authentication"]
 $lan
 mode: $mode
@@ -482,11 +483,6 @@ start_redir(){
 	fi
 	#将PREROUTING链指向clash链
 	iptables -t nat -A PREROUTING -p tcp $ports -j clash
-	#禁用QUIC
-	if [ "$quic_rj" = 已启用 ] && [ "$tproxy_mod" = "已开启" ];then
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
-		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
-	fi
 	#设置ipv6转发
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ];then
@@ -567,21 +563,57 @@ start_tproxy(){
 	iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
 	[ -n "$host_lan" ] && iptables -t mangle -A clash -d $host_lan -j RETURN
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		#mac白名单
-		for mac in $(cat $clashdir/mac); do
-			iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $redir_port --tproxy-mark 1
-		done
-	else
-		#mac黑名单
-		for mac in $(cat $clashdir/mac); do
-			iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
-		done
-		iptables -t mangle -A clash -p $1 -s 192.168.0.0/16 -j TPROXY --on-port $redir_port --tproxy-mark 1
-		iptables -t mangle -A clash -p $1 -s 10.0.0.0/8 -j TPROXY --on-port $redir_port --tproxy-mark 1
-		[ -n "$host_lan" ] && iptables -t mangle -A clash -p $1 -s $host_lan -j TPROXY --on-port $redir_port --tproxy-mark 1
-	fi
-	iptables -t mangle -A PREROUTING -p $1 -j clash
+	tproxy_set(){
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+			#mac白名单
+			for mac in $(cat $clashdir/mac); do
+				iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			done
+		else
+			#mac黑名单
+			for mac in $(cat $clashdir/mac); do
+				iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
+			done
+			iptables -t mangle -A clash -p $1 -s 192.168.0.0/16 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			iptables -t mangle -A clash -p $1 -s 10.0.0.0/8 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			[ -n "$host_lan" ] && iptables -t mangle -A clash -p $1 -s $host_lan -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+		fi
+		iptables -t mangle -A PREROUTING -p $1 $ports -j clash
+	}
+	[ "$1" = "all" ] && tproxy_set tcp
+	tproxy_set udp
+	
+	#屏蔽QUIC
+	[ "$quic_rj" = 已启用 ] && {
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+	}
+	#设置ipv6转发
+	ip6_nat=$(ip6tables -t mangle -L 2>&1 | grep -o 'Chain')
+	[ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ] && {
+		ip -6 rule add fwmark 1 table 101
+		ip -6 route add local ::/0 dev lo table 101
+		ip6tables -t mangle -N clashv6
+		ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
+		tproxy_set6(){
+			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+				#mac白名单
+				for mac in $(cat $clashdir/mac); do
+					ip6tables -t mangle -A clashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+				done
+			else
+				#mac黑名单
+				for mac in $(cat $clashdir/mac); do
+					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
+				done
+				ip6tables -t mangle -A clashv6 -p $1 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			fi	
+			ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
+		}
+		[ "$1" = "all" ] && tproxy_set6 tcp
+		#tproxy_set6 udp
+		
+	}
 }
 start_output(){
 	#流量过滤
@@ -609,14 +641,14 @@ start_output(){
 	}
 	#Docker转发
 	type docker &>/dev/null && {
-	iptables -t nat -N clash_docker
-	iptables -t nat -A clash_docker -d 10.0.0.0/8 -j RETURN
-	iptables -t nat -A clash_docker -d 127.0.0.0/8 -j RETURN
-	iptables -t nat -A clash_docker -d 172.16.0.0/12 -j RETURN
-	iptables -t nat -A clash_docker -d 192.168.0.0/16 -j RETURN
-	iptables -t nat -A clash_docker -p tcp -j REDIRECT --to-ports $redir_port
-	iptables -t nat -A PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker
-	[ "$dns_no" != "已禁用" ] && iptables -t nat -A PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port
+		iptables -t nat -N clash_docker
+		iptables -t nat -A clash_docker -d 10.0.0.0/8 -j RETURN
+		iptables -t nat -A clash_docker -d 127.0.0.0/8 -j RETURN
+		iptables -t nat -A clash_docker -d 172.16.0.0/12 -j RETURN
+		iptables -t nat -A clash_docker -d 192.168.0.0/16 -j RETURN
+		iptables -t nat -A clash_docker -p tcp -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker
+		[ "$dns_no" != "已禁用" ] && iptables -t nat -A PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port
 	}
 }
 start_tun(){
@@ -629,14 +661,15 @@ start_tun(){
 }
 start_nft(){
 	#设置策略路由
-	ip rule add fwmark 1 table 100 
-	ip route add local default dev lo table 100
+	ip rule add fwmark 1 table 100 2> /dev/null
+	ip route add local default dev lo table 100 2> /dev/null
 	[ "$ipv6_support" = "已开启" ] && {
-		ip -6 rule add fwmark 1 table 101
-		ip -6 route add local ::/0 dev lo table 101
+		ip -6 rule add fwmark 1 table 101 2> /dev/null
+		ip -6 route add local ::/0 dev lo table 101 2> /dev/null
 	}
 	#初始化nftables
-	nft add table shellclash
+	nft add table shellclash 2> /dev/null
+	nft flush table shellclash 2> /dev/null
 	nft add chain shellclash prerouting { type nat hook prerouting priority -100 \; }
 	#过滤局域网设备 ether saddr
 	[ -n "$(cat $clashdir/mac)" ] && {
@@ -660,20 +693,26 @@ start_nft(){
 		PORTS=$(echo $multiport | sed 's/,/, /g')
 		nft add rule shellclash prerouting tcp dport != {${PORTS}} return
 	}
+	#屏蔽QUIC
+	[ "$quic_rj" = 已启用 ] && {
+		nft add chain shellclash input { type filter hook input priority 0 \; }
+		nft add rule shellclash input udp dport 443 reject comment "ShellClash QUIC REJECT"
+	}	
 	#代理局域网设备
 	if [ "$redir_mod" = "Nft混合" ];then
 		nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
-		nft add rule shellclash prerouting meta l4proto {tcp, udp} mark set 1 tproxy to 127.0.0.1:7893
+		nft add rule shellclash prerouting meta l4proto {tcp, udp} mark set 1 tproxy to 127.0.0.1:${tproxy_port}
 	else
 		nft add rule shellclash prerouting meta l4proto tcp mark set 1 redirect to ${redir_port}
 	fi
 	#代理本机
 	[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && {
-	nft add chain shellclash output { type filter hook output priority 0 \; }
-	nft add rule shellclash output meta skuid clash return
-	[ "$common_ports" = "已开启" ] && nft add rule shellclash output tcp dport != {${PORTS}} return
-	nft add rule shellclash output ip daddr {${RESERVED_IP}} return
-	nft add rule shellclash output meta l4proto tcp mark set 1 # 重路由至 prerouting
+	nft add chain shellclash output { type route hook output priority 0 \; }
+	nft add rule shellclash output meta skgid 7890 return
+	#[ "$common_ports" = "已开启" ] && nft add rule shellclash output tcp dport != {${PORTS}} return
+	#nft add rule shellclash output ip daddr {${RESERVED_IP}} return
+	nft add rule shellclash output meta l4proto udp dport 53 mark set 1 redirect to ${dns_port}
+	nft add rule shellclash output meta l4proto tcp mark set 1
 	}
 }
 start_wan(){
@@ -695,59 +734,69 @@ start_wan(){
 	fi
 }
 stop_firewall(){
-    #重置iptables规则
-	iptables -t nat -D PREROUTING -p tcp $ports -j clash 2> /dev/null
-	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
-	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-	iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
-	iptables -t nat -F clash 2> /dev/null
-	iptables -t nat -X clash 2> /dev/null
-	iptables -t nat -F clash_dns 2> /dev/null
-	iptables -t nat -X clash_dns 2> /dev/null
-	iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
-	#重置屏蔽QUIC规则
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
-	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
-	iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
-	#重置output规则
-	iptables -t nat -D OUTPUT -p tcp -j clash_out 2> /dev/null
-	iptables -t nat -F clash_out 2> /dev/null
-	iptables -t nat -X clash_out 2> /dev/null	
-	iptables -t nat -D OUTPUT -p udp --dport 53 -j clash_dns_out 2> /dev/null
-	iptables -t nat -F clash_dns_out 2> /dev/null
-	iptables -t nat -X clash_dns_out 2> /dev/null
-	#重置docker规则
-	iptables -t nat -F clash_docker 2> /dev/null
-	iptables -t nat -X clash_docker 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker 2> /dev/null
-	iptables -t nat -D PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port 2> /dev/null
-	#重置udp规则
-	iptables -t mangle -D PREROUTING -p udp -j clash 2> /dev/null
-	iptables -t mangle -F clash 2> /dev/null
-	iptables -t mangle -X clash 2> /dev/null
-	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -j REJECT >/dev/null 2>&1
-	iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" -m set ! --match-set cn_ip dst -j REJECT >/dev/null 2>&1
-	#重置公网访问规则
-	iptables -D INPUT -p tcp -s 10.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
-	iptables -D INPUT -p tcp -s 127.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
-	iptables -D INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT 2> /dev/null
-	iptables -D INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT 2> /dev/null
-	iptables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
-	ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
-	iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
-	ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
-	iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+    #重置iptables相关规则
+	type iptables >/dev/null 2>&1 && {
+		#redir
+		iptables -t nat -D PREROUTING -p tcp $ports -j clash 2> /dev/null
+		iptables -t nat -F clash 2> /dev/null
+		iptables -t nat -X clash 2> /dev/null
+		#dns
+		iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
+		iptables -t nat -F clash_dns 2> /dev/null
+		iptables -t nat -X clash_dns 2> /dev/null
+		#tun
+		iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
+		#屏蔽QUIC
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+		#本机代理
+		iptables -t nat -D OUTPUT -p tcp -j clash_out 2> /dev/null
+		iptables -t nat -F clash_out 2> /dev/null
+		iptables -t nat -X clash_out 2> /dev/null	
+		iptables -t nat -D OUTPUT -p udp --dport 53 -j clash_dns_out 2> /dev/null
+		iptables -t nat -F clash_dns_out 2> /dev/null
+		iptables -t nat -X clash_dns_out 2> /dev/null
+		#docker
+		iptables -t nat -F clash_docker 2> /dev/null
+		iptables -t nat -X clash_docker 2> /dev/null
+		iptables -t nat -D PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker 2> /dev/null
+		iptables -t nat -D PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port 2> /dev/null
+		#TPROXY
+		iptables -t mangle -D PREROUTING -p tcp $ports -j clash 2> /dev/null
+		iptables -t mangle -D PREROUTING -p udp $ports -j clash 2> /dev/null
+		iptables -t mangle -F clash 2> /dev/null
+		iptables -t mangle -X clash 2> /dev/null
+		#公网访问
+		iptables -D INPUT -p tcp -s 10.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
+		iptables -D INPUT -p tcp -s 127.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
+		iptables -D INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT 2> /dev/null
+		iptables -D INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT 2> /dev/null
+		iptables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+		iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+		iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+	}
 	#重置ipv6规则
-	ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
-	ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-	ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
-	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j clashv6_dns 2> /dev/null
-	ip6tables -t nat -F clashv6 2> /dev/null
-	ip6tables -t nat -X clashv6 2> /dev/null
-	ip6tables -t nat -F clashv6_dns 2> /dev/null
-	ip6tables -t nat -X clashv6_dns 2> /dev/null
-	ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
+	type ip6tables >/dev/null 2>&1 && {
+		#redir
+		ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
+		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j clashv6_dns 2> /dev/null
+		ip6tables -t nat -F clashv6 2> /dev/null
+		ip6tables -t nat -X clashv6 2> /dev/null
+		#dns
+		ip6tables -t nat -F clashv6_dns 2> /dev/null
+		ip6tables -t nat -X clashv6_dns 2> /dev/null
+		#tun
+		ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
+		#公网访问
+		ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+		ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+		ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+		#tproxy
+		ip6tables -t mangle -D PREROUTING -p tcp $ports -j clashv6 2> /dev/null
+		ip6tables -t mangle -F clashv6 2> /dev/null
+		ip6tables -t mangle -X clashv6 2> /dev/null
+	}
 	#清理ipset规则
 	ipset destroy cn_ip >/dev/null 2>&1
 	#移除dnsmasq转发规则
@@ -757,12 +806,16 @@ stop_firewall(){
 		uci commit dhcp >/dev/null 2>&1
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
 	}
-	#清理路由
+	#清理路由规则
 	ip rule del fwmark 1 table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
+	ip -6 rule del fwmark 1 table 101 2> /dev/null
+	ip -6 route del local ::/0 dev lo table 101 2> /dev/null
 	#重置nftables相关规则
-	nft flush table shellclash >/dev/null 2>&1
-	nft delete table shellclash >/dev/null 2>&1
+	type nft >/dev/null 2>&1 && {
+		nft flush table shellclash >/dev/null 2>&1
+		nft delete table shellclash >/dev/null 2>&1
+	}
 }
 #面板配置保存相关
 web_save(){
@@ -906,7 +959,7 @@ bfstart(){
 		fi
 	fi
 	#本机代理准备
-	if [ "$local_proxy" = "已开启" -a "$local_type" = "iptables增强模式" ];then
+	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
 			if type userdel useradd groupmod &>/dev/null; then
 				userdel shellclash 2>/dev/null
@@ -921,7 +974,7 @@ bfstart(){
 			[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
 			[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
 			if [ -w /etc/init.d/clash ]; then
-				[ -z "$(grep 'procd_set_param user shellclash' /etc/init.d/clash)" ] && \
+				[ -z "$(grep 'procd_set_param\ user\ shellclash' /etc/init.d/clash)" ] && \
     			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellclash' /etc/init.d/clash
 			elif [ -w "$servdir" ]; then
 				setconfig ExecStart "/bin/su\ shellclash\ -c\ \"$bindir/clash\ -d\ $bindir\"" $servdir
@@ -989,7 +1042,7 @@ afstart(){
 }
 start_old(){
 	#使用传统后台执行二进制文件的方式执行
-	if [ "$local_proxy" = "已开启" -a "$local_type" = "iptables增强模式" ];then
+	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
 	else
 		type nohup >/dev/null 2>&1 && nohup=nohup
