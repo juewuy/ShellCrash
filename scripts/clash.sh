@@ -516,13 +516,15 @@ localproxy(){
 	[ -z "$local_proxy" ] && local_proxy='未开启'
 	[ -z "$local_type" ] && local_type='环境变量'
 	[ "$local_proxy" = "已开启" ] && proxy_set='禁用' || proxy_set='启用'
+	[ -w /etc/systemd/system/clash.service -o -w /usr/lib/systemd/system/clash.service -o -x /bin/su ] && local_enh=1
+	[ -f /etc/rc.common -a -w /etc/passwd ] && local_enh=1
 	echo -----------------------------------------------
 	echo -e "\033[33m当前本机代理配置方式为：\033[32m$local_type\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
 	[ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
-	[ -n "$(type nft)" ] && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
+	type nft 2> /dev/null && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -566,26 +568,23 @@ localproxy(){
 		setconfig local_type $local_type
 		localproxy
 	elif [ "$num" = 3 ]; then
-		if [ -w /etc/systemd/system/clash.service -o -w /usr/lib/systemd/system/clash.service -o -x /bin/su ];then
-			local_type="iptables增强模式"
-			setconfig local_type $local_type
-		elif [ -f /etc/rc.common -a -w /etc/passwd ]; then
+		if [ -n "$local_enh" ];then
 			local_type="iptables增强模式"
 			setconfig local_type $local_type
 		else
 			echo -e "\033[31m当前设备无法使用iptables增强模式！\033[0m"
-			sleep 1
 		fi
+		sleep 1
 		localproxy
 		
 	elif [ "$num" = 4 ]; then
-		if [ -n "$(echo $redir_mod|grep Nft)" ];then
+		if [ -n "$local_enh" ];then
 			local_type="nftables增强模式"
 			setconfig local_type $local_type
 		else
-			echo -e "\033[31m请先启用任意nftable相关模式！\033[0m"
-			sleep 1
+			echo -e "\033[31m当前设备无法使用nftables增强模式！\033[0m"
 		fi
+		sleep 1
 		localproxy
 	else
 		errornum
@@ -606,8 +605,8 @@ clashcfg(){
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
 		[ -n "$(lsmod | grep '^tun')" ] && sup_tun=1
-		[ -n "$(type nft)" ] && sup_nft=1
-		[ -n "$(type nft)" -a -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
+		type nft 2> /dev/null && sup_nft=1
+		[ -n "$sup_nft" -a -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
@@ -817,7 +816,7 @@ clashcfg(){
 		
 	elif [ "$num" = 7 ]; then	
 		echo -----------------------------------------------
-		if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$tproxy_mod" = "已开启" ];then
+		if [ -n "$(echo "$redir_mod" | grep -oE '混合|Tproxy|Tun')" ];then
 			if [ "$quic_rj" = "未开启" ]; then 
 				echo -e "\033[33m已禁止QUCI流量通过clash内核！！\033[0m"
 				quic_rj=已启用
@@ -829,6 +828,7 @@ clashcfg(){
 		else
 			echo -e "\033[33m当前模式默认不会代理UDP流量，无需设置！！\033[0m"
 		fi
+		sleep 1
 		clashcfg	
 		
 	elif [ "$num" = 8 ]; then
@@ -837,10 +837,7 @@ clashcfg(){
 			fake_ip_filter
 			clashcfg
 		else
-			if ! ipset -v >/dev/null 2>&1;then
-				echo -e "\033[31m当前设备缺少ipset模块，无法启用绕过功能！！\033[0m"
-				sleep 1
-			else
+			if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
 				if [ "$cn_ip_route" = "未开启" ]; then 
 					echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
 					cn_ip_route=已开启
@@ -850,6 +847,9 @@ clashcfg(){
 					cn_ip_route=未开启
 				fi
 				setconfig cn_ip_route $cn_ip_route
+			else
+				echo -e "\033[31m当前设备缺少ipset模块或未使用Nft模式，无法启用绕过功能！！\033[0m"
+				sleep 1
 			fi
 		fi
 		clashcfg  	

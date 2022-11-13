@@ -1097,7 +1097,7 @@ testcommand(){
 	echo " 1 查看Clash运行时的报错信息(会停止clash服务)"
 	echo " 2 查看系统DNS端口(:53)占用 "
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
-	echo " 4 查看iptables端口转发详情"
+	echo " 4 查看clash相关路由规则"
 	echo " 5 查看config.yaml前40行"
 	echo " 6 测试代理服务器连通性（google.tw)"
 	echo " 7 重新进入新手引导"
@@ -1129,20 +1129,31 @@ testcommand(){
 		echo -----------------------------------------------
 		exit;
 	elif [ "$num" = 4 ]; then
-		echo -----------------------------------------------
-		iptables  -t nat  -L PREROUTING --line-numbers
-		echo -----------------------------------------------
-		iptables  -t nat  -L clash --line-numbers
-		echo -----------------------------------------------
-		iptables  -t mangle -L clash --line-numbers
-		echo -----------------------------------------------
-		iptables  -t nat  -L clash_dns --line-numbers
-		echo -----------------------------------------------
-		ip6tables  -t nat  -L PREROUTING --line-numbers
-		echo -----------------------------------------------
-		ip6tables  -t nat  -L clashv6 --line-numbers
-		echo -----------------------------------------------
-		ip6tables  -t nat  -L clashv6_dns --line-numbers
+
+		if [ -n "$(echo $redir_mod | grep 'Nft')" ];then
+			nft list table shellclash
+		else
+			echo -------------------Redir---------------------
+			iptables  -t nat  -L PREROUTING --line-numbers
+			iptables  -t nat -L clash_dns --line-numbers
+			iptables  -t nat  -L clash --line-numbers
+			[ -n "$(echo $redir_mod | grep 'Tproxy')" ] && {
+				echo -------------------Tproxy--------------------
+				iptables  -t mangle -L PREROUTING --line-numbers
+				iptables  -t mangle  -L clash --line-numbers
+			}
+			[ -n "$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')" -a "$ipv6_support" = "已开启" ] && {
+				echo -------------------Redir---------------------
+				ip6tables  -t nat  -L PREROUTING --line-numbers
+				ip6tables  -t nat -L clashv6_dns --line-numbers
+				ip6tables  -t nat  -L clashv6 --line-numbers
+				[ -n "$(echo $redir_mod | grep 'Tproxy')" ] && {
+					echo -------------------Tproxy--------------------
+					ip6tables  -t mangle -L PREROUTING --line-numbers
+					ip6tables  -t mangle  -L clashv6 --line-numbers
+				}
+			}
+		fi
 		exit;
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------

@@ -660,6 +660,8 @@ start_tun(){
 	#ip6tables -A FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 }
 start_nft(){
+	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
+	RESERVED_IP="{0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4}"
 	#设置策略路由
 	ip rule add fwmark 1 table 100 2> /dev/null
 	ip route add local default dev lo table 100 2> /dev/null
@@ -670,49 +672,62 @@ start_nft(){
 	#初始化nftables
 	nft add table shellclash 2> /dev/null
 	nft flush table shellclash 2> /dev/null
-	nft add chain shellclash prerouting { type nat hook prerouting priority -100 \; }
-	#过滤局域网设备 ether saddr
-	[ -n "$(cat $clashdir/mac)" ] && {
-		MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
-		[ "$macfilter_type" = "黑名单" ] && nft add rule shellclash prerouting ether saddr {${MAC}} return
-		[ "$macfilter_type" = "白名单" ] && nft add rule shellclash prerouting ether saddr != {${MAC}} return
-	}	
-	#设置DNS转发
-	nft add rule shellclash prerouting udp dport 53 redirect to ${dns_port}
-	nft add rule shellclash prerouting tcp dport 53 redirect to ${dns_port}
-	#过滤保留地址
-	RESERVED_IP="{0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4}"
-	nft add rule shellclash prerouting ip daddr {${RESERVED_IP}} return
-	#过滤CN-IP
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
-		CN_IP=$(awk '{printf "%s, ",$1}' $bindir/cn_ip.txt)
-		[ -n "$CN_IP" ] && nft add rule shellclash prerouting ip daddr {${CN_IP}} return
-	}
-	#过滤常用端口
-	[ "$common_ports" = "已开启" ] && {
-		PORTS=$(echo $multiport | sed 's/,/, /g')
-		nft add rule shellclash prerouting tcp dport != {${PORTS}} return
+	[ "$redir_mod" = "Nft基础" ] && nft add chain shellclash prerouting { type nat hook prerouting priority -100 \; }
+	[ "$redir_mod" = "Nft混合" ] && nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
+	[ -n "$(echo $redir_mod|grep Nft)" ] && {
+		#设置DNS转发
+		nft add chain shellclash dns { type nat hook prerouting priority -100 \; }
+		nft add rule shellclash dns udp dport 53 redirect to ${dns_port}
+		nft add rule shellclash dns tcp dport 53 redirect to ${dns_port}
+		#过滤局域网设备
+		[ -n "$(cat $clashdir/mac)" ] && {
+			MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
+			[ "$macfilter_type" = "黑名单" ] && {
+				nft add rule shellclash dns ether saddr {${MAC}} return
+				nft add rule shellclash prerouting ether saddr {${MAC}} return
+				}
+			[ "$macfilter_type" = "白名单" ] && {
+				nft add rule shellclash dns ether saddr != {${MAC}} return
+				nft add rule shellclash prerouting ether saddr != {${MAC}} return
+			}
+		}	
+		#过滤保留地址
+		nft add rule shellclash prerouting ip daddr {${RESERVED_IP}} return
+		#过滤CN-IP
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
+			CN_IP=$(awk '{printf "%s, ",$1}' $bindir/cn_ip.txt)
+			[ -n "$CN_IP" ] && nft add rule shellclash prerouting ip daddr {${CN_IP}} return
+		}
+		#过滤常用端口
+		[ -n "$PORTS" ] && nft add rule shellclash prerouting tcp dport != {${PORTS}} return
+		#透明路由
+		[ "$redir_mod" = "Nft基础" ] && nft add rule shellclash prerouting meta l4proto tcp mark set 1 redirect to ${redir_port}
+		[ "$redir_mod" = "Nft混合" ] && nft add rule shellclash prerouting meta l4proto {tcp, udp} mark set 1 tproxy to 127.0.0.1:${tproxy_port}
 	}
 	#屏蔽QUIC
 	[ "$quic_rj" = 已启用 ] && {
 		nft add chain shellclash input { type filter hook input priority 0 \; }
-		nft add rule shellclash input udp dport 443 reject comment "ShellClash QUIC REJECT"
-	}	
-	#代理局域网设备
-	if [ "$redir_mod" = "Nft混合" ];then
-		nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
-		nft add rule shellclash prerouting meta l4proto {tcp, udp} mark set 1 tproxy to 127.0.0.1:${tproxy_port}
-	else
-		nft add rule shellclash prerouting meta l4proto tcp mark set 1 redirect to ${redir_port}
-	fi
+		nft add rule shellclash input udp dport 443 reject comment 'ShellClash-QUIC-REJECT'
+	}
 	#代理本机
 	[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && {
-	nft add chain shellclash output { type route hook output priority 0 \; }
-	nft add rule shellclash output meta skgid 7890 return
-	#[ "$common_ports" = "已开启" ] && nft add rule shellclash output tcp dport != {${PORTS}} return
-	#nft add rule shellclash output ip daddr {${RESERVED_IP}} return
-	nft add rule shellclash output meta l4proto udp dport 53 mark set 1 redirect to ${dns_port}
-	nft add rule shellclash output meta l4proto tcp mark set 1
+		#dns
+		nft add chain shellclash dns_out { type nat hook output priority -100 \; }
+		nft add rule shellclash dns_out meta skgid 7890 return && {
+			nft add rule shellclash dns_out udp dport 53 redirect to ${dns_port}
+		}
+		#output
+		nft add chain shellclash output { type nat hook output priority -100 \; }
+		nft add rule shellclash output meta skgid 7890 return && {
+			[ -n "$PORTS" ] && nft add rule shellclash output tcp dport != {${PORTS}} return
+			nft add rule shellclash output ip daddr {${RESERVED_IP}} return
+			nft add rule shellclash output meta l4proto tcp mark set 1 redirect to ${redir_port}
+		}
+		#Docker
+		type docker &>/dev/null && {
+			ip rule add fwmark 1 table 102 2> /dev/null
+			ip route add local 172.16.0.0/12 dev lo table 102 2> /dev/null
+		}
 	}
 }
 start_wan(){
@@ -811,6 +826,8 @@ stop_firewall(){
 	ip route del local default dev lo table 100 2> /dev/null
 	ip -6 rule del fwmark 1 table 101 2> /dev/null
 	ip -6 route del local ::/0 dev lo table 101 2> /dev/null
+	ip rule del fwmark 1 table 102 2> /dev/null
+	ip route del local 172.16.0.0/12 dev lo table 102 2> /dev/null
 	#重置nftables相关规则
 	type nft >/dev/null 2>&1 && {
 		nft flush table shellclash >/dev/null 2>&1
@@ -989,7 +1006,7 @@ afstart(){
 	getconfig
 	$bindir/clash -t -d $bindir >/dev/null
 	if [ "$?" = 0 ];then
-		#设置iptables转发规则
+		#设置DNS转发
 		start_dns(){
 			[ "$dns_mod" = "redir_host" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
 			if [ "$dns_no" != "已禁用" ];then
@@ -1006,19 +1023,21 @@ afstart(){
 				fi
 			fi
 		}
+		#设置路由规则
 		[ "$redir_mod" = "Redir模式" ] && start_dns && start_redir 	
 		[ "$redir_mod" = "混合模式" ] && start_dns && start_redir && start_tun
 		[ "$redir_mod" = "Tproxy混合" ] && start_dns && start_redir && start_tproxy udp
 		[ "$redir_mod" = "Tun模式" ] && start_dns && start_tun
 		[ "$redir_mod" = "Tproxy模式" ] && start_dns && start_tproxy all
-		[ "$redir_mod" = "Nft基础" ] && start_nft 'tcp'
-		[ "$redir_mod" = "Nft混合" ] && start_nft '{tcp, udp}'
+		[ "$redir_mod" = "Nft基础" ] && start_nft
+		[ "$redir_mod" = "Nft混合" ] && start_nft
+		#设置本机代理
+		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
+		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
 		type iptables >/dev/null 2>&1 && start_wan
 		#标记启动时间
 		mark_time
-		#设置本机代理
-		[ "$local_proxy" = "已开启" ] && $0 set_proxy $mix_port $db_port
 		#加载定时任务
 		[ -f $clashdir/cron ] && croncmd $clashdir/cron	
 		#启用面板配置自动保存
