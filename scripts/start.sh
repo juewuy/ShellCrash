@@ -506,8 +506,7 @@ start_dns_redir(){
 	#屏蔽OpenWrt内置53端口转发
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
 	iptables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-	ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-	ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null	
+
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
@@ -524,8 +523,10 @@ start_dns_redir(){
 	fi
 	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
 	#ipv6DNS
-	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
-	if [ -n "$ip6_nat" ];then
+	if [ -n "$(lsmod | grep 'ip6table_nat')" ];then
+		#屏蔽OpenWrt内置53端口转发
+		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
+		ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null	
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
@@ -1129,8 +1130,9 @@ init)
 			done
 			profile=/etc/profile
 			sed -i '' $profile #将软链接转化为一般文件
-		elif [ -d "/jffs/clash" ];then
-			clashdir=/jffs/clash
+		elif [ -d "/jffs" ];then
+			sleep 30
+			clashdir=$(cd $(dirname $0);pwd)
 			if [ -w /etc/profile ];then
 				profile=/etc/profile
 			else

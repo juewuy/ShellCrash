@@ -763,8 +763,7 @@ setserver(){
 	echo -e " 2 \033[32m正式版\033[0m&fastgit.org源"
 	echo -e " 3 \033[36m公测版\033[0m&Github源(本机clash服务加速)"
 	echo -e " 4 \033[36m公测版\033[0m&ShellClash源"
-	echo -e " 5 \033[36m公测版\033[0m&githubusercontents加速"
-	echo -e " 6 \033[36m公测版\033[0m&fastgit.org源"
+	echo -e " 5 \033[36m公测版\033[0m&fastgit.org源"
 	echo -e " 7 \033[33m内测版\033[0m(请加TG讨论组:\033[4;36mhttps://t.me/ShellClash\033[0m)"
 	echo -e " 8 自定义源地址(用于本地源或自建源)"
 	echo -e " 9 \033[31m版本回退\033[0m"
@@ -787,10 +786,6 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 5 ]; then
-		update_url='https://raw.githubusercontents.com/juewuy/ShellClash/master'
-		release_url=''
-		saveserver
-	elif [ "$num" = 6 ]; then
 		update_url='https://raw.fastgit.org/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
@@ -810,7 +805,8 @@ setserver(){
 		fi
 	elif [ "$num" = 9 ]; then
 		echo -----------------------------------------------
-		$clashdir/start.sh webget /tmp/clashrelease https://raw.githubusercontents.com/juewuy/ShellClash/master/bin/release_version echooff rediroff 2>/tmp/clashrelease
+		echo -e "\033[33m如无法连接，请务必先启用clash服务！！！\033[0m"
+		$clashdir/start.sh webget /tmp/clashrelease https://raw.githubusercontent.com/juewuy/ShellClash/master/bin/release_version echooff rediroff 2>/tmp/clashrelease
 		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
 		cat /tmp/clashrelease | awk '{print " "NR" "$1}'
 		echo -e " 0 返回上级菜单"
@@ -819,13 +815,14 @@ setserver(){
 			setserver
 		elif [ $num -le $(cat /tmp/clashrelease | awk 'END{print NR}') 2>/dev/null ]; then
 			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
-			update_url="https://raw.githubusercontents.com/juewuy/ShellClash/$release_version"
+			update_url="https://raw.githubusercontent.com/juewuy/ShellClash/$release_version"
 			saveserver
 			release_url=''
 		else
 			echo -----------------------------------------------
 			echo -e "\033[31m输入有误，请重新输入！\033[0m"
 		fi
+		rm -rf /tmp/clashrelease
 	else
 		errornum
 	fi
