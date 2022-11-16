@@ -28,7 +28,7 @@ getconfig(){
 	[ ! -f $clashdir/mac ] && touch $clashdir/mac
 	#获取本机host地址
 	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host=127.0.0.1
 	#dashboard目录位置
 	[ -d $clashdir/ui ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
@@ -369,7 +369,7 @@ setdns(){
 }
 checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
-		if [ -n "$(netstat -ntul 2>&1 |grep \:$portx\ )" ];then
+		if [ -n "$(netstat -ntul 2>&1 |grep '\:$portx ')" ];then
 			echo -----------------------------------------------
 			echo -e "检测到端口【$portx】被以下进程占用！clash可能无法正常启动！\033[33m"
 			echo $(netstat -ntul | grep :$portx | head -n 1)
@@ -524,7 +524,7 @@ localproxy(){
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
 	[ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
-	type nft 2> /dev/null && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
+	type nft &> /dev/null && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -604,20 +604,20 @@ clashcfg(){
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
-		[ -n "$(lsmod | grep '^tun')" ] && sup_tun=1
-		type nft 2> /dev/null && sup_nft=1
-		[ -n "$sup_nft" -a -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
+		#[ -n "$(lsmod | grep '^tun')" ] || ip tuntap &>/dev/null && sup_tun=1
+		type nft &> /dev/null && sup_nft=1
+		#[ -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
-		[ -n "$sup_tun" ] && echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
+		echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
 		[ -n "$sup_tp" ] && echo -e " 3 \033[32mTproxy混合\033[0m：   Redir转发TCP，Tproxy转发UDP"
-		[ -n "$sup_tun" ] && echo -e " 4 \033[33mTun模式\033[0m：      使用Tun转发TCP&UDP(占用高)"
+		echo -e " 4 \033[33mTun模式\033[0m：      使用Tun转发TCP&UDP(占用高)"
 		[ -n "$sup_tp" ] && echo -e " 5 \033[32mTproxy模式\033[0m：   使用Tproxy转发TCP&UDP"
 		[ -n "$sup_nft" ] && echo -e " 6 \033[36mNft基础\033[0m：      使用nftables转发TCP，不转发UDP"
-		[ "$sup_nft" = '2' ] && echo -e " 7 \033[32mNft混合\033[0m：      使用nft_tproxy转发TCP&UDP"
+		[ -n "$sup_nft" ] && echo -e " 7 \033[32mNft混合\033[0m：      使用nft_tproxy转发TCP&UDP"
 		echo -e " 8 \033[36m纯净模式\033[0m：     不设置流量转发"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
@@ -639,8 +639,13 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 4 ]; then
-			redir_mod=Tun模式
-			dns_mod=fake-ip
+			if modprobe tun &>/dev/null;then
+				redir_mod=Tun模式
+				dns_mod=fake-ip
+			else
+				read -p "未检测到Tun模块，是否强制开启？可能导致无法联网！(1/0)" res
+				[ "$res" = '1' ] && redir_mod=Tun模式 && dns_mod=fake-ip
+			fi
 			set_redir_config
 			
 		elif [ "$num" = 5 ]; then
@@ -652,7 +657,12 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 7 ]; then
-			redir_mod=Nft混合
+			if modprobe nft_tproxy &>/dev/null;then
+				redir_mod=Nft混合
+			else
+				read -p "未检测到Tproxy模块，是否强制开启？可能导致无法联网！(1/0)" res
+				[ "$res" = '1' ] && redir_mod=Nft混合
+			fi
 			set_redir_config	
 			
 		elif [ "$num" = 8 ]; then
@@ -956,11 +966,12 @@ clashadv(){
 		
 	elif [ "$num" = 5 ]; then
 		if [ "$public_support" = "未开启" ]; then 
-			echo -e "\033[32m已开启公网访问Dashboard端口及Http/Sock5代理端口！！\033[0m"
-			echo -e "\033[33m安全起见建议设置相关访问密码！！\033[0m"
+			echo -e "\033[32m已开启公网访问Dashboard端口，安全起见建议设置面板访问密码！！\033[0m"
+			echo -e "\033[33m如需访问Http/Sock5代理，请在端口设置中修改默认端口并设置访问密码！\033[0m"
+			echo -e "\033[31m如未设置密码或仍使用默认端口，将自动拒绝连接！！！\033[0m"
 			public_support=已开启
 			setconfig public_support $public_support
-			sleep 1
+			sleep 3
 		else
 			echo -e "\033[32m已禁止公网访问Dashboard端口及Http/Sock5代理端口！！\033[0m"
 			echo -e "\033[33m如果你的防火墙默认放行公网流量，可能禁用失败！\033[0m"

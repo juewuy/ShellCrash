@@ -235,7 +235,7 @@ EOF`
 			exit 1
 		fi
 		#检测不支持的加密协议
-		if cat $yamlnew | grep 'cipher:\ chacha20,' >/dev/null;then
+		if cat $yamlnew | grep 'cipher: chacha20,' >/dev/null;then
 			echo -----------------------------------------------
 			logger "已停止支持chacha20加密，请更换更安全的节点加密协议！" 31
 			echo -----------------------------------------------
@@ -259,7 +259,7 @@ EOF`
 		fi
 		#检测并去除无效节点组
 		[ -n "$url_type" ] && type xargs >/dev/null 2>&1 && {
-		cat $yamlnew | grep -A 8 "\-\ name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT\ $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
+		cat $yamlnew | grep -A 8 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 		while read line ;do
 			sed -i "/- $line/d" $yamlnew
 			sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
@@ -377,12 +377,12 @@ EOF
 	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_proxy > $tmpdir/config.yaml
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/config.yaml
-	space_rules=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^\ *') #获取空格数
+	space_rules=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^ *') #获取空格数
 	if [ -f $clashdir/rules.yaml ];then
 		sed -i '/^$/d' $clashdir/rules.yaml && echo >> $clashdir/rules.yaml #处理换行
 		while read line;do
 			[ -z "$(echo "$line" | grep '#')" ] && \
-			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
+			[ -n "$(echo "$line" | grep '\- ')" ] && \
 			line=$(echo "$line" | sed 's#/#\\/#') && \
 			sed -i "/^rules:/a\\$space_rules$line #自定义规则" $tmpdir/config.yaml
 		done < $clashdir/rules.yaml
@@ -390,13 +390,13 @@ EOF
 
 	#插入自定义代理
 	sed -i "/#自定义代理/d" $tmpdir/config.yaml
-	space=$(sed -n '/^proxies:/{n;p}' $tmpdir/config.yaml | grep -oE '^\ *') #获取空格数
+	space=$(sed -n '/^proxies:/{n;p}' $tmpdir/config.yaml | grep -oE '^ *') #获取空格数
 	if [ -f $clashdir/proxies.yaml ];then
 		sed -i '/^$/d' $clashdir/proxies.yaml && echo >> $clashdir/proxies.yaml #处理换行
 		while read line;do
 			[ -z "$(echo "$line" | grep '^proxies:')" ] && \
 			[ -z "$(echo "$line" | grep '#')" ] && \
-			[ -n "$(echo "$line" | grep '\-\ ')" ] && \
+			[ -n "$(echo "$line" | grep '\- ')" ] && \
 			line=$(echo "$line" | sed 's#/#\\/#') && \
 			sed -i "/^proxies:/a\\$space$line #自定义代理" $tmpdir/config.yaml
 		done < $clashdir/proxies.yaml
@@ -404,9 +404,9 @@ EOF
 
 	#插入自定义策略组
 	sed -i "/#自定义策略组/d" $tmpdir/config.yaml
-	space=$(sed -n '/^proxy-groups:/{n;p}' $tmpdir/config.yaml | grep -oE '^\ *') #获取原始配置空格数
+	space=$(sed -n '/^proxy-groups:/{n;p}' $tmpdir/config.yaml | grep -oE '^ *') #获取原始配置空格数
 	if [ -f $clashdir/proxy-groups.yaml ];then
-		c_space=$(sed -n '/^proxy-groups:/{n;p}' $clashdir/proxy-groups.yaml | grep -oE '^\ *') #获取自定义配置空格数
+		c_space=$(sed -n '/^proxy-groups:/{n;p}' $clashdir/proxy-groups.yaml | grep -oE '^ *') #获取自定义配置空格数
 		[ -n "$c_space" ] && sed -i "s/$c_space/$space/g" $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理缩进空格数
 		sed -i '/^$/d' $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理换行
 		cat $clashdir/proxy-groups.yaml | awk '{array[NR]=$0} END { for(i=NR;i>0;i--){print array[i];} }' | while IFS= read line;do
@@ -433,7 +433,7 @@ EOF
 }
 #设置路由规则
 cn_ip_route(){	
-	if [ ! -f $bindir/cn_ip.txt ];then
+	[ ! -f $bindir/cn_ip.txt ] && {
 		if [ -f $clashdir/cn_ip.txt ];then
 			mv $clashdir/cn_ip.txt $bindir/cn_ip.txt
 		else
@@ -441,7 +441,14 @@ cn_ip_route(){
 			$0 webget $bindir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
 			[ "$?" = "1" ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败！" 31 
 		fi
-	fi
+	}
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt -a -z "$(echo $redir_mod|grep -o 'Ntf')" ] && {
+			echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> /tmp/cn_$USER.ipset
+			ipset -! flush cn_ip 2>/dev/null
+			ipset -! restore < /tmp/cn_$USER.ipset
+			rm -rf cn_$USER.ipset
+	}
 }
 start_redir(){
 	#获取局域网host地址
@@ -459,14 +466,7 @@ start_redir(){
 	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
 	[ -n "$host_lan" ] && iptables -t nat -A clash -d $host_lan -j RETURN
 	#绕过CN_IP
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
-		echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
-		awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> /tmp/cn_$USER.ipset
-		ipset -! flush cn_ip 2>/dev/null
-		ipset -! restore < /tmp/cn_$USER.ipset
-		rm -rf cn_$USER.ipset
-		iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 
-	}
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -547,6 +547,7 @@ start_dns_redir(){
 
 }
 start_tproxy(){
+	modprobe xt_TPROXY & >/dev/null
 	#获取局域网host地址
 	host_lan
 	ip rule add fwmark 1 table 100
@@ -563,7 +564,7 @@ start_tproxy(){
 	iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
 	iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
 	[ -n "$host_lan" ] && iptables -t mangle -A clash -d $host_lan -j RETURN
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	tproxy_set(){
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
@@ -653,12 +654,13 @@ start_output(){
 	}
 }
 start_tun(){
+	modprobe tun &> /dev/null
+	iptables -I FORWARD -o utun -j ACCEPT
+	#ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	if [ "$quic_rj" = 已启用 ];then
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
-		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
+		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
 	fi
-	iptables -A FORWARD -o utun -j ACCEPT
-	#ip6tables -A FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 }
 start_nft(){
 	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
@@ -674,7 +676,10 @@ start_nft(){
 	nft add table shellclash 2> /dev/null
 	nft flush table shellclash 2> /dev/null
 	[ "$redir_mod" = "Nft基础" ] && nft add chain shellclash prerouting { type nat hook prerouting priority -100 \; }
-	[ "$redir_mod" = "Nft混合" ] && nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
+	[ "$redir_mod" = "Nft混合" ] && {
+		modprobe nft_tproxy &> /dev/null
+		nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
+	}
 	[ -n "$(echo $redir_mod|grep Nft)" ] && {
 		#设置DNS转发
 		nft add chain shellclash dns { type nat hook prerouting priority -100 \; }
@@ -886,7 +891,7 @@ catpac(){
 	#获取本机host地址
 	[ -n "$host" ] && host_pac=$host
 	[ -z "$host_pac" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
-	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E '\ 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
+	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	cat > /tmp/clash_pac <<EOF
 //如看见此处内容，请重新安装本地面板！
 function FindProxyForURL(url, host) {
@@ -992,10 +997,10 @@ bfstart(){
 			[ -w /etc/systemd/system/clash.service ] && servdir=/etc/systemd/system/clash.service
 			[ -w /usr/lib/systemd/system/clash.service ] && servdir=/usr/lib/systemd/system/clash.service
 			if [ -w /etc/init.d/clash ]; then
-				[ -z "$(grep 'procd_set_param\ user\ shellclash' /etc/init.d/clash)" ] && \
+				[ -z "$(grep 'procd_set_param user shellclash' /etc/init.d/clash)" ] && \
     			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellclash' /etc/init.d/clash
 			elif [ -w "$servdir" ]; then
-				setconfig ExecStart "/bin/su\ shellclash\ -c\ \"$bindir/clash\ -d\ $bindir\"" $servdir
+				setconfig ExecStart "/bin/su shellclash -c \"$bindir/clash -d $bindir\"" $servdir
 				systemctl daemon-reload >/dev/null
 			fi
 		fi
