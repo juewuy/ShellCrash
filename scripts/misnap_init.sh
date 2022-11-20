@@ -16,7 +16,7 @@ chmod 755 /etc/init.d/clash
 if [ ! -f $clashdir/.dis_startup ];then
 	log_file=`uci get system.@system[0].log_file`
 	while [ "$i" -lt 10 ];do
-		sleep 3
+		sleep 5
 		[ -n "$(grep 'init complete' $log_file)" ] && i=10 || i=$((i+1))
 	done
 	/etc/init.d/clash start

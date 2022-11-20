@@ -4,7 +4,7 @@
 #读取配置相关
 getconfig(){
 	#服务器缺省地址
-	[ -z "$update_url" ] && update_url=https://raw.githubusercontents.com/juewuy/ShellClash
+	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellClash
 	#文件路径
 	[ -z "$clashdir" ] && echo 环境变量配置有误！请重新安装脚本！
 	ccfg=$clashdir/mark
@@ -13,6 +13,8 @@ getconfig(){
 	[ ! -f $ccfg ] && echo '#标识clash运行状态的文件，不明勿动！' > $ccfg
 	#检查重复行并去除
 	[ -n "$(awk 'a[$0]++' $ccfg)" ] && awk '!a[$0]++' $ccfg > $ccfg
+	#检查时间戳
+	touch /tmp/clash_$USER/start_time
 	#使用source加载配置文件
 	source $ccfg
 	#设置默认核心资源目录
@@ -57,6 +59,8 @@ getconfig(){
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 		#获取运行时长
+		touch /tmp/clash_$USER/start_time #用于延迟启动的校验
+		start_time=$(cat /tmp/clash_$USER/start_time)
 		if [ -n "$start_time" ]; then 
 			time=$((`date +%s`-start_time))
 			day=$((time/86400))
@@ -590,6 +594,142 @@ localproxy(){
 		errornum
 	fi	
 }
+setboot(){
+	[ -z "$start_old" ] && start_old=未开启
+	[ -z "$start_delay" -o "$start_delay" = 0 ] && delay=未设置 || delay=${start_delay}秒
+	[ "$autostart" = "enable" ] && auto_set="\033[33m禁止" || auto_set="\033[32m允许"
+	[ "$bindir" = "$clashdir" ] && mini_clash=未开启 || mini_clash=已开启
+	echo -----------------------------------------------
+	echo -e "\033[30;47m欢迎使用启动设置菜单：\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 ${auto_set}\033[0mclash开机启动"
+	echo -e " 2 使用保守模式:	\033[36m$start_old\033[0m	————基于定时任务(每分钟检测)"
+	echo -e " 3 设置自启延时:	\033[36m$delay\033[0m	————用于解决自启后服务受限"
+	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————用于闪存空间不足的设备"
+	[ "$bindir" != "$clashdir" ] && echo -e " 5 设置小闪存目录:	\033[36m$bindir\033[0m"
+	echo -----------------------------------------------
+	echo -e " 0 \033[0m退出脚本\033[0m"
+	read -p "请输入对应数字 > " num
+	echo -----------------------------------------------
+	case "$num" in
+	1)	
+		if [ "$autostart" = "enable" ]; then
+			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
+			type systemctl >/dev/null 2>&1 && systemctl disable clash.service > /dev/null 2>&1
+			touch $clashdir/.dis_startup
+			autostart=disable
+			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
+		elif [ "$autostart" = "disable" ]; then
+			[ -f /etc/rc.common ] && /etc/init.d/clash enable
+			type systemctl >/dev/null 2>&1 && systemctl enable clash.service > /dev/null 2>&1
+			rm -rf $clashdir/.dis_startup
+			autostart=enable
+			echo -e "\033[32m已设置Clash开机启动！\033[0m"
+		fi
+		setboot
+	;;
+	2)
+		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
+			echo -e "\033[33m改为使用保守模式启动clash服务！！\033[0m"
+			echo -e "\033[31m注意：部分设备保守模式可能无法禁用开机启动！！\033[0m"
+			start_old=已开启
+			setconfig start_old $start_old
+			$clashdir/start.sh stop
+		else
+			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
+				echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
+				$clashdir/start.sh cronset "ShellClash初始化"
+				start_old=未开启
+				setconfig start_old $start_old
+				$clashdir/start.sh stop
+				
+			else
+				echo -e "\033[31m当前设备不支持以其他模式启动！！\033[0m"
+			fi
+		fi
+		sleep 1		
+		setboot
+	;;
+	3)
+		echo -e "\033[33m如果你的设备启动后可以正常使用，则无需设置！！\033[0m"
+		echo -e "\033[36m推荐设置为30~120秒之间，请根据设备问题自行试验\033[0m"
+		read -p "请输入启动延迟时间(0~300秒) > " sec
+		case "$sec" in
+		[0-9]|[0-9][0-9]|[0-2][0-9][0-9]|300)
+			start_delay=$sec
+			setconfig start_delay $sec
+			echo -e "\033[32m设置成功！\033[0m"
+		;;
+		*)
+			echo -e "\033[31m输入有误，或超过300秒，请重新输入！\033[0m"
+		;;
+		esac
+		sleep 1
+		setboot
+	;;
+	4)
+		dir_size=$(df $clashdir |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep Ava |awk '{print $2}')
+		if [ "$mini_clash" = "未开启" ]; then 
+			if [ "$dir_size" -gt 20480 ];then
+				echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
+			else
+				[ "$bindir" = "$clashdir" ] && bindir="/tmp/clash_$USER"
+				echo -e "\033[32m已经启用小闪存功能！\033[0m"
+				echo -e "如需更换目录，请使用【设置小闪存目录】功能\033[0m"
+			fi
+		else
+			if [ "$dir_size" -lt 8192 ];then
+				echo -e "\033[31m您的设备剩余空间不足8M，停用后可能无法正常运行！\033[0m"
+				read -p "确认停用此功能？(1/0) > " res
+				[ "$res" = 1 ] && bindir="$clashdir" && echo -e "\033[33m已经停用小闪存功能！\033[0m"
+			else
+				rm -rf /tmp/clash_$USER
+				bindir="$clashdir"
+				echo -e "\033[33m已经停用小闪存功能！\033[0m"
+			fi
+		fi
+		setconfig bindir $bindir
+		sleep 1	
+		setboot
+	;;
+	5)
+		echo -e "\033[33m如设置到内存，则每次开机后都自动重新下载相关文件\033[0m"
+		echo -e "\033[33m请确保安装源可用裸连，否则会导致启动失败\033[0m"
+		echo " 1 使用内存"
+		echo " 2 选择U盘目录"
+		read -p "请输入相应数字 > " num
+		case "$num" in 
+		1)
+			bindir="/tmp/clash_$USER"	;;
+		2)
+			set_usb_dir(){
+				$echo "请选择安装目录"
+				du -hL /mnt | awk '{print " "NR" "$2"  "$1}'
+				read -p "请输入相应数字 > " num
+				bindir=$(du -hL /mnt | awk '{print $2}' | sed -n "$num"p)
+				if [ -z "$bindir" ];then
+					$echo "\033[31m输入错误！请重新设置！\033[0m"
+					set_usb_dir
+				fi
+			}
+			set_usb_dir
+		;;
+		*)
+			errornum
+		;;
+		esac
+		setboot
+	;;
+	*)			
+		errornum
+	;;
+	esac	
+
+}
+metacfg(){
+	echo -----------------------------------------------
+	
+}
 clashcfg(){
 	set_redir_mod(){
 		set_redir_config(){
@@ -877,16 +1017,17 @@ clashadv(){
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ -z "$public_support" ] && public_support=未开启
+	[ -z "$sniffer" ] && sniffer=已开启
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 	echo -e "\033[33m如您并不了解clash的运行机制，请勿更改本页面功能！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 使用保守模式启动:	\033[36m$start_old\033[0m	————切换时会停止clash服务"
-	echo -e " 2 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
-	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————不保存核心及数据库文件"
-	echo -e " 5 允许公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
+	echo -e " 1 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
+	#echo -e " 2 配置Meta特性"
+	echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
+	echo -e " 5 启用公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
 	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 7 使用自定义配置"
 	echo -e " 8 手动指定相关端口、秘钥及本机host"
@@ -899,30 +1040,8 @@ clashadv(){
 		errornum
 	elif [ "$num" = 0 ]; then
 		i=
-	elif [ "$num" = 1 ]; then	
-		echo -----------------------------------------------
-		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
-			echo -e "\033[33m改为使用保守模式启动clash服务！！\033[0m"
-			echo -e "\033[31m注意：部分设备保守模式可能无法禁用开机启动！！\033[0m"
-			start_old=已开启
-			setconfig start_old $start_old
-			$clashdir/start.sh stop
-		else
-			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
-				echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
-				$clashdir/start.sh cronset "ShellClash初始化"
-				start_old=未开启
-				setconfig start_old $start_old
-				$clashdir/start.sh stop
-				
-			else
-				echo -e "\033[31m当前设备不支持以其他模式启动！！\033[0m"
-			fi
-		fi
-		sleep 1
-		clashadv 
 		
-	elif [ "$num" = 2 ]; then
+	elif [ "$num" = 1 ]; then
 		echo -----------------------------------------------
 		if [ "$ipv6_support" = "未开启" ] > /dev/null 2>&1; then 
 			echo -e "\033[33m已开启对ipv6协议的支持！！\033[0m"
@@ -936,32 +1055,22 @@ clashadv(){
 		setconfig ipv6_support $ipv6_support
 		clashadv   
 		
-	elif [ "$num" = 4 ]; then	
+	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
-		dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
-		if [ "$mini_clash" = "未开启" ]; then 
-			if [ "$dir_size" -gt 20480 ];then
-				echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
-			elif pidof systemd >/dev/null 2>&1;then
-				echo -e "\033[33m该设备不支持开启此模式！\033[0m"
-			else
-				bindir="/tmp/clash_$USER"
-				echo -e "\033[32m已经启用小闪存功能！\033[0m"
-				echo -e "核心及数据库文件将存储在内存中执行，并在每次开机运行后自动下载\033[0m"
+		if [ "$sniffer" = "未启用" ];then
+			if [ "$clashcore" != "clash.meta" -o "$clashcore" != "clashpre" ];then
+				rm -rf $bindir/clash
+				clashcore=clash.meta
+				setconfig clashcore $clashcore
+				echo "已将clash内核切换为Meta内核！"
 			fi
+			sniffer=已启用
 		else
-			if [ "$dir_size" -lt 8192 ];then
-				echo -e "\033[31m您的设备剩余空间不足8M，停用后可能无法正常运行！\033[0m"
-				read -p "确认停用此功能？(1/0) > " res
-				[ "$res" = 1 ] && bindir="$clashdir" && echo -e "\033[33m已经停用小闪存功能！\033[0m"
-			else
-				rm -rf /tmp/clash_$USER
-				bindir="$clashdir"
-				echo -e "\033[33m已经停用小闪存功能！\033[0m"
-			fi
+			sniffer=未启用
 		fi
-		setconfig bindir $bindir
-		sleep 1
+		setconfig sniffer $sniffer
+		echo -e "\033[32m设置成功！\033[0m"
+		sleep 1		
 		clashadv
 		
 	elif [ "$num" = 5 ]; then
@@ -1081,82 +1190,6 @@ EOF
 		errornum
 	fi
 }
-streaming(){
-	[ -z "$netflix_pre" ] && netflix_pre=未开启
-	[ -z "$disneyP_pre" ] && disneyP_pre=未开启
-	[ -z "$streaming_int" ] && streaming_int=24
-	netflix_dir=$clashdir/streaming/Netflix_Domains.list
-	disneyp_dir=$clashdir/streaming/Disney_Plus_Domains.list
-	####
-	echo -e "\033[30;46m欢迎使用流媒体预解析功能：\033[0m"
-	echo -e "\033[33m感谢OpenClash项目提供相关域名数据库！\033[0m"
-	echo -e "\033[31m修改后需重启服务！\033[0m"
-	echo -----------------------------------------------
-	echo -e " 1 预解析\033[36mNetflix域名  	\033[33m$netflix_pre\033[0m"
-	echo -e " 2 预解析\033[36mDisney+域名  	\033[33m$disneyP_pre\033[0m"
-	echo -e " 3 设置预解析间隔	\033[32m$streaming_int小时\033[0m"
-	echo -e " 4 更新本地\033[32m域名数据库\033[0m"
-	echo -e " 0 返回上级菜单" 
-	echo -----------------------------------------------
-	read -p "请输入对应数字 > " num
-	if [ -z "$num" ]; then
-		errornum
-	elif [ "$num" = 0 ]; then
-		i=
-	elif [ "$num" = 1 ]; then	
-		echo -----------------------------------------------
-		if [ "$netflix_pre" = "未开启" ] > /dev/null 2>&1; then
-			echo -e "\033[33m已启用Netflix域名预解析功能！！\033[0m"
-			netflix_pre=已开启
-			sleep 1
-		else
-			echo -e "\033[31m已停用Netflix域名预解析功能！！\033[0m"
-			[ -f "$netflix_dir" ] && rm -rf $netflix_dir
-			netflix_pre=未开启
-		fi
-		setconfig netflix_pre $netflix_pre
-		sleep 1
-		streaming
-	elif [ "$num" = 2 ]; then	
-		echo -----------------------------------------------
-		if [ "$disneyP_pre" = "未开启" ] > /dev/null 2>&1; then
-			echo -e "\033[33m已启用Disney+域名预解析功能！！\033[0m"
-			disneyP_pre=已开启
-			sleep 1
-		else
-			echo -e "\033[31m已停用Disney+域名预解析功能！！\033[0m"
-			[ -f "$disneyp_dir" ] && rm -rf $disneyp_dir
-			disneyP_pre=未开启
-		fi
-		setconfig disneyP_pre $disneyP_pre
-		sleep 1
-		streaming
-	elif [ "$num" = 3 ]; then	
-		echo -----------------------------------------------
-		read -p "请输入刷新间隔(1-24小时,不支持小数) > " num
-			if [ -z "$num" ]; then 
-				errornum
-			elif [ $num -gt 24 ] || [ $num -lt 1 ]; then 
-				errornum
-			else	
-				streaming_int=$num
-				setconfig streaming_int $streaming_int
-				echo -e "\033[32m设置成功！！！\033[0m"
-			fi
-			sleep 1
-			streaming
-	elif [ "$num" = 4 ]; then
-		[ -f "$netflix_dir" ] && rm -rf $netflix_dir
-		[ -f "$disneyp_dir" ] && rm -rf $disneyp_dir
-		echo -----------------------------------------------
-		echo -e "\033[32m本地文件已清理，将在下次刷新时自动更新数据库文件！！！\033[0m"
-		sleep 1
-		streaming
-	else
-		errornum
-		streaming
-	fi		
-}
 tools(){
 	ssh_tools(){
 		stop_iptables(){
@@ -1233,9 +1266,9 @@ tools(){
 	du -sh $clashdir
 	echo -----------------------------------------------
 	echo -e " 1 ShellClash测试菜单"
-	[ -f /etc/firewall.user ] && echo -e " 2 \033[32m配置\033[0m外网访问SSH"
+	echo " 2 ShellClash新手引导"
 	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
-	echo -e " 4 \033[32m流媒体增强\033[0m————用于解决流媒体解锁在TV应用上失效的问题"
+	[ -f /etc/firewall.user ] && echo -e " 4 \033[32m配置\033[0m外网访问SSH"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
 	[ -f /usr/sbin/otapredownload ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
 	echo -----------------------------------------------
@@ -1251,6 +1284,9 @@ tools(){
 		source $clashdir/getdate.sh && testcommand  
 		
 	elif [ "$num" = 2 ]; then
+		source $clashdir/getdate.sh && userguide
+		
+	elif [ "$num" = 4 ]; then
 		ssh_tools
 		sleep 1
 		tools  
@@ -1271,43 +1307,6 @@ tools(){
 		fi
 		sleep 1
 		tools  
-		
-	elif [ "$num" = 4 ]; then
-		checkcfg=$(cat $ccfg)
-		echo -----------------------------------------------
-		echo -e "\033[36m请选择实现方式(不建议同时开启)：\033[0m"
-		echo -e " 1 定时预解析流媒体DNS"
-		echo -e " 2 Meta内核专属tls域名嗅探(推荐) \033[33m$sniffer\033[0m"
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		if [ -z "$num" ]; then
-			errornum
-		elif [ "$num" = 0 ]; then
-			i=
-		elif [ "$num" = 1 ]; then
-			streaming
-		elif [ "$num" = 2 ]; then
-			echo -----------------------------------------------
-			if [ "$sniffer" = "未启用" ];then
-				if [ "$clashcore" != "clash.meta" ];then
-					rm -rf $bindir/clash
-					clashcore=clash.meta
-					setconfig clashcore $clashcore
-					echo "已将clash内核切换为Meta内核！"
-				fi
-				sniffer=已启用
-			else
-				sniffer=未启用
-			fi
-			setconfig sniffer $sniffer
-			echo -e "\033[32m设置成功！\033[0m"
-			sleep 1
-		fi
-		if [ -n "$PID" ];then
-			checkcfg_new=$(cat $ccfg)
-			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-		fi
-		tools
 		
 	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 5 ]; then	
 		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
@@ -1487,7 +1486,7 @@ clashsh(){
 	echo -e " 1 \033[32m启动/重启\033[0mclash服务"
 	echo -e " 2 clash\033[33m功能设置\033[0m"
 	echo -e " 3 \033[31m停止\033[0mclash服务"
-	echo -e " 4 $auto1"
+	echo -e " 4 clash\033[36m启动设置\033[0m"
 	echo -e " 5 设置\033[33m定时任务\033[0m$cronoff"
 	echo -e " 6 导入\033[32m配置文件\033[0m"
 	echo -e " 7 clash\033[31m进阶设置\033[0m"
@@ -1523,18 +1522,7 @@ clashsh(){
 		clashsh
 
 	elif [ "$num" = 4 ]; then
-		echo -----------------------------------------------
-		if [ "$autostart" = "enable" ]; then
-			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
-			type systemctl >/dev/null 2>&1 && systemctl disable clash.service > /dev/null 2>&1
-			touch $clashdir/.dis_startup
-			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
-		elif [ "$autostart" = "disable" ]; then
-			[ -f /etc/rc.common ] && /etc/init.d/clash enable
-			type systemctl >/dev/null 2>&1 && systemctl enable clash.service > /dev/null 2>&1
-			rm -rf $clashdir/.dis_startup
-			echo -e "\033[32m已设置Clash开机启动！\033[0m"
-		fi
+		setboot
 		clashsh
 
 	elif [ "$num" = 5 ]; then

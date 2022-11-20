@@ -58,12 +58,12 @@ webget(){
 	fi
 }
 #检查更新
-url_cdn="https://raw.githubusercontents.com/juewuy/ShellClash"
+url_cdn="https://raw.fastgit.org/juewuy/ShellClash"
 [ -z "$url" ] && url=$url_cdn
 echo -----------------------------------------------
 $echo "\033[33m请选择想要安装的版本：\033[0m"	
-$echo " 1 \033[32mShellclash正式版\033[0m"
-$echo " 2 \033[31mShellclash测试版\033[0m"
+$echo " 1 \033[36mShellclash稳定版\033[0m"
+$echo " 2 \033[32mShellclash公测版\033[0m(推荐)"
 echo -----------------------------------------------
 read -p "请输入相应数字 > " num
 if [ -z $num ];then
@@ -74,7 +74,7 @@ elif [ "$num" = "1" ];then
 		release_new=$(cat /tmp/clashrelease | head -1)
 		url_dl="$url_cdn/$release_new"
 	else
-		echo "无法切换版本，尝试安装测试版！"
+		echo "无法获取稳定版安装地址，将尝试安装公测版！"
 	fi
 fi
 [ -z "$url_dl" ] && url_dl=$url

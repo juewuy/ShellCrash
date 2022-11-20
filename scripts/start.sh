@@ -23,7 +23,7 @@ getconfig(){
 	[ -z "$tproxy_port" ] && tproxy_port=7893
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
-	[ -z "$streaming_int" ] && streaming_int=24
+	[ -z "$sniffer" ] && sniffer=已开启
 	#是否代理常用端口
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
@@ -79,46 +79,7 @@ put_save(){
 	fi
 }
 mark_time(){
-	start_time=`date +%s`
-	sed -i '/start_time*/'d $clashdir/mark
-	echo start_time=$start_time >> $clashdir/mark
-}
-streaming(){
-	getconfig
-	#设置循环检测clashDNS端口
-	ns_type=$(nslookup -version 2>&1 | grep -io busybox)
-	ns_lookup(){
-		[ -n "$ns_type" ] && \
-		nslookup $1 127.0.0.1:${dns_port} > /dev/null 2>&1 || \
-		nslookup -port=${dns_port} $1 127.0.0.1 > /dev/null 2>&1
-	}
-	while [ "$i" != 0 ];do
-		[ "$j" = 60 ] && exit 1
-		sleep 1	
-		ns_lookup baidu.com
-		i=$?
-		j=$((j+1))
-	done
-	streaming_dns(){
-		streaming_dir=$clashdir/streaming/${streaming_type}_Domains.list
-		rm -rf $clashdir/steaming
-		if [ ! -s "$streaming_dir" ];then
-			echo 未找到$streaming_type域名数据库，正在下载！
-			mkdir -p $clashdir/streaming
-			$0 webget "$streaming_dir" "$update_url/bin/${streaming_type}_Domains.list"
-			[ "$?" = "1" ] && logger "$streaming_type数据库文件下载失败"
-		fi
-		if [ -f "$streaming_dir" ];then
-			for line in $(cat $streaming_dir);do
-				[ -n "$line" ] && ns_lookup "$line"
-			done >/dev/null 2>&1
-			echo "$streaming_type域名预解析完成！"
-		fi
-	}
-	echo "正在后台进行流媒体预解析服务，请耐心等待！"
-	[ "$netflix_pre" = "已开启" ] && streaming_type=Netflix && streaming_dns
-	[ "$disneyP_pre" = "已开启" ] && streaming_type=Disney_Plus && streaming_dns
-	echo "请输入回车以继续！"
+	echo `date +%s` > /tmp/clash_$USER/start_time
 }
 autoSSH(){
 	#自动开启SSH
@@ -307,22 +268,25 @@ modify_yaml(){
 	fi
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#dns配置
-	[ "$clashcore" = 'clash.meta' ] && dns_default_meta=', https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
-	dns_default="114.114.114.114, 223.5.5.5$dns_default_meta"
-	if [ -f $clashdir/fake_ip_filter ];then
-		while read line;do
-			fake_ft_ad=$fake_ft_ad,\"$line\"
-		done < $clashdir/fake_ip_filter
-	fi
-	if [ "$dns_mod" = "fake-ip" ];then
-		dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
-	else
-		dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
-	fi
-	#meta专属功能
-	if [ "$clashcore" = "clash.meta" -a "$sniffer" = "已启用" ];then
-		sniffer_set="sniffer: {enable: true, force: false, sniffing: [tls]}"
-	fi
+	[ -z "$(cat $clashdir/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
+		[ "$clashcore" = 'clash.meta' ] && dns_default_meta=', https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
+		dns_default="114.114.114.114, 223.5.5.5$dns_default_meta"
+		if [ -f $clashdir/fake_ip_filter ];then
+			while read line;do
+				fake_ft_ad=$fake_ft_ad,\"$line\"
+			done < $clashdir/fake_ip_filter
+		fi
+		if [ "$dns_mod" = "fake-ip" ];then
+			dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		else
+			dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+		fi
+	}
+	#sniffer配置
+	[ "$sniffer" = "已启用" ] && {
+		[ "$clashcore" = "clash.meta" ] && sniffer_set="sniffer: {enable: true, sniffing: [tls, http]}"
+		[ "$clashcore" = "clashpre" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
+	}
 	#设置目录
 	yaml=$clashdir/config.yaml
 	tmpdir=/tmp/clash_$USER
@@ -547,7 +511,7 @@ start_dns_redir(){
 
 }
 start_tproxy(){
-	modprobe xt_TPROXY & >/dev/null
+	modprobe xt_TPROXY &>/dev/null
 	#获取局域网host地址
 	host_lan
 	ip rule add fwmark 1 table 100
@@ -1051,12 +1015,6 @@ afstart(){
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 		#自动开启SSH
 		[ "$mi_autoSSH" = "已启用" ] && autoSSH 2>/dev/null
-		#流媒体预解析
-		if [ "$netflix_pre" = "已开启" -o "$disneyP_pre" = "已开启" ];then
-			cronset '#ShellClash流媒体预解析' "* */$streaming_int * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh streaming #ShellClash流媒体预解析"
-			sleep 1
-			$0 streaming & #后台执行流媒体预解析进程
-		fi
 	else
 		logger "clash服务启动失败！请查看报错信息！" 31
 		$bindir/clash -t -d $bindir
@@ -1088,6 +1046,7 @@ afstart)
 start)		
 		[ -n "$(pidof clash)" ] && $0 stop #禁止多实例
 		getconfig
+		[ -n "$start_delay" -a ! -f /tmp/clash_$USER/start_time ] && sleep $start_delay
 		#检测必须文件并下载
 		bfstart
 		stop_firewall #清理路由策略
@@ -1225,9 +1184,6 @@ unset_proxy)
 		[ -w /etc/profile ] && profile=/etc/profile
 		sed -i '/all_proxy/'d  $profile
 		sed -i '/ALL_PROXY/'d  $profile
-	;;
-streaming)	
-		streaming
 	;;
 db)	
 		$2

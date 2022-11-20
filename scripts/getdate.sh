@@ -925,33 +925,7 @@ update(){
 }
 #新手引导
 userguide(){
-	whichmod(){	
-		echo -----------------------------------------------
-		echo -e "\033[33m是否需要代理UDP流量(主要用于连接外服游戏)？ \033[0m"
-		echo -----------------------------------------------
-		echo -e " 1 \033[33m不代理UDP流量(推荐)\033[0m"
-		ip tuntap >/dev/null 2>&1 && [ "$?" = 0 ] && \
-		echo -e " 2 \033[32m使用Tun虚拟网卡\033[0m代理UDP流量" || \
-		echo -e " - \033[0m使用Tun模式(你的设备不支持此模式，如为虚拟机运行请调整虚拟网卡设置)\033[0m"
-		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && \
-		echo -e " 3 \033[32m使用Tproxy模式\033[0m代理UDP流量"
-		echo -----------------------------------------------
-		read -p "请输入对应数字 > " num
-		if [ -z "$num" ] || [ "$num" -gt 4 ];then
-			errornum
-			whichmod
-		elif [ "$num" = 1 ];then
-			setconfig redir_mod "Redir模式"
-			setconfig clashcore "clash"
-		elif [ "$num" = 2 ];then
-			setconfig redir_mod "混合模式"
-			setconfig clashcore "clashpre"
-		elif [ "$num" = 3 ];then
-			setconfig redir_mod "Redir模式"
-			setconfig clashcore "clash"
-			setconfig tproxy_mod "已开启"
-		fi		
-	}
+
 	forwhat(){
 		echo -----------------------------------------------
 		echo -e "\033[30;46m 欢迎使用ShellClash新手引导！ \033[0m"
@@ -968,7 +942,7 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			whichmod
+			type nft &>/dev/null && setconfig redir_mod "Nft模式" || setconfig redir_mod "Redir模式"
 			#检测IP转发
 			if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
 				echo -----------------------------------------------
@@ -1095,9 +1069,8 @@ testcommand(){
 	echo " 2 查看系统DNS端口(:53)占用 "
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看clash相关路由规则"
-	echo " 5 查看config.yaml前40行"
+	echo " 5 查看config.yaml前30行"
 	echo " 6 测试代理服务器连通性（google.tw)"
-	echo " 7 重新进入新手引导"
 	echo " 9 查看后台脚本运行日志"
 	echo -----------------------------------------------
 	echo " 0 返回上级目录！"
@@ -1154,7 +1127,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		sed -n '1,40p' $yaml
+		sed -n '1,30p' $yaml
 		echo -----------------------------------------------
 		exit;
 	elif [ "$num" = 6 ]; then
@@ -1168,8 +1141,7 @@ testcommand(){
 			echo -e "\033[31m连接超时！请重试或检查节点配置！\033[0m"
 		fi
 		clashsh
-	elif [ "$num" = 7 ]; then
-		userguide
+		
 	elif [ "$num" = 9 ]; then
 		echo -----------------------------------------------
 		cat $clashdir/log
