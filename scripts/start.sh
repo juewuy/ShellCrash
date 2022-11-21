@@ -269,8 +269,8 @@ modify_yaml(){
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#dns配置
 	[ -z "$(cat $clashdir/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
-		[ "$clashcore" = 'clash.meta' ] && dns_default_meta=', https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
-		dns_default="114.114.114.114, 223.5.5.5$dns_default_meta"
+		[ "$clashcore" = 'clash.meta' ] 
+		dns_default="114.114.114.114, 223.5.5.5"
 		if [ -f $clashdir/fake_ip_filter ];then
 			while read line;do
 				fake_ft_ad=$fake_ft_ad,\"$line\"
