@@ -759,12 +759,13 @@ setserver(){
 	echo -e "\033[30;47m切换ShellClash版本及更新源地址\033[0m"
 	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 \033[32m正式版\033[0m&Jsdelivr-CDN源"
-	echo -e " 2 \033[32m正式版\033[0m&fastgit.org源"
-	echo -e " 3 \033[36m公测版\033[0m&Github源(本机clash服务加速)"
-	echo -e " 4 \033[36m公测版\033[0m&ShellClash源"
-	echo -e " 5 \033[36m公测版\033[0m&fastgit.org源"
-	echo -e " 7 \033[33m内测版\033[0m(请加TG讨论组:\033[4;36mhttps://t.me/ShellClash\033[0m)"
+	echo -e " 1 \033[33m稳定版\033[0m&Jsdelivr-CDN源"
+	echo -e " 2 \033[33m稳定版\033[0m&fastgit.org源"
+	echo -e " 3 \033[32m公测版\033[0m&Github源(须clash服务启用)"
+	echo -e " 4 \033[32m公测版\033[0m&ShellClash私人源"
+	echo -e " 5 \033[32m公测版\033[0m&Jsdelivr-CDN源(推荐)"
+	echo -e " 6 \033[32m公测版\033[0m&fastgit.org源"
+	echo -e " 7 \033[31m内测版\033[0m(请加TG讨论组:\033[4;36mhttps://t.me/ShellClash\033[0m)"
 	echo -e " 8 自定义源地址(用于本地源或自建源)"
 	echo -e " 9 \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
@@ -786,6 +787,10 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 5 ]; then
+		update_url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master'
+		release_url=''
+		saveserver
+	elif [ "$num" = 6 ]; then
 		update_url='https://raw.fastgit.org/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
@@ -942,7 +947,11 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			type nft &>/dev/null && setconfig redir_mod "Nft模式" || setconfig redir_mod "Redir模式"
+			if type nft &>/dev/null;then
+				setconfig redir_mod "Nft模式" 
+			else
+				setconfig redir_mod "Redir模式"
+			fi
 			#检测IP转发
 			if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
 				echo -----------------------------------------------
@@ -1102,6 +1111,7 @@ testcommand(){
 
 		if [ -n "$(echo $redir_mod | grep 'Nft')" ];then
 			nft list table shellclash
+			[ "$ipv6_support" = "已开启" ] && nft list table ip6 shellclashv6
 		else
 			echo -------------------Redir---------------------
 			iptables  -t nat  -L PREROUTING --line-numbers

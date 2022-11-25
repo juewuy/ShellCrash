@@ -14,7 +14,7 @@ getconfig(){
 	#检查重复行并去除
 	[ -n "$(awk 'a[$0]++' $ccfg)" ] && awk '!a[$0]++' $ccfg > $ccfg
 	#检查时间戳
-	touch /tmp/clash_$USER/start_time
+	touch /tmp/clash_start_time
 	#使用source加载配置文件
 	source $ccfg
 	#设置默认核心资源目录
@@ -59,8 +59,8 @@ getconfig(){
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 		#获取运行时长
-		touch /tmp/clash_$USER/start_time #用于延迟启动的校验
-		start_time=$(cat /tmp/clash_$USER/start_time)
+		touch /tmp/clash_start_time #用于延迟启动的校验
+		start_time=$(cat /tmp/clash_start_time)
 		if [ -n "$start_time" ]; then 
 			time=$((`date +%s`-start_time))
 			day=$((time/86400))
@@ -100,6 +100,7 @@ errornum(){
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 }
 startover(){
+	source $ccfg
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -n "$hostdir" ];then
 		echo -e "请使用 \033[4;32mhttp://$host$hostdir\033[0m 管理内置规则"

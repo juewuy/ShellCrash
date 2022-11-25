@@ -17,7 +17,7 @@ getconfig(){
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
 	[ -z "$ipv6_support" ] && ipv6_support=未开启
-	[ -z "$ipv6_dns" ] && ipv6_dns=$ipv6_support
+	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$tproxy_port" ] && tproxy_port=7893
@@ -79,7 +79,7 @@ put_save(){
 	fi
 }
 mark_time(){
-	echo `date +%s` > /tmp/clash_$USER/start_time
+	echo `date +%s` > /tmp/clash_start_time
 }
 autoSSH(){
 	#自动开启SSH
@@ -111,6 +111,7 @@ https://sub.shellclash.cf
 https://sub.xeton.dev
 https://sub.id9.cc
 https://sub.maoxiongnet.com
+http://sub2.shellclash.cf
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash.ini
@@ -134,7 +135,7 @@ EOF`
 	Https=$(echo ${Https//\%26/\&})   #将%26替换回&
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		[ -n "$(echo $Url | grep -o 'vless')" ] && Server='https://sub.shellclash.cf'
+		[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server='https://sub.shellclash.cf'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
 	fi
@@ -156,9 +157,17 @@ EOF`
 			echo -----------------------------------------------
 			exit 1
 		else
-			if [ "$retry" -ge 5 ];then
+			if [ "$retry" -ge 4 ];then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
 				exit 1
+			elif [ "$retry" = 3 ];then
+				logger "配置文件获取失败！尝试使用http备用服务器获取！" 31
+				echo -e "\033[32m如担心安全性，请在5s内使用【ctrl+c】退出！\033[0m"
+				sleep 5
+				server_link=6
+				echo server_link=$server_link >> $ccfg
+				Https=""
+				getyaml
 			else
 				retry=$((retry+1))
 				logger "配置文件获取失败！" 31
@@ -202,20 +211,20 @@ EOF`
 			echo -----------------------------------------------
 			exit 1
 		fi
-		#检测vless协议
-		if [ -n "$(cat $yamlnew | grep -E 'vless')" ] && [ "$clashcore" = "clash" -o "$clashcore" = "clashpre" ];then
+		#检测vless/hysteria协议
+		if [ -n "$(cat $yamlnew | grep -oE 'type: vless|type: hysteria')" ] && [ "$clashcore" != "clash.meta" ];then
 			echo -----------------------------------------------
-			logger "检测到vless协议！将改为使用clash.meta核心启动！" 33
+			logger "检测到vless/hysteria协议！将改为使用clash.meta核心启动！" 33
 			rm -rf $bindir/clash
 			setconfig clashcore clash.meta
 			echo -----------------------------------------------
 		fi
 		#检测是否存在高级版规则
-		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers')" ];then
+		if [ "$clashcore" = "clash" -a -n "$(cat $yamlnew | grep -E '^script:|proxy-providers|rule-providers|rule-set')" ];then
 			echo -----------------------------------------------
-			logger "检测到高级版核心专属规则！将改为使用clash.net核心启动！" 33
+			logger "检测到高级规则！将改为使用clashpre核心启动！" 33
 			rm -rf $bindir/clash
-			setconfig clashcore clash.net
+			setconfig clashcore clashpre
 			echo -----------------------------------------------
 		fi
 		#检测并去除无效节点组
@@ -277,7 +286,7 @@ modify_yaml(){
 			done < $clashdir/fake_ip_filter
 		fi
 		if [ "$dns_mod" = "fake-ip" ];then
-			dns='dns: {enable: true, listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+			dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 		else
 			dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 		fi
@@ -451,6 +460,9 @@ start_redir(){
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
 	if [ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ];then
 		ip6tables -t nat -N clashv6
+		ip6tables -t nat -A clashv6 -d ::1/128 -j RETURN
+		ip6tables -t nat -A clashv6 -d fc00::/7 -j RETURN
+		ip6tables -t nat -A clashv6 -d fe80::/10 -j RETURN
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
 			for mac in $(cat $clashdir/mac); do
@@ -506,7 +518,7 @@ start_dns_redir(){
 		fi
 		ip6tables -t nat -I PREROUTING -p udp --dport 53 -j clashv6_dns
 	else
-		ip6tables -I INPUT -p udp --dport 53 -j REJECT > /dev/null 2>&1
+		ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT > /dev/null 2>&1
 	fi
 
 }
@@ -561,6 +573,9 @@ start_tproxy(){
 		ip -6 route add local ::/0 dev lo table 101
 		ip6tables -t mangle -N clashv6
 		ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
+		ip6tables -t mangle -A clashv6 -d ::1/128 -j RETURN
+		ip6tables -t mangle -A clashv6 -d fc00::/7 -j RETURN
+		ip6tables -t mangle -A clashv6 -d fe80::/10 -j RETURN
 		tproxy_set6(){
 			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 				#mac白名单
@@ -632,14 +647,12 @@ start_nft(){
 	#设置策略路由
 	ip rule add fwmark 1 table 100 2> /dev/null
 	ip route add local default dev lo table 100 2> /dev/null
-	[ "$ipv6_support" = "已开启" ] && {
-		ip -6 rule add fwmark 1 table 101 2> /dev/null
-		ip -6 route add local ::/0 dev lo table 101 2> /dev/null
-	}
 	#初始化nftables
 	nft add table shellclash 2> /dev/null
 	nft flush table shellclash 2> /dev/null
-	[ "$redir_mod" = "Nft基础" ] && nft add chain shellclash prerouting { type nat hook prerouting priority -100 \; }
+	[ "$redir_mod" = "Nft基础" ] && {
+		nft add chain shellclash prerouting { type nat hook prerouting priority -100 \; }
+	}
 	[ "$redir_mod" = "Nft混合" ] && {
 		modprobe nft_tproxy &> /dev/null
 		nft add chain shellclash prerouting { type filter hook prerouting priority 0 \; }
@@ -647,8 +660,6 @@ start_nft(){
 	[ -n "$(echo $redir_mod|grep Nft)" ] && {
 		#设置DNS转发
 		nft add chain shellclash dns { type nat hook prerouting priority -100 \; }
-		nft add rule shellclash dns udp dport 53 redirect to ${dns_port}
-		nft add rule shellclash dns tcp dport 53 redirect to ${dns_port}
 		#过滤局域网设备
 		[ -n "$(cat $clashdir/mac)" ] && {
 			MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
@@ -660,7 +671,9 @@ start_nft(){
 				nft add rule shellclash dns ether saddr != {${MAC}} return
 				nft add rule shellclash prerouting ether saddr != {${MAC}} return
 			}
-		}	
+		}
+		nft add rule shellclash dns udp dport 53 redirect to ${dns_port}
+		nft add rule shellclash dns tcp dport 53 redirect to ${dns_port}
 		#过滤保留地址
 		nft add rule shellclash prerouting ip daddr {${RESERVED_IP}} return
 		#过滤CN-IP
@@ -678,6 +691,27 @@ start_nft(){
 	[ "$quic_rj" = 已启用 ] && {
 		nft add chain shellclash input { type filter hook input priority 0 \; }
 		nft add rule shellclash input udp dport 443 reject comment 'ShellClash-QUIC-REJECT'
+	}
+	#ipv6支持
+	[ "$ipv6_support" = "已开启" ] && {
+		RESERVED_IP6="{::1/128, fc00::/7, fe80::/10}"
+		nft add table ip6 shellclashv6 2> /dev/null
+		nft flush table ip6 shellclashv6 2> /dev/null
+		nft add chain ip6 shellclashv6 prerouting { type nat hook prerouting priority -100 \; }
+		#过滤局域网设备
+		[ -n "$(cat $clashdir/mac)" ] && {
+			MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
+			[ "$macfilter_type" = "黑名单" ] && {
+				nft add rule ip6 shellclashv6 prerouting ether saddr {${MAC}} return 
+			} || {
+				nft add rule ip6 shellclashv6 prerouting ether saddr != {${MAC}} return
+			}
+		}
+		nft add rule ip6 shellclashv6 prerouting udp dport 53 redirect to ${dns_port}
+		nft add rule ip6 shellclashv6 prerouting tcp dport 53 redirect to ${dns_port}
+		nft add rule ip6 shellclashv6 prerouting ip6 daddr {${RESERVED_IP6}} return
+		[ -n "$PORTS" ] && nft add rule ip6 shellclashv6 prerouting tcp dport != {${PORTS}} return
+		nft add rule ip6 shellclashv6 prerouting meta l4proto tcp redirect to ${redir_port}
 	}
 	#代理本机
 	[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && {
@@ -882,6 +916,11 @@ bfstart(){
 	getconfig
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
 	update_url=https://ghproxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master
+	#延迟启动
+	[ -n "$start_delay" -a ! -f /tmp/clash_start_time ] && {
+	logger "clash将延迟$start_delay秒启动" 31
+	sleep $start_delay
+	}
 	#检查clash核心
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
@@ -1046,7 +1085,6 @@ afstart)
 start)		
 		[ -n "$(pidof clash)" ] && $0 stop #禁止多实例
 		getconfig
-		[ -n "$start_delay" -a ! -f /tmp/clash_$USER/start_time ] && sleep $start_delay
 		#检测必须文件并下载
 		bfstart
 		stop_firewall #清理路由策略
@@ -1124,7 +1162,10 @@ updateyaml)
 		;;
 webget)
 		#设置临时http代理 
-		[ -n "$(pidof clash)" ] && getconfig && export all_proxy="http://$authentication@127.0.0.1:$mix_port"
+		[ -n "$(pidof clash)" ] && {
+			getconfig
+			export all_proxy="http://$authentication@127.0.0.1:$mix_port"
+		}
 		#参数【$2】代表下载目录，【$3】代表在线地址
 		#参数【$4】代表输出显示，【$4】不启用重定向
 		#参数【$6】代表验证证书，【$7】使用clash文件头
