@@ -1109,9 +1109,8 @@ testcommand(){
 		exit;
 	elif [ "$num" = 4 ]; then
 
-		if [ -n "$(echo $redir_mod | grep 'Nft')" ];then
-			nft list table shellclash
-			[ "$ipv6_support" = "已开启" ] && nft list table ip6 shellclashv6
+		if [ -n "$(echo $redir_mod | grep 'Nft')" -o "$local_type" = "nftables增强模式" ];then
+			nft list table inet shellclash
 		else
 			echo -------------------Redir---------------------
 			iptables  -t nat  -L PREROUTING --line-numbers

@@ -51,8 +51,6 @@ getconfig(){
 		auto="\033[31m未设置开机启动！\033[0m"
 		auto1="\033[36m允许\033[0mclash开机启动"
 	fi
-	#获取运行模式
-	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	#获取运行状态
 	PID=$(pidof clash)
 	if [ -n "$PID" ];then
@@ -100,7 +98,6 @@ errornum(){
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 }
 startover(){
-	source $ccfg
 	echo -e "\033[32mclash服务已启动！\033[0m"
 	if [ -n "$hostdir" ];then
 		echo -e "请使用 \033[4;32mhttp://$host$hostdir\033[0m 管理内置规则"
@@ -1025,7 +1022,7 @@ clashadv(){
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 	echo -e "\033[33m如您并不了解clash的运行机制，请勿更改本页面功能！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 启用ipv6支持:	\033[36m$ipv6_support\033[0m	————实验性功能，可能不稳定"
+	echo -e " 1 代理ipv6流量:	\033[36m$ipv6_support\033[0m	————关闭时不会影响本机ipv6"
 	#echo -e " 2 配置Meta特性"
 	echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
 	echo -e " 5 启用公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
@@ -1045,8 +1042,9 @@ clashadv(){
 	elif [ "$num" = 1 ]; then
 		echo -----------------------------------------------
 		if [ "$ipv6_support" = "未开启" ] > /dev/null 2>&1; then 
-			echo -e "\033[33m已开启对ipv6协议的支持！！\033[0m"
-			echo -e "Clash对ipv6的支持并不友好，如不能使用请静等修复！"
+			echo -e "\033[33m已开启对ipv6流量的代理！！\033[0m"
+			echo -e "如果启用后导致部分应用加载缓慢，请关闭此功能即可恢复"
+			echo -e "\033[31m除非特殊需要，否则无需开启此功能！\033[0m"
 			ipv6_support=已开启
 			sleep 2
 		else
@@ -1063,7 +1061,7 @@ clashadv(){
 				rm -rf $bindir/clash
 				clashcore=clash.meta
 				setconfig clashcore $clashcore
-				echo "已将clash内核切换为Meta内核！"
+				echo "已将clash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
 			fi
 			sniffer=已启用
 		else
@@ -1442,7 +1440,9 @@ clashcron(){
 	echo -e " 2 设置\033[31m定时停止\033[0mclash服务"
 	echo -e " 3 设置\033[32m定时开启\033[0mclash服务"
 	echo -e " 4 设置\033[33m定时更新\033[0m订阅并重启服务"
-	echo -e " 5 设置\033[33m定时更新\033[0m订阅但不重启服务"
+	echo -e " 5 设置\033[33m定时热更新\033[0m订阅"
+	echo -e " 6 设置\033[36m自定义命令\033[0m"
+	echo -e " 7 删除\033[31m指定任务\033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单" 
 	read -p "请输入对应数字 > " num
@@ -1474,6 +1474,36 @@ clashcron(){
 		cronname=更新订阅但不重启
 		cronset="$clashdir/start.sh updateyaml"
 		setcron	
+		clashcron
+	elif [ "$num" = 6 ]; then
+		echo -----------------------------------------------
+		echo -e "\033[33m可包含空格，请确保命令可执行！\033[0m"
+		read -p "请输入命令语句 > " script
+		if [ -n "$script" ];then
+			cronset=\'$script\'
+			echo -e "请检查输入：\033[32m$cronset\033[0m"
+			read -p "请输入任务备注 > " txt
+			[ -n "$txt" ] && cronname=$txt || cronname=ShellClash自定义
+			cronset="$clashdir/start.sh updateyaml"
+			setcron	
+		else
+			echo -e "\033[31m输入错误，请重新输入！\033[0m"
+			sleep 1
+		fi
+		clashcron
+	elif [ "$num" = 7 ]; then	
+		echo -----------------------------------------------
+		echo -e "\033[33m将按照关键词匹配并删除所有匹配！\033[0m"
+		read -p "请输入备注的关键词 > " txt
+		[ -n "$txt" ] && {
+			cronname=$txt
+			croncmd -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && croncmd /tmp/conf
+			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
+			rm -f /tmp/conf
+			echo -----------------------------------------------
+			echo -e "所有关键词\033[32m$cronname\033[0m匹配的定时任务均已删除！\033[0m"
+			sleep 1
+		}
 		clashcron
 	else
 		errornum
