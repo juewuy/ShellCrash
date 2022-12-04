@@ -1053,6 +1053,12 @@ userguide(){
 			setconfig authentication \'$authentication\'
 		fi
 	fi
+	#小米设备软固化
+	if [ "$systype" = "mi_snapshot" ];then
+		echo -----------------------------------------------
+		read -p "是否启用软固化SSH？(1/0) > " res
+		[ "$res" = 1 ] && setconfig mi_autoSSH 已启用
+	fi
 	#提示导入订阅或者配置文件
 	echo -----------------------------------------------
 	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
@@ -1080,7 +1086,6 @@ testcommand(){
 	echo " 4 查看clash相关路由规则"
 	echo " 5 查看config.yaml前30行"
 	echo " 6 测试代理服务器连通性（google.tw)"
-	echo " 9 查看后台脚本运行日志"
 	echo -----------------------------------------------
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num
@@ -1150,11 +1155,7 @@ testcommand(){
 			echo -e "\033[31m连接超时！请重试或检查节点配置！\033[0m"
 		fi
 		clashsh
-		
-	elif [ "$num" = 9 ]; then
-		echo -----------------------------------------------
-		cat $clashdir/log
-		exit;
+
 	else
 		errornum
 		clashsh

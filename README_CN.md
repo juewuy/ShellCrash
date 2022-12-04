@@ -32,6 +32,10 @@
 ——————————<br>
 ~更多设备支持，请提issue或前往TG群反馈（需提供设备名称及运行uname -a返回的设备核心信息）<br>
 
+## 常见问题：
+
+[ShellClash常见问题 | Juewuy's Blog](https://juewuy.github.io/chang-jian-wen-ti/)
+
 使用方式：
 --
 ~确认路由器设备已经开启SSH并获取root权限（带GUI桌面的Linux设备可使用自带终端安装）<br>
@@ -137,11 +141,6 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 交流反馈：
 --
 ### [TG讨论组](https://t.me/ShellClash) 
-
-相关Q&A：
---
-
-### [详见博客](https://juewuy.github.io)
 
 ## 请喝杯茶：
 

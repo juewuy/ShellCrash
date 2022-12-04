@@ -26,6 +26,7 @@ getconfig(){
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
 	[ -z "$local_proxy" ] && local_proxy=未开启
+	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	#检查mac地址记录
 	[ ! -f $clashdir/mac ] && touch $clashdir/mac
 	#获取本机host地址
@@ -132,6 +133,134 @@ checkrestart(){
 	[ "$res" = 1 ] && clashstart
 }
 #功能相关
+log_pusher(){
+	[ -n "$push_TG" ] && stat_TG=32m已启用 || stat_TG=33m未启用
+	[ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
+	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
+	echo -----------------------------------------------
+	echo -e " 1 查看\033[36m运行日志\033[0m"
+	echo -e " 2 Telegram推送	——\033[$stat_TG\033[0m"
+	echo -e " 3 Bark推送-IOS	——\033[$stat_bark\033[0m"
+	echo -e " 4 Passover推送	——\033[$stat_Po\033[0m"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num	
+	case $num in
+	1)
+		echo -----------------------------------------------
+		cat /tmp/ShellClash_log
+		exit
+	;;
+	2)
+		echo -----------------------------------------------
+		if [ -n "$push_TG" ];then
+			read -p "确认关闭TG日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_TG=
+				chat_ID=
+				setconfig push_TG
+				setconfig chat_ID
+			}
+		else
+			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+			echo -e "请先通过 \033[32;4mhttps://t.me/BotFather\033[0m 申请TG机器人并获取其\033[36mAPI TOKEN\033[0m"
+			echo -----------------------------------------------
+			read -p "请输入你获取到的API TOKEN > " TOKEN
+			echo -----------------------------------------------
+			echo -e "\033[32m请通过Telegram的对话窗口，向该机器人发送任意消息！\033[0m"
+			echo -----------------------------------------------
+			read -p "我已经发送完成(1/0) > " res
+			if [ "$res" = 1 ];then
+				url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
+				[ -n "$authentication" ] && auth="$authentication@"
+				export https_proxy="http://${auth}127.0.0.1:$mix_port"
+				if curl --version &> /dev/null;then 
+					chat=$(curl -kfsSl $url_tg 2>/dev/null| tail -n -1)
+				else
+					chat=$(wget -Y on -q -O - $url_tg | tail -n -1)
+				fi
+				[ -n "$chat" ] && chat_ID=$(echo $chat | grep -oE '"id":.*,"is_bot":false'  | sed s'/"id"://'g | sed s'/,"is_bot":false//'g)
+				if [ -n "$chat_ID" ];then
+					push_TG=$TOKEN
+					setconfig push_TG $TOKEN
+					setconfig chat_ID $chat_ID
+					$clashdir/start.sh logger "已完成Telegram日志推送设置！" 32
+				else
+					echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
+				fi
+			fi
+			sleep 1
+		fi
+		log_pusher
+	;;
+	3)
+		echo -----------------------------------------------
+		if [ -n "$push_bark" ];then
+			read -p "确认关闭Bark日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_bark=
+				setconfig push_bark
+			}
+		else
+			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+			echo -e "\033[33mBark推送仅支持IOS系统，其他平台请使用其他推送方式！\033[0m"
+			echo -e "\033[32m请安装Bark-IOS客户端，并在客户端中找到专属推送链接\033[0m"
+			echo -----------------------------------------------
+			read -p "请输入你的Bark推送链接 > " url
+			if [ -n "$url" ];then
+				push_bark=$url
+				setconfig push_bark $url
+				$clashdir/start.sh logger "已完成Bark日志推送设置！" 32
+			else
+				echo -e "\033[31m输入错误，请重新输入！\033[0m"
+			fi
+			sleep 1
+		fi
+		log_pusher
+	;;
+	4)
+		echo -----------------------------------------------
+		if [ -n "$push_Po" ];then
+			read -p "确认关闭Pushover日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_Po=
+				push_Po_key=
+				setconfig push_Po
+				setconfig push_Po_key
+			}
+		elif curl --version &> /dev/null;then 
+			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+			echo -e "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m"
+			echo -----------------------------------------------
+			read -p "请输入你的User Key > " key
+			if [ -n "$key" ];then
+				echo -----------------------------------------------
+				echo -e "\033[33m请检查注册邮箱，完成账户验证\033[0m"
+				read -p "我已经验证完成(1/0) > " 
+				echo -----------------------------------------------
+				echo -e "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
+				echo -----------------------------------------------
+				read -p "请输入你的API Token > " Token
+				if [ -n "$Token" ];then
+					push_Po=$Token
+					push_Po_key=$key
+					setconfig push_Po $Token
+					setconfig push_Po_key $key
+					$clashdir/start.sh logger "已完成Passover日志推送设置！" 32
+				else
+					echo -e "\033[31m输入错误，请重新输入！\033[0m"
+				fi
+			else
+				echo -e "\033[31m输入错误，请重新输入！\033[0m"
+			fi
+		else
+			echo -e "\033[33mPashover不支持使用wget命令推送，请尝试其他推送方式！\033[0m"
+		fi
+		sleep 1
+		log_pusher
+	;;
+	*)	errornum	;;
+	esac
+}
 setport(){
 	source $ccfg
 	[ -z "$secret" ] && secret=未设置
@@ -174,8 +303,7 @@ setport(){
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
 		echo -e "格式必须是\033[32m 用户名:密码 \033[0m的形式，注意用小写冒号分隔！"
-		echo -e "请尽量不要使用特殊符号！可能会产生未知错误！"
-		echo -e "\033[31m需要使用本机代理功能时，请勿设置密码！\033[0m"
+		echo -e "请尽量不要使用特殊符号！避免产生未知错误！"
 		echo "输入 0 删除密码"
 		echo -----------------------------------------------
 		read -p "请输入Http/Sock5用户名及密码 > " input
@@ -256,7 +384,6 @@ setport(){
 setdns(){
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
-	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
 	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$dns_no" ] && dns_no=未禁用
 	echo -----------------------------------------------
@@ -269,7 +396,6 @@ setdns(){
 	echo -e " 2 修改\033[36mfallback_DNS\033[0m"
 	echo -e " 3 \033[33m重置\033[0mDNS配置"
 	echo -e " 4 一键配置\033[32m加密DNS\033[0m"
-	echo -e " 5 ipv6_dns解析：	\033[36m$ipv6_dns\033[0m	————建议开启"
 	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————用于解决dns劫持失败的问题"
 	echo -e " 7 禁用内置DNS：	\033[36m$dns_no\033[0m	————不明勿动"
 	echo -e " 0 返回上级菜单"
@@ -324,19 +450,6 @@ setdns(){
 		rm -rf /tmp/ssl_test
 		sleep 1
 		setdns
-		
-	elif [ "$num" = 5 ]; then
-		echo -----------------------------------------------
-		if [ "$ipv6_dns" = "未开启" ]; then 
-			echo -e "\033[32m开启成功！！\033[0m"
-			ipv6_dns=已开启
-		else
-			echo -e "\033[33m禁用成功！！\033[0m"
-			ipv6_dns=未开启
-		fi
-		sleep 1
-		setconfig ipv6_dns $ipv6_dns
-		setdns
 				
 	elif [ "$num" = 6 ]; then
 		echo -----------------------------------------------
@@ -368,6 +481,45 @@ setdns(){
 		setconfig dns_no $dns_no
 		setdns
 	fi
+}
+setipv6(){
+	
+	[ -z "$ipv6_support" ] && ipv6_support=已开启
+	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
+	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
+	echo -----------------------------------------------
+	echo -e " 1 ipv6内核支持:  \033[36m$ipv6_support\033[0m  ——用于ipv6节点及规则支持"
+	echo -e " 2 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量且不支持绕过CN"
+	echo -e " 3 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"		
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num		
+	case $num in
+	1)
+		[ "$ipv6_support" = "未开启" ] && ipv6_support=已开启 || ipv6_support=未开启
+		setconfig ipv6_support $ipv6_support
+		setipv6   
+	;;
+	2)
+		if [ "$ipv6_redir" = "未开启" ]; then 
+			echo -e "如果启用后导致部分应用加载缓慢，请关闭此功能即可恢复"
+			echo -e "\033[31m除非特殊需要，否则无需开启此功能！\033[0m"
+			ipv6_redir=已开启
+			sleep 2
+		else
+			ipv6_redir=未开启
+		fi
+		setconfig ipv6_redir $ipv6_redir
+		setipv6   
+	;;
+	3)
+		[ "$ipv6_dns" = "未开启" ] && ipv6_dns=已开启 || ipv6_dns=未开启
+		setconfig ipv6_dns $ipv6_dns
+		setipv6
+	;;
+	*)
+		errornum
+	;;
+	esac
 }
 checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
@@ -1011,7 +1163,6 @@ clashcfg(){
 clashadv(){
 	#获取设置默认显示
 	[ -z "$modify_yaml" ] && modify_yaml=未开启
-	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ -z "$public_support" ] && public_support=未开启
@@ -1022,7 +1173,7 @@ clashadv(){
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 	echo -e "\033[33m如您并不了解clash的运行机制，请勿更改本页面功能！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 代理ipv6流量:	\033[36m$ipv6_support\033[0m	————关闭时不会影响本机ipv6"
+	echo -e " 1 ipv6相关"
 	#echo -e " 2 配置Meta特性"
 	echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
 	echo -e " 5 启用公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
@@ -1040,19 +1191,8 @@ clashadv(){
 		i=
 		
 	elif [ "$num" = 1 ]; then
-		echo -----------------------------------------------
-		if [ "$ipv6_support" = "未开启" ] > /dev/null 2>&1; then 
-			echo -e "\033[33m已开启对ipv6流量的代理！！\033[0m"
-			echo -e "如果启用后导致部分应用加载缓慢，请关闭此功能即可恢复"
-			echo -e "\033[31m除非特殊需要，否则无需开启此功能！\033[0m"
-			ipv6_support=已开启
-			sleep 2
-		else
-			echo -e "\033[32m已禁用对ipv6协议的支持！！\033[0m"
-			ipv6_support=未开启
-		fi
-		setconfig ipv6_support $ipv6_support
-		clashadv   
+		setipv6
+		clashadv
 		
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
@@ -1264,12 +1404,13 @@ tools(){
 	echo -e "磁盘占用/所在目录："
 	du -sh $clashdir
 	echo -----------------------------------------------
-	echo -e " 1 ShellClash测试菜单"
-	echo " 2 ShellClash新手引导"
-	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 3 配置DDNS服务(需下载相关脚本)"
+	echo -e " 1 ShellClash\033[33m测试菜单\033[0m"
+	echo -e " 2 ShellClash\033[32m新手引导\033[0m"
+	echo -e " 3 \033[36m日志及推送工具\033[0m"
 	[ -f /etc/firewall.user ] && echo -e " 4 \033[32m配置\033[0m外网访问SSH"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
-	[ -f /usr/sbin/otapredownload ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
+	[ -f /data/clash/misnap_init.sh ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
+	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 7 配置\033[32mDDNS服务\033[0m(需下载相关脚本)"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -1285,12 +1426,16 @@ tools(){
 	elif [ "$num" = 2 ]; then
 		source $clashdir/getdate.sh && userguide
 		
+	elif [ "$num" = 3 ]; then
+		log_pusher
+		tools
+		
 	elif [ "$num" = 4 ]; then
 		ssh_tools
 		sleep 1
 		tools  
 		
-	elif [ "$num" = 3 ]; then
+	elif [ "$num" = 7 ]; then
 		echo -----------------------------------------------
 		if [ ! -f $clashdir/ShellDDNS.sh ];then
 			echo -e "正在获取在线脚本……"
@@ -1314,11 +1459,11 @@ tools(){
 		sleep 1
 		tools	
 		
-	elif [ -f /usr/sbin/otapredownload ] && [ "$num" = 6 ]; then
+	elif [ "$num" = 6 ]; then
 		if [ "$mi_autoSSH" = "已启用" ];then
 			mi_autoSSH=禁用
 		else
-			if [ "$systype" = "mi_snapshot" -o "$systype" = "mi_snapshot" ];then
+			if [ "$systype" = "mi_snapshot" ];then
 				echo -----------------------------------------------
 				echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
 				echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"

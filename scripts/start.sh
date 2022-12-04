@@ -16,7 +16,8 @@ getconfig(){
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$dns_mod" ] && dns_mod=redir_host
-	[ -z "$ipv6_support" ] && ipv6_support=未开启
+	[ -z "$ipv6_support" ] && ipv6_support=已开启
+	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
@@ -45,8 +46,36 @@ compare(){
 }
 logger(){
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
-	echo `date "+%G-%m-%d %H:%M:%S"` $1 >> $clashdir/log
-	[ "$(wc -l $clashdir/log | awk '{print $1}')" -gt 20 ] && sed -i '1,5d' $clashdir/log
+	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
+	echo $log_text >> /tmp/ShellClash_log
+	[ "$(wc -l /tmp/ShellClash_log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d' /tmp/ShellClash_log
+	getconfig
+	[ -n "$(pidof clash)" ] && {
+		[ -n "$authentication" ] && auth="$authentication@"
+		export https_proxy="http://${auth}127.0.0.1:$mix_port"
+	}
+	[ -n "$push_TG" ] && {
+		url=https://api.telegram.org/bot${push_TG}/sendMessage
+		curl_data="-d chat_id=$chat_ID&text=$log_text"
+		wget_data="--post-data=$chat_ID&text=$log_text"
+		if curl --version &> /dev/null;then 
+			curl -kfsSl -d "chat_id=$chat_ID&text=$log_text" "$url" >/dev/null
+		else
+			wget -Y on -q --post-data="chat_id=$chat_ID&text=$log_text" "$url"
+		fi
+	}
+	[ -n "$push_bark" ] && {
+		url=${push_bark}/${log_text}
+		if curl --version &> /dev/null;then 
+			curl -kfsSl "$url" >/dev/null
+		else
+			wget -Y on -q "$url"
+		fi
+	}
+	[ -n "$push_Po" ] && {
+		url=https://api.pushover.net/1/messages.json
+		curl -kfsSl --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" >/dev/null
+	}	
 }
 croncmd(){
 	if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
@@ -141,8 +170,8 @@ EOF`
 	fi
 	#输出
 	echo -----------------------------------------------
-	echo 正在连接服务器获取配置文件…………链接地址为：
-	echo -e "\033[4;32m$Https\033[0m"
+	logger 正在连接服务器获取配置文件…………
+	echo -e "链接地址为：\033[4;32m$Https\033[0m"
 	echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
 	#获取在线yaml文件
 	yaml=$clashdir/config.yaml
@@ -161,7 +190,8 @@ EOF`
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
 				exit 1
 			elif [ "$retry" = 3 ];then
-				logger "配置文件获取失败！尝试使用http备用服务器获取！" 31
+				retry=4
+				logger "配置文件获取失败！最后尝试使用http备用服务器获取！" 31
 				echo -e "\033[32m如担心安全性，请在5s内使用【ctrl+c】退出！\033[0m"
 				sleep 5
 				server_link=6
@@ -172,7 +202,7 @@ EOF`
 				retry=$((retry+1))
 				logger "配置文件获取失败！" 31
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在重试第$retry次/共5次！" 33
+				logger "正在重试第$retry次/共4次！" 33
 				sed -i '/server_link=*/'d $ccfg
 				if [ "$server_link" -ge 5 ]; then
 					server_link=0
@@ -250,7 +280,7 @@ modify_yaml(){
 	lan='allow-lan: true'
 	log='log-level: info'
 	[ "$ipv6_support" = "已开启" ] && ipv6='ipv6: true' || ipv6='ipv6: false'
-	[ "$ipv6_dns" = "已开启" ] && dns_v6='ipv6: true' || dns_v6=$ipv6
+	[ "$ipv6_dns" = "已开启" ] && dns_v6='ipv6: true' || dns_v6='ipv6: false'
 	external="external-controller: 0.0.0.0:$db_port"
 	[ -d $clashdir/ui ] && db_ui=ui
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
@@ -442,7 +472,7 @@ start_redir(){
 	iptables -t nat -A PREROUTING -p tcp $ports -j clash
 	#设置ipv6转发
 	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
-	if [ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ];then
+	if [ -n "$ip6_nat" -a "$ipv6_redir" = "已开启" ];then
 		ip6tables -t nat -N clashv6
 		ip6tables -t nat -A clashv6 -d ::1/128 -j RETURN
 		ip6tables -t nat -A clashv6 -d fc00::/7 -j RETURN
@@ -554,7 +584,7 @@ start_tproxy(){
 	}
 	#设置ipv6转发
 	ip6_nat=$(ip6tables -t mangle -L 2>&1 | grep -o 'Chain')
-	[ -n "$ip6_nat" -a "$ipv6_support" = "已开启" ] && {
+	[ -n "$ip6_nat" -a "$ipv6_redir" = "已开启" ] && {
 		ip -6 rule add fwmark 1 table 101
 		ip -6 route add local ::/0 dev lo table 101
 		ip6tables -t mangle -N clashv6
@@ -661,7 +691,7 @@ start_nft(){
 		#过滤常用端口
 		[ -n "$PORTS" ] && nft add rule inet shellclash prerouting tcp dport != {${PORTS}} return
 		#ipv6支持
-		if [ "$ipv6_support" = "已开启" ];then
+		if [ "$ipv6_redir" = "已开启" ];then
 			RESERVED_IP6="{::1/128, fc00::/7, fe80::/10}"
 			ip -6 rule add fwmark 1 table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
@@ -1099,9 +1129,11 @@ start)
 		else
 			start_old
 		fi
+		logger clash服务已启动！
 	;;
 stop)	
 		getconfig
+		logger 正在关闭clash服务……
 		[ -n "$(pidof clash)" ] && [ "$restore" = false ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
 		cronset "clash保守模式守护进程"
@@ -1123,6 +1155,7 @@ restart)
         ;;
 init)
 		sleep 30
+		logger ShellClash正在开机初始化！
         if [ -d "/etc/storage/clash" ];then
 			clashdir=/etc/storage/clash
 			i=1
@@ -1151,19 +1184,25 @@ init)
         ;;
 getyaml)	
 		getconfig
-		getyaml
+		getyaml && \
+		logger 配置文件更新成功！
 		;;
 updateyaml)	
 		getconfig
-		getyaml
-		modify_yaml
-		put_save http://localhost:${db_port}/configs "{\"path\":\"${clashdir}/config.yaml\"}"
+		getyaml && \
+		modify_yaml && \
+		put_save http://localhost:${db_port}/configs "{\"path\":\"${clashdir}/config.yaml\"}" && \
+		logger 配置文件更新成功！
 		;;
+logger)
+		logger $2 $3
+	;;
 webget)
-		#设置临时http代理 
+		#设置临时代理 
 		[ -n "$(pidof clash)" ] && {
 			getconfig
-			export all_proxy="http://$authentication@127.0.0.1:$mix_port"
+			[ -n "$authentication" ] && auth="$authentication@"
+			export https_proxy="http://${auth}127.0.0.1:$mix_port" && export http_proxy="$https_proxy"
 		}
 		#参数【$2】代表下载目录，【$3】代表在线地址
 		#参数【$4】代表输出显示，【$4】不启用重定向
@@ -1174,7 +1213,7 @@ webget)
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
 			#[ -n "$7" ] && agent='-A "clash"'
 			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3" 2>/dev/null)
-			[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
+			[ "$result" != "200" ] && export https_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
 		else
 			if wget --version > /dev/null 2>&1;then
 				[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
