@@ -23,7 +23,7 @@ jobs:
         tar xf upx-3.93-amd64_linux.tar.xz
     - name: Download Core
       run: |
-        archs="386 amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat"
+        archs="386 amd64 armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat"
         mkdir tmp
         for arch in ${archs};do
           wget "${download_url}/${download_version}/clash-linux-${arch}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${arch}
@@ -36,6 +36,7 @@ jobs:
             fi
           fi
         done
+        mv -f ./tmp/clash-linux-arm64 ./tmp/clash-linux-armv8
         rm -fr upx*
     - name: Update
       run: |
