@@ -1,6 +1,6 @@
-name: Bug report
-description: Create a report to help us improve
-title: "[Bug] "
+name: Feature report
+description: Suggest an idea for this project
+title: "[Feature] "
 body:
   - type: checkboxes
     id: ensure
@@ -17,7 +17,7 @@ I have searched on the [issue tracker](……/) for a related issue.
 "
           required: true
         - label: "
-我已经使用 公测版本测试过，问题依旧存在
+我已经使用公测版本测试过，问题依旧存在
 I have tested using the test mod, and the issue still exists.
 "
           required: true
