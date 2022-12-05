@@ -25,3 +25,8 @@ I have tested using the test mod, and the issue still exists.
 我已经仔细看过 [常见问题](https://juewuy.github.io/chang-jian-wen-ti/) 并无法自行解决问题
 "
           required: true
+  - type: textarea
+    attributes:
+      label: Description
+    validations:
+      required: true
