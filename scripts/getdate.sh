@@ -473,21 +473,21 @@ setcore(){
 	###
 	echo -----------------------------------------------
 	[ -z "$cpucore" ] && getcpucore
-	echo -e "当前clash核心：\033[47;30m $clashcore \033[46;30m$clashv\033[0m"
+	echo -e "当前clash核心：\033[42;30m $clashcore \033[47;30m$clashv\033[0m"
 	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
 	echo -----------------------------------------------
-	echo "1 clash：     稳定，内存占用小，推荐！"
-	echo "(官方正式版)  不支持Tun模式、混合模式"
+	echo -e "1 \033[43;30m  Clash  \033[0m：	\033[32m占用低\033[0m"
+	echo -e " (官方基础版)  \033[33m不支持Tun、Rule-set等\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo
-	echo "2 clashpre：  支持Tun模式、混合模式"
-	echo "(高级预览版)  内存占用更高"
+	echo -e "2 \033[43;30m Clashpre \033[0m：	\033[32m支持Tun、Rule-set、域名嗅探\033[0m"
+	echo -e " (官方高级版)  \033[33m不支持vless、hy协议\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo
-	echo "3 clash.net： 支持部分vless协议"
-	echo "(.net定制版)  第三方定制内核"
-	echo
-	echo "4 clash.meta：支持大部分vless协议"
-	echo "(meta定制版)  第三方定制内核"
+	echo -e "3 \033[43;30mClash.Meta\033[0m：	\033[32m多功能，支持最全面\033[0m"
+	echo -e " (Meta定制版)  \033[33m第三方定制内核\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://docs.metacubex.one\033[0m"
 	echo
 	echo "5 手动指定处理器架构"
 	echo -----------------------------------------------
@@ -506,10 +506,6 @@ setcore(){
 			version=$clashpre_v
 			getcore
 		elif [ "$num" = 3 ]; then
-			clashcore=clash.net
-			version=$clashnet_v
-			getcore
-		elif [ "$num" = 4 ]; then
 			clashcore=clash.meta
 			version=$meta_v
 			getcore
@@ -1126,7 +1122,7 @@ testcommand(){
 				iptables  -t mangle -L PREROUTING --line-numbers
 				iptables  -t mangle  -L clash --line-numbers
 			}
-			[ -n "$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')" -a "$ipv6_support" = "已开启" ] && {
+			[ -n "$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')" -a "$ipv6_redir" = "已开启" ] && {
 				echo -------------------Redir---------------------
 				ip6tables  -t nat  -L PREROUTING --line-numbers
 				ip6tables  -t nat -L clashv6_dns --line-numbers

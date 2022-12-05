@@ -59,22 +59,22 @@ logger(){
 		curl_data="-d chat_id=$chat_ID&text=$log_text"
 		wget_data="--post-data=$chat_ID&text=$log_text"
 		if curl --version &> /dev/null;then 
-			curl -kfsSl -d "chat_id=$chat_ID&text=$log_text" "$url" >/dev/null
+			curl -kfsSl -d "chat_id=$chat_ID&text=$log_text" "$url" &>/dev/null 
 		else
-			wget -Y on -q --post-data="chat_id=$chat_ID&text=$log_text" "$url"
+			wget -Y on -q --post-data="chat_id=$chat_ID&text=$log_text" "$url" 
 		fi
 	}
 	[ -n "$push_bark" ] && {
 		url=${push_bark}/${log_text}
 		if curl --version &> /dev/null;then 
-			curl -kfsSl "$url" >/dev/null
+			curl -kfsSl "$url" &>/dev/null 
 		else
-			wget -Y on -q "$url"
+			wget -Y on -q "$url" 
 		fi
 	}
 	[ -n "$push_Po" ] && {
 		url=https://api.pushover.net/1/messages.json
-		curl -kfsSl --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" >/dev/null
+		curl -kfsSl --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" &>/dev/null 
 	}	
 }
 croncmd(){
@@ -343,12 +343,12 @@ $exper
 $dns
 $sniffer_set
 store-selected: $restore
-hosts:
 EOF
 ###################################
 	#读取本机hosts并生成配置文件
 	hosts_dir=/etc/hosts
 	if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && [ -f $hosts_dir ];then
+		echo 'hosts:' >> $tmpdir/hosts.yaml
 		while read line;do
 			[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}" )" ] && \
 			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
@@ -583,8 +583,7 @@ start_tproxy(){
 		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	}
 	#设置ipv6转发
-	ip6_nat=$(ip6tables -t mangle -L 2>&1 | grep -o 'Chain')
-	[ -n "$ip6_nat" -a "$ipv6_redir" = "已开启" ] && {
+	[ "$ipv6_redir" = "已开启" ] && {
 		ip -6 rule add fwmark 1 table 101
 		ip -6 route add local ::/0 dev lo table 101
 		ip6tables -t mangle -N clashv6
@@ -608,7 +607,7 @@ start_tproxy(){
 			ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
 		}
 		[ "$1" = "all" ] && tproxy_set6 tcp
-		#tproxy_set6 udp
+		tproxy_set6 udp
 		[ "$quic_rj" = 已启用 ] && {
 			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 		}	
@@ -820,6 +819,7 @@ stop_firewall(){
 		ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 		#tproxy
 		ip6tables -t mangle -D PREROUTING -p tcp $ports -j clashv6 2> /dev/null
+		ip6tables -t mangle -D PREROUTING -p udp $ports -j clashv6 2> /dev/null
 		ip6tables -t mangle -F clashv6 2> /dev/null
 		ip6tables -t mangle -X clashv6 2> /dev/null
 	}
@@ -1082,9 +1082,10 @@ afstart(){
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 		#自动开启SSH
-		[ "$mi_autoSSH" = "已启用" ] && autoSSH 2>/dev/null
+		[ "$mi_autoSSH" = "已启用" ] && autoSSH 2>/dev/null	&
+		{ sleep 30;logger Clash服务已启动！;} &
 	else
-		logger "clash服务启动失败！请查看报错信息！" 31
+		logger "Clash服务启动失败！请查看报错信息！" 31
 		$bindir/clash -t -d $bindir
 		echo "$($bindir/clash -t -d $bindir)" >> $clashdir/log
 		$0 stop
@@ -1129,11 +1130,10 @@ start)
 		else
 			start_old
 		fi
-		logger clash服务已启动！
 	;;
 stop)	
 		getconfig
-		logger 正在关闭clash服务……
+		logger Clash服务即将关闭……
 		[ -n "$(pidof clash)" ] && [ "$restore" = false ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
 		cronset "clash保守模式守护进程"
@@ -1154,8 +1154,6 @@ restart)
         $0 start
         ;;
 init)
-		sleep 30
-		logger ShellClash正在开机初始化！
         if [ -d "/etc/storage/clash" ];then
 			clashdir=/etc/storage/clash
 			i=1
@@ -1165,7 +1163,7 @@ init)
 			profile=/etc/profile
 			sed -i '' $profile #将软链接转化为一般文件
 		elif [ -d "/jffs" ];then
-			sleep 30
+			sleep 40
 			clashdir=$(cd $(dirname $0);pwd)
 			if [ -w /etc/profile ];then
 				profile=/etc/profile
@@ -1185,14 +1183,14 @@ init)
 getyaml)	
 		getconfig
 		getyaml && \
-		logger 配置文件更新成功！
+		logger ShellClash配置文件更新成功！
 		;;
 updateyaml)	
 		getconfig
 		getyaml && \
 		modify_yaml && \
 		put_save http://localhost:${db_port}/configs "{\"path\":\"${clashdir}/config.yaml\"}" && \
-		logger 配置文件更新成功！
+		logger ShellClash配置文件更新成功！
 		;;
 logger)
 		logger $2 $3

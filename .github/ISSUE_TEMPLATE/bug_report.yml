@@ -1,0 +1,29 @@
+name: Bug report
+description: Create a report to help us improve
+title: "[Bug] "
+body:
+  - type: checkboxes
+    id: ensure
+    attributes:
+      label: Verify steps
+      description: "
+在提交之前，请确认
+Please verify that you've followed these steps
+"
+      options:
+        - label: "
+我已经在 [Issue Tracker](……/) 中找过我要提出的问题
+I have searched on the [issue tracker](……/) for a related issue.
+"
+          required: true
+        - label: "
+我已经使用 公测版本测试过，问题依旧存在
+I have tested using the test mod, and the issue still exists.
+"
+          required: true
+        - label: "
+我已经仔细看过 [常见问题](https://juewuy.github.io/chang-jian-wen-ti/) 并无法自行解决问题
+I have read the [常见问题](https://juewuy.github.io/chang-jian-wen-ti/) and was unable to solve the issue.
+"
+          required: true
+        - label: "

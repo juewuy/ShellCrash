@@ -503,12 +503,14 @@ setipv6(){
 		if [ "$ipv6_redir" = "未开启" ]; then 
 			echo -e "如果启用后导致部分应用加载缓慢，请关闭此功能即可恢复"
 			echo -e "\033[31m除非特殊需要，否则无需开启此功能！\033[0m"
+			ipv6_support=已开启
 			ipv6_redir=已开启
 			sleep 2
 		else
 			ipv6_redir=未开启
 		fi
 		setconfig ipv6_redir $ipv6_redir
+		setconfig ipv6_support $ipv6_support
 		setipv6   
 	;;
 	3)
@@ -947,7 +949,7 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 7 ]; then
-			if modprobe nft_tproxy &>/dev/null;then
+			if [ -n "$(lsmod | grep 'nft_tproxy')" ];then
 				redir_mod=Nft混合
 			else
 				read -p "未检测到Tproxy模块，是否强制开启？可能导致无法联网！(1/0)" res
