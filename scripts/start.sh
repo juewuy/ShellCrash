@@ -354,7 +354,7 @@ EOF
 			hosts_ip=$(echo $line | awk '{print $1}')  && \
 			hosts_domain=$(echo $line | awk '{print $2}') && \
 			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
-		done < $hosts_dir
+		done < /etc/hosts
 	fi
 	#合并文件
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
@@ -529,7 +529,7 @@ start_ipt_dns(){
 		fi
 		ip6tables -t nat -I PREROUTING -p udp --dport 53 -j clashv6_dns
 	else
-		ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT 2 > /dev/null
+		ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT 2>/dev/null
 	fi
 	return 0
 
@@ -605,7 +605,7 @@ start_tproxy(){
 		[ "$1" = "all" ] && tproxy_set6 tcp
 		tproxy_set6 udp
 		[ "$quic_rj" = 已启用 ] && {
-			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2 >/dev/null
+			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2>/dev/null
 		}	
 	}
 }
