@@ -756,11 +756,10 @@ setserver(){
 	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 \033[33m稳定版\033[0m&Jsdelivr-CDN源"
-	echo -e " 2 \033[33m稳定版\033[0m&fastgit.org源"
+	echo -e " 2 \033[33m稳定版\033[0m&Github源(须clash服务启用)"
 	echo -e " 3 \033[32m公测版\033[0m&Github源(须clash服务启用)"
 	echo -e " 4 \033[32m公测版\033[0m&ShellClash私人源"
 	echo -e " 5 \033[32m公测版\033[0m&Jsdelivr-CDN源(推荐)"
-	echo -e " 6 \033[32m公测版\033[0m&fastgit.org源"
 	echo -e " 7 \033[31m内测版\033[0m(请加TG讨论组:\033[4;36mhttps://t.me/ShellClash\033[0m)"
 	echo -e " 8 自定义源地址(用于本地源或自建源)"
 	echo -e " 9 \033[31m版本回退\033[0m"
@@ -772,7 +771,7 @@ setserver(){
 		release_url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash'
 		saveserver
 	elif [ "$num" = 2 ]; then
-		release_url='https://raw.fastgit.org/juewuy/ShellClash'
+		release_url='https://raw.githubusercontent.com/juewuy/ShellClash'
 		saveserver
 	elif [ "$num" = 3 ]; then
 		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
@@ -787,7 +786,7 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 6 ]; then
-		update_url='https://raw.fastgit.org/juewuy/ShellClash/master'
+		update_url='https://raw.staticdn.net/juewuy/ShellClash/master'
 		release_url=''
 		saveserver
 	elif [ "$num" = 7 ]; then
@@ -1122,15 +1121,15 @@ testcommand(){
 				iptables  -t mangle -L PREROUTING --line-numbers
 				iptables  -t mangle  -L clash --line-numbers
 			}
-			[ -n "$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')" -a "$ipv6_redir" = "已开启" ] && {
-				echo -------------------Redir---------------------
-				ip6tables  -t nat  -L PREROUTING --line-numbers
-				ip6tables  -t nat -L clashv6_dns --line-numbers
-				ip6tables  -t nat  -L clashv6 --line-numbers
-				[ -n "$(echo $redir_mod | grep 'Tproxy')" ] && {
-					echo -------------------Tproxy--------------------
-					ip6tables  -t mangle -L PREROUTING --line-numbers
-					ip6tables  -t mangle  -L clashv6 --line-numbers
+			[ -n "$(echo $redir_mod | grep 'Tproxy')" -a "$ipv6_redir" = "已开启" ] && {
+				echo -------------------Tproxy--------------------
+				ip6tables  -t mangle -L PREROUTING --line-numbers
+				ip6tables  -t mangle  -L clashv6 --line-numbers
+				[ -n "$(lsmod | grep 'ip6table_nat')" ] && {
+					echo -------------------Redir---------------------
+					ip6tables  -t nat  -L PREROUTING --line-numbers
+					ip6tables  -t nat -L clashv6_dns --line-numbers
+					ip6tables  -t nat  -L clashv6 --line-numbers
 				}
 			}
 		fi

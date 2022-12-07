@@ -1168,7 +1168,7 @@ clashadv(){
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ -z "$public_support" ] && public_support=未开启
-	[ -z "$sniffer" ] && sniffer=已开启
+	[ -z "$sniffer" ] && sniffer=未启用
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
 	#
 	echo -----------------------------------------------
@@ -1199,7 +1199,7 @@ clashadv(){
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
 		if [ "$sniffer" = "未启用" ];then
-			if [ "$clashcore" != "clash.meta" -o "$clashcore" != "clashpre" ];then
+			if [ "$clashcore" = "clash" ];then
 				rm -rf $bindir/clash
 				clashcore=clash.meta
 				setconfig clashcore $clashcore

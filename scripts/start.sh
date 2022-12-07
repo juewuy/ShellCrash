@@ -243,12 +243,12 @@ EOF`
 		fi
 		#检测并去除无效节点组
 		[ -n "$url_type" ] && type xargs >/dev/null 2>&1 && {
-		cat $yamlnew | grep -A 8 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
-		while read line ;do
-			sed -i "/- $line/d" $yamlnew
-			sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
-		done < /tmp/clash_proxies_$USER
-		rm -rf /tmp/clash_proxies_$USER
+			cat $yamlnew | grep -A 8 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
+			while read line ;do
+				sed -i "/- $line/d" $yamlnew
+				sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
+			done < /tmp/clash_proxies_$USER
+			rm -rf /tmp/clash_proxies_$USER
 		}
 		#使用核心内置test功能检测
 		if [ -x $bindir/clash ];then
@@ -346,8 +346,7 @@ store-selected: $restore
 EOF
 ###################################
 	#读取本机hosts并生成配置文件
-	hosts_dir=/etc/hosts
-	if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && [ -f $hosts_dir ];then
+	if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && [ -f /etc/hosts ] && [ -z "$(grep -E '^hosts:' $clashdir/user.yaml 2>/dev/null)" ];then
 		echo 'hosts:' >> $tmpdir/hosts.yaml
 		while read line;do
 			[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}" )" ] && \
@@ -471,8 +470,7 @@ start_redir(){
 	#将PREROUTING链指向clash链
 	iptables -t nat -A PREROUTING -p tcp $ports -j clash
 	#设置ipv6转发
-	ip6_nat=$(ip6tables -t nat -L 2>&1 | grep -o 'Chain')
-	if [ -n "$ip6_nat" -a "$ipv6_redir" = "已开启" ];then
+	if [ "$ipv6_redir" = "已开启" -a -n "$(lsmod | grep 'ip6table_nat')" ];then
 		ip6tables -t nat -N clashv6
 		ip6tables -t nat -A clashv6 -d ::1/128 -j RETURN
 		ip6tables -t nat -A clashv6 -d fc00::/7 -j RETURN
@@ -495,9 +493,10 @@ start_redir(){
 }
 start_ipt_dns(){
 	#屏蔽OpenWrt内置53端口转发
-	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-	iptables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-
+	[ "$(uci get dhcp.@dnsmasq[0].dns_redirect 2>/dev/null)" = 1 ] && {
+		uci del dhcp.@dnsmasq[0].dns_redirect
+		uci commit dhcp.@dnsmasq[0]
+	}
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
@@ -515,9 +514,6 @@ start_ipt_dns(){
 	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
 	#ipv6DNS
 	if [ -n "$(lsmod | grep 'ip6table_nat')" ];then
-		#屏蔽OpenWrt内置53端口转发
-		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null
-		ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 2> /dev/null	
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
@@ -533,7 +529,7 @@ start_ipt_dns(){
 		fi
 		ip6tables -t nat -I PREROUTING -p udp --dport 53 -j clashv6_dns
 	else
-		ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT > /dev/null 2>&1
+		ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT 2 > /dev/null
 	fi
 	return 0
 
@@ -580,7 +576,7 @@ start_tproxy(){
 	#屏蔽QUIC
 	[ "$quic_rj" = 已启用 ] && {
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
-		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	}
 	#设置ipv6转发
 	[ "$ipv6_redir" = "已开启" ] && {
@@ -609,7 +605,7 @@ start_tproxy(){
 		[ "$1" = "all" ] && tproxy_set6 tcp
 		tproxy_set6 udp
 		[ "$quic_rj" = 已启用 ] && {
-			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2 >/dev/null
 		}	
 	}
 }
@@ -652,7 +648,7 @@ start_output(){
 start_tun(){
 	modprobe tun &> /dev/null
 	iptables -I FORWARD -o utun -j ACCEPT
-	#ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	if [ "$quic_rj" = 已启用 ];then
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
@@ -773,8 +769,8 @@ stop_firewall(){
 		iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 		#屏蔽QUIC
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
-		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
-		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash QUIC REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
+		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 		#本机代理
 		iptables -t nat -D OUTPUT -p tcp -j clash_out 2> /dev/null
 		iptables -t nat -F clash_out 2> /dev/null
@@ -805,7 +801,7 @@ stop_firewall(){
 	type ip6tables >/dev/null 2>&1 && {
 		#redir
 		ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
-		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j clashv6_dns 2> /dev/null
+		ip6tables -D INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT 2> /dev/null
 		ip6tables -t nat -F clashv6 2> /dev/null
 		ip6tables -t nat -X clashv6 2> /dev/null
 		#dns
@@ -822,6 +818,7 @@ stop_firewall(){
 		ip6tables -t mangle -D PREROUTING -p udp $ports -j clashv6 2> /dev/null
 		ip6tables -t mangle -F clashv6 2> /dev/null
 		ip6tables -t mangle -X clashv6 2> /dev/null
+		ip6tables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 	}
 	#清理ipset规则
 	ipset destroy cn_ip >/dev/null 2>&1
@@ -1197,11 +1194,14 @@ logger)
 	;;
 webget)
 		#设置临时代理 
-		[ -n "$(pidof clash)" ] && {
+		if [ -n "$(pidof clash)" ];then
 			getconfig
 			[ -n "$authentication" ] && auth="$authentication@"
-			export https_proxy="http://${auth}127.0.0.1:$mix_port" && export http_proxy="$https_proxy"
-		}
+			export https_proxy="http://${auth}127.0.0.1:$mix_port"
+			url=$(echo $3 | sed 's#https://.*/juewuy/ShellClash[@|/]#https://raw.githubusercontent.com/juewuy/ShellClash/#' | sed 's#https://gh.shellclash.cf/#https://raw.githubusercontent.com/juewuy/ShellClash/#')
+		else
+			url=$(echo $3 | sed 's#https://.*/juewuy/ShellClash/#https://fastly.jsdelivr.net/gh/juewuy/ShellClash@#')
+		fi
 		#参数【$2】代表下载目录，【$3】代表在线地址
 		#参数【$4】代表输出显示，【$4】不启用重定向
 		#参数【$6】代表验证证书，【$7】使用clash文件头
@@ -1210,7 +1210,7 @@ webget)
 			[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
 			#[ -n "$7" ] && agent='-A "clash"'
-			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3" 2>/dev/null)
+			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url" 2>/dev/null)
 			[ "$result" != "200" ] && export https_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
 		else
 			if wget --version > /dev/null 2>&1;then
@@ -1222,7 +1222,7 @@ webget)
 			fi
 			[ "$4" = "echoon" ] && progress=''
 			[ "$4" = "echooff" ] && progress='-q'
-			wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$3"
+			wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$url"
 			if [ "$?" != "0" ];then
 				wget -Y off $agent $progress $redirect $certificate $timeout -O "$2" "$3"
 				[ "$?" = "0" ] && result="200"
