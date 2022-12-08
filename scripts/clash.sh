@@ -933,10 +933,9 @@ clashcfg(){
 		elif [ "$num" = 4 ]; then
 			if modprobe tun &>/dev/null;then
 				redir_mod=Tun模式
-				dns_mod=fake-ip
 			else
 				read -p "未检测到Tun模块，是否强制开启？可能导致无法联网！(1/0)" res
-				[ "$res" = '1' ] && redir_mod=Tun模式 && dns_mod=fake-ip
+				[ "$res" = '1' ] && redir_mod=Tun模式
 			fi
 			set_redir_config
 			

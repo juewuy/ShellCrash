@@ -1117,12 +1117,12 @@ testcommand(){
 			iptables  -t nat -L clash_dns --line-numbers
 			iptables  -t nat  -L clash --line-numbers
 			[ -n "$(echo $redir_mod | grep 'Tproxy')" ] && {
-				echo -------------------Tproxy--------------------
+				echo ----------------Tun/Tproxy-------------------
 				iptables  -t mangle -L PREROUTING --line-numbers
 				iptables  -t mangle  -L clash --line-numbers
 			}
 			[ -n "$(echo $redir_mod | grep 'Tproxy')" -a "$ipv6_redir" = "已开启" ] && {
-				echo -------------------Tproxy--------------------
+				echo ----------------Tun/Tproxy-------------------
 				ip6tables  -t mangle -L PREROUTING --line-numbers
 				ip6tables  -t mangle  -L clashv6 --line-numbers
 				[ -n "$(lsmod | grep 'ip6table_nat')" ] && {
