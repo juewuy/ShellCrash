@@ -1763,6 +1763,9 @@ case "$1" in
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
 		$shtype -x $clashdir/clash.sh
 	;;
+	-s)
+		$clashdir/start.sh $2 $3 $4 $5 $6
+	;;
 	-st)
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
 		$shtype -x $clashdir/start.sh $2 $3 $4 $5 $6

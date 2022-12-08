@@ -45,37 +45,40 @@ compare(){
 	fi
 }
 logger(){
+	#$1文字描述$2显示颜色$3是否推送
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
 	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
 	echo $log_text >> /tmp/ShellClash_log
 	[ "$(wc -l /tmp/ShellClash_log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d' /tmp/ShellClash_log
-	getconfig
-	[ -n "$(pidof clash)" ] && {
-		[ -n "$authentication" ] && auth="$authentication@"
-		export https_proxy="http://${auth}127.0.0.1:$mix_port"
-	}
-	[ -n "$push_TG" ] && {
-		url=https://api.telegram.org/bot${push_TG}/sendMessage
-		curl_data="-d chat_id=$chat_ID&text=$log_text"
-		wget_data="--post-data=$chat_ID&text=$log_text"
-		if curl --version &> /dev/null;then 
-			curl -kfsSl -d "chat_id=$chat_ID&text=$log_text" "$url" &>/dev/null 
-		else
-			wget -Y on -q --post-data="chat_id=$chat_ID&text=$log_text" "$url" 
-		fi
-	}
-	[ -n "$push_bark" ] && {
-		url=${push_bark}/${log_text}
-		if curl --version &> /dev/null;then 
-			curl -kfsSl "$url" &>/dev/null 
-		else
-			wget -Y on -q "$url" 
-		fi
-	}
-	[ -n "$push_Po" ] && {
-		url=https://api.pushover.net/1/messages.json
-		curl -kfsSl --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" &>/dev/null 
-	}	
+	[ -z "$3" ] && {
+		getconfig
+		[ -n "$(pidof clash)" ] && {
+			[ -n "$authentication" ] && auth="$authentication@"
+			export https_proxy="http://${auth}127.0.0.1:$mix_port"
+		}
+		[ -n "$push_TG" ] && {
+			url=https://api.telegram.org/bot${push_TG}/sendMessage
+			curl_data="-d chat_id=$chat_ID&text=$log_text"
+			wget_data="--post-data=$chat_ID&text=$log_text"
+			if curl --version &> /dev/null;then 
+				curl -kfsSl --connect-timeout 3 -d "chat_id=$chat_ID&text=$log_text" "$url" &>/dev/null 
+			else
+				wget -Y on -q --timeout=3 -t 1 --post-data="chat_id=$chat_ID&text=$log_text" "$url" 
+			fi
+		}
+		[ -n "$push_bark" ] && {
+			url=${push_bark}/${log_text}
+			if curl --version &> /dev/null;then 
+				curl -kfsSl --connect-timeout 3 "$url" &>/dev/null 
+			else
+				wget -Y on -q --timeout=3 -t 1 "$url" 
+			fi
+		}
+		[ -n "$push_Po" ] && {
+			url=https://api.pushover.net/1/messages.json
+			curl -kfsSl --connect-timeout 3 --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" &>/dev/null 
+		}	
+	} &
 }
 croncmd(){
 	if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
@@ -1031,8 +1034,8 @@ afstart(){
 	#读取配置文件
 	getconfig
 	#延迟启动
-	[ -n "$start_delay" -a ! -f /tmp/clash_start_time ] && {
-	logger "clash将延迟$start_delay秒启动" 31
+	[ ! -f /tmp/clash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+	logger "clash将延迟$start_delay秒启动" 31 pushoff
 	sleep $start_delay
 	}
 	$bindir/clash -t -d $bindir >/dev/null
