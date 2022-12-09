@@ -135,13 +135,15 @@ checkrestart(){
 #功能相关
 log_pusher(){
 	[ -n "$push_TG" ] && stat_TG=32m已启用 || stat_TG=33m未启用
+	[ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
 	[ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
 	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
 	echo -----------------------------------------------
 	echo -e " 1 查看\033[36m运行日志\033[0m"
 	echo -e " 2 Telegram推送	——\033[$stat_TG\033[0m"
-	echo -e " 3 Bark推送-IOS	——\033[$stat_bark\033[0m"
-	echo -e " 4 Passover推送	——\033[$stat_Po\033[0m"
+	echo -e " 3 PushDeer推送	——\033[$stat_Deer\033[0m"
+	echo -e " 4 Bark推送-IOS	——\033[$stat_bark\033[0m"
+	echo -e " 5 Passover推送	——\033[$stat_Po\033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num	
 	case $num in
@@ -194,6 +196,33 @@ log_pusher(){
 	;;
 	3)
 		echo -----------------------------------------------
+		if [ -n "$push_Deer" ];then
+			read -p "确认关闭PushDeer日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_Deer=
+				setconfig push_Deer
+			}
+		else
+			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+			echo -e "请先前往 \033[32;4mhttp://www.pushdeer.com/official.html\033[0m 扫码安装快应用或下载APP"
+			echo -e "打开快应用/APP，并完成登陆"
+			echo -e "\033[33m切换到「设备」标签页，点击右上角的加号，注册当前设备\033[0m"
+			echo -e "\033[36m切换到「秘钥」标签页，点击右上角的加号，创建一个秘钥，并复制\033[0m"
+			echo -----------------------------------------------
+			read -p "请输入你复制的秘钥 > " url
+			if [ -n "$url" ];then
+				push_Deer=$url
+				setconfig push_Deer $url
+				$clashdir/start.sh logger "已完成PushDeer日志推送设置！" 32
+			else
+				echo -e "\033[31m输入错误，请重新输入！\033[0m"
+			fi
+			sleep 1
+		fi
+		log_pusher
+	;;
+	4)
+		echo -----------------------------------------------
 		if [ -n "$push_bark" ];then
 			read -p "确认关闭Bark日志推送？(1/0) > " res
 			[ "$res" = 1 ] && {
@@ -217,7 +246,7 @@ log_pusher(){
 		fi
 		log_pusher
 	;;
-	4)
+	5)
 		echo -----------------------------------------------
 		if [ -n "$push_Po" ];then
 			read -p "确认关闭Pushover日志推送？(1/0) > " res

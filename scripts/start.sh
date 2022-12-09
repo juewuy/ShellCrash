@@ -74,6 +74,14 @@ logger(){
 				wget -Y on -q --timeout=3 -t 1 "$url" 
 			fi
 		}
+		[ -n "$push_Deer" ] && {
+			url=https://api2.pushdeer.com/message/push?pushkey=${push_Deer}
+			if curl --version &> /dev/null;then 
+				curl -kfsSl --connect-timeout 3 "$url"\&text="$log_text" &>/dev/null 
+			else
+				wget -Y on -q --timeout=3 -t 1 "$url"\&text="$log_text" 
+			fi
+		}
 		[ -n "$push_Po" ] && {
 			url=https://api.pushover.net/1/messages.json
 			curl -kfsSl --connect-timeout 3 --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" &>/dev/null 
@@ -474,6 +482,7 @@ start_redir(){
 	iptables -t nat -A PREROUTING -p tcp $ports -j clash
 	#设置ipv6转发
 	if [ "$ipv6_redir" = "已开启" -a -n "$(lsmod | grep 'ip6table_nat')" ];then
+		
 		ip6tables -t nat -N clashv6
 		ip6tables -t nat -A clashv6 -d ::1/128 -j RETURN
 		ip6tables -t nat -A clashv6 -d fc00::/7 -j RETURN
@@ -488,6 +497,7 @@ start_redir(){
 			for mac in $(cat $clashdir/mac); do
 				ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
 			done
+			[ -n "$wan_mac" ] && ip6tables -t nat -A clashv6 -m mac --mac-source $wan_mac -j RETURN #屏蔽本机出口网卡
 			ip6tables -t nat -A clashv6 -p tcp $ports -j REDIRECT --to-ports $redir_port
 		fi
 		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
@@ -602,6 +612,7 @@ start_tproxy(){
 					for mac in $(cat $clashdir/mac); do
 						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 					done
+					[ -n "$wan_mac" ] && ip6tables -t mangle -A clashv6 -m mac --mac-source $wan_mac -j RETURN #屏蔽本机出口网卡
 					ip6tables -t mangle -A clashv6 -p $1 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 				fi	
 				ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
@@ -765,6 +776,7 @@ start_nft(){
 			ip -6 rule add fwmark 1 table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
 			nft add rule inet shellclash prerouting ip6 daddr {${RESERVED_IP6}} return
+			[ -n "$wan_mac" ] && nft add rule inet shellclash prerouting ether saddr {${wan_mac}} return #屏蔽本机出口网卡
 		else
 			nft add rule inet shellclash prerouting meta nfproto ipv6 return
 		fi
@@ -1130,6 +1142,7 @@ afstart(){
 			fi
 		}
 		#设置路由规则
+		wan_mac=$(ifconfig wan | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
 		[ "$redir_mod" = "Redir模式" ] && start_dns && start_redir 	
 		[ "$redir_mod" = "混合模式" ] && start_dns && start_redir && start_tun udp
 		[ "$redir_mod" = "Tproxy混合" ] && start_dns && start_redir && start_tproxy udp
