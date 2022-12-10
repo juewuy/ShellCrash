@@ -38,7 +38,7 @@ setconfig(){
 compare(){
 	if [ ! -f $1 -o ! -f $2 ];then
 		return 1
-	elif type cmp >/dev/null 2>&1;then
+	elif command -v cmp >/dev/null 2>&1;then
 		cmp -s $1 $2
 	else
 		[ "$(cat $1)" = "$(cat $2)" ] && return 0 || return 1
@@ -253,7 +253,7 @@ EOF`
 			exit 1
 		fi
 		#检测并去除无效节点组
-		[ -n "$url_type" ] && type xargs >/dev/null 2>&1 && {
+		[ -n "$url_type" ] && command -v xargs >/dev/null 2>&1 && {
 			cat $yamlnew | grep -A 8 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 			while read line ;do
 				sed -i "/- $line/d" $yamlnew
@@ -651,7 +651,7 @@ start_output(){
 	iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
 	}
 	#Docker转发
-	type docker &>/dev/null && {
+	command -v docker &>/dev/null && {
 		iptables -t nat -N clash_docker
 		iptables -t nat -A clash_docker -d 10.0.0.0/8 -j RETURN
 		iptables -t nat -A clash_docker -d 127.0.0.0/8 -j RETURN
@@ -715,29 +715,29 @@ start_tun(){
 			[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j clash
 			
 			#设置ipv6转发
-			# [ "$ipv6_redir" = "已开启" -a "$clashcore" = "clash.meta" ] && {
-				# ip -6 route add default dev utun table 101
-				# ip -6 rule add fwmark 1 table 101
-				# ip6tables -t mangle -N clashv6
-				# ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
-				# ip6tables -t mangle -A clashv6 -d ::1/128 -j RETURN
-				# ip6tables -t mangle -A clashv6 -d fc00::/7 -j RETURN
-				# ip6tables -t mangle -A clashv6 -d fe80::/10 -j RETURN
-				# if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-					# #mac白名单
-					# for mac in $(cat $clashdir/mac); do
-						# ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark 1	
-					# done
-				# else
-					# #mac黑名单
-					# for mac in $(cat $clashdir/mac); do
-						# ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
-					# done
-					# ip6tables -t mangle -A clashv6 -j MARK --set-mark 1	
-				# fi	
-				# ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
-				# [ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
-			# }
+			[ "$ipv6_redir" = "已开启" -a "$clashcore" = "clash.meta" ] && {
+				ip -6 route add default dev utun table 101
+				ip -6 rule add fwmark 1 table 101
+				ip6tables -t mangle -N clashv6
+				ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
+				ip6tables -t mangle -A clashv6 -d ::1/128 -j RETURN
+				ip6tables -t mangle -A clashv6 -d fc00::/7 -j RETURN
+				ip6tables -t mangle -A clashv6 -d fe80::/10 -j RETURN
+				if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+					#mac白名单
+					for mac in $(cat $clashdir/mac); do
+						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark 1	
+					done
+				else
+					#mac黑名单
+					for mac in $(cat $clashdir/mac); do
+						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
+					done
+					ip6tables -t mangle -A clashv6 -j MARK --set-mark 1	
+				fi	
+				ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
+				[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
+			}
 		} &
 	} 
 }
@@ -829,20 +829,20 @@ start_wan(){
 	iptables -A INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT
 	iptables -A INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT
 	iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-	type ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+	command -v ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	}
 	if [ "$public_support" = "已开启" ];then
 		[ "$mix_port" != "7890" -a -n "$authentication" ] && {
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+		command -v ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 		}
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
-		type ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+		command -v ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	fi
 }
 stop_firewall(){
     #重置iptables相关规则
-	type iptables >/dev/null 2>&1 && {
+	command -v iptables >/dev/null 2>&1 && {
 		#redir
 		iptables -t nat -D PREROUTING -p tcp $ports -j clash 2> /dev/null
 		iptables -t nat -F clash 2> /dev/null
@@ -884,7 +884,7 @@ stop_firewall(){
 		iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	}
 	#重置ipv6规则
-	type ip6tables >/dev/null 2>&1 && {
+	command -v ip6tables >/dev/null 2>&1 && {
 		#redir
 		ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
 		ip6tables -D INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT 2> /dev/null
@@ -924,7 +924,7 @@ stop_firewall(){
 	ip rule del fwmark 1 table 102 2> /dev/null
 	ip route del local 172.16.0.0/12 dev lo table 102 2> /dev/null
 	#重置nftables相关规则
-	type nft >/dev/null 2>&1 && {
+	command -v nft >/dev/null 2>&1 && {
 		nft flush table inet shellclash >/dev/null 2>&1
 		nft delete table inet shellclash >/dev/null 2>&1
 	}
@@ -1091,7 +1091,7 @@ bfstart(){
 	#本机代理准备
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
-			if type userdel useradd groupmod &>/dev/null; then
+			if command -v userdel useradd groupmod &>/dev/null; then
 				userdel shellclash 2>/dev/null
 				useradd shellclash -u 7890
 				groupmod shellclash -g 7890
@@ -1158,7 +1158,7 @@ afstart(){
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
-		type iptables >/dev/null 2>&1 && start_wan
+		command -v iptables >/dev/null 2>&1 && start_wan
 		#标记启动时间
 		mark_time
 		#加载定时任务
@@ -1182,7 +1182,7 @@ start_old(){
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
 	else
-		type nohup >/dev/null 2>&1 && nohup=nohup
+		command -v nohup >/dev/null 2>&1 && nohup=nohup
 		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
 	fi
 	afstart

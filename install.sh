@@ -1,8 +1,8 @@
 #! /bin/bash
 # Copyright (C) Juewuy
 
-echo='echo -e' && [ -n "$(echo -e|grep e)" ] && echo=echo
-#[ -z "$1" ] && test=0 || test=$1
+echo='echo -e'
+[ -z "$1" ] && command -v bash &>/dev/null && { bash $0 0; exit;}
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
@@ -116,7 +116,7 @@ gettar(){
 		fi
 	fi
 	#修饰文件及版本号
-	shtype=sh && [ -n "$(ls -l /bin/sh|grep -oE 'dash|show|bash')" ] && shtype=bash 
+	shtype=sh && command -v bash &>/dev/null && shtype=bash 
 	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
 	chmod 755 $clashdir/start.sh
 	setconfig versionsh_l $release_new
@@ -132,6 +132,11 @@ gettar(){
 		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
 		sed -i '/export clashdir=*/'d $profile
 		echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
+		#适配zsh环境变量
+		[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep clashdir)" ] && { 
+			echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> ~/.zshrc
+			echo "export clashdir=\"$clashdir\"" >> ~/.zshrc
+		}
 	else
 		echo 无法写入环境变量！请检查安装权限！
 		exit 1
@@ -175,6 +180,7 @@ gettar
 echo -----------------------------------------------
 echo ShellClash 已经安装成功!
 [ "$profile" = "~/.bashrc" ] && echo "请执行【source ~/.bashrc &> /dev/null】命令以加载环境变量！"
+[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && echo "请执行【source ~/.zshrc &> /dev/null】命令以加载环境变量！"
 echo -----------------------------------------------
 $echo "\033[33m输入\033[30;47m clash \033[0;33m命令即可管理！！！\033[0m"
 echo -----------------------------------------------

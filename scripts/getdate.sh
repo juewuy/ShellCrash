@@ -354,7 +354,7 @@ gettar(){
 		fi
 	fi
 	#修饰文件及版本号
-	shtype=sh && [ -n "$(ls -l /bin/sh|grep -oE 'dash|show|bash')" ] && shtype=bash 
+	shtype=sh && command -v bash &>/dev/null && shtype=bash 
 	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
 	chmod +x $clashdir/start.sh
 	setconfig versionsh_l $release_new
@@ -370,13 +370,20 @@ gettar(){
 		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
 		sed -i '/export clashdir=*/'d $profile
 		echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
+		#适配zsh环境变量
+		[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && { 
+			echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> ~/.zshrc
+			echo "export clashdir=\"$clashdir\"" >> ~/.zshrc
+		}
 	else
 		echo 无法写入环境变量！请检查安装权限！
 		exit 1
 	fi
-	#华硕/Padavan额外设置
+	#梅林/Padavan额外设置
 	[ -n "$initdir" ] && {
-		sed -i '/ShellClash初始化/'d $initdir && touch $initdir && echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
+		sed -i '/ShellClash初始化/'d $initdir
+		touch $initdir
+		echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
 		setconfig initdir $initdir
 		}
 	#小米镜像化OpenWrt额外设置
@@ -396,6 +403,7 @@ gettar(){
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clash.service
 }
+
 getsh(){
 	echo -----------------------------------------------
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
@@ -948,7 +956,7 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			if type nft &>/dev/null;then
+			if command -v nft &>/dev/null;then
 				setconfig redir_mod "Nft模式" 
 			else
 				setconfig redir_mod "Redir模式"
@@ -1030,7 +1038,7 @@ userguide(){
 			sethost
 		fi
 	}
-	if type systemd >/dev/null 2>&1 ;then
+	if command -v systemd >/dev/null 2>&1 ;then
 		echo -----------------------------------------------
 		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
 		echo -e "注意当前设备必须有公网IP才能从公网正常访问"

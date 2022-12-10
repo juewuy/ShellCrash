@@ -709,7 +709,7 @@ localproxy(){
 	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
 	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
 	[ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
-	type nft &> /dev/null && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
+	command -v nft &> /dev/null && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -796,13 +796,13 @@ setboot(){
 	1)	
 		if [ "$autostart" = "enable" ]; then
 			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
-			type systemctl >/dev/null 2>&1 && systemctl disable clash.service > /dev/null 2>&1
+			command -v systemctl >/dev/null 2>&1 && systemctl disable clash.service > /dev/null 2>&1
 			touch $clashdir/.dis_startup
 			autostart=disable
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
 		elif [ "$autostart" = "disable" ]; then
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
-			type systemctl >/dev/null 2>&1 && systemctl enable clash.service > /dev/null 2>&1
+			command -v systemctl >/dev/null 2>&1 && systemctl enable clash.service > /dev/null 2>&1
 			rm -rf $clashdir/.dis_startup
 			autostart=enable
 			echo -e "\033[32m已设置Clash开机启动！\033[0m"
@@ -926,7 +926,7 @@ clashcfg(){
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
 		#[ -n "$(lsmod | grep '^tun')" ] || ip tuntap &>/dev/null && sup_tun=1
-		type nft &> /dev/null && sup_nft=1
+		command -v nft &> /dev/null && sup_nft=1
 		#[ -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
@@ -1170,8 +1170,9 @@ clashcfg(){
 			if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
 				if [ "$cn_ip_route" = "未开启" ]; then 
 					echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
+					echo -e "\033[31m注意！！！此功能会导致全局模式及一切CN相关规则失效！！！\033[0m"
 					cn_ip_route=已开启
-					sleep 1
+					sleep 2
 				else
 					echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
 					cn_ip_route=未开启
@@ -1814,6 +1815,7 @@ case "$1" in
 			sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
 			sed -i '/ShellClash初始化/'d /etc/storage/started_script.sh 2>/dev/null
 			sed -i '/ShellClash初始化/'d /jffs/.asusrouter 2>/dev/null
+			rm -rf $bindir 
 			rm -rf $clashdir
 			rm -rf /etc/init.d/clash
 			rm -rf /etc/systemd/system/clash.service
