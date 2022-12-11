@@ -74,7 +74,7 @@ elif [ "$num" = "1" ];then
 		release_new=$(cat /tmp/clashrelease | head -1)
 		url_dl="$url_cdn/$release_new"
 	else
-		echo "无法获取稳定版安装地址，将尝试安装公测版！"
+		$echo "\033[33m无法获取稳定版安装地址，将尝试安装公测版！\033[0m"
 	fi
 fi
 [ -z "$url_dl" ] && url_dl=$url
@@ -87,7 +87,11 @@ tarurl=$url_dl/bin/clashfm.tar.gz
 
 gettar(){
 	webget /tmp/clashfm.tar.gz $tarurl
-	[ "$result" != "200" ] && echo "文件下载失败,请尝试使用其他安装源！" && exit 1
+	[ "$result" != "200" ] && {
+		$echo "\033[33m文件下载失败,请参考 \033[32mhttps://github.com/juewuy/ShellClash/blob/master/README_CN.md"
+		$echo  "\033[33m使用其他安装源重新安装！\033[0m" 
+		exit 1
+	}
 	$clashdir/start.sh stop 2>/dev/null
 	#解压
 	echo -----------------------------------------------
@@ -138,7 +142,7 @@ gettar(){
 			echo "export clashdir=\"$clashdir\"" >> ~/.zshrc
 		}
 	else
-		echo 无法写入环境变量！请检查安装权限！
+		$echo "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
 		exit 1
 	fi
 	#梅林/Padavan额外设置

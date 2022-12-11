@@ -414,11 +414,6 @@ EOF
 			sed -i "/^proxy-groups:/a\\$line #自定义策略组" $tmpdir/config.yaml
 		done
 	fi
-
-	#tun/fake-ip防止流量回环
-	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" -o "$dns_mod" = "fake-ip" ];then
-		sed -i "/^rules:/a\\$space_rules- SRC-IP-CIDR,198.18.0.0/16,REJECT #自定义规则(防止回环)" $tmpdir/config.yaml
-	fi
 	#如果没有使用小闪存模式
 	if [ "$tmpdir" != "$bindir" ];then
 		cmp -s $tmpdir/config.yaml $yaml >/dev/null 2>&1
@@ -464,6 +459,7 @@ start_redir(){
 	[ -n "$host_lan" ] && iptables -t nat -A clash -d $host_lan -j RETURN
 	#绕过CN_IP
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	[ "$dns_mod" = "fake-ip" ] && iptables -t nat -A clash -s 198.18.0.0/16 -j RETURN
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		#mac白名单
 		for mac in $(cat $clashdir/mac); do
@@ -497,7 +493,9 @@ start_redir(){
 			for mac in $(cat $clashdir/mac); do
 				ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
 			done
-			[ -n "$wan_mac" ] && ip6tables -t nat -A clashv6 -m mac --mac-source $wan_mac -j RETURN #屏蔽本机出口网卡
+			for ip in $ipv6_wan ;do
+				ip6tables -t nat -A clashv6 -p tcp -s $ip -j RETURN #屏蔽本机ipv6地址
+			done
 			ip6tables -t nat -A clashv6 -p tcp $ports -j REDIRECT --to-ports $redir_port
 		fi
 		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
@@ -566,7 +564,7 @@ start_tproxy(){
 		iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
 		[ -n "$host_lan" ] && iptables -t mangle -A clash -d $host_lan -j RETURN
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
-		
+		[ "$dns_mod" = "fake-ip" ] && iptables -t mangle -A clash -s 198.18.0.0/16 -j RETURN
 		tproxy_set(){
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
@@ -612,7 +610,9 @@ start_tproxy(){
 					for mac in $(cat $clashdir/mac); do
 						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 					done
-					[ -n "$wan_mac" ] && ip6tables -t mangle -A clashv6 -m mac --mac-source $wan_mac -j RETURN #屏蔽本机出口网卡
+					for ip in $ipv6_wan ;do
+						ip6tables -t mangle -A clashv6 -p $1 -s $ip -j RETURN #屏蔽本机ipv6地址
+					done
 					ip6tables -t mangle -A clashv6 -p $1 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 				fi	
 				ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
@@ -666,6 +666,7 @@ start_tun(){
 	modprobe tun &> /dev/null && {
 		#允许流量
 		iptables -I FORWARD -o utun -j ACCEPT
+		iptables -I FORWARD -s 198.18.0.0/16 -o utun -j RETURN
 		#ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 		#屏蔽QUIC
 		if [ "$quic_rj" = 已启用 ];then
@@ -695,6 +696,7 @@ start_tun(){
 			iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
 			iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
 			iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
+			iptables -t mangle -A clash -s 198.18.0.0/16 -j RETURN
 			[ -n "$host_lan" ] && iptables -t mangle -A clash -d $host_lan -j RETURN	
 			[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
@@ -733,6 +735,9 @@ start_tun(){
 					for mac in $(cat $clashdir/mac); do
 						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 					done
+					for ip in $ipv6_wan ;do
+						ip6tables -t mangle -A clashv6 -s $ip -j RETURN #屏蔽本机ipv6地址
+					done					
 					ip6tables -t mangle -A clashv6 -j MARK --set-mark 1	
 				fi	
 				ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
@@ -776,7 +781,10 @@ start_nft(){
 			ip -6 rule add fwmark 1 table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
 			nft add rule inet shellclash prerouting ip6 daddr {${RESERVED_IP6}} return
-			[ -n "$wan_mac" ] && nft add rule inet shellclash prerouting ether saddr {${wan_mac}} return #屏蔽本机出口网卡
+			[ -n "$ipv6_wan" ] && {
+				LOCAL_IP6="{$(echo $ipv6_wan | sed s/\ /\,\ /g)}"
+				nft add rule inet shellclash prerouting ip6 daddr {${LOCAL_IP6}} return #屏蔽本机ipv6地址
+			}
 		else
 			nft add rule inet shellclash prerouting meta nfproto ipv6 return
 		fi
@@ -853,6 +861,7 @@ stop_firewall(){
 		iptables -t nat -X clash_dns 2> /dev/null
 		#tun
 		iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
+		iptables -D FORWARD -s 198.18.0.0/16 -o utun -j RETURN 2> /dev/null
 		#屏蔽QUIC
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
@@ -1142,7 +1151,7 @@ afstart(){
 			fi
 		}
 		#设置路由规则
-		wan_mac=$(ifconfig wan | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
+		[ "$ipv6_redir" = "已开启" ] && ipv6_wan=$(ip addr show|grep -A1 'inet6 [^f:]'|grep -oE 'inet6 ([a-f0-9:]+)/'|sed s#inet6\ ##g|sed s#/##g)
 		[ "$redir_mod" = "Redir模式" ] && start_dns && start_redir 	
 		[ "$redir_mod" = "混合模式" ] && start_dns && start_redir && start_tun udp
 		[ "$redir_mod" = "Tproxy混合" ] && start_dns && start_redir && start_tproxy udp
