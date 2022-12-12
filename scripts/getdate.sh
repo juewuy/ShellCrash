@@ -37,9 +37,9 @@ linkserver(){
 	echo -e "\033[32m感谢以下作者的无私奉献！！！\033[0m"
 	echo 当前使用后端为：$server_link
 	echo 1 api.dler.io			（墙洞提供）
-	echo 2 sub.shellclash.cf	（作者提供）
-	echo 3 sub.xeton.dev		（SUB作者T大提供）
-	echo 4 sub.id9.cc			（品云提供）
+	echo 2 api.v1.mk			（肥羊提供,支持vless）
+	echo 3 sub.xeton.dev		（SUB作者提供）
+	echo 4 v.id9.cc				（品云提供,支持vless）
 	echo 5 sub.maoxiongnet.com	（猫熊提供）
 	echo -----------------------------------------------
 	echo 0 返回上级菜单

@@ -1298,6 +1298,7 @@ EOF
 		[ ! -f $clashdir/rules.yaml ] && cat > $clashdir/rules.yaml <<EOF
 #用于编写自定义规则(此处规则将优先生效)，(可参考https://lancellc.gitbook.io/clash/clash-config-file/rules)：
 #例如“🚀 节点选择”、“🎯 全球直连”这样的自定义规则组必须与config.yaml中的代理规则组相匹配，否则将无法运行
+# 【#】号代表注释！！！注释条目不会生效！！！
 # - DOMAIN-SUFFIX,google.com,🚀 节点选择
 # - DOMAIN-KEYWORD,baidu,🎯 全球直连
 # - DOMAIN,ad.com,REJECT
