@@ -328,14 +328,35 @@ modify_yaml(){
 	#预读取变量
 	mode=$(grep "^mode" $yaml | head -1 | awk '{print $2}')
 	[ -z "$mode" ] && mode='Rule'
-	#预删除需要添加的项目
-	a=$(grep -n "port:" $yaml | head -1 | cut -d ":" -f 1)
-	b=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1)
-	b=$((b-1))
+	#分割配置文件
 	mkdir -p $tmpdir > /dev/null
-	[ "$b" -gt 0 ] && sed "${a},${b}d" $yaml > $tmpdir/proxy.yaml || cp -f $yaml $tmpdir/proxy.yaml
+	yaml_p=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1) #获取节点起始行号
+	yaml_r=$(grep -n "^rule" $yaml | head -1 | cut -d ":" -f 1) #获取规则起始行号
+	if [ "$yaml_p" -lt "$yaml_r" ];then
+		sed -n "${yaml_p},${yaml_r}p" $yaml > $tmpdir/proxy.yaml
+		cat $yaml | sed -n "${yaml_r},\$p" | sed '1d' | sed 's/^ *-/ -/g' > $tmpdir/rule.yaml #切割rule并对齐
+	else
+		cat $yaml | sed -n "${yaml_r},${yaml_p}p" | sed '1d' | sed '$d' | sed 's/^ *-/ -/g' > $tmpdir/rule.yaml #切割rule并对齐
+		sed -n "${yaml_p},\$p" $yaml > $tmpdir/proxy.yaml
+		sed -n "${yaml_r}p" $yaml >> $tmpdir/proxy.yaml #将rule字段附在末尾
+	fi
 	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i '1,99s/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
+	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
+	#节点绕过功能支持
+	[ "$proxies_bypass" = "已启用" ] && {
+		cat /tmp/clash_$USER/proxy.yaml | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
+		cat /tmp/clash_$USER/proxy.yaml | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
+		sed -i "/#节点绕过/d" $tmpdir/rule.yaml
+		cat $tmpdir/rule.yaml >> $tmpdir/proxies_bypass 
+		mv -f $tmpdir/proxies_bypass $tmpdir/rule.yaml
+	}
+	#插入自定义规则
+	[ -f $clashdir/rules.yaml ] && {
+		cat $clashdir/rules.yaml | sed 's/^ *-/ -/g' | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $tmpdir/rules.yaml
+		sed -i "/#自定义规则/d" $tmpdir/rule.yaml
+		cat $tmpdir/rule.yaml >> $tmpdir/rules.yaml
+		mv -f $tmpdir/rules.yaml $tmpdir/rule.yaml
+	}
 	#添加配置
 ###################################
 	cat > $tmpdir/set.yaml <<EOF
@@ -372,19 +393,9 @@ EOF
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
 	[ -f $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
 	[ -f $tmpdir/proxy.yaml ] && yaml_proxy=$tmpdir/proxy.yaml
-	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_proxy > $tmpdir/config.yaml
-	#插入自定义规则
-	sed -i "/#自定义规则/d" $tmpdir/config.yaml
-	space_rules=$(sed -n '/^rules/{n;p}' $tmpdir/proxy.yaml | grep -oE '^ *') #获取空格数
-	if [ -f $clashdir/rules.yaml ];then
-		sed -i '/^$/d' $clashdir/rules.yaml && echo >> $clashdir/rules.yaml #处理换行
-		while read line;do
-			[ -z "$(echo "$line" | grep '#')" ] && \
-			[ -n "$(echo "$line" | grep '\- ')" ] && \
-			line=$(echo "$line" | sed 's#/#\\/#') && \
-			sed -i "/^rules:/a\\$space_rules$line #自定义规则" $tmpdir/config.yaml
-		done < $clashdir/rules.yaml
-	fi
+	[ -f $tmpdir/rule.yaml ] && yaml_rule=$tmpdir/rule.yaml
+	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_proxy $yaml_rule > $tmpdir/config.yaml
+
 
 	#插入自定义代理
 	sed -i "/#自定义代理/d" $tmpdir/config.yaml
@@ -423,6 +434,7 @@ EOF
 	rm -f $tmpdir/set.yaml
 	rm -f $tmpdir/proxy.yaml
 	rm -f $tmpdir/hosts.yaml
+	rm -f $tmpdir/rule.yaml
 }
 #设置路由规则
 cn_ip_route(){	
@@ -1040,10 +1052,10 @@ bfstart(){
 	#检测是否存在高级版规则
 	if [ "$clashcore" = "clash" -a -n "$(cat $clashdir/config.yaml | grep -E '^script:|proxy-providers|rule-providers|rule-set')" ];then
 		echo -----------------------------------------------
-		logger "检测到高级规则！将改为使用clashpre核心启动！" 33
+		logger "检测到高级规则！将改为使用clash.meta核心启动！" 33
 		rm -rf $bindir/clash
-		clashcore=clashpre
-		setconfig clashcore clashpre
+		clashcore=clash.meta
+		setconfig clashcore clash.meta
 		echo -----------------------------------------------
 	fi
 	#检查clash核心
@@ -1360,7 +1372,7 @@ unset_proxy)
 		sed -i '/all_proxy/'d  $profile
 		sed -i '/ALL_PROXY/'d  $profile
 	;;
-db)	
+-t)	
 		$2
 	;;
 esac

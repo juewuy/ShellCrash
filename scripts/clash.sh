@@ -973,15 +973,20 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 6 ]; then
-			redir_mod=Nft基础
+			if command -v opkg >/dev/null && [ -z "$(opkg list-installed | grep firewall4)" ];then
+				read -p "检测到缺少firewall4依赖，是否自动安装？(1/0)" res
+				[ "$res" = '1' ] && opkg install firewall4 && redir_mod=Nft基础
+			else
+				redir_mod=Nft基础
+			fi
 			set_redir_config
 			
 		elif [ "$num" = 7 ]; then
-			if [ -n "$(lsmod | grep 'nft_tproxy')" ];then
-				redir_mod=Nft混合
+			if command -v opkg >/dev/null && [ -z "$(opkg list-installed | grep kmod-nft-tproxy)" ];then
+				read -p "检测到缺少kmod-nft-tproxy依赖，是否自动安装？(1/0)" res
+				[ "$res" = '1' ] && opkg install kmod-nft-tproxy && redir_mod=Nft混合
 			else
-				read -p "未检测到Tproxy模块，是否强制开启？可能导致无法联网！(1/0)" res
-				[ "$res" = '1' ] && redir_mod=Nft混合
+				redir_mod=Nft混合
 			fi
 			set_redir_config	
 			
@@ -1193,7 +1198,7 @@ clashcfg(){
 }
 clashadv(){
 	#获取设置默认显示
-	[ -z "$modify_yaml" ] && modify_yaml=未开启
+	[ -z "$proxies_bypass" ] && proxies_bypass=未启用
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ -z "$public_support" ] && public_support=未开启
@@ -1206,6 +1211,7 @@ clashadv(){
 	echo -----------------------------------------------
 	echo -e " 1 ipv6相关"
 	#echo -e " 2 配置Meta特性"
+	echo -e " 3 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
 	echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
 	echo -e " 5 启用公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
 	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
@@ -1223,6 +1229,20 @@ clashadv(){
 		
 	elif [ "$num" = 1 ]; then
 		setipv6
+		clashadv
+		
+	elif [ "$num" = 3 ]; then
+		echo -----------------------------------------------
+		if [ "$proxies_bypass" = "未启用" ];then
+			proxies_bypass=已启用
+			echo -e "\033[33m仅当ShellClash与子网络同类应用使用相同节点配置时方可生效！\033[0m"
+			sleep 1
+		else
+			proxies_bypass=未启用
+		fi
+		setconfig proxies_bypass $proxies_bypass
+		echo -e "\033[32m设置成功！\033[0m"
+		sleep 1		
 		clashadv
 		
 	elif [ "$num" = 4 ]; then
