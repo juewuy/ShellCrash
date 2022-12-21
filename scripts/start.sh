@@ -951,6 +951,7 @@ stop_firewall(){
 	}
 	#清理ipset规则
 	ipset destroy cn_ip >/dev/null 2>&1
+	ipset destroy cn_ip6 >/dev/null 2>&1
 	#移除dnsmasq转发规则
 	[ "$dns_redir" = "已开启" ] && {
 		uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
