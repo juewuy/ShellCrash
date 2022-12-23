@@ -516,10 +516,12 @@ setipv6(){
 	[ -z "$ipv6_support" ] && ipv6_support=已开启
 	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
+	[ -z "$cn_ipv6_route" ] && cn_ipv6_route=未开启
 	echo -----------------------------------------------
 	echo -e " 1 ipv6内核支持:  \033[36m$ipv6_support\033[0m  ——用于ipv6节点及规则支持"
-	echo -e " 2 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量且不支持绕过CN"
-	echo -e " 3 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"		
+	echo -e " 2 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量"
+	echo -e " 3 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"	
+	echo -e " 4 CN-ipv6绕过内核:   \033[36m$cn_ipv6_route\033[0m  ——优化性能，不兼容fake-ip"	
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num		
 	case $num in
@@ -545,6 +547,22 @@ setipv6(){
 	3)
 		[ "$ipv6_dns" = "未开启" ] && ipv6_dns=已开启 || ipv6_dns=未开启
 		setconfig ipv6_dns $ipv6_dns
+		setipv6
+	;;
+	4)
+		if [ "$ipv6_redir" = "未开启" ]; then
+			ipv6_support=已开启
+			ipv6_redir=已开启
+			setconfig ipv6_redir $ipv6_redir
+			setconfig ipv6_support $ipv6_support
+		fi
+		if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
+			[ "$cn_ipv6_route" = "未开启" ] && cn_ipv6_route=已开启 || cn_ipv6_route=未开启
+			setconfig cn_ipv6_route $cn_ipv6_route
+		else
+			echo -e "\033[31m当前设备缺少ipset模块或未使用Nft模式，无法启用绕过功能！！\033[0m"
+			sleep 1
+		fi
 		setipv6
 	;;
 	*)
@@ -1148,7 +1166,7 @@ clashcfg(){
 		echo -----------------------------------------------
 		if [ -n "$(echo "$redir_mod" | grep -oE '混合|Tproxy|Tun')" ];then
 			if [ "$quic_rj" = "未开启" ]; then 
-				echo -e "\033[33m已禁止QUCI流量通过clash内核！！\033[0m"
+				echo -e "\033[33m已禁止QUIC流量通过clash内核！！\033[0m"
 				quic_rj=已启用
 			else
 				echo -e "\033[33m已取消禁止QUIC协议流量！！\033[0m"
