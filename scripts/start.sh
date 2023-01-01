@@ -456,19 +456,19 @@ cn_ip_route(){
 	}
 }
 cn_ipv6_route(){
-	[ ! -f $bindir/china_ipv6_list.txt ] && {
-		if [ -f $clashdir/china_ipv6_list.txt ];then
-			mv $clashdir/china_ipv6_list.txt $bindir/china_ipv6_list.txt
+	[ ! -f $bindir/cn_ipv6.txt ] && {
+		if [ -f $clashdir/cn_ipv6.txt ];then
+			mv $clashdir/cn_ipv6.txt $bindir/cn_ipv6.txt
 		else
 			logger "未找到cn_ipv6列表，正在下载！" 33
-			$0 webget $bindir/china_ipv6_list.txt "$update_url/bin/china_ipv6_list.txt"
-			[ "$?" = "1" ] && rm -rf $bindir/china_ipv6_list.txt && logger "列表下载失败！" 31 
+			$0 webget $bindir/cn_ipv6.txt "$update_url/bin/china_ipv6_list.txt"
+			[ "$?" = "1" ] && rm -rf $bindir/cn_ipv6.txt && logger "列表下载失败！" 31 
 		fi
 	}
-	[ -f $bindir/china_ipv6_list.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
+	[ -f $bindir/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			#ipv6
 			echo "create cn_ip6 hash:net family inet6 hashsize 1024 maxelem 65536" > /tmp/cn6_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/china_ipv6_list.txt >> /tmp/cn6_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/cn_ipv6.txt >> /tmp/cn6_$USER.ipset
 			ipset -! flush cn_ip6 2>/dev/null
 			ipset -! restore < /tmp/cn6_$USER.ipset 
 			rm -rf cn6_$USER.ipset
@@ -816,8 +816,8 @@ start_nft(){
 			ip -6 rule add fwmark 1 table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
 			nft add rule inet shellclash prerouting ip6 daddr {${RESERVED_IP6}} return
-			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f $bindir/china_ipv6_list.txt ] && {
-				CN_IP6=$(awk '{printf "%s, ",$1}' $bindir/china_ipv6_list.txt)
+			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f $bindir/cn_ipv6.txt ] && {
+				CN_IP6=$(awk '{printf "%s, ",$1}' $bindir/cn_ipv6.txt)
 				[ -n "$CN_IP6" ] && nft add rule inet shellclash prerouting ip6 daddr {${CN_IP6}} return
 			}
 			[ -n "$ipv6_wan" ] && {

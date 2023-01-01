@@ -558,9 +558,10 @@ setgeo(){
 	echo -----------------------------------------------
 	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约6mb)"
 	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.2mb)"
-	echo -e " 3 由\033[32m17mon\033[0m提供的CN-IP文件(需启用CN_IP绕过内核功能，约0.2mb)"
+	echo -e " 3 由\033[32m17mon\033[0m提供的CN-IP文件(需启用CN_IP绕过，约0.2mb)"
+	echo -e " 4 由\033[32mChanthMiao\033[0m提供的CN-IPV6文件(需ipv6启用CN_IP绕过，约50kb)"
 	[ "$clashcore" = "clash.meta" ] && \
-	echo -e " 4 由\033[32mLoyalsoldier\033[0m提供的GeoSite数据库(限Meta内核，约4.5mb)"
+	echo -e " 5 由\033[32mLoyalsoldier\033[0m提供的GeoSite数据库(限Meta内核，约4.5mb)"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -583,6 +584,16 @@ setgeo(){
 			sleep 1
 		fi
 	elif [ "$num" = '4' ]; then
+		if [ "$cn_ipv6_route" = "已开启" -a "$ipv6_redir" = "已开启" ]; then
+			geotype=china_ipv6_list.txt
+			geoname=cn_ipv6.txt
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m未开启ipv6下CN绕过功能，无需更新CN-IPV6文件！！\033[0m"	
+			sleep 1
+		fi
+	elif [ "$num" = '5' ]; then
 		geotype=geosite.dat
 		geoname=geosite.dat
 		getgeo

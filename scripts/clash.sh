@@ -521,7 +521,7 @@ setipv6(){
 	echo -e " 1 ipv6内核支持:  \033[36m$ipv6_support\033[0m  ——用于ipv6节点及规则支持"
 	echo -e " 2 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量"
 	echo -e " 3 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"	
-	echo -e " 4 CN-ipv6绕过内核:   \033[36m$cn_ipv6_route\033[0m  ——优化性能，不兼容fake-ip"	
+	echo -e " 4 CNIP绕过内核:  \033[36m$cn_ipv6_route\033[0m  ——优化性能，不兼容fake-ip"	
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num		
 	case $num in
