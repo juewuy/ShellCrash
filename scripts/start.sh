@@ -174,8 +174,8 @@ https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.
 EOF`
 	Https=$(echo ${Https//\%26/\&})   #将%26替换回&
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
-	if [ -z "$Https" ];then
-		[ -n "$(echo $Url | grep -oE 'vless:')" ] && Server='https://v.id9.cc'
+	if [ -z "$Https" -a -z "$retry" ];then
+		[ -n "$(echo $Url | grep -oE 'vless:')" ] && Server='https://api.v1.mk'
 		[ -n "$(echo $Url | grep -oE 'hysteria:')" ] && Server='https://sub.shellclash.cf'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
@@ -317,11 +317,10 @@ modify_yaml(){
 			dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
 		fi
 	}
-	#sniffer配置
-	[ "$sniffer" = "已启用" ] && {
-		[ "$clashcore" = "clash.meta" ] && sniffer_set="sniffer: {enable: true, sniffing: [tls, http]}"
-		[ "$clashcore" = "clashpre" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
-	}
+	#域名嗅探配置
+	[ "$sniffer" = "已启用" ] && [ "$clashcore" = "clash.meta" ] && sniffer_set="sniffer: {enable: true, sniffing: [tls, http]}"
+	[ "$clashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
+	
 	#设置目录
 	yaml=$clashdir/config.yaml
 	tmpdir=/tmp/clash_$USER
@@ -344,7 +343,7 @@ modify_yaml(){
 	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#节点绕过功能支持
 	[ "$proxies_bypass" = "已启用" ] && {
-		cat /tmp/clash_$USER/proxy.yaml | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
+		cat /tmp/clash_$USER/proxy.yaml | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
 		cat /tmp/clash_$USER/proxy.yaml | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
 		sed -i "/#节点绕过/d" $tmpdir/rule.yaml
 		cat $tmpdir/rule.yaml >> $tmpdir/proxies_bypass 
@@ -891,7 +890,7 @@ stop_firewall(){
 		iptables -t nat -X clash_docker 2> /dev/null
 		iptables -t nat -D PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker 2> /dev/null
 		iptables -t nat -D PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port 2> /dev/null
-		#TPROXY
+		#TPROXY&tun
 		iptables -t mangle -D PREROUTING -p tcp $ports -j clash 2> /dev/null
 		iptables -t mangle -D PREROUTING -p udp $ports -j clash 2> /dev/null
 		iptables -t mangle -F clash 2> /dev/null
@@ -922,7 +921,7 @@ stop_firewall(){
 		ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 		ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 		ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
-		#tproxy
+		#tproxy&tun
 		ip6tables -t mangle -D PREROUTING -p tcp $ports -j clashv6 2> /dev/null
 		ip6tables -t mangle -D PREROUTING -p udp $ports -j clashv6 2> /dev/null
 		ip6tables -t mangle -F clashv6 2> /dev/null

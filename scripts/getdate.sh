@@ -972,10 +972,12 @@ userguide(){
 		elif [ "$num" = 2 ];then
 			setconfig redir_mod "纯净模式"
 			setconfig clashcore "clash"
+			setconfig common_ports "未开启"
 			echo -----------------------------------------------
 			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
 			echo -e " 1 使用\033[32m环境变量\033[0m方式配置(不支持部分应用)"
-			echo -e " 2 使用\033[32miptables增强模式\033[0m配置(不支持OpenWrt)"
+			echo -e " 2 使用\033[32miptables增强模式\033[0m配置"
+			echo -e " 3 使用\033[32mnftables增强模式\033[0m配置"
 			echo -e " 0 稍后设置"
 			read -p "请输入对应数字 > " num
 			if [ "$num" = 1 ]; then
@@ -984,6 +986,9 @@ userguide(){
 			elif [ "$num" = 2 ]; then
 				local_proxy=已开启
 				local_type=iptables增强模式
+			elif [ "$num" = 3 ]; then
+				local_proxy=已开启
+				local_type=nftables增强模式
 			fi
 			setconfig local_proxy $local_proxy
 			setconfig local_type $local_type

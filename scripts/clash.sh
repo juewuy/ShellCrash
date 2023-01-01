@@ -1203,6 +1203,7 @@ clashadv(){
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ -z "$public_support" ] && public_support=未开启
 	[ -z "$sniffer" ] && sniffer=未启用
+	[ "$clashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && sniffer=已启用
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
 	#
 	echo -----------------------------------------------
@@ -1255,6 +1256,8 @@ clashadv(){
 				echo "已将clash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
 			fi
 			sniffer=已启用
+		elif [ "$clashcore" = "clashpre" -a "$dns_mod" = "redir_host" ];then
+			echo -e "\033[31m使用clashpre内核且开启redir-host模式时无法关闭！\033[0m"
 		else
 			sniffer=未启用
 		fi
