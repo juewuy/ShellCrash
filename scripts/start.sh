@@ -19,6 +19,7 @@ getconfig(){
 	[ -z "$ipv6_support" ] && ipv6_support=已开启
 	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
+	[ -z "$cn_ipv6_route" ] && cn_ipv6_route=未开启
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$tproxy_port" ] && tproxy_port=7893
@@ -454,6 +455,25 @@ cn_ip_route(){
 			rm -rf cn_$USER.ipset
 	}
 }
+cn_ipv6_route(){
+	[ ! -f $bindir/china_ipv6_list.txt ] && {
+		if [ -f $clashdir/china_ipv6_list.txt ];then
+			mv $clashdir/china_ipv6_list.txt $bindir/china_ipv6_list.txt
+		else
+			logger "未找到cn_ipv6列表，正在下载！" 33
+			$0 webget $bindir/china_ipv6_list.txt "$update_url/bin/china_ipv6_list.txt"
+			[ "$?" = "1" ] && rm -rf $bindir/china_ipv6_list.txt && logger "列表下载失败！" 31 
+		fi
+	}
+	[ -f $bindir/china_ipv6_list.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
+			#ipv6
+			echo "create cn_ip6 hash:net family inet6 hashsize 1024 maxelem 65536" > /tmp/cn6_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/china_ipv6_list.txt >> /tmp/cn6_$USER.ipset
+			ipset -! flush cn_ip6 2>/dev/null
+			ipset -! restore < /tmp/cn6_$USER.ipset 
+			rm -rf cn6_$USER.ipset
+	}
+}
 start_redir(){
 	#获取局域网host地址
 	host_lan
@@ -495,6 +515,7 @@ start_redir(){
 		ip6tables -t nat -A clashv6 -d ::1/128 -j RETURN
 		ip6tables -t nat -A clashv6 -d fc00::/7 -j RETURN
 		ip6tables -t nat -A clashv6 -d fe80::/10 -j RETURN
+		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && ip6tables -t nat -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
 			for mac in $(cat $clashdir/mac); do
@@ -611,6 +632,7 @@ start_tproxy(){
 			ip6tables -t mangle -A clashv6 -d ::1/128 -j RETURN
 			ip6tables -t mangle -A clashv6 -d fc00::/7 -j RETURN
 			ip6tables -t mangle -A clashv6 -d fe80::/10 -j RETURN
+			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 			tproxy_set6(){
 				if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 					#mac白名单
@@ -737,6 +759,7 @@ start_tun(){
 				ip6tables -t mangle -A clashv6 -d ::1/128 -j RETURN
 				ip6tables -t mangle -A clashv6 -d fc00::/7 -j RETURN
 				ip6tables -t mangle -A clashv6 -d fe80::/10 -j RETURN
+				[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 				if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 					#mac白名单
 					for mac in $(cat $clashdir/mac); do
@@ -793,6 +816,10 @@ start_nft(){
 			ip -6 rule add fwmark 1 table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
 			nft add rule inet shellclash prerouting ip6 daddr {${RESERVED_IP6}} return
+			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f $bindir/china_ipv6_list.txt ] && {
+				CN_IP6=$(awk '{printf "%s, ",$1}' $bindir/china_ipv6_list.txt)
+				[ -n "$CN_IP6" ] && nft add rule inet shellclash prerouting ip6 daddr {${CN_IP6}} return
+			}
 			[ -n "$ipv6_wan" ] && {
 				LOCAL_IP6="{$(echo $ipv6_wan | sed s/\ /\,\ /g)}"
 				nft add rule inet shellclash prerouting ip6 daddr {${LOCAL_IP6}} return #屏蔽本机ipv6地址
@@ -808,6 +835,7 @@ start_nft(){
 	[ "$quic_rj" = 已启用 ] && {
 		nft add chain inet shellclash input { type filter hook input priority 0 \; }
 		[ -n "$CN_IP" ] && nft add rule inet shellclash input ip daddr {${CN_IP}} return
+		[ -n "$CN_IP6" ] && nft add rule inet shellclash input ip6 daddr {${CN_IP6}} return
 		nft add rule inet shellclash input udp dport 443 reject comment 'ShellClash-QUIC-REJECT'
 	}
 	#代理本机(仅TCP)
@@ -917,6 +945,10 @@ stop_firewall(){
 		#tun
 		ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 		ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
+		#屏蔽QUIC
+		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
+		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2> /dev/null
+		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2> /dev/null
 		#公网访问
 		ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 		ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
@@ -930,6 +962,7 @@ stop_firewall(){
 	}
 	#清理ipset规则
 	ipset destroy cn_ip >/dev/null 2>&1
+	ipset destroy cn_ip6 >/dev/null 2>&1
 	#移除dnsmasq转发规则
 	[ "$dns_redir" = "已开启" ] && {
 		uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
@@ -1148,6 +1181,7 @@ afstart(){
 		#设置DNS转发
 		start_dns(){
 			[ "$dns_mod" = "redir_host" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
+			[ "$ipv6_redir" = "已开启" ] && [ "$dns_mod" = "redir_host" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
 			if [ "$dns_no" != "已禁用" ];then
 				if [ "$dns_redir" != "已开启" ];then
 					[ -n "$(echo $redir_mod|grep Nft)" ] && start_nft_dns || start_ipt_dns
