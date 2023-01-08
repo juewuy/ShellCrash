@@ -88,6 +88,7 @@ jobs:
         curl -kfSL -O https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/release/Country.mmdb
         curl -kfSL -o cn_mini.mmdb https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/Country.mmdb
         curl -kfSL -o china_ip_list.txt https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt
+        curl -kfSL -o china_ipv6_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv6-List/release/cn6.txt
         curl -kfSL -O https://raw.githubusercontent.com/P3TERX/ca-certificates.crt/download/ca-certificates.crt
         curl -kfSL -O https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geosite.dat
         sed -i '/GeoIP_v*/'d version
