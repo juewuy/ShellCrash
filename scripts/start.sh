@@ -28,7 +28,7 @@ getconfig(){
 	[ -z "$sniffer" ] && sniffer=已开启
 	#是否代理常用端口
 	[ -z "$common_ports" ] && common_ports=已开启
-	[ -z "$multiport" ] && multiport='22,53,123,587,465,995,993,143,80,443,8080'
+	[ -z "$multiport" ] && multiport='22,53,80,123,143,194,443,465,587,853,993,995,5222,8080,8443'
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 }
 setconfig(){
@@ -331,7 +331,7 @@ modify_yaml(){
 	#分割配置文件
 	mkdir -p $tmpdir > /dev/null
 	yaml_p=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1) #获取节点起始行号
-	yaml_r=$(grep -n "^rule" $yaml | head -1 | cut -d ":" -f 1) #获取规则起始行号
+	yaml_r=$(grep -n "^rules:" $yaml | head -1 | cut -d ":" -f 1) #获取规则起始行号
 	if [ "$yaml_p" -lt "$yaml_r" ];then
 		sed -n "${yaml_p},${yaml_r}p" $yaml > $tmpdir/proxy.yaml
 		cat $yaml | sed -n "${yaml_r},\$p" | sed '1d' | sed 's/^ *-/ -/g' > $tmpdir/rule.yaml #切割rule并对齐
@@ -343,17 +343,17 @@ modify_yaml(){
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml
 	#节点绕过功能支持
+	sed -i "/#节点绕过/d" $tmpdir/rule.yaml
 	[ "$proxies_bypass" = "已启用" ] && {
 		cat /tmp/clash_$USER/proxy.yaml | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
 		cat /tmp/clash_$USER/proxy.yaml | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
-		sed -i "/#节点绕过/d" $tmpdir/rule.yaml
 		cat $tmpdir/rule.yaml >> $tmpdir/proxies_bypass 
 		mv -f $tmpdir/proxies_bypass $tmpdir/rule.yaml
 	}
 	#插入自定义规则
+	sed -i "/#自定义规则/d" $tmpdir/rule.yaml
 	[ -f $clashdir/rules.yaml ] && {
 		cat $clashdir/rules.yaml | sed 's/^ *-/ -/g' | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $tmpdir/rules.yaml
-		sed -i "/#自定义规则/d" $tmpdir/rule.yaml
 		cat $tmpdir/rule.yaml >> $tmpdir/rules.yaml
 		mv -f $tmpdir/rules.yaml $tmpdir/rule.yaml
 	}
@@ -386,9 +386,15 @@ EOF
 			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
 			hosts_ip=$(echo $line | awk '{print $1}')  && \
 			hosts_domain=$(echo $line | awk '{print $2}') && \
+			[ -z "$(cat $tmpdir/hosts.yaml | grep -oE "$hosts_domain")" ] && \
 			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
 		done < /etc/hosts
 	fi
+	#NTP劫持
+		cat >> $tmpdir/hosts.yaml <<EOF
+   'time.android.com': 203.107.6.88
+   'time.facebook.com': 203.107.6.88  
+EOF
 	#合并文件
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
 	[ -f $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
@@ -1105,9 +1111,14 @@ bfstart(){
 			[ "$?" = "1" ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
 			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限1
 			clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
-			[ -z "$clashv" ] && rm -rf $bindir/clash && logger "核心下载失败，请重新运行或更换安装源！" 31 && exit 1
-			setconfig clashcore $clashcore
-			setconfig clashv $clashv
+			if [ -z "$clashv" ];then
+				rm -rf $bindir/clash
+				logger "核心下载失败，请重新运行或更换安装源！" 31
+				exit 1
+			else
+				setconfig clashcore $clashcore
+				setconfig clashv $clashv
+			fi
 		fi
 	fi
 	#检查数据库文件

@@ -24,7 +24,7 @@ getconfig(){
 	[ -z "$redir_port" ] && redir_port=7892
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
-	[ -z "$multiport" ] && multiport='22,53,587,465,995,993,143,80,443,8080'
+	[ -z "$multiport" ] && multiport='22,53,80,123,143,194,443,465,587,853,993,995,5222,8080,8443'
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	#检查mac地址记录

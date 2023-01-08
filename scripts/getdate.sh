@@ -468,8 +468,9 @@ getcore(){
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 		rm -rf /tmp/clash.new
 	else
-		chmod +x /tmp/clash.new && /tmp/clash.new -v >/dev/null 2>&1
-		if [ "$?" != 0 ];then
+		chmod +x /tmp/clash.new 
+		clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+		if [ -z "$clashv" ];then
 			echo -e "\033[31m核心文件下载失败！\033[0m"
 			rm -rf /tmp/clash.new
 		else
