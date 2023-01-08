@@ -85,13 +85,7 @@ rm -rf /tmp/clashversion
 rm -rf /tmp/clashrelease
 tarurl=$url_dl/bin/clashfm.tar.gz
 
-gettar(){
-	webget /tmp/clashfm.tar.gz $tarurl
-	[ "$result" != "200" ] && {
-		$echo "\033[33m文件下载失败,请参考 \033[32mhttps://github.com/juewuy/ShellClash/blob/master/README_CN.md"
-		$echo  "\033[33m使用其他安装源重新安装！\033[0m" 
-		exit 1
-	}
+init(){
 	$clashdir/start.sh stop 2>/dev/null
 	#解压
 	echo -----------------------------------------------
@@ -175,12 +169,27 @@ gettar(){
 	rm -rf /tmp/clashfm.tar.gz 
 	rm -rf $clashdir/clash.service
 }
+gettar(){
+	webget /tmp/clashfm.tar.gz $tarurl
+	if [ "$result" != "200" ];then
+		$echo "\033[33m文件下载失败,请参考 \033[32mhttps://github.com/juewuy/ShellClash/blob/master/README_CN.md"
+		$echo  "\033[33m使用其他安装源重新安装！\033[0m" 
+		exit 1
+	else
+		init
+	fi
+}
+
 #下载及安装
 install(){
 echo -----------------------------------------------
-echo 开始从服务器获取安装文件！
-echo -----------------------------------------------
-gettar
+if [ -f /tmp/clashfm.tar.gz ];then
+	init
+else
+	echo 开始从服务器获取安装文件！
+	echo -----------------------------------------------
+	gettar	
+fi
 echo -----------------------------------------------
 echo ShellClash 已经安装成功!
 [ "$profile" = "~/.bashrc" ] && echo "请执行【source ~/.bashrc &> /dev/null】命令以加载环境变量！"
