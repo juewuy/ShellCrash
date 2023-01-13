@@ -208,7 +208,7 @@ EOF`
 				echo -e "\033[32m如担心安全性，请在5s内使用【ctrl+c】退出！\033[0m"
 				sleep 5
 				server_link=6
-				echo server_link=$server_link >> $ccfg
+				setconfig server_link 6
 				Https=""
 				getyaml
 			else
@@ -221,7 +221,7 @@ EOF`
 					server_link=0
 				fi
 				server_link=$((server_link+1))
-				echo server_link=$server_link >> $ccfg
+				setconfig server_link $server_link
 				Https=""
 				getyaml
 			fi
@@ -379,8 +379,13 @@ store-selected: $restore
 EOF
 ###################################
 	#读取本机hosts并生成配置文件
-	if [ "$redir_mod" != "纯净模式" ] && [ "$dns_no" != "已禁用" ] && [ -f /etc/hosts ] && [ -z "$(grep -E '^hosts:' $clashdir/user.yaml 2>/dev/null)" ];then
-		echo 'hosts:' >> $tmpdir/hosts.yaml
+	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -E '^hosts:' $clashdir/user.yaml 2>/dev/null)" ];then
+		#NTP劫持
+		cat >> $tmpdir/hosts.yaml <<EOF
+hosts:
+   'time.android.com': 203.107.6.88
+   'time.facebook.com': 203.107.6.88  
+EOF
 		while read line;do
 			[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}" )" ] && \
 			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
@@ -390,11 +395,6 @@ EOF
 			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
 		done < /etc/hosts
 	fi
-	#NTP劫持
-		cat >> $tmpdir/hosts.yaml <<EOF
-   'time.android.com': 203.107.6.88
-   'time.facebook.com': 203.107.6.88  
-EOF
 	#合并文件
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
 	[ -f $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
@@ -1043,6 +1043,7 @@ catpac(){
 	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	cat > /tmp/clash_pac <<EOF
 //如看见此处内容，请重新安装本地面板！
+//之后返回上一级页面，清理浏览器缓存并刷新页面！
 function FindProxyForURL(url, host) {
 	if (
 		isInNet(host, "0.0.0.0", "255.0.0.0")||

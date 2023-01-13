@@ -1,6 +1,11 @@
 #!/bin/bash
 # Copyright (C) Juewuy
 
+error_down(){
+	echo -e  "\033[33m请尝试切换至其他安装源后重新下载！\033[0m" 
+	sleep 1
+	setserver
+}
 #导入订阅、配置文件相关
 linkconfig(){
 	echo -----------------------------------------------
@@ -325,85 +330,26 @@ clashlink(){
 #下载更新相关
 gettar(){
 	$clashdir/start.sh webget /tmp/clashfm.tar.gz $tarurl
-	[ "$?" != "0" ] && echo "文件下载失败,请尝试使用其他安装源！" && exit 1
-	$clashdir/start.sh stop 2>/dev/null
-	#解压
-	echo -----------------------------------------------
-	echo 开始解压文件！
-	mkdir -p $clashdir > /dev/null
-	tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
-	[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
-	#初始化文件目录
-	[ -f "$clashdir/mark" ] || echo '#标识clash运行状态的文件，不明勿动！' > $clashdir/mark
-	#判断系统类型写入不同的启动文件
-	if [ -f /etc/rc.common ];then
-			#设为init.d方式启动
-			cp -f $clashdir/clashservice /etc/init.d/clash
-			chmod +x /etc/init.d/clash
+	if [ "$?" != "0" ];then
+		echo -e "\033[33m文件下载失败！\033[0m"
+		error_down
 	else
-		[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
-		[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
-		if [ -n "$sysdir" ];then
-			#设为systemd方式启动
-			mv $clashdir/clash.service $sysdir/clash.service
-			sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service
-			systemctl daemon-reload
+		$clashdir/start.sh stop 2>/dev/null
+		#解压
+		echo -----------------------------------------------
+		echo 开始解压文件！
+		mkdir -p $clashdir > /dev/null
+		tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
+		if [ $? -ne 0 ];then
+			rm -rf /tmp/clashfm.tar.gz
+			echo -e "\033[33m文件解压失败！\033[0m"
+			error_down
 		else
-			#设为保守模式启动
-			setconfig start_old 已开启
-		fi
+			echo -e "\033[32m脚本更新成功！\033[0m"
+		fi		
 	fi
-	#修饰文件及版本号
-	shtype=sh && command -v bash &>/dev/null && shtype=bash 
-	sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
-	chmod +x $clashdir/start.sh
-	setconfig versionsh_l $release_new
-	#设置更新地址
-	[ -n "$url" ] && setconfig update_url $url
-	#设置环境变量	
-	[ -w /opt/etc/profile ] && profile=/opt/etc/profile
-	[ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
-	[ -w ~/.bashrc ] && profile=~/.bashrc
-	[ -w /etc/profile ] && profile=/etc/profile
-	if [ -n "$profile" ];then
-		sed -i '/alias clash=*/'d $profile
-		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
-		sed -i '/export clashdir=*/'d $profile
-		echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
-		#适配zsh环境变量
-		[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && { 
-			echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> ~/.zshrc
-			echo "export clashdir=\"$clashdir\"" >> ~/.zshrc
-		}
-	else
-		echo 无法写入环境变量！请检查安装权限！
-		exit 1
-	fi
-	#梅林/Padavan额外设置
-	[ -n "$initdir" ] && {
-		sed -i '/ShellClash初始化/'d $initdir
-		touch $initdir
-		echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
-		setconfig initdir $initdir
-		}
-	#小米镜像化OpenWrt额外设置
-	if [ "$systype" = "mi_snapshot" ];then
-		chmod +x $clashdir/misnap_init.sh
-		uci set firewall.ShellClash=include
-		uci set firewall.ShellClash.type='script'
-		uci set firewall.ShellClash.path='/data/clash/misnap_init.sh'
-		uci set firewall.ShellClash.enabled='1'
-		uci commit firewall
-		setconfig systype $systype
-	else
-		rm -rf $clashdir/misnap_init.sh
-		rm -rf $clashdir/clashservice
-	fi
-	#删除临时文件
-	rm -rf /tmp/clashfm.tar.gz 
-	rm -rf $clashdir/clash.service
+	exit
 }
-
 getsh(){
 	echo -----------------------------------------------
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
@@ -422,6 +368,7 @@ getsh(){
 		exit;
 	fi
 }
+
 getcpucore(){
 	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
@@ -467,12 +414,14 @@ getcore(){
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 		rm -rf /tmp/clash.new
+		error_down
 	else
 		chmod +x /tmp/clash.new 
 		clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 		if [ -z "$clashv" ];then
 			echo -e "\033[31m核心文件下载失败！\033[0m"
 			rm -rf /tmp/clash.new
+			error_down
 		else
 			echo -e "\033[32m$clashcore核心下载成功！\033[0m"
 			mv -f /tmp/clash.new $bindir/clash
@@ -532,6 +481,7 @@ setcore(){
 			update
 		fi
 }
+
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
@@ -539,7 +489,7 @@ getgeo(){
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
-		exit 1
+		error_down
 	else
 		mv -f /tmp/$geoname $bindir/$geoname
 		echo -----------------------------------------------
@@ -602,6 +552,7 @@ setgeo(){
 		update
 	fi
 }
+
 getdb(){
 	#下载及安装
 	if [ -d /www/clash -o -d $clashdir/ui ];then
@@ -623,6 +574,7 @@ getdb(){
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		echo -----------------------------------------------
+		error_down
 		setdb
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
@@ -719,6 +671,7 @@ setdb(){
 		errornum
 	fi
 }
+
 getcrt(){
 	crtlink="${update_url}/bin/ca-certificates.crt"
 	echo -----------------------------------------------
@@ -727,6 +680,7 @@ getcrt(){
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
+		error_down
 	else
 		echo -----------------------------------------------
 		mv -f /tmp/ca-certificates.crt $crtdir
@@ -768,6 +722,7 @@ setcrt(){
 		sleep 1
 	fi
 }
+#安装源
 setserver(){
 	saveserver(){
 		#写入mark文件
@@ -853,6 +808,7 @@ setserver(){
 		errornum
 	fi
 }
+#检查更新
 checkupdate(){
 if [ -z "$release_new" ];then
 	if [ -n "$release_url" ];then
@@ -867,7 +823,14 @@ if [ -z "$release_new" ];then
 	fi	
 	$clashdir/start.sh webget /tmp/clashversion $update_url/bin/version echooff 
 	[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
-	[ -n "$release_new" ] && source /tmp/clashversion 2>/dev/null || echo -e "\033[31m检查更新失败！请检查网络连接或切换安装源！\033[0m"
+	if [ -n "$release_new" ];then
+		source /tmp/clashversion 2>/dev/null
+	else
+		echo -e "\033[31m检查更新失败！请切换其他安装源！\033[0m"
+		echo -e "\033[36m如全部安装源都无法使用，请先运行服务后再使用更新！\033[0m"
+		sleep 1
+		setserver
+	fi
 	rm -rf /tmp/clashversion
 fi
 }
@@ -891,8 +854,10 @@ update(){
 	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
 	echo -----------------------------------------------
 	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
-	echo -e " 8 鸣谢"
+	echo -e " 8 \033[32m重新初始化运行环境\033[0m"
 	echo -e " 9 \033[31m卸载\033[34mShellClash\033[0m"
+	echo -----------------------------------------------
+	echo -e "99 \033[36m鸣谢！\033[0m"
 	echo -e " 0 返回上级菜单" 
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -929,21 +894,28 @@ update(){
 	elif [ "$num" = 7 ]; then	
 		setserver
 		update
-		
-	elif [ "$num" = 8 ]; then		
-		echo -----------------------------------------------
-		echo -e "感谢：\033[32mClash \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
-		echo -e "感谢：\033[32msubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
-		echo -e "感谢：\033[32malecthw提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
-		echo -e "感谢：\033[32mHackl0us提供的GeoIP精简数据库\033[0m 项目地址：\033[32mhttps://github.com/Hackl0us/GeoIP2-CN\033[0m"
-		echo -e "感谢：\033[32m17mon提供的CN-IP列表\033[0m 项目地址：\033[32mhttps://github.com/17mon/china_ip_list\033[0m"
-		echo -e "感谢：\033[32myacd \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
-		echo -e "感谢：\033[32m更多的帮助过我的人！\033[0m"
-		sleep 2
-		update
+	elif [ "$num" = 8 ]; then
+		source $clashdir/init.sh
+		update		
 		
 	elif [ "$num" = 9 ]; then
 		$0 -u
+		exit
+		
+	elif [ "$num" = 99 ]; then		
+		echo -----------------------------------------------
+		echo -e "感谢：\033[32mClash项目 \033[0m作者\033[36m Dreamacro\033[0m 项目地址：\033[32mhttps://github.com/Dreamacro/clash\033[0m"
+		echo -e "感谢：\033[32mClash.meta项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX/Clash.Meta\033[0m"
+		echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
+		echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
+		echo -e "感谢：\033[32m由alecthw提供的GeoIP数据库\033[0m 项目地址：\033[32mhttps://github.com/alecthw/mmdb_china_ip_list\033[0m"
+		echo -e "感谢：\033[32m由Hackl0us提供的GeoIP精简数据库\033[0m 项目地址：\033[32mhttps://github.com/Hackl0us/GeoIP2-CN\033[0m"
+		echo -e "感谢：\033[32m由17mon提供的CN-IP列表\033[0m 项目地址：\033[32mhttps://github.com/17mon/china_ip_list\033[0m"
+		echo -e "感谢：\033[32m由ChanthMiao提供的CN-IPV6列表\033[0m 项目地址：\033[32mhttps://github.com/ChanthMiao/China-IPv6-List\033[0m"
+		echo -----------------------------------------------
+		echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
+		echo -----------------------------------------------
+		sleep 2
 		update
 	else
 		errornum
@@ -973,6 +945,11 @@ userguide(){
 			else
 				setconfig redir_mod "Redir模式"
 			fi
+			#设置开机启动
+			[ -f /etc/rc.common ] && /etc/init.d/clash enable
+			command -v systemctl >/dev/null 2>&1 && systemctl enable clash.service > /dev/null 2>&1
+			rm -rf $clashdir/.dis_startup
+			autostart=enable
 			#检测IP转发
 			if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
 				echo -----------------------------------------------

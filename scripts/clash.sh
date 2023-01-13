@@ -1,14 +1,13 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+
 #读取配置相关
 getconfig(){
+
 	#服务器缺省地址
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellClash
-	#文件路径
-	[ -z "$clashdir" ] && echo 环境变量配置有误！请重新安装脚本！
 	ccfg=$clashdir/mark
-	yaml=$clashdir/config.yaml
 	#检查/读取标识文件
 	[ ! -f $ccfg ] && echo '#标识clash运行状态的文件，不明勿动！' > $ccfg
 	#检查重复行并去除
@@ -31,8 +30,9 @@ getconfig(){
 	[ ! -f $clashdir/mac ] && touch $clashdir/mac
 	#获取本机host地址
 	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
+	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'lan' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	[ -z "$host" ] && host=127.0.0.1
+	[ -z "$host" ] && host='设备IP地址'
 	#dashboard目录位置
 	[ -d $clashdir/ui ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
 	[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
@@ -115,7 +115,7 @@ startover(){
 }
 clashstart(){
 	#检查yaml配置文件
-	if [ ! -f "$yaml" ];then
+	if [ ! -f "$clashdir/config.yaml" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
 		source $clashdir/getdate.sh && clashlink
@@ -413,19 +413,21 @@ setport(){
 setdns(){
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	[ -z "$hosts_opt" ] && hosts_opt=已开启
 	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$dns_no" ] && dns_no=未禁用
 	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
-	echo -e "fallbackDNS：\033[36m$dns_fallback\033[0m"
+	echo -e "FallbackDNS：\033[36m$dns_fallback\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m“|”\033[0m或者\033[30;47m“, ”\033[0m分隔输入"
 	echo -e "\033[33m必须拥有本地根证书文件才能使用dot/doh类型的加密dns\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
-	echo -e " 2 修改\033[36mfallback_DNS\033[0m"
+	echo -e " 2 修改\033[36mFallback_DNS\033[0m"
 	echo -e " 3 \033[33m重置\033[0mDNS配置"
 	echo -e " 4 一键配置\033[32m加密DNS\033[0m"
-	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————用于解决dns劫持失败的问题"
+	echo -e " 5 hosts优化：  	\033[36m$hosts_opt\033[0m	————调用本机hosts并劫持NTP服务"
+	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————不明勿动"
 	echo -e " 7 禁用内置DNS：	\033[36m$dns_no\033[0m	————不明勿动"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -479,7 +481,20 @@ setdns(){
 		rm -rf /tmp/ssl_test
 		sleep 1
 		setdns
-				
+		
+	elif [ "$num" = 5 ]; then
+		echo -----------------------------------------------
+		if [ "$hosts_opt" = "已启用" ]; then
+			hosts_opt=未启用
+			echo -e "\033[32m已禁用hosts优化功能！！！\033[0m"
+		else
+			hosts_opt=已启用
+			echo -e "\033[33m已启用hosts优化功能！！！\033[0m"
+		fi
+		sleep 1
+		setconfig hosts_opt $hosts_opt
+		setdns
+		
 	elif [ "$num" = 6 ]; then
 		echo -----------------------------------------------
 		if [ "$dns_redir" = "未开启" ]; then 
@@ -1810,6 +1825,15 @@ clashsh(){
 	fi
 }
 
+[ -z "$clashdir" ] && {
+	echo 环境变量配置有误！正在初始化~~~
+	clashdir=$(cd `dirname $0`; pwd)
+	source $clashdir/init.sh
+	sleep 1
+	echo 请重启SSH窗口以完成初始化！
+	exit
+}
+	
 [ -z "$1" ] && clashsh
 
 case "$1" in
