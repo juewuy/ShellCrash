@@ -166,7 +166,7 @@ else
 	fi
 fi
 #修饰文件及版本号
-command -v bash &>/dev/null && sed -i "s|/bin/sh|/bin/bash|" $clashdir/start.sh
+bash --help &>/dev/null && sed -i "s|/bin/sh|/bin/bash|" $clashdir/start.sh
 chmod 755 $clashdir/start.sh
 setconfig versionsh_l $version
 #设置更新地址
@@ -197,6 +197,7 @@ fi
 	sed -i '/ShellClash初始化/'d $initdir
 	touch $initdir
 	echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
+	chmod a+rx $initdir 2>/dev/null
 	setconfig initdir $initdir
 	}
 #小米镜像化OpenWrt额外设置
@@ -210,7 +211,6 @@ if [ "$systype" = "mi_snapshot" ];then
 	setconfig systype $systype
 else
 	rm -rf $clashdir/misnap_init.sh
-	rm -rf $clashdir/clashservice
 fi
 #华硕USB启动额外设置
 [ "$usb_status" = "1" ]	&& {

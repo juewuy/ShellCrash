@@ -345,6 +345,7 @@ gettar(){
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
 		else
+			setconfig versionsh_l $release_new
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi		
 	fi
@@ -940,14 +941,14 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			if command -v nft &>/dev/null;then
+			if ckcmd nft;then
 				setconfig redir_mod "Nft模式" 
 			else
 				setconfig redir_mod "Redir模式"
 			fi
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
-			command -v systemctl >/dev/null 2>&1 && systemctl enable clash.service > /dev/null 2>&1
+			ckcmd systemctl && systemctl enable clash.service > /dev/null 2>&1
 			rm -rf $clashdir/.dis_startup
 			autostart=enable
 			#检测IP转发
@@ -1032,7 +1033,7 @@ userguide(){
 			sethost
 		fi
 	}
-	if command -v systemd >/dev/null 2>&1 ;then
+	if ckcmd systemd;then
 		echo -----------------------------------------------
 		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
 		echo -e "注意当前设备必须有公网IP才能从公网正常访问"

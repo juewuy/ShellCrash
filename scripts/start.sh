@@ -36,10 +36,13 @@ setconfig(){
 	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
 	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
+ckcmd(){
+	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
+}
 compare(){
 	if [ ! -f $1 -o ! -f $2 ];then
 		return 1
-	elif command -v cmp >/dev/null 2>&1;then
+	elif ckcmd cmp;then
 		cmp -s $1 $2
 	else
 		[ "$(cat $1)" = "$(cat $2)" ] && return 0 || return 1
@@ -255,7 +258,7 @@ EOF`
 			exit 1
 		fi
 		#检测并去除无效节点组
-		[ -n "$url_type" ] && command -v xargs >/dev/null 2>&1 && {
+		[ -n "$url_type" ] && ckcmd xargs && {
 			cat $yamlnew | grep -A 8 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 			while read line ;do
 				sed -i "/- $line/d" $yamlnew
@@ -691,7 +694,7 @@ start_output(){
 	iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
 	}
 	#Docker转发
-	command -v docker &>/dev/null && {
+	ckcmd docker && {
 		iptables -t nat -N clash_docker
 		iptables -t nat -A clash_docker -d 10.0.0.0/8 -j RETURN
 		iptables -t nat -A clash_docker -d 127.0.0.0/8 -j RETURN
@@ -883,20 +886,20 @@ start_wan(){
 	iptables -A INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT
 	iptables -A INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT
 	iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-	command -v ip6tables >/dev/null 2>&1 && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+	ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	}
 	if [ "$public_support" = "已开启" ];then
 		[ "$mix_port" != "7890" -a -n "$authentication" ] && {
 		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-		command -v ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 		}
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
-		command -v ip6tables >/dev/null 2>&1 && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	fi
 }
 stop_firewall(){
     #重置iptables相关规则
-	command -v iptables >/dev/null 2>&1 && {
+	ckcmd iptables && {
 		#redir
 		iptables -t nat -D PREROUTING -p tcp $ports -j clash 2> /dev/null
 		iptables -t nat -F clash 2> /dev/null
@@ -939,7 +942,7 @@ stop_firewall(){
 		iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	}
 	#重置ipv6规则
-	command -v ip6tables >/dev/null 2>&1 && {
+	ckcmd ip6tables && {
 		#redir
 		ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
 		ip6tables -D INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT 2> /dev/null
@@ -984,7 +987,7 @@ stop_firewall(){
 	ip rule del fwmark 1 table 102 2> /dev/null
 	ip route del local 172.16.0.0/12 dev lo table 102 2> /dev/null
 	#重置nftables相关规则
-	command -v nft >/dev/null 2>&1 && {
+	ckcmd nft && {
 		nft flush table inet shellclash >/dev/null 2>&1
 		nft delete table inet shellclash >/dev/null 2>&1
 	}
@@ -1100,7 +1103,7 @@ bfstart(){
 	#检查clash核心
 	if [ ! -f $bindir/clash ];then
 		if [ -f $clashdir/clash ];then
-			mv $clashdir/clash $bindir/clash && chmod +x $bindir/clash
+			mv $clashdir/clash $bindir/clash
 		else
 			logger "未找到clash核心，正在下载！" 33
 			if [ -z "$clashcore" ];then
@@ -1110,7 +1113,6 @@ bfstart(){
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			$0 webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
 			[ "$?" = "1" ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
-			[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限1
 			clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 			if [ -z "$clashv" ];then
 				rm -rf $bindir/clash
@@ -1122,6 +1124,7 @@ bfstart(){
 			fi
 		fi
 	fi
+	[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
 	#检查数据库文件
 	if [ ! -f $bindir/Country.mmdb ];then
 		if [ -f $clashdir/Country.mmdb ];then
@@ -1157,7 +1160,7 @@ bfstart(){
 	#本机代理准备
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		if [ -z "$(id shellclash 2>/dev/null | grep 'root')" ];then
-			if command -v userdel useradd groupmod &>/dev/null; then
+			if ckcmd userdel useradd groupmod; then
 				userdel shellclash 2>/dev/null
 				useradd shellclash -u 7890
 				groupmod shellclash -g 7890
@@ -1225,7 +1228,7 @@ afstart(){
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
-		command -v iptables >/dev/null 2>&1 && start_wan
+		ckcmd iptables && start_wan
 		#标记启动时间
 		mark_time
 		#加载定时任务
@@ -1249,7 +1252,7 @@ start_old(){
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
 	else
-		command -v nohup >/dev/null 2>&1 && nohup=nohup
+		ckcmd nohup && nohup=nohup
 		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
 	fi
 	afstart
@@ -1418,7 +1421,7 @@ unset_proxy)
 		sed -i '/ALL_PROXY/'d  $profile
 	;;
 -t)	
-		$2
+		$2 $3 $4 $5 $6
 	;;
 esac
 
