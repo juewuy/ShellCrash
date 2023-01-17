@@ -1,24 +1,29 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+CFG_PATH=$clashdir/mark
 
 #读取配置相关
+setconfig(){
+	#参数1代表变量名，参数2代表变量值,参数3即文件路径
+	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
+	[ -n "$(grep -E "^${1}=" $configpath)" ] && sed -i "s#^${1}=\(.*\)#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
+}
 ckcmd(){
 	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
 }
-getconfig(){
+ckstatus(){
 
 	#服务器缺省地址
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellClash
-	ccfg=$clashdir/mark
 	#检查/读取标识文件
-	[ ! -f $ccfg ] && echo '#标识clash运行状态的文件，不明勿动！' > $ccfg
+	[ ! -f $CFG_PATH ] && echo '#标识clash运行状态的文件，不明勿动！' > $CFG_PATH
 	#检查重复行并去除
-	[ -n "$(awk 'a[$0]++' $ccfg)" ] && awk '!a[$0]++' $ccfg > $ccfg
+	[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH
 	#检查时间戳
 	touch /tmp/clash_start_time
 	#使用source加载配置文件
-	source $ccfg
+	source $CFG_PATH
 	#设置默认核心资源目录
 	[ -z "$bindir" ] && bindir=$clashdir
 	#设置默认端口及变量
@@ -90,12 +95,37 @@ getconfig(){
 	fi
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
+	#检查/tmp用户上传
+	[ -f /tmp/clash-linux* ] && chmod +x /tmp/clash-linux* && tmp_version=$(/tmp/clash-linux* -v)
+	[ -n "$tmp_version" ] && {
+		echo -e "\033[32m发现可用的内核文件\033[0m"
+		read -p "是否加载？(1/0) > " res
+		[ "$res" = 1 ] && {
+			echo -e " 1 Clash内核"
+			echo -e " 2 Clashpre内核"
+			echo -e " 3 Clash.Meta内核"
+			read -p "请手动确定该内核类型 > " num
+			case "$num" in
+				2) clashcore=clashpre ;;
+				3) clashcore=clash.meta ;;
+				*) clashcore=clash ;;
+			esac
+			mv -f /tmp/clash-linux* $bindir/clash
+			setconfig clashcore $clashcore
+			echo -----------------------------------------------
+		}
+	}
+	[ -f /tmp/*.*ml ] && {
+		echo -e "\033[32m发现可用的YAML配置文件\033[0m"
+		echo /tmp/*.*ml
+		read -p "是否加载为config.yaml配置文件？(1/0) > " res
+		[ "$res" = 1 ] && {
+			mv -f /tmp/*.*ml $clashdir/config.yaml
+		}
+		echo -----------------------------------------------
+	}	
 }
-setconfig(){
-	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
-	[ -n "$(grep -E "^${1}=" $configpath)" ] && sed -i "s#^${1}=\(.*\)#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
-}
+
 #启动相关
 errornum(){
 	echo -----------------------------------------------
@@ -294,7 +324,7 @@ log_pusher(){
 	esac
 }
 setport(){
-	source $ccfg
+	source $CFG_PATH
 	[ -z "$secret" ] && secret=未设置
 	[ -z "$authentication" ] && authentication=未设置
 	inputport(){
@@ -601,7 +631,7 @@ checkport(){
 			echo -e "\033[0m-----------------------------------------------"
 			echo -e "\033[36m请修改默认端口配置！\033[0m"
 			setport
-			source $ccfg
+			source $CFG_PATH
 			checkport
 		fi
 	done
@@ -1324,7 +1354,7 @@ clashadv(){
 			clashadv
 		
 	elif [ "$num" = 6 ]; then
-		source $ccfg
+		source $CFG_PATH
 		if [ "$dns_no" = "已禁用" ];then
 			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
 			if [ "$res" = "1" ];then
@@ -1337,7 +1367,7 @@ clashadv(){
 		clashadv	
 		
 	elif [ "$num" = 8 ]; then
-		source $ccfg
+		source $CFG_PATH
 		if [ -n "$(pidof clash)" ];then
 			echo -----------------------------------------------
 			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
@@ -1402,19 +1432,19 @@ EOF
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 1 ]; then
-			cp -f $ccfg $ccfg.bak
+			cp -f $CFG_PATH $CFG_PATH.bak
 			echo -e "\033[32m脚本设置已备份！\033[0m"
 		elif [ "$num" = 2 ]; then
-			if [ -f "$ccfg.bak" ];then
-				mv -f $ccfg $ccfg.bak2
-				mv -f $ccfg.bak $ccfg
-				mv -f $ccfg.bak2 $ccfg.bak
+			if [ -f "$CFG_PATH.bak" ];then
+				mv -f $CFG_PATH $CFG_PATH.bak2
+				mv -f $CFG_PATH.bak $CFG_PATH
+				mv -f $CFG_PATH.bak2 $CFG_PATH.bak
 				echo -e "\033[32m脚本设置已还原！(被覆盖的配置已备份！)\033[0m"
 			else
 				echo -e "\033[31m找不到备份文件，请先备份脚本设置！\033[0m"
 			fi
 		elif [ "$num" = 3 ]; then
-			mv -f $ccfg $ccfg.bak
+			mv -f $CFG_PATH $CFG_PATH.bak
 			echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
 		fi
 		echo -e "\033[33m请重新启动脚本！\033[0m"
@@ -1752,7 +1782,7 @@ clashcron(){
 #主菜单
 clashsh(){
 	#############################
-	getconfig
+	ckstatus
 	#############################
 	echo -e " 1 \033[32m启动/重启\033[0mclash服务"
 	echo -e " 2 clash\033[33m功能设置\033[0m"
@@ -1778,10 +1808,10 @@ clashsh(){
 		exit;
   
 	elif [ "$num" = 2 ]; then
-		checkcfg=$(cat $ccfg)
+		checkcfg=$(cat $CFG_PATH)
 		clashcfg
 		if [ -n "$PID" ];then
-			checkcfg_new=$(cat $ccfg)
+			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
 		clashsh
@@ -1805,10 +1835,10 @@ clashsh(){
 		clashsh
 		
 	elif [ "$num" = 7 ]; then
-		checkcfg=$(cat $ccfg)
+		checkcfg=$(cat $CFG_PATH)
 		clashadv
 		if [ -n "$PID" ];then
-			checkcfg_new=$(cat $ccfg)
+			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
 		clashsh
@@ -1818,10 +1848,10 @@ clashsh(){
 		clashsh
 
 	elif [ "$num" = 9 ]; then
-		checkcfg=$(cat $ccfg)
+		checkcfg=$(cat $CFG_PATH)
 		source $clashdir/getdate.sh && update
 		if [ -n "$PID" ];then
-			checkcfg_new=$(cat $ccfg)
+			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
 		clashsh

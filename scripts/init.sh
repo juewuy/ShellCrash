@@ -140,9 +140,8 @@ $clashdir/start.sh stop 2>/dev/null #防止进程冲突
 }
 #移动文件
 mkdir -p $clashdir
-mv -f /tmp/SC_tmp/* $clashdir
-[ -f /tmp/clash-linux* ] && mv -f /tmp/clash-linux* $clashdir/clash
-[ -f /tmp/clash ] && mv -f /tmp/clash $clashdir/clash
+[ -f /tmp/SC_tmp/* ] && mv -f /tmp/SC_tmp/* $clashdir
+
 #初始化
 [ -f "$clashdir/mark" ] || echo '#ShellClash配置文件，不明勿动！' > $clashdir/mark
 #本地安装跳过新手引导
@@ -166,7 +165,8 @@ else
 	fi
 fi
 #修饰文件及版本号
-bash --help &>/dev/null && sed -i "s|/bin/sh|/bin/bash|" $clashdir/start.sh
+type bash &>/dev/null && shtype=bash || shtype=sh 
+sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
 chmod 755 $clashdir/start.sh
 setconfig versionsh_l $version
 #设置更新地址
