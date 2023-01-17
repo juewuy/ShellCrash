@@ -2,7 +2,6 @@
 # Copyright (C) Juewuy
 
 echo='echo -e'
-[ -z "$1" ] && command -v bash &>/dev/null && { bash $0 0; exit;}
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
