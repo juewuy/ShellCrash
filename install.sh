@@ -1,7 +1,8 @@
 #! /bin/bash
 # Copyright (C) Juewuy
 
-echo='echo -e'
+type bash &>/dev/null && shtype=bash || shtype=sh 
+echo='echo -e' && [ -n "$(echo -e|grep e)" ] && echo=echo
 
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
@@ -61,7 +62,7 @@ gettar(){
 			error_down
 			exit 1
 		else
-			source $clashdir/init.sh
+			$shtype $clashdir/init.sh
 		fi		
 	fi
 }
