@@ -792,11 +792,24 @@ localproxy(){
 	elif [ "$num" = 1 ]; then
 		echo -----------------------------------------------
 		if [ "$local_proxy" = "未开启" ]; then 
-			local_proxy=已开启
-			setconfig local_proxy $local_proxy
-			setconfig local_type $local_type
-			echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
-			sleep 1
+			if [ -n "$authentication" ] && [ "$authentication" != "未设置" ] ;then
+				echo -e "\033[32m检测到您已经设置了Http/Sock5代理密码，请先取消密码！\033[0m"
+				sleep 1
+				setport
+				localproxy
+			else
+				local_proxy=已开启
+				setconfig local_proxy $local_proxy
+				setconfig local_type $local_type
+				echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
+				if [ "$local_type" = "环境变量" ];then
+					$clashdir/start.sh set_proxy $mix_port $db_port
+					echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
+				else
+					echo -e "\033[36m请重新启动clash服务！\033[0m"
+				fi
+				sleep 1
+			fi		
 		else
 			local_proxy=未开启
 			setconfig local_proxy $local_proxy
