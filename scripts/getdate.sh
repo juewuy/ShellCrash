@@ -389,8 +389,7 @@ setcpucore(){
 	echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
 	echo -e "当前可供在线下载的处理器架构为："
 	echo $cpucore_list | awk -F " " '{for(i=1;i<=NF;i++) {print i" "$i }}'
-	echo -e "如果您的CPU架构未在以上列表中，请运行【uname -a】命令,并复制好返回信息"
-	echo -e "之后前往 t.me/ShellClash 群提交或 github.com/juewuy/ShellClash 提交issue"
+	echo -e "不知道如何获取核心版本？请参考：\033[36;4mhttps://juewuy.github.io/bdaz\033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	setcpucore=$(echo $cpucore_list | awk '{print $"'"$num"'"}' )
@@ -420,9 +419,9 @@ getcore(){
 		chmod +x /tmp/clash.new 
 		clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 		if [ -z "$clashv" ];then
-			echo -e "\033[31m核心文件下载失败！\033[0m"
+			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
 			rm -rf /tmp/clash.new
-			error_down
+			setcpucore
 		else
 			echo -e "\033[32m$clashcore核心下载成功！\033[0m"
 			mv -f /tmp/clash.new $bindir/clash

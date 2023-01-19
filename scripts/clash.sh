@@ -24,6 +24,8 @@ ckstatus(){
 	touch /tmp/clash_start_time
 	#使用source加载配置文件
 	source $CFG_PATH
+	versionsh=$(cat $clashdir/init.sh | grep -E ^version= | sed 's/version=//')
+	[ -n "$versionsh" ] && versionsh_l=$versionsh
 	#设置默认核心资源目录
 	[ -z "$bindir" ] && bindir=$clashdir
 	#设置默认端口及变量
@@ -96,7 +98,7 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 	#检查/tmp用户上传
-	[ -f /tmp/clash-linux* ] && chmod +x /tmp/clash-linux* && tmp_version=$(/tmp/clash-linux* -v)
+	[ -f /tmp/clash*linux* ] && chmod +x /tmp/clash*linux* && tmp_version=$(/tmp/clash*linux* -v)
 	[ -n "$tmp_version" ] && {
 		echo -e "\033[32m发现可用的内核文件\033[0m"
 		read -p "是否加载？(1/0) > " res
@@ -110,7 +112,7 @@ ckstatus(){
 				3) clashcore=clash.meta ;;
 				*) clashcore=clash ;;
 			esac
-			mv -f /tmp/clash-linux* $bindir/clash
+			mv -f /tmp/clash*linux* $bindir/clash
 			setconfig clashcore $clashcore
 			echo -----------------------------------------------
 		}
@@ -790,24 +792,11 @@ localproxy(){
 	elif [ "$num" = 1 ]; then
 		echo -----------------------------------------------
 		if [ "$local_proxy" = "未开启" ]; then 
-			if [ -n "$authentication" ] && [ "$authentication" != "未设置" ] ;then
-				echo -e "\033[32m检测到您已经设置了Http/Sock5代理密码，请先取消密码！\033[0m"
-				sleep 1
-				setport
-				localproxy
-			else
-				local_proxy=已开启
-				setconfig local_proxy $local_proxy
-				setconfig local_type $local_type
-				echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
-				if [ "$local_type" = "环境变量" ];then
-					$clashdir/start.sh set_proxy $mix_port $db_port
-					echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
-				else
-					echo -e "\033[36m请重新启动clash服务！\033[0m"
-				fi
-				sleep 1
-			fi		
+			local_proxy=已开启
+			setconfig local_proxy $local_proxy
+			setconfig local_type $local_type
+			echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
+			sleep 1
 		else
 			local_proxy=未开启
 			setconfig local_proxy $local_proxy
@@ -820,12 +809,17 @@ localproxy(){
 
 	elif [ "$num" = 2 ]; then
 		local_type="环境变量"
+		local_proxy=已开启
+		setconfig local_proxy $local_proxy
 		setconfig local_type $local_type
 		localproxy
 	elif [ "$num" = 3 ]; then
 		if [ -n "$local_enh" ];then
 			local_type="iptables增强模式"
+			local_proxy=已开启
+			setconfig local_proxy $local_proxy
 			setconfig local_type $local_type
+			
 		else
 			echo -e "\033[31m当前设备无法使用iptables增强模式！\033[0m"
 		fi
@@ -835,6 +829,8 @@ localproxy(){
 	elif [ "$num" = 4 ]; then
 		if [ -n "$local_enh" ];then
 			local_type="nftables增强模式"
+			local_proxy=已开启
+			setconfig local_proxy $local_proxy
 			setconfig local_type $local_type
 		else
 			echo -e "\033[31m当前设备无法使用nftables增强模式！\033[0m"
