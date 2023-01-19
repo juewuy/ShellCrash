@@ -417,7 +417,7 @@ getcore(){
 		error_down
 	else
 		chmod +x /tmp/clash.new 
-		clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+		clashv=$(/tmp/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 		if [ -z "$clashv" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
 			rm -rf /tmp/clash.new
