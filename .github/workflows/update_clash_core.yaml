@@ -13,8 +13,10 @@ jobs:
   Update:
     runs-on: ubuntu-latest
     steps:
-    - name: Clone Repository
-      uses: actions/checkout@main
+    - uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        persist-credentials: true
     - name: Init Dependencies
       run: |
         wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
@@ -43,9 +45,17 @@ jobs:
         cp ./tmp/* ./bin/clash/
         rm -fr ./tmp
         sed -i "s/clash_v=.*/clash_v=$(./bin/clash/clash-linux-amd64 -v 2>/dev/null | sed 's/ linux.*//;s/.* //')/" bin/version
-    - name: Commit and push
+    - name: Git Commit
       run: |
         git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
         git add . && git commit -m "更新Clash内核至${download_version}" || exit 0
-        git push
-        
+    - name: Git Push
+      uses: ad-m/github-push-action@master
+      with:
+        ssh: true
+        branch: ${{ github.ref }}
+    - name: Cleanup Workflow
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        retain_days: 1
+        keep_minimum_runs: 3

@@ -20,8 +20,10 @@ jobs:
 
     steps:
     
-    - name: Checkout
-      uses: actions/checkout@master
+    - uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        persist-credentials: true
  
     - name: Apt Update
       env:
@@ -95,12 +97,17 @@ jobs:
         echo GeoIP_v=`date '+%Y%m%d'` >> version
         echo IP数据库及根证书文件更新完成！
 
-    - name: Commit and push
+    - name: Git Commit
       run: |
         git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
         git add . && git commit -m "自动更新最新Dashboard、地址库、根证书" || exit 0
-        git push
-        
+
+    - name: Git Push
+      uses: ad-m/github-push-action@master
+      with:
+        ssh: true
+        branch: ${{ github.ref }}
+
     - name: Cleanup Workflow
       uses: Mattraks/delete-workflow-runs@main
       with:
