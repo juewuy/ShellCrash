@@ -25,6 +25,6 @@ if [ -z $(pidof clash) ]; then
 		/etc/init.d/clash enable
 	fi
 else
-	#重启clash
-	$clashdir/start.sh start
+	sleep 10
+	$clashdir/start.sh restart
 fi
