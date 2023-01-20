@@ -949,6 +949,7 @@ stop_firewall(){
 		ip6tables -t nat -F clashv6 2> /dev/null
 		ip6tables -t nat -X clashv6 2> /dev/null
 		#dns
+		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j clashv6_dns 2>/dev/null
 		ip6tables -t nat -F clashv6_dns 2> /dev/null
 		ip6tables -t nat -X clashv6_dns 2> /dev/null
 		#tun
