@@ -42,59 +42,67 @@
 ~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或Linux设备的SSH管理界面或终端界面，并切换到root用户<br>
 ~确认设备已经安装curl或者wget下载工具
 
-~之后在SSH界面执行如下安装命令，并按照后续提示完成安装<br>
+~之后在SSH界面执行目标设备对应的安装命令，并按照后续提示完成安装<br>
 
 （**如无法连接或出现SSL连接错误，请尝试更换各种不同的安装源！**）<br>
 
-~**使用curl安装**：<br>
+~**标准Linux设备安装：**<br>
+
+```shell
+sudo -i #切换到root用户，如果需要密码，请输入密码
+export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && bash /tmp/install.sh && source /etc/profile &> /dev/null
+```
+或者
+```shell
+sudo -i #切换到root用户，如果需要密码，请输入密码
+export url='https://gh.shellclash.cf/master' && bash -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+```
+
+~**路由设备使用curl安装**：<br>
 
 ```shell
 #GitHub源(可能需要代理)
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
-
+或者
 ```shell
 #jsDelivrCDN源
 export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
-
+或者
 ```shell
 #作者私人源
-export url='https://shellclash.cf' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://gh.shellclash.cf/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
-~**使用wget安装**：<br>
+~**路由设备使用wget安装**：<br>
 
 ```Shell
 #GitHub源(可能需要代理)
 export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
-
+或者
 ```shell
 #jsDelivrCDN源
 export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
-~**使用低版本wget（提示不支持https）安装**：<br>
+~**老旧设备使用低版本wget安装**：<br>
 
 ```Shell
-#作者私人http源
-export url='http://shellclash.cf/' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
-```
-
-~**非root用户安装后**请额外执行以下命令以读取环境变量：<br>
-
-```Shell
-source ~/.bashrc &> /dev/null
+#作者私人http内测源
+export url='http://test.shellclash.cf' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~安装完成管理脚本后，执行如下命令以**运行管理脚本**<br>
 
 ```Shell
-clash #正常模式运行
+clash #进入对话脚本
 clash -h #脚本帮助及说明
 clash -u #卸载脚本
 clash -t #测试模式运行
+clash -s start #启动服务
+clash -s stop #停止服务
 ```
 
 ~**DOCKER环境下安装：**<br>
