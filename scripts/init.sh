@@ -140,7 +140,7 @@ $clashdir/start.sh stop 2>/dev/null #防止进程冲突
 }
 #移动文件
 mkdir -p $clashdir
-[ -f /tmp/SC_tmp/* ] && mv -f /tmp/SC_tmp/* $clashdir
+mv -f /tmp/SC_tmp/* $clashdir 2>/dev/null
 
 #初始化
 [ -f "$clashdir/mark" ] || echo '#ShellClash配置文件，不明勿动！' > $clashdir/mark

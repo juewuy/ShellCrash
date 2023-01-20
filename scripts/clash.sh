@@ -98,24 +98,31 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 	#检查/tmp用户上传
-	[ -f /tmp/clash*linux* ] && chmod +x /tmp/clash*linux* && tmp_version=$(/tmp/clash*linux* -v)
-	[ -n "$tmp_version" ] && {
-		echo -e "\033[32m发现可用的内核文件\033[0m"
-		read -p "是否加载？(1/0) > " res
-		[ "$res" = 1 ] && {
-			echo -e " 1 Clash内核"
-			echo -e " 2 Clashpre内核"
-			echo -e " 3 Clash.Meta内核"
-			read -p "请手动确定该内核类型 > " num
-			case "$num" in
-				2) clashcore=clashpre ;;
-				3) clashcore=clash.meta ;;
-				*) clashcore=clash ;;
-			esac
-			mv -f /tmp/clash*linux* $bindir/clash
-			setconfig clashcore $clashcore
-			echo -----------------------------------------------
-		}
+	[ -f /tmp/clash*linux* ] && chmod +x /tmp/clash*linux* && {
+		tmp_version=$(/tmp/clash*linux* -v)
+		if [ -n "$tmp_version" ];then
+			echo -e "\033[32m发现可用的内核文件\033[0m"
+			read -p "是否加载？(1/0) > " res
+			[ "$res" = 1 ] && {
+				echo -e " 1 Clash内核"
+				echo -e " 2 Clashpre内核"
+				echo -e " 3 Clash.Meta内核"
+				read -p "请手动确定该内核类型 > " num
+				case "$num" in
+					2) clashcore=clashpre ;;
+					3) clashcore=clash.meta ;;
+					*) clashcore=clash ;;
+				esac
+				mv -f /tmp/clash*linux* $bindir/clash
+				setconfig clashcore $clashcore
+			}
+		else
+			echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
+			rm -rf /tmp/clash*linux*
+			echo -e "\033[33m内核文件已移除，请认真检查后重新上传！\033[0m"
+			sleep 3
+		fi
+		echo -----------------------------------------------
 	}
 	[ -f /tmp/*.*ml ] && {
 		echo -e "\033[32m发现可用的YAML配置文件\033[0m"
