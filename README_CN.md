@@ -97,17 +97,15 @@ export url='http://test.shellclash.cf' && wget -q -O /tmp/install.sh $url/instal
 
 ~**DOCKER环境下安装：**<br>
 
-请参考https://github.com/echvoyager/shellclash_docker
+请参考 [ShellClash_docker 一键脚本和镜像](https://github.com/echvoyager/shellclash_docker)
 
 ### **本地安装：**<br>
 
-请参考：https://juewuy.github.io/bdaz/
+如使用在线安装出现问题，请参考：[本地安装ShellClash的教程 | Juewuy's Blog](https://juewuy.github.io/bdaz) 使用本地安装！<br>
 
 ### 使用脚本：<br>
 
 安装完成管理脚本后，执行如下命令使用~
-
-安装完成管理脚本后，执行如下命令以**运行管理脚本**
 
 ```Shell
 clash 		#进入对话脚本
@@ -151,4 +149,5 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 机场推荐：
 --
-#### [墙洞-老牌稳定，流媒体解锁，年付推荐](https://dler.best/auth/register?affid=89698)<br>
+#### [大米-群友力荐，流媒体解锁，月付推荐](https://bigme.pro/auth/register?code=tdXp)<br>
+#### [Dler-老牌稳定，流媒体解锁，年付推荐](https://dler.best/auth/register?affid=89698)<br>
