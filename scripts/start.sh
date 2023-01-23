@@ -1111,6 +1111,7 @@ bfstart(){
 			fi
 			[ -z "$cpucore" ] && source $clashdir/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
+			[ "$update_url" = "https://jwsc.eu.org:8888" ] && [ "$clashcore" != 'clash' ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master
 			$0 webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
 			[ "$?" = "1" ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
 			clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')

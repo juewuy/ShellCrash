@@ -38,11 +38,12 @@
 
 使用方式：
 --
-~确认路由器设备已经开启SSH并获取root权限（带GUI桌面的Linux设备可使用自带终端安装）<br>
-~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或Linux设备的SSH管理界面或终端界面，并切换到root用户<br>
-~确认设备已经安装curl或者wget下载工具
+~确认设备已经开启SSH并获取root权限（带GUI桌面的Linux设备可使用自带终端安装）<br>
+~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或Linux设备的SSH管理界面或终端界面
 
 ~之后在SSH界面执行目标设备对应的安装命令，并按照后续提示完成安装<br>
+
+#### 在线安装：<br>
 
 （**如无法连接或出现SSL连接错误，请尝试更换各种不同的安装源！**）<br>
 
@@ -87,14 +88,22 @@ export url='https://raw.githubusercontent.com/juewuy/ShellClash/master' && wget 
 export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
-~**老旧设备使用低版本wget安装**：<br>
+~**老旧设备使用低版本wge安装**：<br>
 
 ```Shell
 #作者私人http内测源
 export url='http://test.shellclash.cf' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
-~安装完成管理脚本后，执行如下命令以**运行管理脚本**<br>
+~**DOCKER环境下安装：**<br>
+
+请参考https://github.com/echvoyager/shellclash_docker
+
+#### **本地安装：**<br>
+
+请参考：https://juewuy.github.io/bdaz/
+
+#### 安装完成管理脚本后，执行如下命令以**运行管理脚本**<br>
 
 ```Shell
 clash #进入对话脚本
@@ -105,11 +114,9 @@ clash -s start #启动服务
 clash -s stop #停止服务
 ```
 
-~**DOCKER环境下安装：**<br>
 
-请参考https://github.com/echvoyager/shellclash_docker
 
-~**运行时的额外依赖**：<br>
+#### **运行时的额外依赖**：<br>
 
 > 大部分的设备/系统都已经预装了以下的大部分依赖，使用时如无影响可以无视之
 
