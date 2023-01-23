@@ -145,7 +145,7 @@ mv -f /tmp/SC_tmp/* $clashdir 2>/dev/null
 #初始化
 [ -f "$clashdir/mark" ] || echo '#ShellClash配置文件，不明勿动！' > $clashdir/mark
 #本地安装跳过新手引导
-setconfig userguide 1
+[ -z "$url" ] && setconfig userguide 1
 #判断系统类型写入不同的启动文件
 if [ -f /etc/rc.common ];then
 		#设为init.d方式启动

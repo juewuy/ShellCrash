@@ -345,7 +345,7 @@ gettar(){
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
 		else
-			setconfig versionsh_l $release_new
+			source $clashdir/init.sh >/dev/null
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi		
 	fi

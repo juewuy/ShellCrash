@@ -210,25 +210,25 @@ if [ "$USER" != "root" -a -z "$systype" ];then
 fi
 
 #检查更新
-url_cdn="https://raw.fastgit.org/juewuy/ShellClash"
+url_cdn="https://fastly.jsdelivr.net/gh/juewuy/ShellClash"
 [ -z "$url" ] && url=$url_cdn
-# echo -----------------------------------------------
-# $echo "\033[33m请选择想要安装的版本：\033[0m"	
-# $echo " 1 \033[36mShellclash稳定版\033[0m"
-# $echo " 2 \033[32mShellclash公测版\033[0m(推荐)"
-# echo -----------------------------------------------
-# read -p "请输入相应数字 > " num
-# if [ -z $num ];then
-	# echo 安装已取消！ && exit 1;
-# elif [ "$num" = "1" ];then
-	# webget /tmp/clashrelease $url_cdn/master/bin/release_version echoon rediroff 2>/tmp/clashrelease
-	# if [ "$result" = "200" ];then
-		# release_new=$(cat /tmp/clashrelease | head -1)
-		# url_dl="$url_cdn/$release_new"
-	# else
-		# $echo "\033[33m无法获取稳定版安装地址，将尝试安装公测版！\033[0m"
-	# fi
-# fi
+echo -----------------------------------------------
+$echo "\033[33m请选择想要安装的版本：\033[0m"	
+$echo " 1 \033[32mShellclash公测版\033[0m"
+$echo " 2 \033[36mShellclash稳定版\033[0m"
+echo -----------------------------------------------
+read -p "请输入相应数字 > " num
+if [ -z $num ];then
+	echo 安装已取消！ && exit 1;
+elif [ "$num" = "2" ];then
+	webget /tmp/clashrelease $url_cdn@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
+	if [ "$result" = "200" ];then
+		release_new=$(cat /tmp/clashrelease | head -1)
+		url_dl="$url_cdn@$release_new"
+	else
+		$echo "\033[33m无法获取稳定版安装地址，将尝试安装公测版！\033[0m"
+	fi
+fi
 [ -z "$url_dl" ] && url_dl=$url
 webget /tmp/clashversion "$url_dl/bin/version" echooff
 [ "$result" = "200" ] && versionsh=$(cat /tmp/clashversion | grep "versionsh" | awk -F "=" '{print $2}')
