@@ -949,6 +949,7 @@ stop_firewall(){
 		ip6tables -t nat -F clashv6 2> /dev/null
 		ip6tables -t nat -X clashv6 2> /dev/null
 		#dns
+		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j clashv6_dns 2>/dev/null
 		ip6tables -t nat -F clashv6_dns 2> /dev/null
 		ip6tables -t nat -X clashv6_dns 2> /dev/null
 		#tun
@@ -1363,12 +1364,11 @@ webget)
 		fi
 		#参数【$2】代表下载目录，【$3】代表在线地址
 		#参数【$4】代表输出显示，【$4】不启用重定向
-		#参数【$6】代表验证证书，【$7】使用clash文件头
+		#参数【$6】代表验证证书
 		if curl --version > /dev/null 2>&1;then
 			[ "$4" = "echooff" ] && progress='-s' || progress='-#'
 			[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
-			#[ -n "$7" ] && agent='-A "clash"'
 			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
 			[ "$result" != "200" ] && export https_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
 		else
@@ -1377,7 +1377,6 @@ webget)
 				[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 				[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
 				timeout='--timeout=3 -t 2'
-				#[ -n "$7" ] && agent='--user-agent="clash"'
 			fi
 			[ "$4" = "echoon" ] && progress=''
 			[ "$4" = "echooff" ] && progress='-q'
