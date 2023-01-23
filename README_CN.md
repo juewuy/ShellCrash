@@ -97,11 +97,11 @@ export url='http://test.shellclash.cf' && wget -q -O /tmp/install.sh $url/instal
 
 ~**DOCKER环境下安装：**<br>
 
-请参考https://github.com/echvoyager/shellclash_docker
+请参考 [ShellClash_docker 一键脚本和镜像](https://github.com/echvoyager/shellclash_docker)
 
 ### **本地安装：**<br>
 
-请参考：https://juewuy.github.io/bdaz/
+如使用在线安装出现问题，请参考：[本地安装ShellClash的教程 | Juewuy's Blog](https://juewuy.github.io/bdaz) 使用本地安装！<br>
 
 ### 使用脚本：<br>
 
