@@ -36,14 +36,14 @@
 
 [ShellClash常见问题 | Juewuy's Blog](https://juewuy.github.io/chang-jian-wen-ti/)
 
-使用方式：
---
+## 使用方式：
+
 ~确认设备已经开启SSH并获取root权限（带GUI桌面的Linux设备可使用自带终端安装）<br>
 ~使用SSH连接工具（如putty，JuiceSSH，系统自带终端等）路由器或Linux设备的SSH管理界面或终端界面
 
 ~之后在SSH界面执行目标设备对应的安装命令，并按照后续提示完成安装<br>
 
-#### 在线安装：<br>
+### 在线安装：<br>
 
 （**如无法连接或出现SSL连接错误，请尝试更换各种不同的安装源！**）<br>
 
@@ -99,19 +99,23 @@ export url='http://test.shellclash.cf' && wget -q -O /tmp/install.sh $url/instal
 
 请参考https://github.com/echvoyager/shellclash_docker
 
-#### **本地安装：**<br>
+### **本地安装：**<br>
 
 请参考：https://juewuy.github.io/bdaz/
 
-#### 安装完成管理脚本后，执行如下命令以**运行管理脚本**<br>
+### 使用脚本：<br>
+
+安装完成管理脚本后，执行如下命令使用~
+
+安装完成管理脚本后，执行如下命令以**运行管理脚本**
 
 ```Shell
-clash #进入对话脚本
-clash -h #脚本帮助及说明
-clash -u #卸载脚本
-clash -t #测试模式运行
-clash -s start #启动服务
-clash -s stop #停止服务
+clash 		#进入对话脚本
+clash -h 	#脚本帮助及说明
+clash -u 	#卸载脚本
+clash -t 	#测试模式运行
+clash -s start 	#启动服务
+clash -s stop 	#停止服务
 ```
 
 
