@@ -1114,7 +1114,8 @@ bfstart(){
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && setcpucore
 			[ "$update_url" = "https://jwsc.eu.org:8888" ] && [ "$clashcore" != 'clash' ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master
 			$0 webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
-			[ "$?" = "1" ] && rm -rf $bindir/clash && logger "核心下载失败，已退出！" 31 && exit 1
+			#校验内核
+			chmod +x $bindir/clash 2>/dev/null
 			clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 			if [ -z "$clashv" ];then
 				rm -rf $bindir/clash
@@ -1420,9 +1421,7 @@ unset_proxy)
 		sed -i '/all_proxy/'d  $profile
 		sed -i '/ALL_PROXY/'d  $profile
 	;;
--t)	
-		$2 $3 $4 $5 $6
-	;;
+
 esac
 
 exit 0

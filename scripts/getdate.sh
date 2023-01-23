@@ -151,9 +151,8 @@ getlink(){
 			if [ -n "$Url_link" ];then
 				i=100
 				#将用户链接写入mark
-				sed -i '/Https=*/'d $ccfg
+				setconfig Https
 				setconfig Url \'$Url_link\'
-				Https=""
 				#获取在线yaml文件
 				getyaml
 			else

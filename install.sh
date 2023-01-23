@@ -44,7 +44,7 @@ error_down(){
 }
 #安装及初始化
 gettar(){
-	webget /tmp/clashfm.tar.gz $tarurl
+	webget /tmp/ShellClash.tar.gz $tarurl
 	if [ "$result" != "200" ];then
 		$echo "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -55,9 +55,9 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p $clashdir > /dev/null
-		tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
+		tar -zxvf '/tmp/ShellClash.tar.gz' -C $clashdir/
 		if [ $? -ne 0 ];then
-			rm -rf /tmp/clashfm.tar.gz
+			rm -rf /tmp/ShellClash.tar.gz
 			$echo "\033[33m文件解压失败！\033[0m"
 			error_down
 			exit 1
@@ -235,7 +235,7 @@ webget /tmp/clashversion "$url_dl/bin/version" echooff
 [ -z "$release_new" ] && release_new=$versionsh
 rm -rf /tmp/clashversion
 rm -rf /tmp/clashrelease
-tarurl=$url_dl/bin/clashfm.tar.gz
+tarurl=$url_dl/bin/ShellClash.tar.gz
 
 #输出
 $echo "最新版本：\033[32m$release_new\033[0m"
