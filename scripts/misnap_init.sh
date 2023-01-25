@@ -12,7 +12,7 @@ if [ -z $(pidof clash) ]; then
 	echo "alias clash=\"$clashdir/clash.sh\"" >>$profile
 	echo "export clashdir=\"$clashdir\"" >>$profile
 	#设置init.d服务并启动clash服务
-	ln -sf $clashdir/clashservice /etc/init.d/clash
+	cp -f $clashdir/clashservice /etc/init.d/clash
 	chmod 755 /etc/init.d/clash
 
 	if [ ! -f $clashdir/.dis_startup ]; then

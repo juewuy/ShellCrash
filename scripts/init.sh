@@ -1,7 +1,7 @@
  #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.7.0
+version=1.7.0b
 
 setdir(){
 	dir_avail(){
@@ -149,7 +149,7 @@ mv -f /tmp/SC_tmp/* $clashdir 2>/dev/null
 #判断系统类型写入不同的启动文件
 if [ -f /etc/rc.common ];then
 		#设为init.d方式启动
-		ln -sf $clashdir/clashservice /etc/init.d/clash
+		cp -f $clashdir/clashservice /etc/init.d/clash
 		chmod 755 /etc/init.d/clash
 else
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
