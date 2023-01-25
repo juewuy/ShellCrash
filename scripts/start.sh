@@ -1150,14 +1150,14 @@ bfstart(){
 	[ "$?" = 1 ] && restore=true || restore=false
 	#生成pac文件
 	catpac
-	#预下载Geosite数据库
-	if [ "$clashcore" = "clash.meta" ] && [ ! -f $bindir/geosite.dat ] && [ -n "$(cat $clashdir/config.yaml|grep -Ei 'geosite')" ];then
-		if [ -f $clashdir/geosite.dat ];then
-			mv $clashdir/geosite.dat $bindir/geosite.dat
+	#预下载GeoSite数据库
+	if [ "$clashcore" = "clash.meta" ] && [ ! -f $bindir/GeoSite.dat ] && [ -n "$(cat $clashdir/config.yaml|grep -Ei 'geosite')" ];then
+		if [ -f $clashdir/*eo*ite.dat ];then
+			mv -f $clashdir/*eo*ite.dat $bindir/GeoSite.dat
 		else
 			logger "未找到geosite数据库，正在下载！" 33
-			$0 webget $bindir/geosite.dat $update_url/bin/geosite.dat
-			[ "$?" = "1" ] && rm -rf $bindir/geosite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
+			$0 webget $bindir/GeoSite.dat $update_url/bin/geosite.dat
+			[ "$?" = "1" ] && rm -rf $bindir/GeoSite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
 		fi
 	fi
 	#本机代理准备

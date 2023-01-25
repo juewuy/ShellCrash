@@ -545,7 +545,7 @@ setgeo(){
 		fi
 	elif [ "$num" = '5' ]; then
 		geotype=geosite.dat
-		geoname=geosite.dat
+		geoname=GeoSite.dat
 		getgeo
 	else
 		update
