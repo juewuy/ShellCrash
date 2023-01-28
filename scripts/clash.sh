@@ -44,8 +44,8 @@ ckstatus(){
 	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host='设备IP地址'
 	#dashboard目录位置
-	[ -d $clashdir/ui ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
-	[ -d /www/clash ] && dbdir=/www/clash && hostdir=/clash
+	[ -f $clashdir/ui/index.html ] && dbdir=$clashdir/ui && hostdir=":$db_port/ui"
+	[ -f /www/clash/index.html ] && dbdir=/www/clash && hostdir=/clash
 	#开机自启检测
 	if [ -f /etc/rc.common ];then
 		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable || autostart=disable
@@ -97,7 +97,7 @@ ckstatus(){
 	fi
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
-	#检查/tmp用户上传
+	#检查/tmp内核文件
 	[ -f /tmp/clash*linux* ] && chmod +x /tmp/clash*linux* && {
 		tmp_version=$(/tmp/clash*linux* -v)
 		if [ -n "$tmp_version" ];then
@@ -124,7 +124,8 @@ ckstatus(){
 		fi
 		echo -----------------------------------------------
 	}
-	[ -f /tmp/*.*ml ] && {
+	#检查/tmp配置文件
+	[ -f /tmp/*.*ml -a -x $bindir/clash ] && $bindir/clash -t -d $bindir -f  /tmp/*.*ml &>/dev/null && {
 		echo -e "\033[32m发现可用的YAML配置文件\033[0m"
 		echo /tmp/*.*ml
 		read -p "是否加载为config.yaml配置文件？(1/0) > " res

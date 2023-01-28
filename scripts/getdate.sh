@@ -554,7 +554,7 @@ setgeo(){
 
 getdb(){
 	#下载及安装
-	if [ -d /www/clash -o -d $clashdir/ui ];then
+	if [ -f /www/clash/index.html -o -f $clashdir/ui/index.html ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
 		echo -----------------------------------------------
