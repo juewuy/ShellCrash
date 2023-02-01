@@ -155,7 +155,7 @@ https://api.v1.mk
 https://sub.xeton.dev
 https://v.id9.cc
 https://sub.maoxiongnet.com
-http://sub2.shellclash.cf
+http://sub2.jwsc.eu.org
 EOF`
 	Config=`sed -n ""$rule_link"p"<<EOF
 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash.ini
@@ -180,7 +180,7 @@ EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" -a -z "$retry" ];then
 		[ -n "$(echo $Url | grep -oE 'vless:')" ] && Server='https://api.v1.mk'
-		[ -n "$(echo $Url | grep -oE 'hysteria:')" ] && Server='https://sub.shellclash.cf'
+		[ -n "$(echo $Url | grep -oE 'hysteria:')" ] && Server='https://sub.jwsc.eu.org'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
 	fi
@@ -1152,8 +1152,9 @@ bfstart(){
 	catpac
 	#预下载GeoSite数据库
 	if [ "$clashcore" = "clash.meta" ] && [ ! -f $bindir/GeoSite.dat ] && [ -n "$(cat $clashdir/config.yaml|grep -Ei 'geosite')" ];then
-		if [ -f $clashdir/*eo*ite.dat ];then
-			mv -f $clashdir/*eo*ite.dat $bindir/GeoSite.dat
+		[ -f $clashdir/geosite.dat ] && mv -f $clashdir/geosite.dat $clashdir/GeoSite.dat
+		if [ -f $clashdir/GeoSite.dat ];then
+			mv -f $clashdir/GeoSite.dat $bindir/GeoSite.dat
 		else
 			logger "未找到geosite数据库，正在下载！" 33
 			$0 webget $bindir/GeoSite.dat $update_url/bin/geosite.dat
@@ -1359,7 +1360,7 @@ webget)
 			getconfig
 			[ -n "$authentication" ] && auth="$authentication@"
 			export https_proxy="http://${auth}127.0.0.1:$mix_port"
-			url=$(echo $3 | sed 's#https://.*/juewuy/ShellClash[@|/]#https://raw.githubusercontent.com/juewuy/ShellClash/#' | sed 's#https://gh.shellclash.cf/#https://raw.githubusercontent.com/juewuy/ShellClash/#')
+			url=$(echo $3 | sed 's#https://.*/juewuy/ShellClash[@|/]#https://raw.githubusercontent.com/juewuy/ShellClash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellClash/#')
 		else
 			url=$(echo $3 | sed 's#https://.*/juewuy/ShellClash/#https://fastly.jsdelivr.net/gh/juewuy/ShellClash@#')
 		fi

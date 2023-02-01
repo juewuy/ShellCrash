@@ -62,7 +62,7 @@ gettar(){
 			error_down
 			exit 1
 		else
-			source $clashdir/init.sh 2>/dev/null
+			source $clashdir/init.sh >/dev/null
 		fi		
 	fi
 }

@@ -758,7 +758,7 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 4 ]; then
-		update_url='https://gh.shellclash.cf/master'
+		update_url='https://gh.jwsc.eu.org/master'
 		release_url=''
 		saveserver
 	elif [ "$num" = 5 ]; then
@@ -770,7 +770,7 @@ setserver(){
 		release_url=''
 		saveserver
 	elif [ "$num" = 7 ]; then
-		update_url='http://test.shellclash.cf'
+		update_url='http://t.jwsc.eu.org'
 		release_url=''
 		saveserver
 	elif [ "$num" = 8 ]; then
@@ -793,7 +793,7 @@ setserver(){
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" -o "$num" = 0 ]; then
 			setserver
-		elif [ $num -le $(cat /tmp/clashrelease | awk 'END{print NR}') 2>/dev/null ]; then
+		elif [ $num -le $(cat /tmp/clashrelease 2>/dev/null | awk 'END{print NR}') ]; then
 			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
 			update_url="https://raw.githubusercontent.com/juewuy/ShellClash/$release_version"
 			saveserver

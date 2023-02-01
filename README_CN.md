@@ -56,7 +56,7 @@ export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q 
 或者
 ```shell
 sudo -i #切换到root用户，如果需要密码，请输入密码
-export url='https://gh.shellclash.cf/master' && bash -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://gh.jwsc.eu.org/master' && bash -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 ~**路由设备使用curl安装**：<br>
@@ -73,7 +73,7 @@ export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && sh -c "$
 或者
 ```shell
 #作者私人源
-export url='https://gh.shellclash.cf/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://gh.jwsc.eu.org/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 ~**路由设备使用wget安装**：<br>
@@ -92,7 +92,7 @@ export url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master' && wget -q 
 
 ```Shell
 #作者私人http内测源
-export url='http://test.shellclash.cf' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='http://t.jwsc.eu.org' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**DOCKER环境下安装：**<br>

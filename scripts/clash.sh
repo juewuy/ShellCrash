@@ -98,8 +98,9 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 	#检查/tmp内核文件
-	[ -f /tmp/clash*linux* ] && chmod +x /tmp/clash*linux* && {
-		tmp_version=$(/tmp/clash*linux* -v)
+	for file in /tmp/clash*linux* ; do 
+		chmod +x $file
+		tmp_version=$($file -v)
 		if [ -n "$tmp_version" ];then
 			echo -e "\033[32m发现可用的内核文件\033[0m"
 			read -p "是否加载？(1/0) > " res
@@ -113,27 +114,29 @@ ckstatus(){
 					3) clashcore=clash.meta ;;
 					*) clashcore=clash ;;
 				esac
-				mv -f /tmp/clash*linux* $bindir/clash
+				mv -f $file $bindir/clash
 				setconfig clashcore $clashcore
 			}
 		else
 			echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
-			rm -rf /tmp/clash*linux*
+			rm -rf $file
 			echo -e "\033[33m内核文件已移除，请认真检查后重新上传！\033[0m"
-			sleep 3
+			sleep 2
 		fi
 		echo -----------------------------------------------
-	}
+	done
 	#检查/tmp配置文件
-	[ -f /tmp/*.*ml -a -x $bindir/clash ] && $bindir/clash -t -d $bindir -f  /tmp/*.*ml &>/dev/null && {
+	[ -x $bindir/clash ] && \
+	for file in /tmp/clash*linux* ; do 
+		$bindir/clash -t -d $bindir -f $file &>/dev/null && {
 		echo -e "\033[32m发现可用的YAML配置文件\033[0m"
-		echo /tmp/*.*ml
+		echo $file
 		read -p "是否加载为config.yaml配置文件？(1/0) > " res
 		[ "$res" = 1 ] && {
-			mv -f /tmp/*.*ml $clashdir/config.yaml
+			mv -f $file $clashdir/config.yaml
 		}
 		echo -----------------------------------------------
-	}	
+	done
 }
 
 #启动相关
@@ -669,7 +672,7 @@ macfilter(){
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
 			fi
 			add_mac
-		elif [ $num -le $(cat $dhcpdir | awk 'END{print NR}') 2>/dev/null ]; then
+		elif [ $num -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
 			macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
 			if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
 				echo $macadd >> $clashdir/mac
@@ -1039,6 +1042,10 @@ clashcfg(){
 			set_redir_config
 
 		elif [ "$num" = 2 ]; then
+			modprobe tun &>/dev/null || {
+				echo -e "\033[32m设备未检测到Tun模块，可能无法代理UDP流量！\033[0m"
+				sleep 1
+			}
 			redir_mod=混合模式	
 			set_redir_config
 			
