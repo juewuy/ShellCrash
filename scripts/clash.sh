@@ -98,9 +98,9 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 	#检查/tmp内核文件
-	for file in /tmp/clash*linux* ; do 
+	for file in `find /tmp -name "clash-linux*" -o -name "clash"` ; do 
 		chmod +x $file
-		tmp_version=$($file -v)
+		tmp_version=$($file -v 2>/dev/null)
 		if [ -n "$tmp_version" ];then
 			echo -e "\033[32m发现可用的内核文件\033[0m"
 			read -p "是否加载？(1/0) > " res
@@ -127,15 +127,15 @@ ckstatus(){
 	done
 	#检查/tmp配置文件
 	[ -x $bindir/clash ] && \
-	for file in /tmp/clash*linux* ; do 
+	for file in `find /tmp -name "*.yaml" -o -name "*.yml"` ; do 
 		$bindir/clash -t -d $bindir -f $file &>/dev/null && {
 		echo -e "\033[32m发现可用的YAML配置文件\033[0m"
 		echo $file
-		read -p "是否加载为config.yaml配置文件？(1/0) > " res
-		[ "$res" = 1 ] && {
-			mv -f $file $clashdir/config.yaml
-		}
+		read -p "加载为config.yaml配置文件/或者移除该文件？(1/0) > " res
+		[ "$res" = 1 ] && mv -f $file $clashdir/config.yaml
+		[ "$res" = 0 ] && rm -rf $file 
 		echo -----------------------------------------------
+		}
 	done
 }
 
