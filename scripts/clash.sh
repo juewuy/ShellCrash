@@ -98,7 +98,7 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 	#检查/tmp内核文件
-	for file in `find /tmp -name "clash-linux*" -o -name "clash"` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -iE '^clash$|^clash-linux*'` ; do 
 		chmod +x $file
 		tmp_version=$($file -v 2>/dev/null)
 		if [ -n "$tmp_version" ];then
@@ -127,7 +127,7 @@ ckstatus(){
 	done
 	#检查/tmp配置文件
 	[ -x $bindir/clash ] && \
-	for file in `find /tmp -name "*.yaml" -o -name "*.yml"` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -iE '.yaml$|.yml$'` ; do 
 		$bindir/clash -t -d $bindir -f $file &>/dev/null && {
 		echo -e "\033[32m发现可用的YAML配置文件\033[0m"
 		echo $file
