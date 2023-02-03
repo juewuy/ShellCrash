@@ -1234,7 +1234,7 @@ afstart(){
 		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
 		ckcmd iptables && start_wan
 		#同步本机时间
-		ckcmd ntpd && ntpd -n -q -p ntp.aliyun.com
+		ckcmd ntpd && ntpd -n -q -p 203.107.6.88
 		#标记启动时间
 		mark_time
 		#加载定时任务

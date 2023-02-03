@@ -98,11 +98,12 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 	#检查/tmp内核文件
-	for file in `ls -F /tmp | grep -v [/\$] | grep -iE '^clash$|^clash-linux*'` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '^clash$|^clash-linux*'` ; do 
+		file=/tmp/$file
 		chmod +x $file
 		tmp_version=$($file -v 2>/dev/null)
 		if [ -n "$tmp_version" ];then
-			echo -e "\033[32m发现可用的内核文件\033[0m"
+			echo -e "发现可用的内核文件： \033[36m$file\033[0m "
 			read -p "是否加载？(1/0) > " res
 			[ "$res" = 1 ] && {
 				echo -e " 1 Clash内核"
@@ -114,7 +115,7 @@ ckstatus(){
 					3) clashcore=clash.meta ;;
 					*) clashcore=clash ;;
 				esac
-				mv -f $file $bindir/clash
+				mv -f $file $bindir/clash && echo -e "\033[32m内核加载完成！\033[0m " && sleep 1
 				setconfig clashcore $clashcore
 			}
 		else
@@ -127,13 +128,21 @@ ckstatus(){
 	done
 	#检查/tmp配置文件
 	[ -x $bindir/clash ] && \
-	for file in `ls -F /tmp | grep -v [/\$] | grep -iE '.yaml$|.yml$'` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '.yaml$|.yml$'` ; do 
+		file=/tmp/$file
 		$bindir/clash -t -d $bindir -f $file &>/dev/null && {
-		echo -e "\033[32m发现可用的YAML配置文件\033[0m"
-		echo $file
+		echo -e "发现可用的YAML配置文件： \033[36m$file\033[0m "
 		read -p "加载为config.yaml配置文件/或者移除该文件？(1/0) > " res
-		[ "$res" = 1 ] && mv -f $file $clashdir/config.yaml
-		[ "$res" = 0 ] && rm -rf $file 
+		[ "$res" = 1 ] && {
+			mv -f $file $clashdir/config.yaml
+			echo -e "\033[32m配置文件加载完成！\033[0m " 
+			sleep 1
+		}
+		[ "$res" = 0 ] && { 
+			rm -rf $file 
+			echo -e "\033[32m配置文件已移除！\033[0m " 
+			sleep 1
+		}
 		echo -----------------------------------------------
 		}
 	done
