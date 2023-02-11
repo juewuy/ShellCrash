@@ -1087,7 +1087,7 @@ testcommand(){
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看clash相关路由规则"
 	echo " 5 查看config.yaml前30行"
-	echo " 6 测试代理服务器连通性（google.tw)"
+	echo " 6 测试代理服务器连通性（google.com)"
 	echo -----------------------------------------------
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num
@@ -1148,7 +1148,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 6 ]; then
 		echo "注意：依赖curl(不支持wget)，且测试结果不保证一定准确！"
-		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
+		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.com' & { sleep 3 ; kill $! & }` > /dev/null 2>&1
 		delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
 		echo -----------------------------------------------
 		if [ `echo ${#delay}` -gt 1 ];then
