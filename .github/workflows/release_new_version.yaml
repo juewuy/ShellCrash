@@ -52,7 +52,7 @@ jobs:
       run: |
         git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
         git add . && git commit -m "${new_type} ${new_version} 打包" || exit 0
-        git push origin master
+        git push
         if [[ "${new_type}" == "正式版" ]]; then
           git tag ${new_version}
           git push origin ${new_version}
