@@ -100,7 +100,7 @@ croncmd(){
 		[ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
 		[ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
 		[ ! -w "$crondir" ] && crondir="/var/spool/cron"
-		[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请前往 https://t.me/clashfm 申请适配！"
+		[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请尝试使用搜索引擎查找安装方式！"
 		[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
 		[ -f "$1" ] && cat $1 > $crondir/$USER
 	fi
@@ -306,6 +306,10 @@ modify_yaml(){
 		tun='tun: {enable: false}'
 	fi
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
+	#Meta内核专属配置
+	[ "$clashcore" = 'clash.meta' ] && {
+		find_process='find-process-mode: "off"'
+	}
 	#dns配置
 	[ -z "$(cat $clashdir/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
 		[ "$clashcore" = 'clash.meta' ] && dns_default_meta=', https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
@@ -379,6 +383,7 @@ $exper
 $dns
 $sniffer_set
 store-selected: $restore
+$find_process
 EOF
 ###################################
 	#读取本机hosts并生成配置文件

@@ -939,14 +939,10 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			if ckcmd nft;then
-				setconfig redir_mod "Nft模式" 
-			else
-				setconfig redir_mod "Redir模式"
-			fi
+			setconfig redir_mod "Redir模式"
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
-			ckcmd systemctl && systemctl enable clash.service > /dev/null 2>&1
+			[ "$(pidof systemd)" = 1 ] && systemctl enable clash.service > /dev/null 2>&1
 			rm -rf $clashdir/.dis_startup
 			autostart=enable
 			#检测IP转发
@@ -1000,11 +996,11 @@ userguide(){
 		[ "$res" = 1 ] && setconfig bindir "/tmp/clash_$USER"
 	fi
 	#下载本地面板
-	echo -----------------------------------------------
-	echo -e "\033[33m安装本地Dashboard面板，可以更快捷的管理clash内置规则！\033[0m"
-	echo -----------------------------------------------
-	read -p "需要安装本地Dashboard面板吗？(1/0) > " res
-	[ "$res" = 1 ] && checkupdate && setdb
+	# echo -----------------------------------------------
+	# echo -e "\033[33m安装本地Dashboard面板，可以更快捷的管理clash内置规则！\033[0m"
+	# echo -----------------------------------------------
+	# read -p "需要安装本地Dashboard面板吗？(1/0) > " res
+	# [ "$res" = 1 ] && checkupdate && setdb
 	#检测及下载根证书
 	if [ -d /etc/ssl/certs -a ! -f '/etc/ssl/certs/ca-certificates.crt' ];then
 		echo -----------------------------------------------
@@ -1014,7 +1010,7 @@ userguide(){
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#设置加密DNS
-	$clashdir/start.sh webget /tmp/ssl_test https://doh.pub echooff rediron skipceroff
+	$clashdir/start.sh webget /tmp/ssl_test https://doh.pub echooff rediron
 	if [ "$?" = "0" ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
@@ -1031,7 +1027,7 @@ userguide(){
 			sethost
 		fi
 	}
-	if ckcmd systemd;then
+	if [ "$(pidof systemd)" = 1 ];then
 		echo -----------------------------------------------
 		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
 		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
@@ -1058,7 +1054,8 @@ userguide(){
 	#小米设备软固化
 	if [ "$systype" = "mi_snapshot" ];then
 		echo -----------------------------------------------
-		read -p "是否启用软固化SSH？(1/0) > " res
+		echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
+		read -p "是否启用软固化功能？(1/0) > " res
 		[ "$res" = 1 ] && setconfig mi_autoSSH 已启用
 	fi
 	#提示导入订阅或者配置文件

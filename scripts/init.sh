@@ -152,8 +152,8 @@ if [ -f /etc/rc.common ];then
 		cp -f $clashdir/clashservice /etc/init.d/clash
 		chmod 755 /etc/init.d/clash
 else
-	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
-	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
+	[ "$(pidof systemd)" = 1 ] && [ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
+	[ "$(pidof systemd)" = 1 ] && [ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
 	if [ -n "$sysdir" ];then
 		#设为systemd方式启动
 		mv -f $clashdir/clash.service $sysdir/clash.service 2>/dev/null

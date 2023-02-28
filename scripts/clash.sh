@@ -516,8 +516,8 @@ setdns(){
 		setdns
 		
 	elif [ "$num" = 4 ]; then
-		$clashdir/start.sh webget /tmp/ssl_test https://www.baidu.com echooff rediron skipceroff
-		if [ "$？" = "1" ];then
+		$clashdir/start.sh webget /tmp/ssl_test https://doh.pub echooff rediron
+		if [ "$?" = "1" ];then
 			echo -----------------------------------------------
 			if openssl version >/dev/null 2>&1;then
 				echo -e "\033[31m当前设备缺少本地根证书，请先安装证书！\033[0m"
@@ -1232,15 +1232,23 @@ clashcfg(){
 		clashcfg
 	
 	elif [ "$num" = 4 ]; then	
-		echo -----------------------------------------------	
-		if [ "$common_ports" = "未开启" ]; then 
-			echo -e "\033[33m已设为仅代理【$multiport】等常用端口！！\033[0m"
-			common_ports=已开启
+		set_common_ports(){
+			if [ "$common_ports" = "未开启" ]; then 
+				echo -e "\033[33m已设为仅代理【$multiport】等常用端口！！\033[0m"
+				common_ports=已开启
+			else
+				echo -e "\033[33m已设为代理全部端口！！\033[0m"
+				common_ports=未开启
+			fi
+			setconfig common_ports $common_ports
+		}
+		echo -----------------------------------------------
+		if [ -n "$(pidof clash)" ];then
+			read -p "切换时将停止clash服务，是否继续？(1/0) > " res
+			[ "$res" = 1 ] && $clashdir/start.sh stop && set_common_ports
 		else
-			echo -e "\033[33m已设为代理全部端口！！\033[0m"
-			common_ports=未开启
+			set_common_ports
 		fi
-		setconfig common_ports $common_ports
 		clashcfg  
 
 	elif [ "$num" = 5 ]; then	
