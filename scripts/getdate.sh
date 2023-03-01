@@ -672,7 +672,7 @@ setdb(){
 }
 
 getcrt(){
-	crtlink="${update_url}/bin/ca-certificates.crt"
+	crtlink="${update_url}/bin/fix/ca-certificates.crt"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
 	$clashdir/start.sh webget /tmp/ca-certificates.crt $crtlink
@@ -939,7 +939,8 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			setconfig redir_mod "Redir模式"
+			redir_mod="Redir模式"
+			setconfig redir_mod "$redir_mod"
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
 			[ "$(pidof systemd)" = 1 ] && systemctl enable clash.service > /dev/null 2>&1

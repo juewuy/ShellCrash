@@ -1051,8 +1051,8 @@ clashcfg(){
 			set_redir_config
 
 		elif [ "$num" = 2 ]; then
-			modprobe tun &>/dev/null || {
-				echo -e "\033[32m设备未检测到Tun模块，可能无法代理UDP流量！\033[0m"
+			modinfo tun &>/dev/null || {
+				echo -e "\033[32m设备未检测到Tun内核模块，可能无法代理UDP流量！\033[0m"
 				sleep 1
 			}
 			redir_mod=混合模式	
@@ -1063,10 +1063,10 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 4 ]; then
-			if modprobe tun &>/dev/null;then
+			if modinfo tun &>/dev/null;then
 				redir_mod=Tun模式
 			else
-				read -p "未检测到Tun模块，是否强制开启？可能导致无法联网！(1/0)" res
+				read -p "设备未检测到Tun内核模块，是否强制开启？可能导致无法联网！(1/0) > " res
 				[ "$res" = '1' ] && redir_mod=Tun模式
 			fi
 			set_redir_config
@@ -1077,7 +1077,7 @@ clashcfg(){
 			
 		elif [ "$num" = 6 ]; then
 			if ckcmd opkg && [ -z "$(opkg list-installed | grep firewall4)" ];then
-				read -p "检测到缺少firewall4依赖，是否自动安装？(1/0)" res
+				read -p "检测到缺少firewall4依赖，是否自动安装？(1/0) > " res
 				[ "$res" = '1' ] && opkg install firewall4 && redir_mod=Nft基础
 			else
 				redir_mod=Nft基础
@@ -1086,7 +1086,7 @@ clashcfg(){
 			
 		elif [ "$num" = 7 ]; then
 			if ckcmd opkg && [ -z "$(opkg list-installed | grep kmod-nft-tproxy)" ];then
-				read -p "检测到缺少kmod-nft-tproxy依赖，是否自动安装？(1/0)" res
+				read -p "检测到缺少kmod-nft-tproxy依赖，是否自动安装？(1/0) > " res
 				[ "$res" = '1' ] && opkg install kmod-nft-tproxy && redir_mod=Nft混合
 			else
 				redir_mod=Nft混合
