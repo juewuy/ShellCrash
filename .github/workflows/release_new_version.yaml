@@ -1,0 +1,74 @@
+name: Release New Version
+on: 
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'new version of ShellClash, such as 1.7.0f'
+        required: true
+        type: string
+      release_type:
+        required: true
+        type: choice
+        options:
+          - '内测版'
+          - '公测版'
+          - '正式版'
+env:
+  new_version: ${{ github.event.inputs.release_version }}
+  new_type: ${{ github.event.inputs.release_type }}
+jobs:
+  Update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@main
+    - name: Update Version Number
+      if: ${{ github.event.inputs.release_type != '内测版' }}
+      run: |
+        if [[ "${new_type}" == "正式版" ]]; then
+          sed -i "1i ${new_version}" ./bin/release_version
+        elif [[ "${new_type}" == "公测版" ]]; then
+          sed -i "s/versionsh=.*/versionsh=${new_version}/" ./bin/version
+          sed -i "s/version=.*/version=${new_version}/" ./scripts/init.sh
+        fi
+    - name: Package
+      if: ${{ github.event.inputs.release_type != '正式版' }}
+      run: |
+        cd ./bin
+        # 打包 clashfm.tar.gz
+        rm ./clashfm.tar.gz
+        mkdir clashfm && pushd clashfm
+          cp ../../scripts/* ./
+          chmod +x *
+          tar zcvf ../clashfm.tar.gz *
+        popd && rm -fr clashfm
+        # 打包 ShellClash.tar.gz
+        rm ./ShellClash.tar.gz
+        mkdir ShellClash && pushd ShellClash
+          cp ../../scripts/* ./
+          chmod +x *
+          cp ../Country.mmdb ./
+          tar zcvf ../ShellClash.tar.gz *
+        popd && rm -fr ./ShellClash
+    - name: Commit and push
+      if: ${{ github.event.inputs.release_type != '内测版' }}
+      run: |
+        git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
+        git add . && git commit -m "${new_type} ${new_version} 打包" || exit 0
+        git push
+        if [[ "${new_type}" == "正式版" ]]; then
+          git tag ${new_version}
+          git push origin ${new_version}
+        fi
+    - name: Package Artifact
+      id: package_artifact
+      run: |
+        mkdir artifacts
+        cp ./bin/clashfm.tar.gz ./artifacts/
+        cp ./bin/ShellClash.tar.gz ./artifacts/
+        echo "artifact_name=${new_type}_${new_version}_$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
+    - name: Upload Test Artifact
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ steps.package_artifact.outputs.artifact_name }}
+        path: ./artifacts/*
