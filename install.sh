@@ -55,7 +55,8 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p $clashdir > /dev/null
-		tar -zxvf '/tmp/ShellClash.tar.gz' -C $clashdir/
+		tar -zxf '/tmp/ShellClash.tar.gz' -C $clashdir/
+		[ $? -ne 0 ] && tar -zxf --no-same-owner '/tmp/ShellClash.tar.gz' -C $clashdir/
 		if [ $? -ne 0 ];then
 			rm -rf /tmp/ShellClash.tar.gz
 			$echo "\033[33m文件解压失败！\033[0m"

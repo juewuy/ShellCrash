@@ -6,18 +6,12 @@ profile=/etc/profile
 
 tunfix(){
 	#在/tmp创建并挂载overlay
-	[ -e /tmp/overlay ] || mkdir /tmp/overlay
-	[ -e /tmp/overlay/upper ] || mkdir /tmp/overlay/upper
-	[ -e /tmp/overlay/work ] || mkdir /tmp/overlay/work
-	mount --bind /tmp/overlay /overlay
-	. /lib/functions/preinit.sh
-	fopivot /overlay/upper /overlay/work /rom 1
-	#Fixup miwifi misc, and DO NOT use /overlay/upper/etc instead, /etc/uci-defaults/* may be already removed
-	mount -o noatime,move /rom/data /data 2>&-
-	mount -o noatime,move /rom/etc /etc 2>&-
-	mount -o noatime,move /rom/userdisk /userdisk 2>&-
+	mkdir -p /tmp/overlay
+	mkdir -p /tmp/overlay/upper
+	mkdir -p /tmp/overlay/work
+	mount -o noatime,lowerdir=/lib/modules/4.4.198,upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" /lib/modules/4.4.198
 	#将tun.ko链接到lib
-	ln -s $clashdir/tun.ko /overlay/upper/lib/modules/4.4.198/tun.ko
+	ln -s $clashdir/tun.ko /lib/modules/4.4.198/tun.ko
 }
 init(){
 	#初始化环境变量
@@ -36,7 +30,7 @@ init(){
 			[ -n "$(grep 'init complete' $log_file)" ] && i=10 || i=$((i + 1))
 		done
 		#AX6S/AX6000修复tun功能
-		[ -f $clashdir/tun.ko -a ! -f /lib/modules/4.4.198/tun.ko ] && tunfix
+		[ -f $clashdir/tun.ko -a ! -f /lib/modules/4.4.198/tun.ko ] && tunfix && sleep 10
 		#
 		/etc/init.d/clash start
 		/etc/init.d/clash enable

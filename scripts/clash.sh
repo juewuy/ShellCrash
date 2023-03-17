@@ -359,7 +359,7 @@ setport(){
 		elif [ -n "$(echo "|$mix_port|$redir_port|$dns_port|$db_port|" | grep "|$portx|")" ]; then
 			echo -e "\033[31m输入错误！请不要输入重复的端口！\033[0m"
 			inputport
-		elif [ -n "$(netstat -ntul |grep :$portx)" ];then
+		elif [ -n "$(netstat -ntul |grep ":$portx ")" ];then
 			echo -e "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
 			inputport
 		else
@@ -376,7 +376,7 @@ setport(){
 	echo -e " 5 修改面板访问端口：	\033[36m$db_port\033[0m"
 	echo -e " 6 设置面板访问密码：	\033[36m$secret\033[0m"
 	echo -e " 7 修改默认端口过滤：	\033[36m$multiport\033[0m"
-	echo -e " 8 指定本机host地址：	\033[36m$host\033[0m"
+	echo -e " 8 自定义本机host地址：	\033[36m$host\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then 
@@ -445,8 +445,8 @@ setport(){
 		setport
 	elif [ "$num" = 8 ]; then
 		echo -----------------------------------------------
-		echo -e "\033[33m此处可以更改脚本内置的局域网设备IP地址\033[0m"
-		echo -e "\033[31m设置后如本机host地址有变动，请务必手动修改！\033[0m"
+		echo -e "\033[33m如果你的局域网网段不是192.168.x或127.16.x或10.x开头，请务必修改！\033[0m"
+		echo -e "\033[31m设置后如本机host地址有变动，请务必重新修改！\033[0m"
 		echo -----------------------------------------------
 		read -p "请输入自定义host地址(输入0移除自定义host) > " host
 		if [ "$host" = "0" ];then
@@ -516,25 +516,18 @@ setdns(){
 		setdns
 		
 	elif [ "$num" = 4 ]; then
-		$clashdir/start.sh webget /tmp/ssl_test https://doh.pub echooff rediron
-		if [ "$?" = "1" ];then
-			echo -----------------------------------------------
-			if openssl version >/dev/null 2>&1;then
-				echo -e "\033[31m当前设备缺少本地根证书，请先安装证书！\033[0m"
-				source $clashdir/getdate.sh
-				setcrt
-			else
-				echo -e "\033[31m当前设备未安装OpenSSL，无法启用加密DNS，Linux系统请自行搜索安装方式！\033[0m"
-			fi
-		else
+		echo -----------------------------------------------
+		if openssl version >/dev/null 2>&1;then
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 			dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			setconfig dns_fallback \'"$dns_fallback"\' 
-			echo -e "\033[32m设置成功！！！\033[0m"
+			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"
+		else
+			echo -e "\033[31m当前设备未安装OpenSSL，无法启用加密DNS，Linux系统请自行搜索安装方式！\033[0m"
 		fi
 		rm -rf /tmp/ssl_test
-		sleep 1
+		sleep 2
 		setdns
 		
 	elif [ "$num" = 5 ]; then
@@ -790,89 +783,45 @@ macfilter(){
 	fi
 }
 localproxy(){
-	[ -z "$local_proxy" ] && local_proxy='未开启'
-	[ -z "$local_type" ] && local_type='环境变量'
-	[ "$local_proxy" = "已开启" ] && proxy_set='禁用' || proxy_set='启用'
 	[ -w /etc/systemd/system/clash.service -o -w /usr/lib/systemd/system/clash.service -o -x /bin/su ] && local_enh=1
 	[ -f /etc/rc.common -a -w /etc/passwd ] && local_enh=1
 	echo -----------------------------------------------
-	echo -e "\033[33m当前本机代理配置方式为：\033[32m$local_type\033[0m"
-	echo -----------------------------------------------
-	echo -e " 1 \033[36m$proxy_set本机代理\033[0m"
-	echo -e " 2 使用\033[32m环境变量\033[0m方式配置(部分应用可能无法使用)"
-	[ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 3 使用\033[32miptables增强模式\033[0m配置(支持docker)"
-	ckcmd nft && echo -e " 4 使用\033[32mnftables增强模式\033[0m配置(支持docker)"
+	[ -n "$local_enh" ] && {
+		[ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
+		ckcmd nft && echo -e " 2 使用\033[32mnftables增强模式\033[0m配置(支持docker,推荐！)"
+	}
+	echo -e " 3 使用\033[33m环境变量\033[0m方式配置(部分应用可能无法使用,不推荐！)"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
-	read -p "请输入对应数字 > " num
-	if [ -z "$num" ]; then 
-		errornum
-	elif [ "$num" = 0 ]; then
-		i=
-	elif [ "$num" = 1 ]; then
-		echo -----------------------------------------------
-		if [ "$local_proxy" = "未开启" ]; then 
-			if [ -n "$authentication" ] && [ "$authentication" != "未设置" ] ;then
-				echo -e "\033[32m检测到您已经设置了Http/Sock5代理密码，请先取消密码！\033[0m"
-				sleep 1
-				setport
-				localproxy
-			else
-				local_proxy=已开启
-				setconfig local_proxy $local_proxy
-				setconfig local_type $local_type
-				echo -e "\033[32m已经成功使用$local_type方式配置本机代理~\033[0m"
-				if [ "$local_type" = "环境变量" ];then
-					$clashdir/start.sh set_proxy $mix_port $db_port
-					echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m"
-				else
-					echo -e "\033[36m请重新启动clash服务！\033[0m"
-				fi
-				sleep 1
-			fi		
-		else
-			local_proxy=未开启
-			setconfig local_proxy $local_proxy
-			setconfig local_type
-			sed -i '/user shellclash/d' /etc/init.d/clash 2>/dev/null
-			$clashdir/start.sh stop
-			echo -e "\033[33m已经停用本机代理规则并停止clash服务！！\033[0m"
-			[ "$local_type" = "环境变量" ] && echo -e "\033[36m如未生效，请重新启动终端或重新连接SSH！\033[0m" && sleep 1
-		fi
-
-	elif [ "$num" = 2 ]; then
-		local_type="环境变量"
-		local_proxy=已开启
-		setconfig local_proxy $local_proxy
-		setconfig local_type $local_type
-		localproxy
-	elif [ "$num" = 3 ]; then
-		if [ -n "$local_enh" ];then
+	read -p "请选择本机代理方式 > " num
+	case "$num" in
+	1)
 			local_type="iptables增强模式"
 			local_proxy=已开启
-			setconfig local_proxy $local_proxy
-			setconfig local_type $local_type
-			
-		else
-			echo -e "\033[31m当前设备无法使用iptables增强模式！\033[0m"
-		fi
-		sleep 1
-		localproxy
-		
-	elif [ "$num" = 4 ]; then
-		if [ -n "$local_enh" ];then
+	;;
+	2)
 			local_type="nftables增强模式"
 			local_proxy=已开启
-			setconfig local_proxy $local_proxy
-			setconfig local_type $local_type
-		else
-			echo -e "\033[31m当前设备无法使用nftables增强模式！\033[0m"
-		fi
-		sleep 1
-		localproxy
-	else
-		errornum
-	fi	
+	;;	
+	3)
+			if [ -z "$authentication" -o "$authentication" = "未设置" ];then
+				local_type="环境变量"
+				echo -e "\033[33m注意，请重启clash后手动输入以下命令使配置生效\033[0m"
+				echo -e "【\033[32m source /etc/profile > /dev/null \033[0m】"
+				local_proxy=已开启
+			else
+				echo -e "\033[32m检测到您已经设置了Http/Sock5代理密码，请先取消密码！\033[0m"
+				setport
+				localproxy
+			fi
+			sleep 1
+	;;	
+	*)
+			errornum
+	;;
+	esac
+	setconfig local_proxy $local_proxy
+	setconfig local_type $local_type
 }
 setboot(){
 	[ -z "$start_old" ] && start_old=未开启
@@ -888,7 +837,7 @@ setboot(){
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————用于闪存空间不足的设备"
 	[ "$bindir" != "$clashdir" ] && echo -e " 5 设置小闪存目录:	\033[36m$bindir\033[0m"
 	echo -----------------------------------------------
-	echo -e " 0 \033[0m退出脚本\033[0m"
+	echo -e " 0 \033[0m返回上级菜单\033[0m"
 	read -p "请输入对应数字 > " num
 	echo -----------------------------------------------
 	case "$num" in
@@ -975,29 +924,41 @@ setboot(){
 	5)
 		echo -e "\033[33m如设置到内存，则每次开机后都自动重新下载相关文件\033[0m"
 		echo -e "\033[33m请确保安装源可用裸连，否则会导致启动失败\033[0m"
-		echo " 1 使用内存"
+		echo " 1 使用内存(/tmp)"
 		echo " 2 选择U盘目录"
+		echo " 3 自定义目录"
 		read -p "请输入相应数字 > " num
 		case "$num" in 
 		1)
 			bindir="/tmp/clash_$USER"	;;
 		2)
 			set_usb_dir(){
-				$echo "请选择安装目录"
+				echo "请选择安装目录"
 				du -hL /mnt | awk '{print " "NR" "$2"  "$1}'
 				read -p "请输入相应数字 > " num
 				bindir=$(du -hL /mnt | awk '{print $2}' | sed -n "$num"p)
 				if [ -z "$bindir" ];then
-					$echo "\033[31m输入错误！请重新设置！\033[0m"
+					echo "\033[31m输入错误！请重新设置！\033[0m"
 					set_usb_dir
 				fi
 			}
 			set_usb_dir
 		;;
+		3)
+			input_dir(){
+				read -p "请输入自定义目录 > " bindir
+				if [ ! -d "$bindir" ];then
+					echo "\033[31m输入错误！请重新设置！\033[0m"
+					input_dir
+				fi
+			}
+			input_dir
+		;;
 		*)
 			errornum
 		;;
 		esac
+		setconfig bindir $bindir
 		setboot
 	;;
 	*)			
@@ -1181,6 +1142,7 @@ clashcfg(){
 	[ -z "$dns_mod" ] && dns_mod=redir_host
 	[ -z "$dns_over" ] && dns_over=已开启
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
+	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$quic_rj" ] && quic_rj=未开启
 	[ -z "$(cat $clashdir/mac)" ] && mac_return=未开启 || mac_return=已启用
 	#
@@ -1256,7 +1218,15 @@ clashcfg(){
 		clashcfg
 		
 	elif [ "$num" = 6 ]; then	
-		localproxy
+		if [ "$local_proxy" = "未开启" ]; then 
+			localproxy
+		else
+			local_proxy=未开启
+			setconfig local_proxy $local_proxy
+			setconfig local_type
+			sed -i '/user shellclash/d' /etc/init.d/clash 2>/dev/null
+			echo -e "\033[33m已经停用本机代理规则,请尽快重启clash服务！！\033[0m"
+		fi
 		sleep 1
 		clashcfg
 		
@@ -1563,6 +1533,7 @@ tools(){
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	[ "$mi_autoSSH" = "已启用" ] && mi_autoSSH_type=32m已启用 || mi_autoSSH_type=31m未启用
+	[ -f $clashdir/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
@@ -1577,6 +1548,7 @@ tools(){
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
 	[ -f /data/clash/misnap_init.sh ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
 	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 7 配置\033[32mDDNS服务\033[0m(需下载相关脚本)"
+	[ -f /data/clash/misnap_init.sh ] && echo -e " 8 小米设备Tun模块修复 ———— \033[$mi_tunfix \033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -1647,6 +1619,35 @@ tools(){
 		setconfig mi_autoSSH $mi_autoSSH
 		setconfig mi_autoSSH_pwd $mi_autoSSH_pwd
 		tools		
+	elif [ "$num" = 8 ]; then
+		if [ -f $clashdir/tun.ko ];then
+			read -p "是否禁用此功能并移除相关补丁？(1/0) > " res
+			[ "$res" = 1 ] && {
+				rm -rf $clashdir/tun.ko
+				echo -e "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
+			}
+		elif [ -z "$(modinfo tun)" ];then
+			echo -e "\033[33m本功能需要修改系统文件，可能导致未知的不稳定情况产生！\033[0m"
+			echo -e "\033[33m本功能采集的Tun模块不一定适用于你的设备！\033[0m"
+			read -p "是否继续？(1/0) > " res
+			if [ "$res" = 1 ];then
+				tunfixlink="${update_url}/bin/fix/tun.ko"
+				echo -----------------------------------------------
+				echo 正在连接服务器获取Tun模块补丁文件…………
+				$clashdir/start.sh webget /tmp/tun.ko $tunfixlink
+				if [ "$?" = "0" ];then
+					mv -f /tmp/tun.ko $clashdir && \
+					$clashdir/misnap_init.sh tunfix && \
+					echo -e "\033[32m设置成功！请重启clash服务！\033[0m"
+				else
+					echo -e "\033[31m文件下载失败，请重试！\033[0m"
+				fi
+			fi
+		else
+			echo -e "\033[31m当前设备无需设置，请勿尝试！\033[0m"
+			sleep 1
+		fi
+		tools	
 	else
 		errornum
 	fi

@@ -703,8 +703,8 @@ setcrt(){
 		echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
 		echo -e "\033[31m无上述问题的设备请勿使用！\033[0m"
 		echo -----------------------------------------------
-		[ -f "$crtdir" ] && echo -e "\033[33m检测到系统已经安装根证书文件了！\033[0m\n-----------------------------------------------"
-		read -p "确认安装？(1/0) > " res
+		[ -f "$crtdir" ] && echo -e "\033[33m检测到系统已经存在根证书文件($crtdir)了！\033[0m\n-----------------------------------------------"
+		read -p "是否覆盖更新？(1/0) > " res
 
 		if [ -z "$res" ];then
 			errornum
@@ -960,23 +960,7 @@ userguide(){
 			setconfig common_ports "未开启"
 			echo -----------------------------------------------
 			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
-			echo -e " 1 使用\033[32m环境变量\033[0m方式配置(不支持部分应用)"
-			echo -e " 2 使用\033[32miptables增强模式\033[0m配置"
-			echo -e " 3 使用\033[32mnftables增强模式\033[0m配置"
-			echo -e " 0 稍后设置"
-			read -p "请输入对应数字 > " num
-			if [ "$num" = 1 ]; then
-				local_proxy=已开启
-				local_type=环境变量
-			elif [ "$num" = 2 ]; then
-				local_proxy=已开启
-				local_type=iptables增强模式
-			elif [ "$num" = 3 ]; then
-				local_proxy=已开启
-				local_type=nftables增强模式
-			fi
-			setconfig local_proxy $local_proxy
-			setconfig local_type $local_type
+			localproxy
 		elif [ "$num" = 3 ];then
 			mv -f $ccfg.bak $ccfg
 			echo -e "\033[32m脚本设置已还原！\033[0m"

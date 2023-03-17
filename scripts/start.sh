@@ -204,14 +204,14 @@ EOF`
 		else
 			if [ "$retry" -ge 4 ];then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
+				echo -e "\033[32m你也可以尝试使用浏览器下载配置文件后，使用WinSCP手动上传到/tmp目录！\033[0m"
 				exit 1
 			elif [ "$retry" = 3 ];then
 				retry=4
-				logger "配置文件获取失败！最后尝试使用http备用服务器获取！" 31
-				echo -e "\033[32m如担心安全性，请在5s内使用【ctrl+c】退出！\033[0m"
+				logger "配置文件获取失败！将尝试使用http协议备用服务器获取！" 31
+				echo -e "\033[32m如担心数据安全，请在5s内使用【ctrl+c】退出！\033[0m"
 				sleep 5
 				server_link=6
-				setconfig server_link 6
 				Https=""
 				getyaml
 			else
@@ -517,7 +517,8 @@ start_redir(){
 			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 		done
 		iptables -t nat -A clash -p tcp -s 192.168.0.0/16 -j REDIRECT --to-ports $redir_port
-		iptables -t nat -A clash -p tcp -s 10.0.0.0/8 -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A clash -p tcp -s 10.0.0.0/12 -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A clash -p tcp -s 172.16.0.0/12 -j REDIRECT --to-ports $redir_port
 		[ -n "$host_lan" ] && iptables -t nat -A clash -p tcp -s $host_lan -j REDIRECT --to-ports $redir_port
 	fi
 	#将PREROUTING链指向clash链
@@ -624,7 +625,8 @@ start_tproxy(){
 				iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 			done
 			iptables -t mangle -A clash -p $1 -s 192.168.0.0/16 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-			iptables -t mangle -A clash -p $1 -s 10.0.0.0/8 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			iptables -t mangle -A clash -p $1 -s 10.0.0.0/12 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			iptables -t mangle -A clash -p $1 -s 172.16.0.0/12 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 			[ -n "$host_lan" ] && iptables -t mangle -A clash -p $1 -s $host_lan -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 		fi
 		iptables -t mangle -A PREROUTING -p $1 $ports -j clash
@@ -724,7 +726,7 @@ start_tun(){
 		fi
 		modprobe xt_mark &> /dev/null && {
 			i=1
-			while [ -z "$(ip route list |grep utun)" -a "$i" -le 9 ];do
+			while [ -z "$(ip route list |grep utun)" -a "$i" -le 29 ];do
 				sleep 1
 				i=$((i+1))
 			done
@@ -758,7 +760,8 @@ start_tun(){
 					iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 				done
 				iptables -t mangle -A clash -s 192.168.0.0/16 -j MARK --set-mark 1	
-				iptables -t mangle -A clash -s 10.0.0.0/8 -j MARK --set-mark 1	
+				iptables -t mangle -A clash -s 10.0.0.0/12 -j MARK --set-mark 1	
+				iptables -t mangle -A clash -s 172.16.0.0/12 -j MARK --set-mark 1	
 				[ -n "$host_lan" ] && iptables -t mangle -A clash -s $host_lan -j MARK --set-mark 1	
 			fi
 			iptables -t mangle -A PREROUTING -p udp $ports -j clash
@@ -1234,12 +1237,14 @@ afstart(){
 			start_nft
 		}
 		#设置本机代理
-		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
-		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && start_output
-		[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
+		[ "$local_proxy" = "已开启" ] && {
+			[ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
+			[ "$local_type" = "iptables增强模式" ] && start_output
+			[ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
+		}
 		ckcmd iptables && start_wan
 		#同步本机时间
-		ckcmd ntpd && ntpd -n -q -p 203.107.6.88
+		ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &
 		#标记启动时间
 		mark_time
 		#加载定时任务
