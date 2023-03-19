@@ -151,5 +151,5 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 机场推荐：
 --
-#### [大米-群友力荐，流媒体解锁，月付推荐](https://bigme.pro/auth/register?code=tdXp)<br>
+#### [大米-群友力荐，流媒体解锁，月付推荐](https://www.bigme.pro/user#/register?code=2PuWY9I7)<br>
 #### [Dler-老牌稳定，流媒体解锁，年付推荐](https://dler.best/auth/register?affid=89698)<br>
