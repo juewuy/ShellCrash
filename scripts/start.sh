@@ -572,7 +572,7 @@ start_ipt_dns(){
 	fi
 	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
 	#ipv6DNS
-	if [ -n "$(lsmod | grep 'ip6table_nat')" ];then
+	if [ -n "$(lsmod | grep 'ip6table_nat')" -a -n "$(lsmod | grep 'xt_nat')" ];then
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			#mac白名单
