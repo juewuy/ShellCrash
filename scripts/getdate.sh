@@ -138,7 +138,7 @@ getlink(){
 		link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
 		link=`echo ${link/*\&url\=/""}`   #将clash完整链接还原成单一链接
 		link=`echo ${link/\&config\=*/""}`   #将clash完整链接还原成单一链接
-		link=`echo ${link//\&/\%26}`   #将分隔符 & 替换成urlcode：%26
+		link=`echo ${link//\&/\\\&}`   #处理分隔符
 		if [ -n "$test" ];then
 			if [ -z "$Url_link" ];then
 				Url_link="$link"
@@ -208,6 +208,7 @@ getlink2(){
 				#将用户链接写入mark
 				sed -i '/Url=*/'d $ccfg
 				setconfig Https \'$link\'
+				setconfig Url
 				#获取在线yaml文件
 				getyaml
 			else
