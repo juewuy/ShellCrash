@@ -9,14 +9,14 @@ on:
 #   branches: 
 #       - master
     schedule:
-        - cron: 0 9 * * 6
+        - cron: 0 18 * * 6
 #   watch:
 #       types: [started]
     workflow_dispatch:
 
 jobs:
   update:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
     

@@ -77,14 +77,25 @@ setdir(){
 			set_usb_dir
 		fi
 	}
+	set_cust_dir(){
+		echo -----------------------------------------------
+		echo '可用路径 剩余空间:'
+		df -h | awk '{print $6,$4}'| sed 1d 
+		echo '路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！'
+		read -p "请输入自定义路径 > " dir
+		if [ "$(dir_avail $dir)" = 0 ] &&;then
+			$echo "\033[31m路径错误！请重新设置！\033[0m"
+			setdir
+		fi
+	}
 echo -----------------------------------------------
 if [ -n "$systype" ];then
 	[ "$systype" = "Padavan" ] && dir=/etc/storage
 	[ "$systype" = "mi_snapshot" ] && {
 		$echo "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"	
-		$echo " 1 安装到/data目录(推荐，支持软固化功能)"
-		$echo " 2 安装到USB设备(支持软固化功能)"
-		[ "$(dir_avail /etc)" != 0 ] && $echo " 3 安装到/etc目录(不推荐)"
+		[ "$(dir_avail /data)" != 0 ] && $echo " 1 安装到 /data 目录(推荐，支持软固化功能)"
+		[ "$(dir_avail /userdisk)" != 0 ] && $echo " 2 安装到 /userdisk 目录(推荐，支持软固化功能)"
+		$echo " 3 安装自定义目录(不推荐，不明勿用！)"
 		$echo " 0 退出安装"
 		echo -----------------------------------------------
 		read -p "请输入相应数字 > " num
@@ -93,15 +104,10 @@ if [ -n "$systype" ];then
 			dir=/data
 			;;
 		2)
-			set_usb_dir ;;
+			dir=/userdisk
+			;;
 		3)
-			if [ "$(dir_avail /etc)" != 0 ];then
-				dir=/etc
-				systype=""
-			else
-				$echo "\033[31m你的设备不支持安装到/etc目录，已改为安装到/data\033[0m"	
-				dir=data
-			fi
+			set_cust_dir
 			;;
 		*)
 			exit 1 ;;
@@ -152,15 +158,7 @@ else
 	elif [ "$num" = "4" ];then
 		set_usb_dir
 	elif [ "$num" = "5" ];then
-		echo -----------------------------------------------
-		echo '可用路径 剩余空间:'
-		df -h | awk '{print $6,$4}'| sed 1d 
-		echo '路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！'
-		read -p "请输入自定义路径 > " dir
-		if [ -z "$dir" ];then
-			$echo "\033[31m路径错误！请重新设置！\033[0m"
-			setdir
-		fi
+		set_cust_dir
 	else
 		echo 安装已取消！！！
 		exit 1;
