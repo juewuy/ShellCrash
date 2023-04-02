@@ -944,7 +944,7 @@ userguide(){
 			setconfig redir_mod "$redir_mod"
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
-			[ "$(pidof systemd)" = 1 ] && systemctl enable clash.service > /dev/null 2>&1
+			ckcmd systemctl && systemctl enable clash.service > /dev/null 2>&1
 			rm -rf $clashdir/.dis_startup
 			autostart=enable
 			#检测IP转发
@@ -1013,7 +1013,7 @@ userguide(){
 			sethost
 		fi
 	}
-	if [ "$(pidof systemd)" = 1 ];then
+	if ckcmd systemctl;then
 		echo -----------------------------------------------
 		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
 		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
@@ -1103,23 +1103,28 @@ testcommand(){
 			nft list table inet shellclash
 		else
 			echo -------------------Redir---------------------
-			iptables  -t nat  -L PREROUTING --line-numbers
-			iptables  -t nat -L clash_dns --line-numbers
-			iptables  -t nat  -L clash --line-numbers
-			[ -n "$(echo $redir_mod | grep 'Tproxy')" ] && {
+			iptables -t nat -L PREROUTING --line-numbers
+			iptables -t nat -L clash_dns --line-numbers
+			iptables -t nat -L clash --line-numbers
+			[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
 				echo ----------------Tun/Tproxy-------------------
-				iptables  -t mangle -L PREROUTING --line-numbers
-				iptables  -t mangle  -L clash --line-numbers
+				iptables -t mangle -L PREROUTING --line-numbers
+				iptables -t mangle -L clash --line-numbers
 			}
-			[ -n "$(echo $redir_mod | grep 'Tproxy')" -a "$ipv6_redir" = "已开启" ] && {
+			[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && {
+				echo ----------------OUTPUT-------------------
+				iptables -t nat -L OUTPUT --line-numbers
+				iptables -t nat -L clash_out --line-numbers
+			}
+			[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" -a "$ipv6_redir" = "已开启" ] && {
 				echo ----------------Tun/Tproxy-------------------
-				ip6tables  -t mangle -L PREROUTING --line-numbers
-				ip6tables  -t mangle  -L clashv6 --line-numbers
+				ip6tables -t mangle -L PREROUTING --line-numbers
+				ip6tables -t mangle -L clashv6 --line-numbers
 				[ -n "$(lsmod | grep 'ip6table_nat')" ] && {
 					echo -------------------Redir---------------------
-					ip6tables  -t nat  -L PREROUTING --line-numbers
-					ip6tables  -t nat -L clashv6_dns --line-numbers
-					ip6tables  -t nat  -L clashv6 --line-numbers
+					ip6tables -t nat -L PREROUTING --line-numbers
+					ip6tables -t nat -L clashv6_dns --line-numbers
+					ip6tables -t nat -L clashv6 --line-numbers
 				}
 			}
 		fi

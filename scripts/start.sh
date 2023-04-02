@@ -141,8 +141,15 @@ autoSSH(){
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 	[ -f $clashdir/authorized_keys ] && ln -sf $clashdir/authorized_keys /etc/dropbear/authorized_keys
 }
-host_lan(){
-	[ -n "$(echo $host | grep -oE "([0-9]{1,3}[\.]){3}[0-9]{1,3}" )" ] && host_lan="$(echo $host | grep -oE "([0-9]{1,3}[\.]){3}")0/24"
+getlanip(){
+	host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
+	host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
+	#缺省配置
+	[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
+	[ -z "$host_ipv6" ] && host_ipv6='fe80::/10 fd00::/8'
+	#保留地址
+	reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
+	reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fc00::/7 fe80::/10 ff00::/8"
 }
 #配置文件相关
 getyaml(){
@@ -490,63 +497,55 @@ cn_ipv6_route(){
 }
 start_redir(){
 	#获取局域网host地址
-	host_lan
-	#流量过滤规则
+	getlanip
+	#流量过滤
 	iptables -t nat -N clash
-	iptables -t nat -A clash -d 0.0.0.0/8 -j RETURN
-	iptables -t nat -A clash -d 10.0.0.0/8 -j RETURN
-	iptables -t nat -A clash -d 127.0.0.0/8 -j RETURN
-	iptables -t nat -A clash -d 100.64.0.0/10 -j RETURN
-	iptables -t nat -A clash -d 169.254.0.0/16 -j RETURN
-	iptables -t nat -A clash -d 172.16.0.0/12 -j RETURN
-	iptables -t nat -A clash -d 192.168.0.0/16 -j RETURN
-	iptables -t nat -A clash -d 224.0.0.0/4 -j RETURN
-	iptables -t nat -A clash -d 240.0.0.0/4 -j RETURN
-	[ -n "$host_lan" ] && iptables -t nat -A clash -d $host_lan -j RETURN
+	for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
+		iptables -t nat -A clash -d $ip -j RETURN
+	done
 	#绕过CN_IP
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
-	[ "$dns_mod" = "fake-ip" ] && iptables -t nat -A clash -s 198.18.0.0/16 -j RETURN
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+	iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	#局域网设备过滤
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		#mac白名单
-		for mac in $(cat $clashdir/mac); do
+		for mac in $(cat $clashdir/mac); do #mac白名单
 			iptables -t nat -A clash -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 		done
 	else
-		#mac黑名单
-		for mac in $(cat $clashdir/mac); do
+		for mac in $(cat $clashdir/mac); do #mac黑名单
 			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 		done
-		iptables -t nat -A clash -p tcp -s 192.168.0.0/16 -j REDIRECT --to-ports $redir_port
-		iptables -t nat -A clash -p tcp -s 10.0.0.0/12 -j REDIRECT --to-ports $redir_port
-		iptables -t nat -A clash -p tcp -s 172.16.0.0/12 -j REDIRECT --to-ports $redir_port
-		[ -n "$host_lan" ] && iptables -t nat -A clash -p tcp -s $host_lan -j REDIRECT --to-ports $redir_port
+		#仅代理本机局域网网段流量
+		for ip in $host_ipv4;do
+			iptables -t nat -A clash -p tcp -s $ip -j REDIRECT --to-ports $redir_port
+		done
 	fi
 	#将PREROUTING链指向clash链
 	iptables -t nat -A PREROUTING -p tcp $ports -j clash
 	#设置ipv6转发
 	if [ "$ipv6_redir" = "已开启" -a -n "$(lsmod | grep 'ip6table_nat')" ];then
-		
 		ip6tables -t nat -N clashv6
-		ip6tables -t nat -A clashv6 -d ::1/128 -j RETURN
-		ip6tables -t nat -A clashv6 -d fc00::/7 -j RETURN
-		ip6tables -t nat -A clashv6 -d fe80::/10 -j RETURN
-		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && ip6tables -t nat -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+		for ip in $reserve_ipv6 $host_ipv6;do #跳过目标保留地址及目标本机网段
+			ip6tables -t nat -A clashv6 -d $ip -j RETURN
+		done
+		#绕过CN_IPV6
+		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+		ip6tables -t nat -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+		#局域网设备过滤
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-			#mac白名单
-			for mac in $(cat $clashdir/mac); do
-				ip6tables -t nat -A clashv6 -p tcp $ports -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+			for mac in $(cat $clashdir/mac); do #mac白名单
+				ip6tables -t nat -A clashv6 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 			done
 		else
-			#mac黑名单
-			for mac in $(cat $clashdir/mac); do
+			for mac in $(cat $clashdir/mac); do #mac黑名单
 				ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
 			done
-			for ip in $ipv6_wan ;do
-				ip6tables -t nat -A clashv6 -p tcp -s $ip -j RETURN #屏蔽本机ipv6地址
+			#仅代理本机局域网网段流量
+			for ip in $host_ipv6;do
+				ip6tables -t nat -A clashv6 -p tcp -s $ip -j REDIRECT --to-ports $redir_port
 			done
-			ip6tables -t nat -A clashv6 -p tcp $ports -j REDIRECT --to-ports $redir_port
 		fi
-		ip6tables -t nat -A PREROUTING -p tcp -j clashv6
+		ip6tables -t nat -A PREROUTING -p tcp $ports -j clashv6
 	fi
 	return 0
 }
@@ -559,13 +558,11 @@ start_ipt_dns(){
 	#设置dns转发
 	iptables -t nat -N clash_dns
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		#mac白名单
-		for mac in $(cat $clashdir/mac); do
+		for mac in $(cat $clashdir/mac); do #mac白名单
 			iptables -t nat -A clash_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 		done
 	else
-		#mac黑名单
-		for mac in $(cat $clashdir/mac); do
+		for mac in $(cat $clashdir/mac); do #mac黑名单
 			iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
 		done	
 		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
@@ -575,13 +572,11 @@ start_ipt_dns(){
 	if [ -n "$(lsmod | grep 'ip6table_nat')" -a -n "$(lsmod | grep 'xt_nat')" ];then
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-			#mac白名单
-			for mac in $(cat $clashdir/mac); do
+			for mac in $(cat $clashdir/mac); do #mac白名单
 				ip6tables -t nat -A clashv6_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 			done
 		else
-			#mac黑名单
-			for mac in $(cat $clashdir/mac); do
+			for mac in $(cat $clashdir/mac); do #mac黑名单
 				ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN
 			done	
 			ip6tables -t nat -A clashv6_dns -p udp -j REDIRECT --to $dns_port
@@ -596,38 +591,31 @@ start_ipt_dns(){
 start_tproxy(){
 	modprobe xt_TPROXY &>/dev/null && {
 		#获取局域网host地址
-		host_lan
+		getlanip
 		ip rule add fwmark 1 table 100
 		ip route add local default dev lo table 100
 		iptables -t mangle -N clash
 		iptables -t mangle -A clash -p udp --dport 53 -j RETURN
-		iptables -t mangle -A clash -d 0.0.0.0/8 -j RETURN
-		iptables -t mangle -A clash -d 10.0.0.0/8 -j RETURN
-		iptables -t mangle -A clash -d 127.0.0.0/8 -j RETURN
-		iptables -t mangle -A clash -d 100.64.0.0/10 -j RETURN
-		iptables -t mangle -A clash -d 169.254.0.0/16 -j RETURN
-		iptables -t mangle -A clash -d 172.16.0.0/12 -j RETURN
-		iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
-		iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
-		iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
-		[ -n "$host_lan" ] && iptables -t mangle -A clash -d $host_lan -j RETURN
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
-		[ "$dns_mod" = "fake-ip" ] && iptables -t mangle -A clash -s 198.18.0.0/16 -j RETURN
+		for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
+			iptables -t mangle -A clash -d $ip -j RETURN
+		done
+		#绕过CN_IP
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+		iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+		#tcp&udp分别进代理链
 		tproxy_set(){
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-			#mac白名单
-			for mac in $(cat $clashdir/mac); do
+			for mac in $(cat $clashdir/mac); do #mac白名单
 				iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 			done
 		else
-			#mac黑名单
-			for mac in $(cat $clashdir/mac); do
+			for mac in $(cat $clashdir/mac); do #mac黑名单
 				iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 			done
-			iptables -t mangle -A clash -p $1 -s 192.168.0.0/16 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-			iptables -t mangle -A clash -p $1 -s 10.0.0.0/12 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-			iptables -t mangle -A clash -p $1 -s 172.16.0.0/12 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-			[ -n "$host_lan" ] && iptables -t mangle -A clash -p $1 -s $host_lan -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			#仅代理本机局域网网段流量
+			for ip in $host_ipv4;do
+				iptables -t mangle -A clash -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			done			
 		fi
 		iptables -t mangle -A PREROUTING -p $1 $ports -j clash
 		}
@@ -645,10 +633,13 @@ start_tproxy(){
 			ip -6 route add local ::/0 dev lo table 101
 			ip6tables -t mangle -N clashv6
 			ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
-			ip6tables -t mangle -A clashv6 -d ::1/128 -j RETURN
-			ip6tables -t mangle -A clashv6 -d fc00::/7 -j RETURN
-			ip6tables -t mangle -A clashv6 -d fe80::/10 -j RETURN
-			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+			for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
+				ip6tables -t mangle -A clashv6 -d $ip -j RETURN
+			done
+			#绕过CN_IPV6
+			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+			ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+			#tcp&udp分别进代理链
 			tproxy_set6(){
 				if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 					#mac白名单
@@ -660,53 +651,56 @@ start_tproxy(){
 					for mac in $(cat $clashdir/mac); do
 						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 					done
-					for ip in $ipv6_wan ;do
-						ip6tables -t mangle -A clashv6 -p $1 -s $ip -j RETURN #屏蔽本机ipv6地址
+					#仅代理本机局域网网段流量
+					for ip in $host_ipv6;do
+						ip6tables -t mangle -A clashv6 -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 					done
-					ip6tables -t mangle -A clashv6 -p $1 -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 				fi	
 				ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
 			}
 			[ "$1" = "all" ] && tproxy_set6 tcp
 			tproxy_set6 udp
-	
+			
+			#屏蔽QUIC
 			[ "$quic_rj" = 已启用 ] && {
-				ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2>/dev/null
+				[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
+				ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
 			}	
 		}
 	}
 }
 start_output(){
+	#获取局域网host地址
+	getlanip
+	#获取本机所有出口IP地址
+	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot'| grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g' )
 	#流量过滤
 	iptables -t nat -N clash_out
 	iptables -t nat -A clash_out -m owner --gid-owner 7890 -j RETURN
-	iptables -t nat -A clash_out -d 0.0.0.0/8 -j RETURN
-	iptables -t nat -A clash_out -d 10.0.0.0/8 -j RETURN
-	iptables -t nat -A clash_out -d 100.64.0.0/10 -j RETURN
-	iptables -t nat -A clash_out -d 127.0.0.0/8 -j RETURN
-	iptables -t nat -A clash_out -d 169.254.0.0/16 -j RETURN
-	iptables -t nat -A clash_out -d 192.168.0.0/16 -j RETURN
-	iptables -t nat -A clash_out -d 224.0.0.0/4 -j RETURN
-	iptables -t nat -A clash_out -d 240.0.0.0/4 -j RETURN
+	for ip in $local_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
+		iptables -t nat -A clash_out -d $ip -j RETURN
+	done
+	#绕过CN_IP
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
-	iptables -t nat -A clash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 #绕过大陆IP
-	iptables -t nat -A clash_out -p tcp -j REDIRECT --to-ports $redir_port
-	#
-	iptables -t nat -A OUTPUT -p tcp -j clash_out
+	iptables -t nat -A clash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 
+	#仅允许本机流量
+	for ip in 127.0.0.0/8 $local_ipv4;do 
+		iptables -t nat -A clash_out -p tcp -s $ip -j REDIRECT --to-ports $redir_port
+	done
+	iptables -t nat -A OUTPUT -p tcp $ports -j clash_out
 	#设置dns转发
 	[ "$dns_no" != "已禁用" ] && {
 	iptables -t nat -N clash_dns_out
 	iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
-	iptables -t nat -A clash_dns_out -p udp -j REDIRECT --to $dns_port
+	iptables -t nat -A clash_dns_out -p udp -s 127.0.0.0/8 -j REDIRECT --to $dns_port
 	iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
 	}
 	#Docker转发
 	ckcmd docker && {
 		iptables -t nat -N clash_docker
-		iptables -t nat -A clash_docker -d 10.0.0.0/8 -j RETURN
-		iptables -t nat -A clash_docker -d 127.0.0.0/8 -j RETURN
-		iptables -t nat -A clash_docker -d 172.16.0.0/12 -j RETURN
-		iptables -t nat -A clash_docker -d 192.168.0.0/16 -j RETURN
+		for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
+			iptables -t nat -A clash_docker -d $ip -j RETURN
+		done
 		iptables -t nat -A clash_docker -p tcp -j REDIRECT --to-ports $redir_port
 		iptables -t nat -A PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker
 		[ "$dns_no" != "已禁用" ] && iptables -t nat -A PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port
@@ -717,7 +711,7 @@ start_tun(){
 		#允许流量
 		iptables -I FORWARD -o utun -j ACCEPT
 		iptables -I FORWARD -s 198.18.0.0/16 -o utun -j RETURN
-		#ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+		ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 		#屏蔽QUIC
 		if [ "$quic_rj" = 已启用 ];then
 			[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
@@ -733,36 +727,28 @@ start_tun(){
 			ip route add default dev utun table 100
 			ip rule add fwmark 1 table 100
 			#获取局域网host地址
-			host_lan
+			getlanip
 			iptables -t mangle -N clash
-			iptables -t mangle -F clash
 			iptables -t mangle -A clash -p udp --dport 53 -j RETURN
-			iptables -t mangle -A clash -d 0.0.0.0/8 -j RETURN
-			iptables -t mangle -A clash -d 10.0.0.0/8 -j RETURN
-			iptables -t mangle -A clash -d 127.0.0.0/8 -j RETURN
-			iptables -t mangle -A clash -d 100.64.0.0/10 -j RETURN
-			iptables -t mangle -A clash -d 169.254.0.0/16 -j RETURN
-			iptables -t mangle -A clash -d 172.16.0.0/12 -j RETURN
-			iptables -t mangle -A clash -d 192.168.0.0/16 -j RETURN
-			iptables -t mangle -A clash -d 224.0.0.0/4 -j RETURN
-			iptables -t mangle -A clash -d 240.0.0.0/4 -j RETURN
-			iptables -t mangle -A clash -s 198.18.0.0/16 -j RETURN
-			[ -n "$host_lan" ] && iptables -t mangle -A clash -d $host_lan -j RETURN	
-			[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+			for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
+				iptables -t mangle -A clash -d $ip -j RETURN
+			done
+			#绕过CN_IP
+			[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+			iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+			#局域网设备过滤
 			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-				#mac白名单
-				for mac in $(cat $clashdir/mac); do
+				for mac in $(cat $clashdir/mac); do #mac白名单
 					iptables -t mangle -A clash -m mac --mac-source $mac -j MARK --set-mark 1	
 				done
 			else
-				#mac黑名单
-				for mac in $(cat $clashdir/mac); do
+				for mac in $(cat $clashdir/mac); do #mac黑名单
 					iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 				done
-				iptables -t mangle -A clash -s 192.168.0.0/16 -j MARK --set-mark 1	
-				iptables -t mangle -A clash -s 10.0.0.0/12 -j MARK --set-mark 1	
-				iptables -t mangle -A clash -s 172.16.0.0/12 -j MARK --set-mark 1	
-				[ -n "$host_lan" ] && iptables -t mangle -A clash -s $host_lan -j MARK --set-mark 1	
+				#仅代理本机局域网网段流量
+				for ip in $host_ipv4;do
+					iptables -t mangle -A clash -s $ip -j MARK --set-mark 1	
+				done
 			fi
 			iptables -t mangle -A PREROUTING -p udp $ports -j clash
 			[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j clash
@@ -773,24 +759,25 @@ start_tun(){
 				ip -6 rule add fwmark 1 table 101
 				ip6tables -t mangle -N clashv6
 				ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
-				ip6tables -t mangle -A clashv6 -d ::1/128 -j RETURN
-				ip6tables -t mangle -A clashv6 -d fc00::/7 -j RETURN
-				ip6tables -t mangle -A clashv6 -d fe80::/10 -j RETURN
-				[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+				for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
+					ip6tables -t mangle -A clashv6 -d $ip -j RETURN
+				done
+				#绕过CN_IPV6
+				[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+				ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+				#局域网设备过滤
 				if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-					#mac白名单
-					for mac in $(cat $clashdir/mac); do
+					for mac in $(cat $clashdir/mac); do #mac白名单
 						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark 1	
 					done
 				else
-					#mac黑名单
-					for mac in $(cat $clashdir/mac); do
+					for mac in $(cat $clashdir/mac); do #mac黑名单
 						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 					done
-					for ip in $ipv6_wan ;do
-						ip6tables -t mangle -A clashv6 -s $ip -j RETURN #屏蔽本机ipv6地址
+					#仅代理本机局域网网段流量
+					for ip in $host_ipv6;do
+						ip6tables -t mangle -A clashv6 -s $ip -j MARK --set-mark 1
 					done					
-					ip6tables -t mangle -A clashv6 -j MARK --set-mark 1	
 				fi	
 				ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
 				[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
@@ -799,8 +786,11 @@ start_tun(){
 	} 
 }
 start_nft(){
+	#获取局域网host地址
+	getlanip
 	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
-	RESERVED_IP="{0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4}"
+	RESERVED_IP="{$(echo $reserve_ipv4 | sed 's/ /, /g')}"
+	HOST_IP="{$(echo $host_ipv4 | sed 's/ /, /g')}"
 	#设置策略路由
 	ip rule add fwmark 1 table 100 2> /dev/null
 	ip route add local default dev lo table 100 2> /dev/null
@@ -820,7 +810,9 @@ start_nft(){
 		}
 		#过滤保留地址
 		nft add rule inet shellclash prerouting ip daddr {${RESERVED_IP}} return
-		#过滤CN-IP
+		#仅代理本机局域网网段流量
+		nft add rule inet shellclash prerouting ip saddr != {${HOST_IP}} return
+		#绕过CN-IP
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
 			CN_IP=$(awk '{printf "%s, ",$1}' $bindir/cn_ip.txt)
 			[ -n "$CN_IP" ] && nft add rule inet shellclash prerouting ip daddr {${CN_IP}} return
@@ -829,17 +821,18 @@ start_nft(){
 		[ -n "$PORTS" ] && nft add rule inet shellclash prerouting tcp dport != {${PORTS}} return
 		#ipv6支持
 		if [ "$ipv6_redir" = "已开启" ];then
-			RESERVED_IP6="{::1/128, fc00::/7, fe80::/10}"
+			RESERVED_IP6="{$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')}"
+			HOST_IP6="{$(echo $host_ipv6 | sed 's/ /, /g')}"
 			ip -6 rule add fwmark 1 table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
+			#过滤保留地址及本机地址
 			nft add rule inet shellclash prerouting ip6 daddr {${RESERVED_IP6}} return
+			#仅代理本机局域网网段流量
+			nft add rule inet shellclash prerouting ip6 saddr != {${HOST_IP6}} return
+			#绕过CN_IPV6
 			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f $bindir/cn_ipv6.txt ] && {
 				CN_IP6=$(awk '{printf "%s, ",$1}' $bindir/cn_ipv6.txt)
 				[ -n "$CN_IP6" ] && nft add rule inet shellclash prerouting ip6 daddr {${CN_IP6}} return
-			}
-			[ -n "$ipv6_wan" ] && {
-				LOCAL_IP6="{$(echo $ipv6_wan | sed s/\ /\,\ /g)}"
-				nft add rule inet shellclash prerouting ip6 daddr {${LOCAL_IP6}} return #屏蔽本机ipv6地址
 			}
 		else
 			nft add rule inet shellclash prerouting meta nfproto ipv6 return
@@ -888,24 +881,35 @@ start_nft_dns(){
 	nft add rule inet shellclash dns tcp dport 53 redirect to ${dns_port}
 }
 start_wan(){
+	#获取局域网host地址
+	getlanip
 	[ "$mix_port" = "7890" -o -z "$authentication" ] && {
-	iptables -A INPUT -p tcp -s 10.0.0.0/8 --dport $mix_port -j ACCEPT
-	iptables -A INPUT -p tcp -s 127.0.0.0/8 --dport $mix_port -j ACCEPT
-	iptables -A INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT
-	iptables -A INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT
-	iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-	ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+		#仅允许局域网设备访问混合端口
+		for ip in $host_ipv4;do
+			iptables -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
+		done
+		iptables -A INPUT -p tcp --dport $mix_port -j REJECT
+		ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 	}
 	if [ "$public_support" = "已开启" ];then
 		[ "$mix_port" != "7890" -a -n "$authentication" ] && {
-		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+			iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+			ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 		}
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
-		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+		ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+	else
+		#仅允许局域网设备访问面板
+		for ip in $host_ipv4;do
+			iptables -A INPUT -p tcp -s $ip --dport $db_port -j ACCEPT
+		done
+		iptables -A INPUT -p tcp --dport $db_port -j REJECT
+		ip6tables -A INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null		
 	fi
 }
 stop_firewall(){
+	#获取局域网host地址
+	getlanip
     #重置iptables相关规则
 	ckcmd iptables && {
 		#redir
@@ -941,18 +945,19 @@ stop_firewall(){
 		iptables -t mangle -F clash 2> /dev/null
 		iptables -t mangle -X clash 2> /dev/null
 		#公网访问
-		iptables -D INPUT -p tcp -s 10.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
-		iptables -D INPUT -p tcp -s 127.0.0.0/8 --dport $mix_port -j ACCEPT 2> /dev/null
-		iptables -D INPUT -p tcp -s 172.16.0.0/12 --dport $mix_port -j ACCEPT 2> /dev/null
-		iptables -D INPUT -p tcp -s 192.168.0.0/16 --dport $mix_port -j ACCEPT 2> /dev/null
+		for ip in $host_ipv4;do
+			iptables -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2> /dev/null
+			iptables -D INPUT -p tcp -s $ip --dport $db_port -j ACCEPT 2> /dev/null
+		done
 		iptables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 		iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+		iptables -D INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null
 		iptables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 	}
 	#重置ipv6规则
 	ckcmd ip6tables && {
 		#redir
-		ip6tables -t nat -D PREROUTING -p tcp -j clashv6 2> /dev/null
+		ip6tables -t nat -D PREROUTING -p tcp $ports -j clashv6 2> /dev/null
 		ip6tables -D INPUT -p udp --dport 53 -m comment --comment "ShellClash-IPV6_DNS-REJECT" -j REJECT 2> /dev/null
 		ip6tables -t nat -F clashv6 2> /dev/null
 		ip6tables -t nat -X clashv6 2> /dev/null
@@ -962,7 +967,7 @@ stop_firewall(){
 		ip6tables -t nat -X clashv6_dns 2> /dev/null
 		#tun
 		ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
-		ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
+		ip6tables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
 		#屏蔽QUIC
 		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2> /dev/null
@@ -970,6 +975,7 @@ stop_firewall(){
 		#公网访问
 		ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 		ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+		ip6tables -D INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null	
 		ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 		#tproxy&tun
 		ip6tables -t mangle -D PREROUTING -p tcp $ports -j clashv6 2> /dev/null
@@ -1433,6 +1439,9 @@ unset_proxy)
 		[ -w /etc/profile ] && profile=/etc/profile
 		sed -i '/all_proxy/'d  $profile
 		sed -i '/ALL_PROXY/'d  $profile
+	;;
+*)
+	$1 $2 $3 $4 $5 $6 $7
 	;;
 
 esac

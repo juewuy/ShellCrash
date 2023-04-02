@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.7.3b
+version=1.7.4
 
 setdir(){
 	dir_avail(){
@@ -152,9 +152,9 @@ if [ -f /etc/rc.common ];then
 		cp -f $clashdir/clashservice /etc/init.d/clash
 		chmod 755 /etc/init.d/clash
 else
-	[ "$(pidof systemd)" = 1 ] && [ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
-	[ "$(pidof systemd)" = 1 ] && [ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
-	if [ -n "$sysdir" ];then
+	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
+	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
+	if [ -n "$sysdir" -a -z "$WSL_DISTRO_NAME" ];then #wsl环境不使用systemd
 		#设为systemd方式启动
 		mv -f $clashdir/clash.service $sysdir/clash.service 2>/dev/null
 		sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service

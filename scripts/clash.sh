@@ -98,7 +98,7 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x $clashdir/start.sh ] && chmod +x $clashdir/start.sh
 	#检查/tmp内核文件
-	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '^clash$|^clash-linux*'` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '^clash$|^clash-linux*|^clash.meta*'` ; do 
 		file=/tmp/$file
 		chmod +x $file
 		tmp_version=$($file -v 2>/dev/null)
