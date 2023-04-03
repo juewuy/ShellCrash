@@ -147,6 +147,8 @@ getlanip(){
 	#缺省配置
 	[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
 	[ -z "$host_ipv6" ] && host_ipv6='fe80::/10 fd00::/8'
+	#获取本机出口IP地址
+	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot'| grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g' )
 	#保留地址
 	reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
 	reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fc00::/7 fe80::/10 ff00::/8"
@@ -184,9 +186,9 @@ https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Mini_Games.
 https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.ini
 EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
-	if [ -z "$Https" -a -z "$retry" ];then
-		[ -n "$(echo $Url | grep -oE 'vless:')" ] && Server='https://api.v1.mk'
-		[ -n "$(echo $Url | grep -oE 'hysteria:')" ] && Server='https://sub.jwsc.eu.org'
+	if [ -z "$Https" ];then
+		[ -n "$(echo $Url | grep -oE 'vless:')" -a -z "$retry" ] && Server='https://api.v1.mk'
+		[ -n "$(echo $Url | grep -oE 'hysteria:')" -a -z "$retry" ] && Server='https://sub.jwsc.eu.org'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
 	fi
@@ -208,7 +210,7 @@ EOF`
 			echo -----------------------------------------------
 			exit 1
 		else
-			if [ "$retry" -ge 4 ];then
+			if [ "$retry" = 4 ];then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
 				echo -e "\033[32m你也可以尝试使用浏览器下载配置文件后，使用WinSCP手动上传到/tmp目录！\033[0m"
 				exit 1
@@ -265,7 +267,7 @@ EOF`
 		fi
 		#检测并去除无效节点组
 		[ -n "$url_type" ] && ckcmd xargs && {
-			cat $yamlnew | grep -A 8 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/ rules:.*//g' | sed 's/- //g' | grep -E '#DIRECT $' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
+			cat $yamlnew | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
 			while read line ;do
 				sed -i "/- $line/d" $yamlnew
 				sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
@@ -359,8 +361,8 @@ modify_yaml(){
 	#节点绕过功能支持
 	sed -i "/#节点绕过/d" $tmpdir/rule.yaml
 	[ "$proxies_bypass" = "已启用" ] && {
-		cat /tmp/clash_$USER/proxy.yaml | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
-		cat /tmp/clash_$USER/proxy.yaml | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
+		cat /tmp/clash_$USER/proxy.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
+		cat /tmp/clash_$USER/proxy.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
 		cat $tmpdir/rule.yaml >> $tmpdir/proxies_bypass 
 		mv -f $tmpdir/proxies_bypass $tmpdir/rule.yaml
 	}
@@ -672,8 +674,6 @@ start_tproxy(){
 start_output(){
 	#获取局域网host地址
 	getlanip
-	#获取本机所有出口IP地址
-	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot'| grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g' )
 	#流量过滤
 	iptables -t nat -N clash_out
 	iptables -t nat -A clash_out -m owner --gid-owner 7890 -j RETURN
@@ -885,26 +885,26 @@ start_wan(){
 	getlanip
 	[ "$mix_port" = "7890" -o -z "$authentication" ] && {
 		#仅允许局域网设备访问混合端口
-		for ip in $host_ipv4;do
+		for ip in $host_ipv4 $local_ipv4;do
 			iptables -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
 		done
 		iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-		ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
+		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 
 	}
 	if [ "$public_support" = "已开启" ];then
 		[ "$mix_port" != "7890" -a -n "$authentication" ] && {
 			iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-			ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
+			ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 
 		}
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
-		ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
+		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 
 	else
 		#仅允许局域网设备访问面板
-		for ip in $host_ipv4;do
+		for ip in $host_ipv4 $local_ipv4;do
 			iptables -A INPUT -p tcp -s $ip --dport $db_port -j ACCEPT
 		done
 		iptables -A INPUT -p tcp --dport $db_port -j REJECT
-		ip6tables -A INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null		
+		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $db_port -j REJECT
 	fi
 }
 stop_firewall(){
@@ -945,7 +945,7 @@ stop_firewall(){
 		iptables -t mangle -F clash 2> /dev/null
 		iptables -t mangle -X clash 2> /dev/null
 		#公网访问
-		for ip in $host_ipv4;do
+		for ip in $host_ipv4 $local_ipv4;do
 			iptables -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2> /dev/null
 			iptables -D INPUT -p tcp -s $ip --dport $db_port -j ACCEPT 2> /dev/null
 		done

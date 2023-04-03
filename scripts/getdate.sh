@@ -940,7 +940,9 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			redir_mod="Redir模式"
+			redir_mod="redir模式"
+			ckcmd nft && redir_mod="Nft基础"
+			modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
 			setconfig redir_mod "$redir_mod"
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
