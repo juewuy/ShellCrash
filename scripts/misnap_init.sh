@@ -1,9 +1,26 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-clashdir=/data/clash
+clashdir="$(uci get firewall.ShellClash.path | sed 's/\/misnap_init.sh//')"
 profile=/etc/profile
 
+autoSSH(){
+	#自动开启SSH
+	[ "$(nvram get ssh_en)" = 0 ] && nvram set ssh_en=1 && nvram commit
+    [ "`uci -c /usr/share/xiaoqiang get xiaoqiang_version.version.CHANNEL`" != 'stable' ] && {
+	uci -c /usr/share/xiaoqiang set xiaoqiang_version.version.CHANNEL='stable' 
+    uci -c /usr/share/xiaoqiang commit xiaoqiang_version.version
+	}
+	[ -z "$(pidof dropbear)" -o -z "$(netstat -ntul | grep :22)" ] && {
+	sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
+	/etc/init.d/dropbear restart
+	mi_autoSSH_pwd=$(grep 'mi_autoSSH_pwd=' $clashdir/mark | awk -F "=" '{print $2}')
+	[ -n "$mi_autoSSH_pwd" ] && echo -e "$mi_autoSSH_pwd\n$mi_autoSSH_pwd" | passwd root
+	}
+	#备份还原SSH秘钥
+	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
+	[ -f $clashdir/authorized_keys ] && ln -sf $clashdir/authorized_keys /etc/dropbear/authorized_keys
+}
 tunfix(){
 	#在/tmp创建并挂载overlay
 	mkdir -p /tmp/overlay
@@ -19,6 +36,8 @@ init(){
 	sed -i "/export clashdir/d" $profile
 	echo "alias clash=\"$clashdir/clash.sh\"" >>$profile
 	echo "export clashdir=\"$clashdir\"" >>$profile
+	#软固化功能
+	[ "$(grep 'mi_autoSSH=' $clashdir/mark | awk -F "=" '{print $2}')" = "已启用" ] && autoSSH
 	#设置init.d服务
 	cp -f $clashdir/clashservice /etc/init.d/clash
 	chmod 755 /etc/init.d/clash

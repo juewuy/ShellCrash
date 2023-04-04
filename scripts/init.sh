@@ -17,15 +17,26 @@ setdir(){
 			set_usb_dir
 		fi
 	}
+	set_cust_dir(){
+		echo -----------------------------------------------
+		echo '可用路径 剩余空间:'
+		df -h | awk '{print $6,$4}'| sed 1d 
+		echo '路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！'
+		read -p "请输入自定义路径 > " dir
+		if [ "$(dir_avail $dir)" = 0 ];then
+			echo "\033[31m路径错误！请重新设置！\033[0m"
+			set_cust_dir
+		fi
+	}
 echo -----------------------------------------------
 if [ -n "$systype" ];then
 	[ "$systype" = "Padavan" ] && dir=/etc/storage
 	[ "$systype" = "mi_snapshot" ] && {
 		echo -e "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"	
-		echo -e " 1 安装到/data目录(推荐，支持软固化功能)"
-		echo -e " 2 安装到USB设备(支持软固化功能)"
-		[ "$(dir_avail /etc)" != 0 ] && echo -e " 3 安装到/etc目录(不推荐)"
-		echo -e " 0 退出安装"
+		[ "$(dir_avail /data)" != 0 ] && echo " 1 安装到 /data 目录(推荐，支持软固化功能)"
+		[ "$(dir_avail /userdisk)" != 0 ] && echo " 2 安装到 /userdisk 目录(推荐，支持软固化功能)"
+		echo " 3 安装自定义目录(不推荐，不明勿用！)"
+		echo " 0 退出安装"
 		echo -----------------------------------------------
 		read -p "请输入相应数字 > " num
 		case "$num" in 
@@ -33,15 +44,10 @@ if [ -n "$systype" ];then
 			dir=/data
 			;;
 		2)
-			set_usb_dir ;;
+			dir=/userdisk
+			;;
 		3)
-			if [ "$(dir_avail /etc)" != 0 ];then
-				dir=/etc
-				systype=""
-			else
-				echo -e "\033[31m你的设备不支持安装到/etc目录，已改为安装到/data\033[0m"	
-				dir=data
-			fi
+			set_cust_dir
 			;;
 		*)
 			exit 1 ;;
@@ -181,7 +187,7 @@ if [ -n "$profile" ];then
 	echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
 	sed -i '/export clashdir=*/'d $profile
 	echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
-	source $profile &>/dev/null
+	source $profile &>/dev/null || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
 	[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep clashdir)" ] && { 
 		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> ~/.zshrc
@@ -205,7 +211,7 @@ if [ "$systype" = "mi_snapshot" ];then
 	chmod 755 $clashdir/misnap_init.sh
 	uci set firewall.ShellClash=include
 	uci set firewall.ShellClash.type='script'
-	uci set firewall.ShellClash.path='/data/clash/misnap_init.sh'
+	uci set firewall.ShellClash.path="$clashdir/misnap_init.sh"
 	uci set firewall.ShellClash.enabled='1'
 	uci commit firewall
 	setconfig systype $systype

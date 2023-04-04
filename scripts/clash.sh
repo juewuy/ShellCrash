@@ -1604,7 +1604,6 @@ tools(){
 			if [ "$systype" = "mi_snapshot" ];then
 				echo -----------------------------------------------
 				echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
-				echo -e "本功能需依赖clash服务，请确保clash为开机启动状态！"
 				echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
 				read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
 				mi_autoSSH=已启用

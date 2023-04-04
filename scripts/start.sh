@@ -125,22 +125,6 @@ put_save(){
 mark_time(){
 	echo `date +%s` > /tmp/clash_start_time
 }
-autoSSH(){
-	#自动开启SSH
-	[ "$(nvram get ssh_en)" = 0 ] && nvram set ssh_en=1 && nvram commit
-    [ "`uci -c /usr/share/xiaoqiang get xiaoqiang_version.version.CHANNEL`" != 'stable' ] && {
-	uci -c /usr/share/xiaoqiang set xiaoqiang_version.version.CHANNEL='stable' 
-    uci -c /usr/share/xiaoqiang commit xiaoqiang_version.version
-	}
-	[ -z "$(pidof dropbear)" -o -z "$(netstat -ntul | grep :22)" ] && {
-	sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
-	/etc/init.d/dropbear restart
-	[ -n "$mi_autoSSH_pwd" ] && echo -e "$mi_autoSSH_pwd\n$mi_autoSSH_pwd" | passwd root
-	}
-	#备份还原SSH秘钥
-	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
-	[ -f $clashdir/authorized_keys ] && ln -sf $clashdir/authorized_keys /etc/dropbear/authorized_keys
-}
 getlanip(){
 	host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
 	host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
@@ -1250,7 +1234,7 @@ afstart(){
 		}
 		ckcmd iptables && start_wan
 		#同步本机时间
-		ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &
+		ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null &
 		#标记启动时间
 		mark_time
 		#加载定时任务
@@ -1258,8 +1242,7 @@ afstart(){
 		#启用面板配置自动保存
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
-		#自动开启SSH
-		[ "$mi_autoSSH" = "已启用" ] && autoSSH 2>/dev/null	&
+		#推送日志
 		{ sleep 30;logger Clash服务已启动！;} &
 	else
 		logger "Clash服务启动失败！请查看报错信息！" 31
