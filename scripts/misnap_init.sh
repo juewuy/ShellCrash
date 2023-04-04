@@ -22,8 +22,7 @@ autoSSH(){
 	[ -f $clashdir/authorized_keys ] && ln -sf $clashdir/authorized_keys /etc/dropbear/authorized_keys
 }
 tunfix(){
-	[ -d /lib/modules/4.4.198 ] && ko_dir=/lib/modules/4.4.198
-	[ -d /lib/modules/5.4.150 ] && ko_dir=/lib/modules/5.4.150
+	ko_dir=$(modinfo ip_tables | grep  -Eo '/lib/modules.*/ip_tables.ko' | sed 's|/ip_tables.ko||' )
 	#在/tmp创建并挂载overlay
 	mkdir -p /tmp/overlay
 	mkdir -p /tmp/overlay/upper

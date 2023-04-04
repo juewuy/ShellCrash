@@ -133,6 +133,7 @@ getlanip(){
 	[ -z "$host_ipv6" ] && host_ipv6='fe80::/10 fd00::/8'
 	#获取本机出口IP地址
 	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot'| grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g' )
+	[ -z "$local_ipv4" ] && local_ipv4=$(ip route 2>&1 | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u )
 	#保留地址
 	reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
 	reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fc00::/7 fe80::/10 ff00::/8"
@@ -776,8 +777,8 @@ start_nft(){
 	RESERVED_IP="{$(echo $reserve_ipv4 | sed 's/ /, /g')}"
 	HOST_IP="{$(echo $host_ipv4 | sed 's/ /, /g')}"
 	#设置策略路由
-	ip rule add fwmark 1 table 100 2> /dev/null
-	ip route add local default dev lo table 100 2> /dev/null
+	ip rule add fwmark 1 table 100
+	ip route add local default dev lo table 100
 	[ "$redir_mod" = "Nft基础" ] && \
 		nft add chain inet shellclash prerouting { type nat hook prerouting priority -100 \; }
 	[ "$redir_mod" = "Nft混合" ] && {
@@ -890,6 +891,7 @@ start_wan(){
 		iptables -A INPUT -p tcp --dport $db_port -j REJECT
 		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $db_port -j REJECT
 	fi
+	iptables -I INPUT -p tcp -d 127.0.0.1 -j ACCEPT #本机请求全放行
 }
 stop_firewall(){
 	#获取局域网host地址
@@ -933,6 +935,7 @@ stop_firewall(){
 			iptables -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2> /dev/null
 			iptables -D INPUT -p tcp -s $ip --dport $db_port -j ACCEPT 2> /dev/null
 		done
+		iptables -D INPUT -p tcp -d 127.0.0.1 -j ACCEPT 2> /dev/null
 		iptables -D INPUT -p tcp --dport $mix_port -j REJECT 2> /dev/null
 		iptables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2> /dev/null
 		iptables -D INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null
@@ -1214,18 +1217,17 @@ afstart(){
 			fi
 		}
 		#设置路由规则
-		[ "$ipv6_redir" = "已开启" ] && ipv6_wan=$(ip addr show|grep -A1 'inet6 [^f:]'|grep -oE 'inet6 ([a-f0-9:]+)/'|sed s#inet6\ ##g|sed s#/##g)
+		#[ "$ipv6_redir" = "已开启" ] && ipv6_wan=$(ip addr show|grep -A1 'inet6 [^f:]'|grep -oE 'inet6 ([a-f0-9:]+)/'|sed s#inet6\ ##g|sed s#/##g)
 		[ "$redir_mod" = "Redir模式" ] && start_dns && start_redir 	
 		[ "$redir_mod" = "混合模式" ] && start_dns && start_redir && start_tun udp
 		[ "$redir_mod" = "Tproxy混合" ] && start_dns && start_redir && start_tproxy udp
 		[ "$redir_mod" = "Tun模式" ] && start_dns && start_tun all
 		[ "$redir_mod" = "Tproxy模式" ] && start_dns && start_tproxy all
-		[ -n "$(echo $redir_mod|grep Nft)" ] && {
-			nft add table inet shellclash 2> /dev/null #初始化nftables
-			nft flush table inet shellclash 2> /dev/null
-			start_dns
-			start_nft
+		[ -n "$(echo $redir_mod|grep Nft)" -o "$local_type" = "nftables增强模式" ] && {
+			nft add table inet shellclash #初始化nftables
+			nft flush table inet shellclash
 		}
+		[ -n "$(echo $redir_mod|grep Nft)" ] && start_dns && start_nft
 		#设置本机代理
 		[ "$local_proxy" = "已开启" ] && {
 			[ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
