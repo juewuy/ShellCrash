@@ -133,12 +133,13 @@ getlink(){
 		echo -e " 0 \033[31m撤销输入并返回上级菜单\033[0m"
 		echo -----------------------------------------------
 		read -p "请直接输入第${i}个链接或对应数字选项 > " link
+		link=$(echo $link | sed 's/\&/%26/g')   #处理分隔符
 		test=$(echo $link | grep "://")
 		link=`echo ${link/\#*/''}`   #删除链接附带的注释内容
 		link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
 		link=`echo ${link/*\&url\=/""}`   #将clash完整链接还原成单一链接
 		link=`echo ${link/\&config\=*/""}`   #将clash完整链接还原成单一链接
-		link=`echo ${link//\&/\\\&}`   #处理分隔符
+		
 		if [ -n "$test" ];then
 			if [ -z "$Url_link" ];then
 				Url_link="$link"

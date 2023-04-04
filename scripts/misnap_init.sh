@@ -22,13 +22,15 @@ autoSSH(){
 	[ -f $clashdir/authorized_keys ] && ln -sf $clashdir/authorized_keys /etc/dropbear/authorized_keys
 }
 tunfix(){
+	[ -d /lib/modules/4.4.198 ] && ko_dir=/lib/modules/4.4.198
+	[ -d /lib/modules/5.4.150 ] && ko_dir=/lib/modules/5.4.150
 	#在/tmp创建并挂载overlay
 	mkdir -p /tmp/overlay
 	mkdir -p /tmp/overlay/upper
 	mkdir -p /tmp/overlay/work
-	mount -o noatime,lowerdir=/lib/modules/4.4.198,upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" /lib/modules/4.4.198
+	mount -o noatime,lowerdir=${ko_dir},upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" ${ko_dir}
 	#将tun.ko链接到lib
-	ln -s $clashdir/tun.ko /lib/modules/4.4.198/tun.ko
+	ln -s $clashdir/tun.ko ${ko_dir}/tun.ko
 }
 init(){
 	#初始化环境变量
