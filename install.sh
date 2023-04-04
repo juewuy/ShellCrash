@@ -85,7 +85,7 @@ setdir(){
 		read -p "请输入自定义路径 > " dir
 		if [ "$(dir_avail $dir)" = 0 ];then
 			$echo "\033[31m路径错误！请重新设置！\033[0m"
-			setdir
+			set_cust_dir
 		fi
 	}
 echo -----------------------------------------------
