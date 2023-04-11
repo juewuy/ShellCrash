@@ -985,7 +985,7 @@ clashcfg(){
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
-		#[ -n "$(lsmod | grep '^tun')" ] || ip tuntap &>/dev/null && sup_tun=1
+		[ -n "$(lsmod | grep '^tun')" ] || ip tuntap &>/dev/null && sup_tun=1
 		ckcmd nft && sup_nft=1
 		#[ -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
 		echo -----------------------------------------------
@@ -995,7 +995,7 @@ clashcfg(){
 		echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
 		echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
 		[ -n "$sup_tp" ] && echo -e " 3 \033[32mTproxy混合\033[0m：   Redir转发TCP，Tproxy转发UDP"
-		echo -e " 4 \033[33mTun模式\033[0m：      使用Tun转发TCP&UDP(占用高)"
+		[ -n "$sup_tun" ] && echo -e " 4 \033[33mTun模式\033[0m：      使用Tun转发TCP&UDP(占用高)"
 		[ -n "$sup_tp" ] && echo -e " 5 \033[32mTproxy模式\033[0m：   使用Tproxy转发TCP&UDP"
 		[ -n "$sup_nft" ] && echo -e " 6 \033[36mNft基础\033[0m：      使用nftables转发TCP，不转发UDP"
 		[ -n "$sup_nft" ] && echo -e " 7 \033[32mNft混合\033[0m：      使用nft_tproxy转发TCP&UDP"
@@ -1012,7 +1012,7 @@ clashcfg(){
 			set_redir_config
 
 		elif [ "$num" = 2 ]; then
-			modinfo tun &>/dev/null || {
+			[ -n "$sup_tun" ] || {
 				echo -e "\033[32m设备未检测到Tun内核模块，可能无法代理UDP流量！\033[0m"
 				sleep 1
 			}
@@ -1024,12 +1024,7 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 4 ]; then
-			if modinfo tun &>/dev/null;then
-				redir_mod=Tun模式
-			else
-				read -p "设备未检测到Tun内核模块，是否强制开启？可能导致无法联网！(1/0) > " res
-				[ "$res" = '1' ] && redir_mod=Tun模式
-			fi
+			redir_mod=Tun模式
 			set_redir_config
 			
 		elif [ "$num" = 5 ]; then

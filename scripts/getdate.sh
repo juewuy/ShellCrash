@@ -1066,14 +1066,14 @@ userguide(){
 testcommand(){
 	echo -----------------------------------------------
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
-	echo -e "\033[33m如遇问题尽量运行相应命令后截图发群\033[0m"
+	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
 	echo -----------------------------------------------
 	echo " 1 查看Clash运行时的报错信息(会停止clash服务)"
 	echo " 2 查看系统DNS端口(:53)占用 "
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看clash相关路由规则"
-	echo " 5 查看config.yaml前30行"
-	echo " 6 测试代理服务器连通性（google.tw)"
+	echo " 5 查看config.yaml前40行"
+	echo " 6 测试代理服务器连通性(google.tw)"
 	echo -----------------------------------------------
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num
@@ -1134,7 +1134,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		sed -n '1,30p' $yaml
+		sed -n '1,40p' $clashdir/config.yaml
 		echo -----------------------------------------------
 		exit;
 	elif [ "$num" = 6 ]; then

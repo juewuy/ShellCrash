@@ -576,84 +576,82 @@ start_ipt_dns(){
 
 }
 start_tproxy(){
-	modprobe xt_TPROXY &>/dev/null && {
-		#获取局域网host地址
-		getlanip
-		ip rule add fwmark 1 table 100
-		ip route add local default dev lo table 100
-		iptables -t mangle -N clash
-		iptables -t mangle -A clash -p udp --dport 53 -j RETURN
-		for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
-			iptables -t mangle -A clash -d $ip -j RETURN
+	#获取局域网host地址
+	getlanip
+	ip rule add fwmark 1 table 100
+	ip route add local default dev lo table 100
+	iptables -t mangle -N clash
+	iptables -t mangle -A clash -p udp --dport 53 -j RETURN
+	for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
+		iptables -t mangle -A clash -d $ip -j RETURN
+	done
+	#绕过CN_IP
+	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+	iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	#tcp&udp分别进代理链
+	tproxy_set(){
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+		for mac in $(cat $clashdir/mac); do #mac白名单
+			iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
 		done
-		#绕过CN_IP
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
-		iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	else
+		for mac in $(cat $clashdir/mac); do #mac黑名单
+			iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
+		done
+		#仅代理本机局域网网段流量
+		for ip in $host_ipv4;do
+			iptables -t mangle -A clash -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+		done			
+	fi
+	iptables -t mangle -A PREROUTING -p $1 $ports -j clash
+	}
+	[ "$1" = "all" ] && tproxy_set tcp
+	tproxy_set udp
+	
+	#屏蔽QUIC
+	[ "$quic_rj" = 已启用 ] && {
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
+	}
+	#设置ipv6转发
+	[ "$ipv6_redir" = "已开启" ] && {
+		ip -6 rule add fwmark 1 table 101
+		ip -6 route add local ::/0 dev lo table 101
+		ip6tables -t mangle -N clashv6
+		ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
+		for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
+			ip6tables -t mangle -A clashv6 -d $ip -j RETURN
+		done
+		#绕过CN_IPV6
+		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+		ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		#tcp&udp分别进代理链
-		tproxy_set(){
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-			for mac in $(cat $clashdir/mac); do #mac白名单
-				iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-			done
-		else
-			for mac in $(cat $clashdir/mac); do #mac黑名单
-				iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
-			done
-			#仅代理本机局域网网段流量
-			for ip in $host_ipv4;do
-				iptables -t mangle -A clash -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-			done			
-		fi
-		iptables -t mangle -A PREROUTING -p $1 $ports -j clash
+		tproxy_set6(){
+			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+				#mac白名单
+				for mac in $(cat $clashdir/mac); do
+					ip6tables -t mangle -A clashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+				done
+			else
+				#mac黑名单
+				for mac in $(cat $clashdir/mac); do
+					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
+				done
+				#仅代理本机局域网网段流量
+				for ip in $host_ipv6;do
+					ip6tables -t mangle -A clashv6 -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+				done
+			fi	
+			ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
 		}
-		[ "$1" = "all" ] && tproxy_set tcp
-		tproxy_set udp
+		[ "$1" = "all" ] && tproxy_set6 tcp
+		tproxy_set6 udp
 		
 		#屏蔽QUIC
 		[ "$quic_rj" = 已启用 ] && {
-			[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
-			iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
-		}
-		#设置ipv6转发
-		[ "$ipv6_redir" = "已开启" ] && {
-			ip -6 rule add fwmark 1 table 101
-			ip -6 route add local ::/0 dev lo table 101
-			ip6tables -t mangle -N clashv6
-			ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
-			for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
-				ip6tables -t mangle -A clashv6 -d $ip -j RETURN
-			done
-			#绕过CN_IPV6
-			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
-			ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
-			#tcp&udp分别进代理链
-			tproxy_set6(){
-				if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-					#mac白名单
-					for mac in $(cat $clashdir/mac); do
-						ip6tables -t mangle -A clashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-					done
-				else
-					#mac黑名单
-					for mac in $(cat $clashdir/mac); do
-						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
-					done
-					#仅代理本机局域网网段流量
-					for ip in $host_ipv6;do
-						ip6tables -t mangle -A clashv6 -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
-					done
-				fi	
-				ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
-			}
-			[ "$1" = "all" ] && tproxy_set6 tcp
-			tproxy_set6 udp
-			
-			#屏蔽QUIC
-			[ "$quic_rj" = 已启用 ] && {
-				[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
-				ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
-			}	
-		}
+			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
+			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
+		}	
 	}
 }
 start_output(){
@@ -692,90 +690,88 @@ start_output(){
 	}
 }
 start_tun(){
-	modprobe tun &> /dev/null && {
-		#允许流量
-		iptables -I FORWARD -o utun -j ACCEPT
-		iptables -I FORWARD -s 198.18.0.0/16 -o utun -j RETURN
-		ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
-		#屏蔽QUIC
-		if [ "$quic_rj" = 已启用 ];then
-			[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
-			iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
-			#ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
+	#允许流量
+	iptables -I FORWARD -o utun -j ACCEPT
+	iptables -I FORWARD -s 198.18.0.0/16 -o utun -j RETURN
+	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
+	#屏蔽QUIC
+	if [ "$quic_rj" = 已启用 ];then
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
+		#ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
+	fi
+	modprobe xt_mark &> /dev/null && {
+		i=1
+		while [ -z "$(ip route list |grep utun)" -a "$i" -le 29 ];do
+			sleep 1
+			i=$((i+1))
+		done
+		ip route add default dev utun table 100
+		ip rule add fwmark 1 table 100
+		#获取局域网host地址
+		getlanip
+		iptables -t mangle -N clash
+		iptables -t mangle -A clash -p udp --dport 53 -j RETURN
+		for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
+			iptables -t mangle -A clash -d $ip -j RETURN
+		done
+		#绕过CN_IP
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+		iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+		#局域网设备过滤
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+			for mac in $(cat $clashdir/mac); do #mac白名单
+				iptables -t mangle -A clash -m mac --mac-source $mac -j MARK --set-mark 1	
+			done
+		else
+			for mac in $(cat $clashdir/mac); do #mac黑名单
+				iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
+			done
+			#仅代理本机局域网网段流量
+			for ip in $host_ipv4;do
+				iptables -t mangle -A clash -s $ip -j MARK --set-mark 1	
+			done
 		fi
-		modprobe xt_mark &> /dev/null && {
-			i=1
-			while [ -z "$(ip route list |grep utun)" -a "$i" -le 29 ];do
-				sleep 1
-				i=$((i+1))
+		iptables -t mangle -A PREROUTING -p udp $ports -j clash
+		[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j clash
+		
+		#设置ipv6转发
+		[ "$ipv6_redir" = "已开启" -a "$clashcore" = "clash.meta" ] && {
+			ip -6 route add default dev utun table 101
+			ip -6 rule add fwmark 1 table 101
+			ip6tables -t mangle -N clashv6
+			ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
+			for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
+				ip6tables -t mangle -A clashv6 -d $ip -j RETURN
 			done
-			ip route add default dev utun table 100
-			ip rule add fwmark 1 table 100
-			#获取局域网host地址
-			getlanip
-			iptables -t mangle -N clash
-			iptables -t mangle -A clash -p udp --dport 53 -j RETURN
-			for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
-				iptables -t mangle -A clash -d $ip -j RETURN
-			done
-			#绕过CN_IP
-			[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
-			iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+			#绕过CN_IPV6
+			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+			ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 			#局域网设备过滤
 			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 				for mac in $(cat $clashdir/mac); do #mac白名单
-					iptables -t mangle -A clash -m mac --mac-source $mac -j MARK --set-mark 1	
+					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark 1	
 				done
 			else
 				for mac in $(cat $clashdir/mac); do #mac黑名单
-					iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
+					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 				done
 				#仅代理本机局域网网段流量
-				for ip in $host_ipv4;do
-					iptables -t mangle -A clash -s $ip -j MARK --set-mark 1	
-				done
-			fi
-			iptables -t mangle -A PREROUTING -p udp $ports -j clash
-			[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j clash
-			
-			#设置ipv6转发
-			[ "$ipv6_redir" = "已开启" -a "$clashcore" = "clash.meta" ] && {
-				ip -6 route add default dev utun table 101
-				ip -6 rule add fwmark 1 table 101
-				ip6tables -t mangle -N clashv6
-				ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
-				for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
-					ip6tables -t mangle -A clashv6 -d $ip -j RETURN
-				done
-				#绕过CN_IPV6
-				[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
-				ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
-				#局域网设备过滤
-				if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-					for mac in $(cat $clashdir/mac); do #mac白名单
-						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark 1	
-					done
-				else
-					for mac in $(cat $clashdir/mac); do #mac黑名单
-						ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
-					done
-					#仅代理本机局域网网段流量
-					for ip in $host_ipv6;do
-						ip6tables -t mangle -A clashv6 -s $ip -j MARK --set-mark 1
-					done					
-				fi	
-				ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
-				[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
-			}
-		} &
-	} 
+				for ip in $host_ipv6;do
+					ip6tables -t mangle -A clashv6 -s $ip -j MARK --set-mark 1
+				done					
+			fi	
+			ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
+			[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
+		}
+	} &
 }
 start_nft(){
 	#获取局域网host地址
 	getlanip
 	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
-	RESERVED_IP="{$(echo $reserve_ipv4 | sed 's/ /, /g')}"
-	HOST_IP="{$(echo $host_ipv4 | sed 's/ /, /g')}"
+	RESERVED_IP="$(echo $reserve_ipv4 | sed 's/ /, /g')"
+	HOST_IP="$(echo $host_ipv4 | sed 's/ /, /g')"
 	#设置策略路由
 	ip rule add fwmark 1 table 100
 	ip route add local default dev lo table 100
@@ -790,34 +786,34 @@ start_nft(){
 		[ -n "$(cat $clashdir/mac)" ] && {
 			MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
 			[ "$macfilter_type" = "黑名单" ] && \
-				nft add rule inet shellclash prerouting ether saddr {${MAC}} return || \
-				nft add rule inet shellclash prerouting ether saddr != {${MAC}} return
+				nft add rule inet shellclash prerouting ether saddr {$MAC} return || \
+				nft add rule inet shellclash prerouting ether saddr != {$MAC} return
 		}
 		#过滤保留地址
-		nft add rule inet shellclash prerouting ip daddr {${RESERVED_IP}} return
+		nft add rule inet shellclash prerouting ip daddr {$RESERVED_IP} return
 		#仅代理本机局域网网段流量
-		nft add rule inet shellclash prerouting ip saddr != {${HOST_IP}} return
+		nft add rule inet shellclash prerouting ip saddr != {$HOST_IP} return
 		#绕过CN-IP
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
 			CN_IP=$(awk '{printf "%s, ",$1}' $bindir/cn_ip.txt)
-			[ -n "$CN_IP" ] && nft add rule inet shellclash prerouting ip daddr {${CN_IP}} return
+			[ -n "$CN_IP" ] && nft add rule inet shellclash prerouting ip daddr {$CN_IP} return
 		}
 		#过滤常用端口
-		[ -n "$PORTS" ] && nft add rule inet shellclash prerouting tcp dport != {${PORTS}} return
+		[ -n "$PORTS" ] && nft add rule inet shellclash prerouting tcp dport != {$PORTS} return
 		#ipv6支持
 		if [ "$ipv6_redir" = "已开启" ];then
-			RESERVED_IP6="{$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')}"
-			HOST_IP6="{$(echo $host_ipv6 | sed 's/ /, /g')}"
+			RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
+			HOST_IP6="$(echo $host_ipv6 | sed 's/ /, /g')"
 			ip -6 rule add fwmark 1 table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
 			#过滤保留地址及本机地址
-			nft add rule inet shellclash prerouting ip6 daddr {${RESERVED_IP6}} return
+			nft add rule inet shellclash prerouting ip6 daddr {$RESERVED_IP6} return
 			#仅代理本机局域网网段流量
-			nft add rule inet shellclash prerouting ip6 saddr != {${HOST_IP6}} return
+			nft add rule inet shellclash prerouting ip6 saddr != {$HOST_IP6} return
 			#绕过CN_IPV6
 			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f $bindir/cn_ipv6.txt ] && {
 				CN_IP6=$(awk '{printf "%s, ",$1}' $bindir/cn_ipv6.txt)
-				[ -n "$CN_IP6" ] && nft add rule inet shellclash prerouting ip6 daddr {${CN_IP6}} return
+				[ -n "$CN_IP6" ] && nft add rule inet shellclash prerouting ip6 daddr {$CN_IP6} return
 			}
 		else
 			nft add rule inet shellclash prerouting meta nfproto ipv6 return
@@ -829,8 +825,8 @@ start_nft(){
 	#屏蔽QUIC
 	[ "$quic_rj" = 已启用 ] && {
 		nft add chain inet shellclash input { type filter hook input priority 0 \; }
-		[ -n "$CN_IP" ] && nft add rule inet shellclash input ip daddr {${CN_IP}} return
-		[ -n "$CN_IP6" ] && nft add rule inet shellclash input ip6 daddr {${CN_IP6}} return
+		[ -n "$CN_IP" ] && nft add rule inet shellclash input ip daddr {$CN_IP} return
+		[ -n "$CN_IP6" ] && nft add rule inet shellclash input ip6 daddr {$CN_IP6} return
 		nft add rule inet shellclash input udp dport 443 reject comment 'ShellClash-QUIC-REJECT'
 	}
 	#代理本机(仅TCP)
@@ -842,8 +838,8 @@ start_nft(){
 		#output
 		nft add chain inet shellclash output { type nat hook output priority -100 \; }
 		nft add rule inet shellclash output meta skgid 7890 return && {
-			[ -n "$PORTS" ] && nft add rule inet shellclash output tcp dport != {${PORTS}} return
-			nft add rule inet shellclash output ip daddr {${RESERVED_IP}} return
+			[ -n "$PORTS" ] && nft add rule inet shellclash output tcp dport != {$PORTS} return
+			nft add rule inet shellclash output ip daddr {$RESERVED_IP} return
 			nft add rule inet shellclash output meta l4proto tcp mark set 1 redirect to ${redir_port}
 		}
 		#Docker
@@ -859,8 +855,8 @@ start_nft_dns(){
 	[ -n "$(cat $clashdir/mac)" ] && {
 		MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
 		[ "$macfilter_type" = "黑名单" ] && \
-			nft add rule inet shellclash dns ether saddr {${MAC}} return || \
-			nft add rule inet shellclash dns ether saddr != {${MAC}} return
+			nft add rule inet shellclash dns ether saddr {$MAC} return || \
+			nft add rule inet shellclash dns ether saddr != {$MAC} return
 	}
 	nft add rule inet shellclash dns udp dport 53 redirect to ${dns_port}
 	nft add rule inet shellclash dns tcp dport 53 redirect to ${dns_port}
@@ -1004,7 +1000,7 @@ web_save(){
 		fi
 	}
 	#使用get_save获取面板节点设置
-	get_save http://localhost:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
+	get_save http://127.0.0.1:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
 	while read line ;do
 		def=$(echo $line | awk -F "[[,]" '{print $2}')
 		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g' | sed 's/"type":.*//g' |  sed 's/,//g')
@@ -1024,9 +1020,9 @@ web_restore(){
 	while [ -z "$test" -a "$i" -lt 60 ];do
 		sleep 1
 		if curl --version > /dev/null 2>&1;then
-			test=$(curl -s http://localhost:${db_port})
+			test=$(curl -s http://127.0.0.1:${db_port})
 		else
-			test=$(wget -q -O - http://localhost:${db_port})
+			test=$(wget -q -O - http://127.0.0.1:${db_port})
 		fi
 		i=$((i+1))
 	done
@@ -1036,7 +1032,7 @@ web_restore(){
 	while [ "$i" -le "$num" ];do
 		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' $clashdir/web_save | sed 's/ /%20/g')
 		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $clashdir/web_save)
-		put_save http://localhost:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
+		put_save http://127.0.0.1:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
 		i=$((i+1))
 	done
 }
@@ -1351,7 +1347,7 @@ updateyaml)
 		getconfig
 		getyaml && \
 		modify_yaml && \
-		put_save http://localhost:${db_port}/configs "{\"path\":\"${clashdir}/config.yaml\"}" && \
+		put_save http://127.0.0.1:${db_port}/configs "{\"path\":\"${clashdir}/config.yaml\"}" && \
 		logger ShellClash配置文件更新成功！
 		;;
 logger)
