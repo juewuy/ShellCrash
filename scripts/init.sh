@@ -33,8 +33,8 @@ if [ -n "$systype" ];then
 	[ "$systype" = "Padavan" ] && dir=/etc/storage
 	[ "$systype" = "mi_snapshot" ] && {
 		echo -e "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"	
-		[ "$(dir_avail /data)" != 0 ] && echo " 1 安装到 /data 目录(推荐，支持软固化功能)"
-		[ "$(dir_avail /userdisk)" != 0 ] && echo " 2 安装到 /userdisk 目录(推荐，支持软固化功能)"
+		[ "$(dir_avail /data)" -gt 256 ] && echo " 1 安装到 /data 目录(推荐，支持软固化功能)"
+		[ "$(dir_avail /userdisk)" -gt 256 ] && echo " 2 安装到 /userdisk 目录(推荐，支持软固化功能)"
 		echo " 3 安装自定义目录(不推荐，不明勿用！)"
 		echo " 0 退出安装"
 		echo -----------------------------------------------

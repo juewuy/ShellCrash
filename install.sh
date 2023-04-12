@@ -89,13 +89,14 @@ setdir(){
 		fi
 	}
 echo -----------------------------------------------
+$echo "\033[33m注意：安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"
 if [ -n "$systype" ];then
 	[ "$systype" = "Padavan" ] && dir=/etc/storage
 	[ "$systype" = "mi_snapshot" ] && {
 		$echo "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"	
-		[ "$(dir_avail /data)" != 0 ] && $echo " 1 安装到 /data 目录(推荐，支持软固化功能)"
-		[ "$(dir_avail /userdisk)" != 0 ] && $echo " 2 安装到 /userdisk 目录(推荐，支持软固化功能)"
-		$echo " 3 安装自定义目录(不推荐，不明勿用！)"
+		[ "$(dir_avail /data)" -gt 256 ] && $echo " 1 安装到 /data 目录(推荐，支持软固化功能)"
+		[ "$(dir_avail /userdisk)" -gt 256 ] && $echo " 2 安装到 /userdisk 目录(推荐，支持软固化功能)"
+		$echo " 3 安装到自定义目录(不推荐，不明勿用！)"
 		$echo " 0 退出安装"
 		echo -----------------------------------------------
 		read -p "请输入相应数字 > " num
@@ -134,8 +135,7 @@ if [ -n "$systype" ];then
 			exit 1 ;;
 		esac
 	}
-else
-	$echo "\033[33m安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"	
+else	
 	$echo " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
 	$echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux系统)"
 	$echo " 3 在\033[32m当前用户目录\033[0m下安装(适合非root用户)"
