@@ -941,7 +941,7 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
-			redir_mod="redir模式"
+			redir_mod="Redir模式"
 			ckcmd nft && redir_mod="Nft基础"
 			modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
 			setconfig redir_mod "$redir_mod"

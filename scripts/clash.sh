@@ -193,12 +193,14 @@ log_pusher(){
 	[ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
 	[ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
 	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
+	[ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	echo -----------------------------------------------
 	echo -e " 1 查看\033[36m运行日志\033[0m"
 	echo -e " 2 Telegram推送	——\033[$stat_TG\033[0m"
 	echo -e " 3 PushDeer推送	——\033[$stat_Deer\033[0m"
 	echo -e " 4 Bark推送-IOS	——\033[$stat_bark\033[0m"
 	echo -e " 5 Passover推送	——\033[$stat_Po\033[0m"
+	echo -e " 9 设置设备名称	——\033[$device_s\033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num	
 	case $num in
@@ -341,6 +343,12 @@ log_pusher(){
 		fi
 		sleep 1
 		log_pusher
+	;;
+	9)	
+		read -p "请输入本设备自定义推送名称 > " device_name
+		setconfig device_name $device_name
+		sleep 1
+		log_pusher		
 	;;
 	*)	errornum	;;
 	esac

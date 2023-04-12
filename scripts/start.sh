@@ -49,13 +49,14 @@ compare(){
 	fi
 }
 logger(){
-	#$1文字描述$2显示颜色$3是否推送
+	#$1日志内容$2显示颜色$3是否推送
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
 	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
 	echo $log_text >> /tmp/ShellClash_log
 	[ "$(wc -l /tmp/ShellClash_log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d' /tmp/ShellClash_log
 	[ -z "$3" ] && {
 		getconfig
+		[ -n "$device_name" ] && log_text="$log_text($device_name)"
 		[ -n "$(pidof clash)" ] && {
 			[ -n "$authentication" ] && auth="$authentication@"
 			export https_proxy="http://${auth}127.0.0.1:$mix_port"
@@ -403,8 +404,13 @@ EOF
 	[ -f $tmpdir/proxy.yaml ] && yaml_proxy=$tmpdir/proxy.yaml
 	[ -f $tmpdir/rule.yaml ] && yaml_rule=$tmpdir/rule.yaml
 	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_proxy $yaml_rule > $tmpdir/config.yaml
-
-
+	#测试自定义配置文件
+	$bindir/clash -t -d $bindir -f $tmpdir/config.yaml >/dev/null
+	if [ "$?" != 0 ];then
+		logger "$($bindir/clash -t -d $bindir -f $tmpdir/config.yaml | grep -Eo 'error=.*')" 31
+		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
+		sed -i "/#自定义/d" $tmpdir/config.yaml
+	fi
 	#插入自定义代理
 	sed -i "/#自定义代理/d" $tmpdir/config.yaml
 	space=$(sed -n '/^proxies:/{n;p}' $tmpdir/config.yaml | grep -oE '^ *') #获取空格数
@@ -1211,6 +1217,7 @@ afstart(){
 					/etc/init.d/dnsmasq restart >/dev/null 2>&1
 				fi
 			fi
+			return 0
 		}
 		#设置路由规则
 		#[ "$ipv6_redir" = "已开启" ] && ipv6_wan=$(ip addr show|grep -A1 'inet6 [^f:]'|grep -oE 'inet6 ([a-f0-9:]+)/'|sed s#inet6\ ##g|sed s#/##g)
@@ -1243,9 +1250,8 @@ afstart(){
 		#推送日志
 		{ sleep 30;logger Clash服务已启动！;} &
 	else
-		logger "Clash服务启动失败！请查看报错信息！" 31
-		$bindir/clash -t -d $bindir
-		echo "$($bindir/clash -t -d $bindir)" >> $clashdir/log
+		logger "Clash服务启动失败！请查看报错信息！" 33
+		logger "$($bindir/clash -t -d $bindir | grep -Eo 'error=.*')" 31
 		$0 stop
 		exit 1
 	fi
