@@ -48,8 +48,8 @@ jobs:
       with:
         tag_name: clash.meta.alpha
         name: clash.meta.alpha
-        body: "The alpha version of clash.meta core \n这是clash.meta的Alpha版本内核文件\nZip by upx\n使用了upx进行压缩\nOnly support for ShellClash\n仅限于ShellClash项目使用"
-        draft: true
+        body: "The alpha version of clash.meta core \n这是clash.meta的Alpha版本内核文件\n version=${download_version}\n https://github.com/MetaCubeX/Clash.Meta/releases/tag/Prerelease-Alpha \nZip by upx\n使用了upx进行压缩\nOnly support for ShellClash\n仅限于ShellClash项目使用"
+        draft: false
         prerelease: true
         files: |
           ./tmp/* 
