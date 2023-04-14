@@ -55,7 +55,7 @@ jobs:
           ./tmp/* 
     - name: Commit and push version
       run: |
-        sed -i "s/meta.a_v=.*/meta.a_v=${download_version}/" bin/version
+        sed -i "s/meta.a_v=.*/meta.a_v=$(./tmp/clash-linux-amd64 -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')/" bin/version
         rm -fr ./tmp
         git config --global user.email "juewuy@126.com" && git config --global user.name "Bot"
         git add . && git commit -m "更新Meta.Alpha内核至${download_version}" || exit 0

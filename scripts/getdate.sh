@@ -843,7 +843,7 @@ update(){
 	[ "$clashcore" = "clashpre" ] && clash_n=$clashpre_v
 	[ "$clashcore" = "clash.net" ] && clash_n=$clashnet_v
 	[ "$clashcore" = "clash.meta" ] && clash_n=$meta_v
-	clash_v=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+	clash_v=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 	[ -z "$clash_v" ] && clash_v=$clashv
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
