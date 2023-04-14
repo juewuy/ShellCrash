@@ -1119,7 +1119,7 @@ bfstart(){
 			$0 webget $bindir/clash "$update_url/bin/$clashcore/clash-linux-$cpucore"
 			#校验内核
 			chmod +x $bindir/clash 2>/dev/null
-			clashv=$($bindir/clash -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+			clashv=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 			if [ -z "$clashv" ];then
 				rm -rf $bindir/clash
 				logger "核心下载失败，请重新运行或更换安装源！" 31
