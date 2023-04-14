@@ -11,7 +11,7 @@ echo "**                             by  Juewuy    **"
 echo "***********************************************"
 #内置工具
 dir_avail(){
-	df -h $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep Ava |awk '{print $2}'
+	df $2 $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep Ava |awk '{print $2}'
 }
 setconfig(){
 	configpath=$clashdir/mark
@@ -168,7 +168,7 @@ fi
 if [ ! -w $dir ];then
 	$echo "\033[31m没有$dir目录写入权限！请重新设置！\033[0m" && sleep 1 && setdir
 else
-	$echo "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir)"
+	$echo "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir -h)"
 	read -p "确认安装？(1/0) > " res
 	[ "$res" = "1" ] && clashdir=$dir/clash || setdir
 fi
