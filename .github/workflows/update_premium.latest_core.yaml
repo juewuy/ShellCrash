@@ -1,0 +1,49 @@
+name: Update Premium latest Core 
+on: 
+  schedule:
+    - cron: "0 20 * * 1,3,5,6"
+  workflow_dispatch:
+
+env:
+  download_version: latest
+  download_url: https://release.dreamacro.workers.dev
+jobs:
+  Update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@main
+    - name: Init Dependencies
+      run: |
+        wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+        wget https://github.com/upx/upx/releases/download/v3.93/upx-3.93-amd64_linux.tar.xz
+        tar xf upx-3.96-amd64_linux.tar.xz
+        tar xf upx-3.93-amd64_linux.tar.xz
+    - name: Download Core
+      run: |
+        archs="386 amd64 armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat"
+        mkdir tmp
+        for arch in ${archs};do
+          wget "${download_url}/${download_version}/clash-linux-${arch}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${arch}
+          chmod +x ./tmp/clash-linux-${arch}
+          if [ "${arch}" != "armv5" ];then
+            if [[ ${arch} == mips* ]];then
+              ./upx-3.93-amd64_linux/upx ./tmp/clash-linux-${arch}
+            else
+              ./upx-3.96-amd64_linux/upx ./tmp/clash-linux-${arch}
+            fi
+          fi
+        done
+        mv -f ./tmp/clash-linux-arm64 ./tmp/clash-linux-armv8
+        rm -fr upx*
+    - name: Create Release and Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: clash.premium.latest
+        name: clash.premium.latest
+        body: "The latest version of clash.premium core \n这是clash.premium的最新版本内核文件\nhttps://github.com/Dreamacro/clash/releases/tag/premium \nZip by upx\n使用了upx进行压缩\nOnly support for ShellClash\n仅限于ShellClash项目使用"
+        draft: false
+        prerelease: true
+        files: |
+          ./tmp/* 
+        
