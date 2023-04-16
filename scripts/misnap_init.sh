@@ -20,6 +20,8 @@ autoSSH(){
 	#备份还原SSH秘钥
 	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 	[ -f $clashdir/authorized_keys ] && ln -sf $clashdir/authorized_keys /etc/dropbear/authorized_keys
+	#自动清理升级备份文件夹
+	rm -rf /data/etc_bak
 }
 tunfix(){
 	ko_dir=$(modinfo ip_tables | grep  -Eo '/lib/modules.*/ip_tables.ko' | sed 's|/ip_tables.ko||' )
@@ -51,7 +53,7 @@ init(){
 		done
 		#AX6S/AX6000修复tun功能
 		[ -f $clashdir/tun.ko -a ! -f /lib/modules/4.4.198/tun.ko ] && tunfix && sleep 10
-		#
+		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable
 	fi
