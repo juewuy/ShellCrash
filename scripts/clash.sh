@@ -24,7 +24,7 @@ ckstatus(){
 	touch /tmp/clash_start_time
 	#使用source加载配置文件
 	source $CFG_PATH
-	versionsh=$(cat $clashdir/init.sh | grep -E ^version= | sed 's/version=//')
+	versionsh=$(cat $clashdir/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
 	#设置默认核心资源目录
 	[ -z "$bindir" ] && bindir=$clashdir
@@ -1629,9 +1629,10 @@ tools(){
 				echo -e "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
 			}
 		elif [ -z "$(modinfo tun)" ];then
-			echo -e "\033[33m本功能需要修改系统文件，可能导致未知的不稳定情况产生！\033[0m"
-			echo -e "\033[33m本功能采集的Tun模块不一定适用于你的设备！\033[0m"
-			read -p "是否继续？(1/0) > " res
+			echo -e "\033[33m本功能需要修改系统文件，不保证没有任何风险！\033[0m"
+			echo -e "\033[33m本功能采集的Tun模块并不一定适用于你的设备！\033[0m"
+			sleep 1
+			read -p "我已知晓，出现问题会自行承担！(1/0) > " res
 			if [ "$res" = 1 ];then
 				tunfixlink="${update_url}/bin/fix/tun.ko"
 				echo -----------------------------------------------

@@ -37,7 +37,7 @@ start() {
 			#其他设置
 			$DIR/start.sh afstart
 			#设置守护进程
-			$DIR/start.sh deamon
+			$DIR/start.sh daemon
 		fi
 	else
 		start_service

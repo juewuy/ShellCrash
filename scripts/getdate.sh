@@ -263,14 +263,10 @@ clashlink(){
 	elif [ "$num" = 2 ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m此功能可能会导致严重bug！！！\033[0m"
-		sleep 1
-		echo -----------------------------------------------
 		echo -e "强烈建议你使用\033[32m在线生成配置文件功能！\033[0m"
-		sleep 1
-		echo -----------------------------------------------
 		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
 		echo -----------------------------------------------
-		sleep 2
+		sleep 1
 		read -p "我确认遇到问题可以自行解决[1/0] > " res
 		if [ "$res" = '1' ]; then
 			getlink2
@@ -407,7 +403,7 @@ getcore(){
 	[ -z "$clashcore" ] && clashcore=clashpre
 	[ -z "$cpucore" ] && getcpucore
 	#生成链接
-	corelink="$update_url/bin/$clashcore/clash-linux-$cpucore"
+	[ -z "$custcorelink" ] && corelink="$update_url/bin/$clashcore/clash-linux-$cpucore" || corelink="$custcorelink"
 	#获取在线clash核心文件
 	echo -----------------------------------------------
 	echo 正在在线获取clash核心文件……
@@ -415,7 +411,7 @@ getcore(){
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 		rm -rf /tmp/clash.new
-		error_down
+		[ -z "$custcorelink" ] && error_down
 	else
 		chmod +x /tmp/clash.new 
 		clashv=$(/tmp/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
@@ -432,6 +428,45 @@ getcore(){
 		fi
 	fi
 }
+setcustcore(){
+	[ -z "$cpucore" ] && getcpucore
+	echo -----------------------------------------------
+	echo -e "\033[36m自定义内核均未经过适配，可能存在部分功能不兼容的问题！\033[0m"
+	echo -e "\033[36m如你不熟悉clash的运行机制，请使用脚本已经适配过的内核！\033[0m"
+	echo -e "\033[36m自定义内核不兼容小闪存模式，且下载可能依赖clash服务！\033[0m"
+	echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+	echo -----------------------------------------------
+	sleep 1
+	read -p "我确认遇到问题可以自行解决[1/0] > " res
+	[ "$res" = '1' ] && {
+		echo -e "\033[33m请选择需要使用的核心！\033[0m"
+		echo -e "1 \033[32m 测试版ClashPre内核 \033[0m(不兼容redir-host)"
+		echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
+		echo -e "3 \033[33m 自定义内核链接 \033[0m"
+		read -p "请输入对应数字 > " num	
+		case "$num" in
+		1)
+			clashcore=clashpre
+			custcorelink=https://gh.shellclash.workers.dev/https://github.com/juewuy/ShellClash/releases/download/clash.premium.latest/clash-linux-$cpucore
+			getcore			
+		;;
+		2)
+			clashcore=clash.meta
+			custcorelink=https://gh.shellclash.workers.dev/https://github.com/juewuy/ShellClash/releases/download/clash.meta.alpha/clash-linux-$cpucore
+			getcore			
+		;;
+		3)
+			read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
+			[ -n "$link" ] && custcorelink="$link"
+			clashcore=clash.meta
+			getcore
+		;;
+		*)
+			errornum
+		;;
+		esac
+	}
+}
 setcore(){
 	#获取核心及版本信息
 	[ ! -f $clashdir/clash ] && clashcore="未安装核心"
@@ -443,44 +478,50 @@ setcore(){
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
 	echo -----------------------------------------------
 	echo -e "1 \033[43;30m  Clash  \033[0m：	\033[32m占用低\033[0m"
-	echo -e " (官方基础版)  \033[33m不支持Tun、Rule-set等\033[0m"
+	echo -e " (开源基础内核)  \033[33m不支持Tun、Rule-set等\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo
-	echo -e "2 \033[43;30m Clashpre \033[0m：	\033[32m支持Tun、Rule-set、域名嗅探\033[0m"
-	echo -e " (官方高级版)  \033[33m不支持vless、hy协议\033[0m"
+	echo -e "2 \033[43;30m Clashpre \033[0m：	\033[32m支持Tun、Rule-set\033[0m"
+	echo -e " (官方高级内核)  \033[33m不支持vless、hy协议\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo
 	echo -e "3 \033[43;30mClash.Meta\033[0m：	\033[32m多功能，支持最全面\033[0m"
-	echo -e " (Meta定制版)  \033[33m第三方定制内核\033[0m"
+	echo -e " (Meta稳定内核)  \033[33m内存占用较高\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://docs.metacubex.one\033[0m"
+	echo
+	echo -e "4 \033[32m自定义内核\033[0m：	\033[33m仅限专业用户使用\033[0m"
 	echo
 	echo "5 手动指定处理器架构"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
-		if [ -z "$num" ]; then
-			errornum
-		elif [ "$num" = 0 ]; then
-			i=
-		elif [ "$num" = 1 ]; then
-			clashcore=clash
-			version=$clash_v
-			getcore
-		elif [ "$num" = 2 ]; then
-			clashcore=clashpre
-			version=$clashpre_v
-			getcore
-		elif [ "$num" = 3 ]; then
-			clashcore=clash.meta
-			version=$meta_v
-			getcore
-		elif [ "$num" = 5 ]; then
-			setcpucore
-			setcore
-		else
-			errornum
-			update
-		fi
+	case "$num" in
+	1)
+		clashcore=clash
+		custcorelink=''
+		getcore
+	;;
+	2)
+		clashcore=clashpre
+		custcorelink=''
+		getcore
+	;;
+	3)
+		clashcore=clash.meta
+		custcorelink=''
+		getcore
+	;;
+	4)
+		setcustcore
+	;;
+	5)
+		setcpucore
+		setcore
+	;;
+	*)
+		errornum
+	;;
+	esac
 }
 
 getgeo(){
