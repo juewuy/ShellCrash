@@ -356,7 +356,7 @@ log_pusher(){
 setport(){
 	source $CFG_PATH
 	[ -z "$secret" ] && secret=未设置
-	[ -z "$authentication" ] && authentication=未设置
+	[ -z "$authentication" ] && auth=未设置 || auth=******
 	inputport(){
 		read -p "请输入端口号(1-65535) > " portx
 		if [ -z "$portx" ]; then
@@ -378,7 +378,7 @@ setport(){
 	}
 	echo -----------------------------------------------
 	echo -e " 1 修改Http/Sock5端口：	\033[36m$mix_port\033[0m"
-	echo -e " 2 设置Http/Sock5密码：	\033[36m$authentication\033[0m"
+	echo -e " 2 设置Http/Sock5密码：	\033[36m$auth\033[0m"
 	echo -e " 3 修改静态路由端口：	\033[36m$redir_port\033[0m"
 	echo -e " 4 修改DNS监听端口：	\033[36m$dns_port\033[0m"
 	echo -e " 5 修改面板访问端口：	\033[36m$db_port\033[0m"
@@ -639,6 +639,82 @@ setipv6(){
 			sleep 1
 		fi
 		setipv6
+	;;
+	*)
+		errornum
+	;;
+	esac
+}
+setfirewall(){
+	set_cust_host_ipv4(){		
+		echo -----------------------------------------------
+		echo -e "当前已自动设置透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | tr '\n' ' ' && echo ) \033[0m"
+		echo -e "当前已添加的自定义网段为:\033[36m$cust_host_ipv4\033[0m"
+		echo -----------------------------------------------	
+		echo -e "\033[33m自定义网段不会覆盖自动获取的网段地址，无需重复添加\033[0m"
+		echo -e " 1 移除所有自定义网段"
+		echo -e " 0 返回上级菜单"
+		read -p "请输入需要额外添加的网段 > " text
+		case $text in
+		1)
+			unset cust_host_ipv4
+			setconfig cust_host_ipv4
+			set_cust_host_ipv4
+		;;
+		0)
+		;;
+		*)
+			if [ -n "$(echo $text | grep -Eo '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}'$)" -a -z "$(echo $cust_host_ipv4 | grep "$text")" ];then
+				cust_host_ipv4="$cust_host_ipv4 $text"
+				setconfig cust_host_ipv4 "\'$cust_host_ipv4\'"
+			else
+				echo -----------------------------------------------
+				echo -e "\033[31m请输入正确的网段地址！\033[0m"
+			fi
+			sleep 1
+			set_cust_host_ipv4
+		;;
+		esac
+	}
+	[ -z "$public_support" ] && public_support=未开启
+	[ -z "$public_mixport" ] && public_mixport=未开启
+	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
+	[ -z "$cn_ipv6_route" ] && cn_ipv6_route=未开启
+	echo -----------------------------------------------
+	echo -e " 1 公网访问Dashboard面板:	\033[36m$public_support\033[0m"
+	echo -e " 2 公网访问Socks/Http代理:	\033[36m$public_mixport\033[0m"
+	echo -e " 3 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"	
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num		
+	case $num in
+	1)
+		if [ "$public_support" = "未开启" ]; then 
+			public_support=已开启
+		else
+			public_support=未开启
+		fi
+		setconfig public_support $public_support
+		setfirewall   
+	;;
+	2)
+		if [ "$public_mixport" = "未开启" ]; then 
+			if [ "$mix_port" = "7890" -o -z "$authentication" ];then
+				echo -----------------------------------------------
+				echo -e "\033[33m为了安全考虑，请先修改默认Socks/Http端口并设置代理密码\033[0m"
+				sleep 1
+				setport
+			else
+				public_mixport=已开启
+			fi
+		else
+			public_mixport=未开启
+		fi
+		setconfig public_mixport $public_mixport
+		setfirewall   
+	;;
+	3)
+		set_cust_host_ipv4
+		setfirewall
 	;;
 	*)
 		errornum
@@ -1296,41 +1372,31 @@ clashadv(){
 	echo -----------------------------------------------
 	echo -e " 1 ipv6相关"
 	#echo -e " 2 配置Meta特性"
-	echo -e " 3 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
+	echo -e " 3 配置公网及局域网防火墙"
 	echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
-	echo -e " 5 启用公网访问:	\033[36m$public_support\033[0m	————需要路由拨号+公网IP"
+	echo -e " 5 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
 	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	echo -e " 7 使用自定义配置"
-	echo -e " 8 手动指定相关端口、秘钥及本机host"
+	echo -e " 8 手动指定相关端口、秘钥"
 	echo -----------------------------------------------
 	echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ]; then
-		errornum
-	elif [ "$num" = 0 ]; then
-		i=
-		
-	elif [ "$num" = 1 ]; then
+	case "$num" in
+	1)
 		setipv6
 		clashadv
-		
-	elif [ "$num" = 3 ]; then
-		echo -----------------------------------------------
-		if [ "$proxies_bypass" = "未启用" ];then
-			proxies_bypass=已启用
-			echo -e "\033[33m仅当ShellClash与子网络同类应用使用相同节点配置时方可生效！\033[0m"
-			sleep 1
-		else
-			proxies_bypass=未启用
-		fi
-		setconfig proxies_bypass $proxies_bypass
-		echo -e "\033[32m设置成功！\033[0m"
-		sleep 1		
-		clashadv
-		
-	elif [ "$num" = 4 ]; then
+	;;	
+	2)
+		setmeta
+		clashadv	
+	;;	
+	3)
+		setfirewall
+		clashadv	
+	;;	
+	4)
 		echo -----------------------------------------------
 		if [ "$sniffer" = "未启用" ];then
 			if [ "$clashcore" = "clash" ];then
@@ -1349,25 +1415,22 @@ clashadv(){
 		echo -e "\033[32m设置成功！\033[0m"
 		sleep 1		
 		clashadv
-		
-	elif [ "$num" = 5 ]; then
-		if [ "$public_support" = "未开启" ]; then 
-			echo -e "\033[32m已开启公网访问Dashboard端口，安全起见建议设置面板访问密码！！\033[0m"
-			echo -e "\033[33m如需访问Http/Sock5代理，请在端口设置中修改默认端口并设置访问密码！\033[0m"
-			echo -e "\033[31m如未设置密码或仍使用默认端口，将自动拒绝连接！！！\033[0m"
-			public_support=已开启
-			setconfig public_support $public_support
-			sleep 3
-		else
-			echo -e "\033[32m已禁止公网访问Dashboard端口及Http/Sock5代理端口！！\033[0m"
-			echo -e "\033[33m如果你的防火墙默认放行公网流量，可能禁用失败！\033[0m"
-			public_support=未开启
-			setconfig public_support $public_support
+	;;
+	5)
+		echo -----------------------------------------------
+		if [ "$proxies_bypass" = "未启用" ];then
+			proxies_bypass=已启用
+			echo -e "\033[33m仅当ShellClash与子网络同类应用使用相同节点配置时方可生效！\033[0m"
 			sleep 1
+		else
+			proxies_bypass=未启用
 		fi
-			clashadv
-		
-	elif [ "$num" = 6 ]; then
+		setconfig proxies_bypass $proxies_bypass
+		echo -e "\033[32m设置成功！\033[0m"
+		sleep 1		
+		clashadv
+	;;
+	6)
 		source $CFG_PATH
 		if [ "$dns_no" = "已禁用" ];then
 			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
@@ -1379,23 +1442,8 @@ clashadv(){
 			setdns
 		fi
 		clashadv	
-		
-	elif [ "$num" = 8 ]; then
-		source $CFG_PATH
-		if [ -n "$(pidof clash)" ];then
-			echo -----------------------------------------------
-			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
-			read -p "是否停止clash服务？(1/0) > " res
-			if [ "$res" = "1" ];then
-				$clashdir/start.sh stop
-				setport
-			fi
-		else
-			setport
-		fi
-		clashadv
-		
-	elif [ "$num" = 7 ]; then
+	;;
+	7)
 		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
 #用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)，例如
 #新版已经支持直接读取系统hosts(/etc/hosts)并写入配置文件，无需在此处添加！
@@ -1433,8 +1481,23 @@ EOF
 		echo -e "如需自定义节点，可以在config.yaml文件中修改或者直接替换config.yaml文件！\033[0m"
 		sleep 3
 		clashadv
-		
-	elif [ "$num" = 9 ]; then	
+	;;
+	8)
+		source $CFG_PATH
+		if [ -n "$(pidof clash)" ];then
+			echo -----------------------------------------------
+			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
+			read -p "是否停止clash服务？(1/0) > " res
+			if [ "$res" = "1" ];then
+				$clashdir/start.sh stop
+				setport
+			fi
+		else
+			setport
+		fi
+		clashadv
+	;;
+	9)
 		echo -e " 1 备份脚本设置"
 		echo -e " 2 还原脚本设置"
 		echo -e " 3 重置脚本设置"
@@ -1463,10 +1526,9 @@ EOF
 		fi
 		echo -e "\033[33m请重新启动脚本！\033[0m"
 		exit 0
-
-	else
-		errornum
-	fi
+	;;
+	*)	errornum	;;
+	esac
 }
 tools(){
 	ssh_tools(){

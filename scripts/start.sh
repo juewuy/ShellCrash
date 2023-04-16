@@ -129,6 +129,8 @@ mark_time(){
 getlanip(){
 	host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
 	host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
+	#添加自定义ipv4局域网网段
+	host_ipv4="$host_ipv4$cust_host_ipv4"
 	#缺省配置
 	[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
 	[ -z "$host_ipv6" ] && host_ipv6='fe80::/10 fd00::/8'
@@ -870,28 +872,27 @@ start_nft_dns(){
 start_wan(){
 	#获取局域网host地址
 	getlanip
-	[ "$mix_port" = "7890" -o -z "$authentication" ] && {
-		#仅允许局域网设备访问混合端口
-		for ip in $host_ipv4 $local_ipv4;do
-			iptables -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
-		done
-		iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 
-	}
 	if [ "$public_support" = "已开启" ];then
-		[ "$mix_port" != "7890" -a -n "$authentication" ] && {
-			iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-			ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 
-		}
 		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
 		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 
 	else
-		#仅允许局域网设备访问面板
-		for ip in $host_ipv4 $local_ipv4;do
+		#仅允许非公网设备访问面板
+		for ip in $reserve_ipv4;do
 			iptables -A INPUT -p tcp -s $ip --dport $db_port -j ACCEPT
 		done
 		iptables -A INPUT -p tcp --dport $db_port -j REJECT
 		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $db_port -j REJECT
+	fi
+	if [ "$public_mixport" = "已开启" ];then
+		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 
+	else
+		#仅允许局域网设备访问混合端口
+		for ip in $reserve_ipv4;do
+			iptables -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
+		done
+		iptables -A INPUT -p tcp --dport $mix_port -j REJECT
+		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 
 	fi
 	iptables -I INPUT -p tcp -d 127.0.0.1 -j ACCEPT #本机请求全放行
 }
