@@ -1276,7 +1276,9 @@ clashcfg(){
 		set_common_ports(){
 			if [ "$common_ports" = "未开启" ]; then 
 				echo -e "\033[33m已设为仅代理【$multiport】等常用端口！！\033[0m"
+				echo -e "\033[31m注意，fake-ip模式下，非常用端口的域名连接将不受影响！！\033[0m"
 				common_ports=已开启
+				sleep 1
 			else
 				echo -e "\033[33m已设为代理全部端口！！\033[0m"
 				common_ports=未开启

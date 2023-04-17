@@ -447,12 +447,12 @@ setcustcore(){
 		case "$num" in
 		1)
 			clashcore=clashpre
-			custcorelink=https://gh.shellclash.workers.dev/https://github.com/juewuy/ShellClash/releases/download/clash.premium.latest/clash-linux-$cpucore
+			custcorelink=https://github.com/juewuy/ShellClash/releases/download/clash.premium.latest/clash-linux-$cpucore
 			getcore			
 		;;
 		2)
 			clashcore=clash.meta
-			custcorelink=https://gh.shellclash.workers.dev/https://github.com/juewuy/ShellClash/releases/download/clash.meta.alpha/clash-linux-$cpucore
+			custcorelink=https://github.com/juewuy/ShellClash/releases/download/clash.meta.alpha/clash-linux-$cpucore
 			getcore			
 		;;
 		3)

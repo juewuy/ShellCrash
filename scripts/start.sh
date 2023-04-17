@@ -409,7 +409,7 @@ EOF
 	#测试自定义配置文件
 	$bindir/clash -t -d $bindir -f $tmpdir/config.yaml >/dev/null
 	if [ "$?" != 0 ];then
-		logger "$($bindir/clash -t -d $bindir -f $tmpdir/config.yaml | grep -Eo 'error=.*')" 31
+		logger "$($bindir/clash -t -d $bindir -f $tmpdir/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
 		sed -i "/#自定义/d" $tmpdir/config.yaml
 	fi
@@ -517,6 +517,7 @@ start_redir(){
 	fi
 	#将PREROUTING链指向clash链
 	iptables -t nat -A PREROUTING -p tcp $ports -j clash
+	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t nat -A PREROUTING -p tcp -d 198.18.0.0/16 -j clash
 	#设置ipv6转发
 	if [ "$ipv6_redir" = "已开启" -a -n "$(lsmod | grep 'ip6table_nat')" ];then
 		ip6tables -t nat -N clashv6
@@ -612,6 +613,7 @@ start_tproxy(){
 		done			
 	fi
 	iptables -t mangle -A PREROUTING -p $1 $ports -j clash
+	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t mangle -A PREROUTING -p $1 -d 198.18.0.0/16 -j clash
 	}
 	[ "$1" = "all" ] && tproxy_set tcp
 	tproxy_set udp
@@ -807,7 +809,7 @@ start_nft(){
 			[ -n "$CN_IP" ] && nft add rule inet shellclash prerouting ip daddr {$CN_IP} return
 		}
 		#过滤常用端口
-		[ -n "$PORTS" ] && nft add rule inet shellclash prerouting tcp dport != {$PORTS} return
+		[ -n "$PORTS" ] && nft add rule inet shellclash prerouting tcp dport != {$PORTS} ip daddr != {198.18.0.0/16} return
 		#ipv6支持
 		if [ "$ipv6_redir" = "已开启" ];then
 			RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
@@ -903,6 +905,7 @@ stop_firewall(){
 	ckcmd iptables && {
 		#redir
 		iptables -t nat -D PREROUTING -p tcp $ports -j clash 2> /dev/null
+		iptables -t nat -D PREROUTING -p tcp -d 198.18.0.0/16 -j clash 2> /dev/null
 		iptables -t nat -F clash 2> /dev/null
 		iptables -t nat -X clash 2> /dev/null
 		#dns
@@ -931,6 +934,8 @@ stop_firewall(){
 		#TPROXY&tun
 		iptables -t mangle -D PREROUTING -p tcp $ports -j clash 2> /dev/null
 		iptables -t mangle -D PREROUTING -p udp $ports -j clash 2> /dev/null
+		iptables -t mangle -D PREROUTING -p tcp -d 198.18.0.0/16 -j clash 2> /dev/null
+		iptables -t mangle -D PREROUTING -p udp -d 198.18.0.0/16 -j clash 2> /dev/null
 		iptables -t mangle -F clash 2> /dev/null
 		iptables -t mangle -X clash 2> /dev/null
 		#公网访问
@@ -1252,7 +1257,7 @@ afstart(){
 		{ sleep 30;logger Clash服务已启动！;} &
 	else
 		logger "Clash服务启动失败！请查看报错信息！" 33
-		logger "$($bindir/clash -t -d $bindir | grep -Eo 'error=.*')" 31
+		logger "$($bindir/clash -t -d $bindir | grep -Eo 'error.*=.*')" 31
 		$0 stop
 		exit 1
 	fi
