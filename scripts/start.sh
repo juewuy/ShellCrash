@@ -57,7 +57,7 @@ logger(){
 	[ -z "$3" ] && {
 		getconfig
 		[ -n "$device_name" ] && log_text="$log_text($device_name)"
-		[ -n "$(pidof clash)" ] && {
+		[ -n "$(pidof $clashdir/clash)" ] && {
 			[ -n "$authentication" ] && auth="$authentication@"
 			export https_proxy="http://${auth}127.0.0.1:$mix_port"
 		}
@@ -1251,7 +1251,7 @@ afstart(){
 		#加载定时任务
 		[ -f $clashdir/cron ] && croncmd $clashdir/cron	
 		#启用面板配置自动保存
-		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
+		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof $clashdir/clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 		#推送日志
 		{ sleep 30;logger Clash服务已启动！;} &
@@ -1283,7 +1283,7 @@ afstart)
 		afstart
 	;;
 start)		
-		[ -n "$(pidof clash)" ] && $0 stop #禁止多实例
+		[ -n "$(pidof $clashdir/clash)" ] && $0 stop #禁止多实例
 		getconfig
 		#检测必须文件并下载
 		bfstart
@@ -1304,7 +1304,7 @@ start)
 stop)	
 		getconfig
 		logger Clash服务即将关闭……
-		[ -n "$(pidof clash)" ] && [ "$restore" = false ] && web_save #保存面板配置
+		[ -n "$(pidof $clashdir/clash)" ] && [ "$restore" = false ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
 		cronset "clash保守模式守护进程"
 		cronset "保存节点配置"
@@ -1315,7 +1315,7 @@ stop)
 		elif [ "$USER" = "root" ];then
 			systemctl stop clash.service >/dev/null 2>&1
 		fi
-		PID=$(pidof clash) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
+		PID=$(pidof $clashdir/clash) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
 		stop_firewall #清理路由策略
 		$0 unset_proxy #禁用本机代理
         ;;
@@ -1367,7 +1367,7 @@ logger)
 	;;
 webget)
 		#设置临时代理 
-		if [ -n "$(pidof clash)" ];then
+		if [ -n "$(pidof $clashdir/clash)" ];then
 			getconfig
 			[ -n "$authentication" ] && auth="$authentication@"
 			export https_proxy="http://${auth}127.0.0.1:$mix_port"
@@ -1413,7 +1413,7 @@ web_restore)
 	;;
 daemon)
 		getconfig
-		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"\$(pidof clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
+		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"\$(pidof $clashdir/clash)\" && $clashdir/start.sh restart #clash保守模式守护进程"
 	;;
 cronset)
 		cronset $2 $3
