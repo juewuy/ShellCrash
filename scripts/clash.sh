@@ -63,7 +63,7 @@ ckstatus(){
 		auto1="\033[36m允许\033[0mclash开机启动"
 	fi
 	#获取运行状态
-	PID=$(pidof $clashdir/clash)
+	PID=$(pidof clash)
 	if [ -n "$PID" ];then
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
@@ -178,7 +178,7 @@ clashstart(){
 	echo -----------------------------------------------
 	$clashdir/start.sh start
 	sleep 1
-	[ -n "$(pidof $clashdir/clash)" ] && startover
+	[ -n "$(pidof clash)" ] && startover
 }
 checkrestart(){
 	echo -----------------------------------------------
@@ -1286,7 +1286,7 @@ clashcfg(){
 			setconfig common_ports $common_ports
 		}
 		echo -----------------------------------------------
-		if [ -n "$(pidof $clashdir/clash)" ];then
+		if [ -n "$(pidof clash)" ];then
 			read -p "切换时将停止clash服务，是否继续？(1/0) > " res
 			[ "$res" = 1 ] && $clashdir/start.sh stop && set_common_ports
 		else
@@ -1486,7 +1486,7 @@ EOF
 	;;
 	8)
 		source $CFG_PATH
-		if [ -n "$(pidof $clashdir/clash)" ];then
+		if [ -n "$(pidof clash)" ];then
 			echo -----------------------------------------------
 			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
 			read -p "是否停止clash服务？(1/0) > " res
