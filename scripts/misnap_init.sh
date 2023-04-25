@@ -63,7 +63,7 @@ case "$1" in
 	tunfix) tunfix ;;
 	init) init ;;
 	*)
-		if [ -z $(pidof $clashdir/clash) ];then
+		if [ -z $(pidof clash) ];then
 			init
 		else
 			sleep 10
