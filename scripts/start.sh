@@ -1030,6 +1030,8 @@ web_save(){
 	if [ -s /tmp/clash_web_save_$USER ];then
 		compare /tmp/clash_web_save_$USER $clashdir/web_save
 		[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
+	else
+		rm -rf $clashdir/web_save
 	fi
 }
 web_restore(){
