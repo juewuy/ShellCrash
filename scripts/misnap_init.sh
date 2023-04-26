@@ -52,7 +52,9 @@ init(){
 			[ -n "$(grep 'init complete' $log_file)" ] && i=10 || i=$((i + 1))
 		done
 		#AX6S/AX6000修复tun功能
-		[ -f $clashdir/tun.ko -a ! -f /lib/modules/4.4.198/tun.ko ] && tunfix && sleep 10
+		[ -f $clashdir/tun.ko -a ! -f /lib/modules/4.4.198/tun.ko ] && tunfix
+		#启动延迟
+		sleep 60
 		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable

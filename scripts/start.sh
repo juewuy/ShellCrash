@@ -25,6 +25,7 @@ getconfig(){
 	[ -z "$tproxy_port" ] && tproxy_port=7893
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
+	[ -z "$fwmark" ] && fwmark=$redir_port
 	[ -z "$sniffer" ] && sniffer=已开启
 	#是否代理常用端口
 	[ -z "$common_ports" ] && common_ports=已开启
@@ -322,7 +323,7 @@ modify_yaml(){
 		fi
 	}
 	#域名嗅探配置
-	[ "$sniffer" = "已启用" ] && [ "$clashcore" = "clash.meta" ] && sniffer_set="sniffer: {enable: true, sniffing: [tls, http]}"
+	[ "$sniffer" = "已启用" ] && [ "$clashcore" = "clash.meta" ] && sniffer_set="sniffer: {enable: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}}}"
 	[ "$clashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
 	
 	#设置目录
@@ -442,10 +443,12 @@ EOF
 			sed -i "/^proxy-groups:/a\\$line #自定义策略组" $tmpdir/config.yaml
 		done
 	fi
-	#如果没有使用小闪存模式
-	if [ "$tmpdir" != "$bindir" ];then
+	#存档
+	if [ "$clashdir" = "$bindir" ];then
 		cmp -s $tmpdir/config.yaml $yaml >/dev/null 2>&1
 		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
+	elif [ "$tmpdir" != "$bindir" ];then
+		mv -f $tmpdir/config.yaml $bindir/config.yaml
 	fi
 	rm -f $tmpdir/set.yaml
 	rm -f $tmpdir/proxy.yaml
@@ -587,7 +590,8 @@ start_ipt_dns(){
 start_tproxy(){
 	#获取局域网host地址
 	getlanip
-	ip rule add fwmark 1 table 100
+	modprobe xt_TPROXY &>/dev/null
+	ip rule add fwmark $fwmark table 100
 	ip route add local default dev lo table 100
 	iptables -t mangle -N clash
 	iptables -t mangle -A clash -p udp --dport 53 -j RETURN
@@ -601,7 +605,7 @@ start_tproxy(){
 	tproxy_set(){
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 		for mac in $(cat $clashdir/mac); do #mac白名单
-			iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 		done
 	else
 		for mac in $(cat $clashdir/mac); do #mac黑名单
@@ -609,7 +613,7 @@ start_tproxy(){
 		done
 		#仅代理本机局域网网段流量
 		for ip in $host_ipv4;do
-			iptables -t mangle -A clash -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+			iptables -t mangle -A clash -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 		done			
 	fi
 	iptables -t mangle -A PREROUTING -p $1 $ports -j clash
@@ -625,7 +629,7 @@ start_tproxy(){
 	}
 	#设置ipv6转发
 	[ "$ipv6_redir" = "已开启" ] && {
-		ip -6 rule add fwmark 1 table 101
+		ip -6 rule add fwmark $fwmark table 101
 		ip -6 route add local ::/0 dev lo table 101
 		ip6tables -t mangle -N clashv6
 		ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
@@ -640,7 +644,7 @@ start_tproxy(){
 			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 				#mac白名单
 				for mac in $(cat $clashdir/mac); do
-					ip6tables -t mangle -A clashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+					ip6tables -t mangle -A clashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 				done
 			else
 				#mac黑名单
@@ -649,7 +653,7 @@ start_tproxy(){
 				done
 				#仅代理本机局域网网段流量
 				for ip in $host_ipv6;do
-					ip6tables -t mangle -A clashv6 -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark 1
+					ip6tables -t mangle -A clashv6 -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 				done
 			fi	
 			ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
@@ -700,9 +704,10 @@ start_output(){
 	}
 }
 start_tun(){
+	modprobe tun &>/dev/null
 	#允许流量
 	iptables -I FORWARD -o utun -j ACCEPT
-	iptables -I FORWARD -s 198.18.0.0/16 -o utun -j RETURN
+	iptables -I FORWARD -s 198.18.0.0/16 -o utun -j RETURN #防止回环
 	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	#屏蔽QUIC
 	if [ "$quic_rj" = 已启用 ];then
@@ -710,14 +715,14 @@ start_tun(){
 		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
 		#ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
 	fi
-	modprobe xt_mark &> /dev/null && {
+	modprobe xt_mark &>/dev/null && {
 		i=1
 		while [ -z "$(ip route list |grep utun)" -a "$i" -le 29 ];do
 			sleep 1
 			i=$((i+1))
 		done
 		ip route add default dev utun table 100
-		ip rule add fwmark 1 table 100
+		ip rule add fwmark $fwmark table 100
 		#获取局域网host地址
 		getlanip
 		iptables -t mangle -N clash
@@ -725,13 +730,15 @@ start_tun(){
 		for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
 			iptables -t mangle -A clash -d $ip -j RETURN
 		done
+		#防止回环
+		iptables -t mangle -A clash -s 198.18.0.0/16 -j RETURN
 		#绕过CN_IP
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
 		iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 		#局域网设备过滤
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 			for mac in $(cat $clashdir/mac); do #mac白名单
-				iptables -t mangle -A clash -m mac --mac-source $mac -j MARK --set-mark 1	
+				iptables -t mangle -A clash -m mac --mac-source $mac -j MARK --set-mark $fwmark
 			done
 		else
 			for mac in $(cat $clashdir/mac); do #mac黑名单
@@ -739,7 +746,7 @@ start_tun(){
 			done
 			#仅代理本机局域网网段流量
 			for ip in $host_ipv4;do
-				iptables -t mangle -A clash -s $ip -j MARK --set-mark 1	
+				iptables -t mangle -A clash -s $ip -j MARK --set-mark $fwmark
 			done
 		fi
 		iptables -t mangle -A PREROUTING -p udp $ports -j clash
@@ -748,7 +755,7 @@ start_tun(){
 		#设置ipv6转发
 		[ "$ipv6_redir" = "已开启" -a "$clashcore" = "clash.meta" ] && {
 			ip -6 route add default dev utun table 101
-			ip -6 rule add fwmark 1 table 101
+			ip -6 rule add fwmark $fwmark table 101
 			ip6tables -t mangle -N clashv6
 			ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
 			for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
@@ -760,7 +767,7 @@ start_tun(){
 			#局域网设备过滤
 			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
 				for mac in $(cat $clashdir/mac); do #mac白名单
-					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark 1	
+					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark $fwmark
 				done
 			else
 				for mac in $(cat $clashdir/mac); do #mac黑名单
@@ -768,7 +775,7 @@ start_tun(){
 				done
 				#仅代理本机局域网网段流量
 				for ip in $host_ipv6;do
-					ip6tables -t mangle -A clashv6 -s $ip -j MARK --set-mark 1
+					ip6tables -t mangle -A clashv6 -s $ip -j MARK --set-mark $fwmark
 				done					
 			fi	
 			ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
@@ -783,7 +790,7 @@ start_nft(){
 	RESERVED_IP="$(echo $reserve_ipv4 | sed 's/ /, /g')"
 	HOST_IP="$(echo $host_ipv4 | sed 's/ /, /g')"
 	#设置策略路由
-	ip rule add fwmark 1 table 100
+	ip rule add fwmark $fwmark table 100
 	ip route add local default dev lo table 100
 	[ "$redir_mod" = "Nft基础" ] && \
 		nft add chain inet shellclash prerouting { type nat hook prerouting priority -100 \; }
@@ -814,7 +821,7 @@ start_nft(){
 		if [ "$ipv6_redir" = "已开启" ];then
 			RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
 			HOST_IP6="$(echo $host_ipv6 | sed 's/ /, /g')"
-			ip -6 rule add fwmark 1 table 101 2> /dev/null
+			ip -6 rule add fwmark $fwmark table 101 2> /dev/null
 			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
 			#过滤保留地址及本机地址
 			nft add rule inet shellclash prerouting ip6 daddr {$RESERVED_IP6} return
@@ -829,8 +836,8 @@ start_nft(){
 			nft add rule inet shellclash prerouting meta nfproto ipv6 return
 		fi
 		#透明路由
-		[ "$redir_mod" = "Nft基础" ] && nft add rule inet shellclash prerouting meta l4proto tcp mark set 1 redirect to ${redir_port}
-		[ "$redir_mod" = "Nft混合" ] && nft add rule inet shellclash prerouting meta l4proto {tcp, udp} mark set 1 tproxy to :${tproxy_port}
+		[ "$redir_mod" = "Nft基础" ] && nft add rule inet shellclash prerouting meta l4proto tcp mark set $fwmark redirect to $redir_port
+		[ "$redir_mod" = "Nft混合" ] && nft add rule inet shellclash prerouting meta l4proto {tcp, udp} mark set $fwmark tproxy to :$tproxy_port
 	}
 	#屏蔽QUIC
 	[ "$quic_rj" = 已启用 ] && {
@@ -844,17 +851,17 @@ start_nft(){
 		#dns
 		nft add chain inet shellclash dns_out { type nat hook output priority -100 \; }
 		nft add rule inet shellclash dns_out meta skgid 7890 return && \
-		nft add rule inet shellclash dns_out udp dport 53 redirect to ${dns_port}
+		nft add rule inet shellclash dns_out udp dport 53 redirect to $dns_port
 		#output
 		nft add chain inet shellclash output { type nat hook output priority -100 \; }
 		nft add rule inet shellclash output meta skgid 7890 return && {
 			[ -n "$PORTS" ] && nft add rule inet shellclash output tcp dport != {$PORTS} return
 			nft add rule inet shellclash output ip daddr {$RESERVED_IP} return
-			nft add rule inet shellclash output meta l4proto tcp mark set 1 redirect to ${redir_port}
+			nft add rule inet shellclash output meta l4proto tcp mark set $fwmark redirect to $redir_port
 		}
 		#Docker
 		type docker &>/dev/null && {
-			ip rule add fwmark 1 table 102 2> /dev/null
+			ip rule add fwmark $fwmark table 102 2> /dev/null
 			ip route add local 172.16.0.0/12 dev lo table 102 2> /dev/null
 		}
 	}
@@ -990,11 +997,11 @@ stop_firewall(){
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
 	}
 	#清理路由规则
-	ip rule del fwmark 1 table 100  2> /dev/null
+	ip rule del fwmark $fwmark table 100  2> /dev/null
 	ip route del local default dev lo table 100 2> /dev/null
-	ip -6 rule del fwmark 1 table 101 2> /dev/null
+	ip -6 rule del fwmark $fwmark table 101 2> /dev/null
 	ip -6 route del local ::/0 dev lo table 101 2> /dev/null
-	ip rule del fwmark 1 table 102 2> /dev/null
+	ip rule del fwmark $fwmark table 102 2> /dev/null
 	ip route del local 172.16.0.0/12 dev lo table 102 2> /dev/null
 	#重置nftables相关规则
 	ckcmd nft && {
@@ -1201,8 +1208,8 @@ afstart(){
 	getconfig
 	#延迟启动
 	[ ! -f /tmp/clash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
-	logger "clash将延迟$start_delay秒启动" 31 pushoff
-	sleep $start_delay
+		logger "clash将延迟$start_delay秒启动" 31 pushoff
+		sleep $start_delay
 	}
 	$bindir/clash -t -d $bindir >/dev/null
 	if [ "$?" = 0 ];then
@@ -1244,8 +1251,6 @@ afstart(){
 			[ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
 		}
 		ckcmd iptables && start_wan
-		#同步本机时间
-		ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null &
 		#标记启动时间
 		mark_time
 		#加载定时任务
@@ -1254,7 +1259,9 @@ afstart(){
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
 		#推送日志
-		{ sleep 30;logger Clash服务已启动！;} &
+		{ sleep 5;logger Clash服务已启动！;} &
+		#同步本机时间
+		{ ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null;exit 0 ;} &
 	else
 		logger "Clash服务启动失败！请查看报错信息！" 33
 		logger "$($bindir/clash -t -d $bindir | grep -Eo 'error.*=.*')" 31
@@ -1324,25 +1331,23 @@ restart)
         $0 start
         ;;
 init)
+		clashdir=$(cd $(dirname $0);pwd)
+		profile=/etc/profile
         if [ -d "/etc/storage/clash" ];then
 			clashdir=/etc/storage/clash
 			i=1
-			while [ ! -w "/etc/profile" -a "$i" -lt 7 ];do
+			while [ ! -w /etc/profile -a "$i" -lt 10 ];do
 				sleep 5 && i=$((i+1))
 			done
 			profile=/etc/profile
 			sed -i '' $profile #将软链接转化为一般文件
 		elif [ -d "/jffs" ];then
-			sleep 40
-			clashdir=$(cd $(dirname $0);pwd)
+			sleep 60
 			if [ -w /etc/profile ];then
 				profile=/etc/profile
 			else
 				profile=$(cat /etc/profile | grep -oE '\-f.*jffs.*profile' | awk '{print $2}')
 			fi
-		else
-			clashdir=$(cd $(dirname $0);pwd)
-			profile=/etc/profile
 		fi
 		sed -i "/alias clash/d" $profile 
 		sed -i "/export clashdir/d" $profile 
@@ -1371,9 +1376,9 @@ webget)
 			getconfig
 			[ -n "$authentication" ] && auth="$authentication@"
 			export https_proxy="http://${auth}127.0.0.1:$mix_port"
-			url=$(echo $3 | sed 's#https://.*/juewuy/ShellClash[@|/]#https://raw.githubusercontent.com/juewuy/ShellClash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellClash/#')
+			url=$(echo $3 | sed 's#https://fastly.jsdelivr.net/gh/juewuy/ShellClash[@|/]#https://raw.githubusercontent.com/juewuy/ShellClash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellClash/#')
 		else
-			url=$(echo $3 | sed 's#https://.*/juewuy/ShellClash/#https://fastly.jsdelivr.net/gh/juewuy/ShellClash@#')
+			url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellClash/#https://fastly.jsdelivr.net/gh/juewuy/ShellClash@#')
 		fi
 		#参数【$2】代表下载目录，【$3】代表在线地址
 		#参数【$4】代表输出显示，【$4】不启用重定向

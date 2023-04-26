@@ -63,7 +63,7 @@ ckstatus(){
 		auto1="\033[36m允许\033[0mclash开机启动"
 	fi
 	#获取运行状态
-	PID=$(pidof clash)
+	PID=$(pidof clash | awk '{print $NF}')
 	if [ -n "$PID" ];then
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
@@ -597,6 +597,7 @@ setipv6(){
 	echo -e " 2 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量"
 	echo -e " 3 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"	
 	echo -e " 4 CNIP绕过内核:  \033[36m$cn_ipv6_route\033[0m  ——优化性能，不兼容fake-ip"	
+	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num		
 	case $num in
@@ -1991,9 +1992,9 @@ case "$1" in
 		echo "	-h 帮助列表"
 		echo "	-u 卸载脚本"
 		echo -----------------------------------------
-		echo "	$clashdir/start.sh start	启动服务"
-		echo "	$clashdir/start.sh stop		停止服务"
-		echo "	$clashdir/start.sh init		写入服务"
+		echo "	clash -s start	启动服务"
+		echo "	clash -s stop		停止服务"
+		echo "	安装目录/start.sh init		开机初始化"
 		echo -----------------------------------------
 		echo "在线求助：t.me/ShellClash"
 		echo "官方博客：juewuy.github.io"
