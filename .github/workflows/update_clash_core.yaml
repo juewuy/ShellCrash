@@ -48,4 +48,8 @@ jobs:
         git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
         git add . && git commit -m "更新Clash内核至${download_version}" || exit 0
         git push
-        
+    - name: Cleanup Workflow
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        retain_days: 1
+        keep_minimum_runs: 2         
