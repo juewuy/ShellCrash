@@ -5,11 +5,28 @@ START=99
 SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1
 USE_PROCD=1
+EXTRA_COMMANDS="start_in_procd"
 #获取目录
 DIR=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 [ -z "$DIR" ] && DIR=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 BINDIR=$(cat $DIR/mark | grep bindir | awk -F "=" '{print $2}')
 [ -z "$BINDIR" ] && BINDIR=$DIR
+
+start_in_procd() {
+	# 等待开机初始化完成
+	[ ! -f /tmp/clash_start_time ] && {
+		log_file=$(uci get system.@system[0].log_file)
+		i=0
+		while [ "$i" -lt 60 ]; do
+			[ -n "$(grep 'init complete' $log_file)" ] && break || i=$((i + 1))
+			sleep 1
+		done
+	}
+	#其他设置
+	$DIR/start.sh afstart
+	#启动clash
+	$BINDIR/clash -d $BINDIR
+}
 
 start_service() {
 	#检测必须文件
@@ -20,10 +37,8 @@ start_service() {
 		procd_set_param respawn
 		procd_set_param stderr 0
 		procd_set_param stdout 0
-		procd_set_param command $BINDIR/clash -d $BINDIR
+		procd_set_param command $DIR/clashservice start_in_procd
 		procd_close_instance
-		#其他设置
-		$DIR/start.sh afstart
 	fi
 }
 
@@ -33,9 +48,7 @@ start() {
 		$DIR/start.sh bfstart
 		if [ "$?" = "0" ];then
 			#创建后台进程
-			service_start  $BINDIR/clash -d $BINDIR
-			#其他设置
-			$DIR/start.sh afstart
+			service_start $DIR/clashservice start_in_procd
 			#设置守护进程
 			$DIR/start.sh daemon
 		fi
