@@ -1600,7 +1600,7 @@ tools(){
 			}
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
-	[ "$mi_autoSSH" = "已启用" ] && mi_autoSSH_type=32m已启用 || mi_autoSSH_type=31m未启用
+	[ "$mi_autoSSH" = "已启用" ] && mi_autoSSH_type=32m已启用 || mi_autoSSH_type=31m未配置
 	[ -f $clashdir/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
 	#
 	echo -----------------------------------------------
@@ -1666,22 +1666,18 @@ tools(){
 		tools	
 		
 	elif [ "$num" = 6 ]; then
-		if [ "$mi_autoSSH" = "已启用" ];then
-			mi_autoSSH=禁用
+		if [ "$systype" = "mi_snapshot" ];then
+			echo -----------------------------------------------
+			echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
+			echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
+			read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
+			mi_autoSSH=已启用
+			cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
+			cp -f /etc/dropbear/authorized_keys $clashdir/authorized_keys 2>/dev/null
+			echo -e "\033[32m设置成功！\033[0m"
+			sleep 1
 		else
-			if [ "$systype" = "mi_snapshot" ];then
-				echo -----------------------------------------------
-				echo -e "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
-				echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
-				read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
-				mi_autoSSH=已启用
-				cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
-				cp -f /etc/dropbear/authorized_keys $clashdir/authorized_keys 2>/dev/null
-				echo -e "\033[32m设置成功！\033[0m"
-				sleep 1
-			else
-				echo 不支持的设备！
-			fi
+			echo 不支持的设备！
 		fi
 		setconfig mi_autoSSH $mi_autoSSH
 		setconfig mi_autoSSH_pwd $mi_autoSSH_pwd

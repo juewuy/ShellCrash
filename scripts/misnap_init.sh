@@ -34,27 +34,26 @@ tunfix(){
 	ln -s $clashdir/tun.ko ${ko_dir}/tun.ko
 }
 init(){
+	#等待启动完成
+	log_file=$(uci get system.@system[0].log_file)
+	while [ "$i" -lt 20 ]; do
+		sleep 3
+		[ -z "$(grep 'init complete' $log_file)" ] && i=20 || i=$((i + 1))
+	done
 	#初始化环境变量
 	sed -i "/alias clash/d" $profile
 	sed -i "/export clashdir/d" $profile
 	echo "alias clash=\"$clashdir/clash.sh\"" >>$profile
 	echo "export clashdir=\"$clashdir\"" >>$profile
 	#软固化功能
-	[ "$(grep 'mi_autoSSH=' $clashdir/mark | awk -F "=" '{print $2}')" = "已启用" ] && autoSSH
+	autoSSH
 	#设置init.d服务
 	cp -f $clashdir/clashservice /etc/init.d/clash
 	chmod 755 /etc/init.d/clash
 	#启动服务
 	if [ ! -f $clashdir/.dis_startup ]; then
-		log_file=$(uci get system.@system[0].log_file)
-		while [ "$i" -lt 10 ]; do
-			sleep 5
-			[ -n "$(grep 'init complete' $log_file)" ] && i=10 || i=$((i + 1))
-		done
 		#AX6S/AX6000修复tun功能
-		[ -f $clashdir/tun.ko -a ! -f /lib/modules/4.4.198/tun.ko ] && tunfix
-		#启动延迟
-		sleep 60
+		[ -f $clashdir/tun.ko ] && tunfix
 		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable
@@ -66,7 +65,7 @@ case "$1" in
 	init) init ;;
 	*)
 		if [ -z $(pidof clash) ];then
-			init
+			init &
 		else
 			sleep 10
 			$clashdir/start.sh restart

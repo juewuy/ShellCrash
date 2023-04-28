@@ -869,7 +869,7 @@ if [ -z "$release_new" ];then
 		source /tmp/clashversion 2>/dev/null
 	else
 		echo -e "\033[31m检查更新失败！请切换其他安装源！\033[0m"
-		echo -e "\033[36m如全部安装源都无法使用，请先运行服务后再使用更新！\033[0m"
+		echo -e "\033[36m如全部安装源都无法使用，请先运行clash服务后再使用更新功能！\033[0m"
 		sleep 1
 		setserver
 	fi
@@ -1082,12 +1082,12 @@ userguide(){
 		fi
 	fi
 	#小米设备软固化
-	if [ "$systype" = "mi_snapshot" ];then
-		echo -----------------------------------------------
-		echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
-		read -p "是否启用软固化功能？(1/0) > " res
-		[ "$res" = 1 ] && setconfig mi_autoSSH 已启用
-	fi
+	# if [ "$systype" = "mi_snapshot" ];then
+		# echo -----------------------------------------------
+		# echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
+		# read -p "是否启用软固化功能？(1/0) > " res
+		# [ "$res" = 1 ] && setconfig mi_autoSSH 已启用
+	# fi
 	#提示导入订阅或者配置文件
 	echo -----------------------------------------------
 	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"

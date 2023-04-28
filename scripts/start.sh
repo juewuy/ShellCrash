@@ -1377,7 +1377,7 @@ webget)
 		if [ -n "$(pidof clash)" ];then
 			getconfig
 			[ -n "$authentication" ] && auth="$authentication@"
-			export https_proxy="http://${auth}127.0.0.1:$mix_port"
+			export all_proxy="http://${auth}127.0.0.1:$mix_port"
 			url=$(echo $3 | sed 's#https://fastly.jsdelivr.net/gh/juewuy/ShellClash[@|/]#https://raw.githubusercontent.com/juewuy/ShellClash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellClash/#')
 		else
 			url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellClash/#https://fastly.jsdelivr.net/gh/juewuy/ShellClash@#')
@@ -1390,7 +1390,7 @@ webget)
 			[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
 			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
-			[ "$result" != "200" ] && export https_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
+			[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
 		else
 			if wget --version > /dev/null 2>&1;then
 				[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
