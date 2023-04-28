@@ -177,8 +177,11 @@ clashstart(){
 	fi
 	echo -----------------------------------------------
 	$clashdir/start.sh start
-	sleep 1
-	[ -n "$(pidof clash)" ] && startover
+	i=0
+	while [ "$i" -lt 10 ];do
+		sleep 1
+		[ -n "$(pidof clash)" ] && startover && break || i=$((i+1))
+    done
 }
 checkrestart(){
 	echo -----------------------------------------------
