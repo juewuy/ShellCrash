@@ -46,7 +46,7 @@ jobs:
         prerelease: true
         files: |
           ./tmp/* 
-     - name: Cleanup Workflow
+    - name: Cleanup Workflow
       uses: Mattraks/delete-workflow-runs@main
       with:
         retain_days: 1
