@@ -207,7 +207,7 @@ getlink2(){
 		read -p "确认导入配置文件？原配置文件将被更名为config.yaml.bak![1/0] > " res
 			if [ "$res" = '1' ]; then
 				#将用户链接写入mark
-				sed -i '/Url=*/'d $ccfg
+				sed -i '/Url=*/'d $CFG_PATH
 				setconfig Https \'$link\'
 				setconfig Url
 				#获取在线yaml文件
@@ -975,7 +975,7 @@ userguide(){
 		echo -----------------------------------------------
 		echo -e " 1 \033[32m路由设备配置局域网透明代理\033[0m"
 		echo -e " 2 \033[36mLinux设备仅配置本机代理\033[0m"
-		[ -f "$ccfg.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
+		[ -f "$CFG_PATH.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ] || [ "$num" -gt 4 ];then
@@ -984,7 +984,7 @@ userguide(){
 		elif [ "$num" = 1 ];then
 			redir_mod="Redir模式"
 			ckcmd nft && redir_mod="Nft基础"
-			modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
+			ckcmd nft && modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
 			setconfig redir_mod "$redir_mod"
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
@@ -1007,7 +1007,7 @@ userguide(){
 			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
 			localproxy
 		elif [ "$num" = 3 ];then
-			mv -f $ccfg.bak $ccfg
+			mv -f $CFG_PATH.bak $CFG_PATH
 			echo -e "\033[32m脚本设置已还原！\033[0m"
 			echo -e "\033[33m请重新启动脚本！\033[0m"
 			exit 0
