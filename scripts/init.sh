@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.7.5b
+version=1.7.6c
 
 setdir(){
 	dir_avail(){
@@ -215,7 +215,6 @@ if [ "$systype" = "mi_snapshot" ];then
 	uci set firewall.ShellClash.enabled='1'
 	uci commit firewall
 	setconfig systype $systype
-	setconfig start_delay 90
 else
 	rm -rf $clashdir/misnap_init.sh
 fi
