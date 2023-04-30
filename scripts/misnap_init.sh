@@ -36,9 +36,10 @@ tunfix(){
 init(){
 	#等待启动完成
 	log_file=$(uci get system.@system[0].log_file)
+	local i=0
 	while [ "$i" -lt 20 ]; do
 		sleep 3
-		[ -z "$(grep 'init complete' $log_file)" ] && i=20 || i=$((i + 1))
+		[ -n "$(grep 'init complete' $log_file)" ] && i=20 || i=$((i + 1))
 	done
 	#初始化环境变量
 	sed -i "/alias clash/d" $profile
