@@ -334,7 +334,7 @@ modify_yaml(){
 	[ -z "$mode" ] && mode='Rule'
 	#分割配置文件
 	mkdir -p $tmpdir > /dev/null
-	yaml_p=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1) #获取节点起始行号
+	yaml_p=$(grep -n "^proxies:" $yaml | head -1 | cut -d ":" -f 1) #获取节点起始行号
 	yaml_r=$(grep -n "^rules:" $yaml | head -1 | cut -d ":" -f 1) #获取规则起始行号
 	if [ "$yaml_p" -lt "$yaml_r" ];then
 		sed -n "${yaml_p},${yaml_r}p" $yaml > $tmpdir/proxy.yaml
