@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.7.6c
+version=1.7.7
 
 setdir(){
 	dir_avail(){
@@ -74,6 +74,7 @@ if [ -n "$systype" ];then
 			exit 1 ;;
 		esac
 	}
+	[ "$systype" = "ng_snapshot" ] && dir=/tmp/mnt
 else
 	echo -e "\033[33m安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"	
 	echo -e " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
@@ -139,6 +140,7 @@ $clashdir/start.sh stop 2>/dev/null #防止进程冲突
 	[ -d "/jffs/scripts" ] && initdir='/jffs/scripts/nat-start' 
 	}
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
+[ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot #NETGEAR设备
 
 #检查环境变量
 [ -z "$clashdir" -a -d /tmp/SC_tmp ] && {
@@ -206,8 +208,8 @@ fi
 	chmod a+rx $initdir 2>/dev/null
 	setconfig initdir $initdir
 	}
-#小米镜像化OpenWrt额外设置
-if [ "$systype" = "mi_snapshot" ];then
+#镜像化OpenWrt(snapshot)额外设置
+if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ];then
 	chmod 755 $clashdir/misnap_init.sh
 	uci set firewall.ShellClash=include
 	uci set firewall.ShellClash.type='script'

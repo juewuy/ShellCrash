@@ -135,6 +135,7 @@ if [ -n "$systype" ];then
 			exit 1 ;;
 		esac
 	}
+	[ "$systype" = "ng_snapshot" ] && dir=/tmp/mnt
 else	
 	$echo " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
 	$echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux系统)"
@@ -198,6 +199,8 @@ echo -----------------------------------------------
 	[ -d "/jffs/scripts" ] && initdir='/jffs/scripts/nat-start' 
 	}
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
+[ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot #NETGEAR设备
+
 #检查root权限
 if [ "$USER" != "root" -a -z "$systype" ];then
 	echo 当前用户:$USER

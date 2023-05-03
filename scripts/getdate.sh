@@ -1166,15 +1166,17 @@ testcommand(){
 				iptables -t nat -L OUTPUT --line-numbers
 				iptables -t nat -L clash_out --line-numbers
 			}
-			[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" -a "$ipv6_redir" = "已开启" ] && {
-				echo ----------------Tun/Tproxy-------------------
-				ip6tables -t mangle -L PREROUTING --line-numbers
-				ip6tables -t mangle -L clashv6 --line-numbers
+			[ "$ipv6_redir" = "已开启" ] && {
 				[ -n "$(lsmod | grep 'ip6table_nat')" ] && {
 					echo -------------------Redir---------------------
 					ip6tables -t nat -L PREROUTING --line-numbers
 					ip6tables -t nat -L clashv6_dns --line-numbers
 					ip6tables -t nat -L clashv6 --line-numbers
+				}
+				[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
+					echo ----------------Tun/Tproxy-------------------
+					ip6tables -t mangle -L PREROUTING --line-numbers
+					ip6tables -t mangle -L clashv6 --line-numbers
 				}
 			}
 		fi
