@@ -667,7 +667,7 @@ setfirewall(){
 		*)
 			if [ -n "$(echo $text | grep -Eo '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}'$)" -a -z "$(echo $cust_host_ipv4 | grep "$text")" ];then
 				cust_host_ipv4="$cust_host_ipv4 $text"
-				setconfig cust_host_ipv4 "\'$cust_host_ipv4\'"
+				setconfig cust_host_ipv4 "'$cust_host_ipv4'"
 			else
 				echo -----------------------------------------------
 				echo -e "\033[31m请输入正确的网段地址！\033[0m"

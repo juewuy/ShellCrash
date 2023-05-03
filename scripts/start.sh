@@ -392,6 +392,9 @@ hosts:
    'time.android.com': 203.107.6.88
    'time.facebook.com': 203.107.6.88  
 EOF
+		#加载本机hosts
+		sys_hosts=/etc/hosts
+		[ -f /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
 		while read line;do
 			[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}" )" ] && \
 			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
@@ -399,7 +402,7 @@ EOF
 			hosts_domain=$(echo $line | awk '{print $2}') && \
 			[ -z "$(cat $tmpdir/hosts.yaml | grep -oE "$hosts_domain")" ] && \
 			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
-		done < /etc/hosts
+		done < $sys_hosts
 	fi
 	#合并文件
 	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
@@ -1031,14 +1034,14 @@ web_save(){
 		compare /tmp/clash_web_save_$USER $clashdir/web_save
 		[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
 	else
-		rm -rf $clashdir/web_save
+		echo > $clashdir/web_save
 	fi
 }
 web_restore(){
 
 	#设置循环检测clash面板端口
 	i=1
-	while [ -z "$test" -a "$i" -lt 60 ];do
+	while [ -z "$test" -a "$i" -lt 20 ];do
 		sleep 1
 		if curl --version > /dev/null 2>&1;then
 			test=$(curl -s http://127.0.0.1:${db_port})
@@ -1313,7 +1316,7 @@ start)
 stop)	
 		getconfig
 		logger Clash服务即将关闭……
-		[ -n "$(pidof clash)" ] && [ "$restore" = false ] && web_save #保存面板配置
+		[ -n "$(pidof clash)" ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
 		cronset "clash保守模式守护进程"
 		cronset "保存节点配置"
