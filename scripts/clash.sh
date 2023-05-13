@@ -146,6 +146,13 @@ ckstatus(){
 		echo -----------------------------------------------
 		}
 	done
+	#检查禁用配置覆写
+	[ "$disoverride" = "1" ] && {
+		echo -e "\033[33m你已经禁用了配置文件覆写功能，这会导致大量脚本功能无法使用！\033[0m "
+		read -p "是否取消禁用？(1/0) > " res
+		[ "$res" = 1 ] && unset disoverride && setconfig disoverride 
+		echo -----------------------------------------------
+	}
 }
 
 #启动相关
@@ -593,9 +600,9 @@ setipv6(){
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
 	[ -z "$cn_ipv6_route" ] && cn_ipv6_route=未开启
 	echo -----------------------------------------------
-	echo -e " 1 ipv6内核支持:  \033[36m$ipv6_support\033[0m  ——用于ipv6节点及规则支持"
+	[ "$disoverride" != "1" ] && echo -e " 1 ipv6内核支持:  \033[36m$ipv6_support\033[0m  ——用于ipv6节点及规则支持"
 	echo -e " 2 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量"
-	echo -e " 3 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"	
+	[ "$disoverride" != "1" ] && echo -e " 3 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"	
 	echo -e " 4 CNIP绕过内核:  \033[36m$cn_ipv6_route\033[0m  ——优化性能，不兼容fake-ip"	
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -1230,15 +1237,19 @@ clashcfg(){
 	echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 切换Clash运行模式: 	\033[36m$redir_mod\033[0m"
-	echo -e " 2 切换DNS运行模式：	\033[36m$dns_mod\033[0m"
-	echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
+	[ "$disoverride" != "1" ] && {
+		echo -e " 2 切换DNS运行模式：	\033[36m$dns_mod\033[0m"
+		echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
+	}
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
 	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
 	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过clash内核"
 	echo -e " 7 屏蔽QUIC流量:	\033[36m$quic_rj\033[0m   ————优化视频性能"
-	[ "$dns_mod" = "fake-ip" ] && \
-	echo -e " 8 管理Fake-ip过滤列表" || \
-	echo -e " 8 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
+	[ "$disoverride" != "1" ] && {
+		[ "$dns_mod" = "fake-ip" ] && \
+		echo -e " 8 管理Fake-ip过滤列表" || \
+		echo -e " 8 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
+	}
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -1373,14 +1384,13 @@ clashadv(){
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
 	echo -e "\033[33m如您并不了解clash的运行机制，请勿更改本页面功能！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 ipv6相关"
+	[ "$disoverride" != "1" ] && echo -e " 1 ipv6相关"
 	#echo -e " 2 配置Meta特性"
 	echo -e " 3 配置公网及局域网防火墙"
-	echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
-	echo -e " 5 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
-	echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
-	echo -e " 7 使用自定义配置"
-	echo -e " 8 手动指定相关端口、秘钥"
+	[ "$disoverride" != "1" ] && {
+		echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
+		echo -e " 5 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
+	}
 	echo -----------------------------------------------
 	echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
 	echo -e " 0 返回上级菜单 \033[0m"
@@ -1431,73 +1441,6 @@ clashadv(){
 		setconfig proxies_bypass $proxies_bypass
 		echo -e "\033[32m设置成功！\033[0m"
 		sleep 1		
-		clashadv
-	;;
-	6)
-		source $CFG_PATH
-		if [ "$dns_no" = "已禁用" ];then
-			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
-			if [ "$res" = "1" ];then
-				setconfig dns_no
-				setdns
-			fi
-		else
-			setdns
-		fi
-		clashadv	
-	;;
-	7)
-		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
-#用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)，例如
-#新版已经支持直接读取系统hosts(/etc/hosts)并写入配置文件，无需在此处添加！
-#新版meta内核已经支持yaml-v3，所有能在脚本中修改的条目请勿在此处配置以免报错！
-#port: 7890
-EOF
-		[ ! -f $clashdir/rules.yaml ] && cat > $clashdir/rules.yaml <<EOF
-#用于编写自定义规则(此处规则将优先生效)，(可参考https://lancellc.gitbook.io/clash/clash-config-file/rules)：
-#例如“🚀 节点选择”、“🎯 全球直连”这样的自定义规则组必须与config.yaml中的代理规则组相匹配，否则将无法运行
-# 【#】号代表注释！！！注释条目不会生效！！！
-# - DOMAIN-SUFFIX,google.com,🚀 节点选择
-# - DOMAIN-KEYWORD,baidu,🎯 全球直连
-# - DOMAIN,ad.com,REJECT
-# - SRC-IP-CIDR,192.168.1.201/32,DIRECT
-# - IP-CIDR,127.0.0.0/8,DIRECT
-# - IP-CIDR6,2620:0:2d0:200::7/32,🚀 节点选择
-# - DST-PORT,80,DIRECT
-# - SRC-PORT,7777,DIRECT
-EOF
-		[ ! -f $clashdir/proxies.yaml ] && cat > $clashdir/proxies.yaml <<EOF
-#proxies:
-#  - {name: "test", server: 192.168.1.1, port: 9050, type: socks5, udp: true}
-EOF
-		[ ! -f $clashdir/proxy-groups.yaml ] && cat > $clashdir/proxy-groups.yaml <<EOF
-#proxy-groups:
-#  - name: OFFICE
-#    type: select
-#    proxies:
-#      - office-router
-EOF
-		echo -e "\033[32m已经启用自定义配置功能！\033[0m"
-		echo -e "Windows下请\n使用\033[33mwinscp软件\033[0m进入$clashdir目录后手动编辑！\033[0m"
-		echo -e "Shell下(\033[31m部分旧设备可能不显示中文\033[0m)可\n使用【\033[36mvi $clashdir/user.yaml\033[0m】编辑自定义设定文件;\n使用【\033[36mvi $clashdir/rules.yaml\033[0m】编辑自定义规则文件。"
-		echo -e "使用【\033[36mvi $clashdir/proxies.yaml\033[0m】编辑自定义代理文件;\n使用【\033[36mvi $clashdir/proxy-groups.yaml\033[0m】编辑自定义策略组文件。"
-		echo -e "如需自定义节点，可以在config.yaml文件中修改或者直接替换config.yaml文件！\033[0m"
-		sleep 3
-		clashadv
-	;;
-	8)
-		source $CFG_PATH
-		if [ -n "$(pidof clash)" ];then
-			echo -----------------------------------------------
-			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
-			read -p "是否停止clash服务？(1/0) > " res
-			if [ "$res" = "1" ];then
-				$clashdir/start.sh stop
-				setport
-			fi
-		else
-			setport
-		fi
 		clashadv
 	;;
 	9)
@@ -1757,7 +1700,7 @@ clashcron(){
 						echo 将在$week1的$hour点$min分$cronname（旧的任务会被覆盖）
 						read -p  "是否确认添加定时任务？(1/0) > " res
 						if [ "$res" = '1' ]; then
-							cronwords="$min $hour * * $week $cronset >/dev/null 2>&1 #$week1的$hour点$min分$cronname"
+							cronwords="$min $hour * * $week $cronset #$week1的$hour点$min分$cronname"
 							tmpcron=/tmp/cron_$USER
 							croncmd -l > $tmpcron
 							sed -i "/$cronname/d" $tmpcron
@@ -1856,11 +1799,10 @@ clashcron(){
 		echo -e "\033[33m可包含空格，请确保命令可执行！\033[0m"
 		read -p "请输入命令语句 > " script
 		if [ -n "$script" ];then
-			cronset=\'$script\'
+			cronset=$script
 			echo -e "请检查输入：\033[32m$cronset\033[0m"
 			read -p "请输入任务备注 > " txt
 			[ -n "$txt" ] && cronname=$txt || cronname=ShellClash自定义
-			cronset="$clashdir/start.sh updateyaml"
 			setcron	
 		else
 			echo -e "\033[31m输入错误，请重新输入！\033[0m"

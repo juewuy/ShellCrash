@@ -67,9 +67,6 @@ case "$1" in
 	*)
 		if [ -z $(pidof clash) ];then
 			init &
-		else
-			sleep 10
-			$clashdir/start.sh restart
 		fi
 	;;
 esac

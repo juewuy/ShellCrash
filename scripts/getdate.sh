@@ -10,25 +10,24 @@ error_down(){
 linkconfig(){
 	echo -----------------------------------------------
 	echo 当前使用规则为：$rule_link
-	echo " 1	Acl4SSR全能优化版（推荐）"
-	echo " 2	Acl4SSR精简优化版（推荐）"
+	echo " 1	Acl4SSR全能优化版(推荐)"
+	echo " 2	Acl4SSR精简优化版(推荐)"
 	echo " 3	Acl4SSR全能优化+去广告增强"
-	echo " 4	Acl4SSR极简版（适合自建节点）"
+	echo " 4	Acl4SSR极简版(适合自建)"
 	echo " 5	Acl4SSR分流&游戏增强"
-	echo " 6	Acl4SSR分流&游戏&去广告增强（低性能设备慎用）"
-	echo " 7	洞主规则精简版（推荐）"
+	echo " 6	Acl4SSR分流&游戏&去广告增强"
+	echo " 7	洞主规则精简版"
 	echo " 8	洞主规则重度完整版"
-	echo " 9	神机规则高级版"
-	echo " 10	神机规则-回国专用"
-	echo " 11	李哥规则-墙洞专用"
+	echo " 9	Acl4SSR多国精简"
+	echo " 10	Acl4SSR回国专用"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ] || [ "$num" -gt 17 ];then
+	if [ -z "$num" ] || [ "$num" -gt 10 ];then
 		errornum
 	elif [ "$num" = 0 ];then
 		echo 
-	elif [ "$num" -le 17 ];then
+	elif [ "$num" -le 10 ];then
 		#将对应标记值写入mark
 		rule_link=$num
 		setconfig rule_link $rule_link
@@ -225,6 +224,197 @@ getlink2(){
 		getlink2
 	fi
 }
+setrules(){
+	set_rule_type(){
+		echo -----------------------------------------------	
+		echo -e "\033[33m请选择规则类型\033[0m"
+		echo $rule_type | awk -F ' ' '{for(i=1;i<=NF;i++){print i" "$i}}'
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num	
+		case $num in
+		0) ;;
+		[0-9]*) 
+			if [ $num -gt $(echo $rule_type | awk -F " " '{print NF}') ];then
+				errornum
+			else
+				rule_type_set=$(echo $rule_type|cut -d' ' -f$num)
+				echo -----------------------------------------------	
+				echo -e "\033[33m请输入规则语句，可以是域名、泛域名、IP网段或者其他匹配规则类型的内容\033[0m"
+				read -p "请输入对应规则 > " rule_state_set
+				[ -n "$rule_state_set" ] && set_group_type || errornum
+			fi
+		;;
+		*)
+			errornum
+		;;
+		esac
+	}
+	set_group_type(){
+		echo -----------------------------------------------	
+		echo -e "\033[36m请选择具体规则\033[0m"
+		echo -e "\033[33m此处规则读取自现有配置文件，如果你后续更换配置文件时运行出错，请尝试重新添加\033[0m"
+		echo $rule_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num	
+		case $num in
+		0) ;;
+		[0-9]*) 
+			if [ $num -gt $(echo $rule_group | awk -F "#" '{print NF}') ];then
+				errornum
+			else
+				rule_group_set=$(echo $rule_group|cut -d'#' -f$num)
+				rule_all="- ${rule_type_set},${rule_state_set},${rule_group_set}"
+				[ -n "$(echo IP-CIDR SRC-IP-CIDR IP-CIDR6|grep "$rule_type_set")" ] && rule_all="${rule_all},no-resolve"
+				echo $rule_all >> $clashdir/rules.yaml
+				echo -----------------------------------------------	
+				echo -e "\033[32m添加成功！\033[0m"
+			fi
+		;;
+		*)
+			errornum
+		;;
+		esac
+	}
+	echo -----------------------------------------------
+	echo -e "当前已添加的自定义规则为:"
+	cat $clashdir/rules.yaml | grep -Ev '^#' | awk '{print " "NR" "$2" "$3}'
+	
+	echo -----------------------------------------------	
+	echo -e "\033[33m输入规则对应数字可以移除对应规则\033[0m"
+	echo -e " a 新建自定义规则"
+	echo -e " b 清空自定义规则"
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应字母或数字 > " char
+	case $char in
+	a)
+		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
+		rule_group="DIRECT#REJECT$(grep -o '\- name:.*' $clashdir/config.yaml | sed 's/- name: /#/g' | tr -d '\n')"
+		set_rule_type
+		setrules
+	;;
+	b)
+		sed -i '/^\s*[^#]/d' $clashdir/rules.yaml
+		setrules
+	;;
+	0)
+	;;
+	"")
+		errornum
+	;;
+	*)
+		if [ $char -le $(cat $clashdir/rules.yaml | grep -Ev '^#' | wc -l) ];then
+			sed -i "$char{/^\s*[^#]/d}" $clashdir/rules.yaml
+		else
+			errornum
+		fi
+		sleep 1
+		setrules
+	;;
+	esac
+}
+override(){
+	[ -z "$rule_link" ] && rule_link=1
+	[ -z "$server_link" ] && server_link=1
+	echo -----------------------------------------------
+	echo -e "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
+	echo -e " 2 配置\033[33m内置DNS服务\033[0m"
+	echo -e " 3 \033[36m管理\033[0m自定义规则"
+	#echo -e " 4 \033[36m管理\033[0m自定义节点"
+	#echo -e " 5 \033[36m管理\033[0m自定义代理链"
+	echo -e " 6 \033[32m自定义\033[0m其他功能"
+	[ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
+	echo -----------------------------------------------
+	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	case "$num" in
+	1)
+		source $CFG_PATH
+		if [ -n "$(pidof clash)" ];then
+			echo -----------------------------------------------
+			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
+			read -p "是否停止clash服务？(1/0) > " res
+			if [ "$res" = "1" ];then
+				$clashdir/start.sh stop
+				setport
+			fi
+		else
+			setport
+		fi
+		override
+	;;
+	2)
+		source $CFG_PATH
+		if [ "$dns_no" = "已禁用" ];then
+			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
+			if [ "$res" = "1" ];then
+				setconfig dns_no
+				setdns
+			fi
+		else
+			setdns
+		fi
+		override	
+	;;
+	3)
+		setrules
+		override
+	;;
+	4)
+		setproxies
+		override
+	;;
+	5)
+		setgroups
+		override
+	;;
+	6)
+		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
+#用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)
+#port: 7890
+EOF
+		[ ! -f $clashdir/others.yaml ] && cat > $clashdir/others.yaml <<EOF
+#用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能
+#可参考 https://github.com/MetaCubeX/Clash.Meta/blob/Meta/docs/config.yaml 或 https://lancellc.gitbook.io/clash/clash-config-file/an-example-configuration-file
+#此处内容会被添加在配置文件的“proxy-group：”模块的末尾与“rules：”模块之前的位置
+#例如：
+#proxy-providers:
+#rule-providers:
+#sub-rules:
+#tunnels:
+#script:
+#listeners:
+EOF
+		echo -e "\033[32m已经创建自定义功能文件：$clashdir/user.yaml ！\033[0m"
+		echo -e "\033[33m可用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能\033[0m"		
+		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
+		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
+		echo -e "Linux本机请\n使用\033[33mVim\033[0m进行编辑(不支持路由设备)！\033[0m"
+		sleep 3
+		override
+	;;
+	9)
+		echo -----------------------------------------------
+		echo -e "\033[33m此功能可能会导致严重问题！启用后脚本中大部分功能都将禁用！！！\033[0m"
+		echo -e "如果你不是非常了解Clash的运行机制，切勿开启！\033[0m"
+		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+		echo -----------------------------------------------
+		sleep 2
+		read -p "我确认遇到问题可以自行解决[1/0] > " res
+		[ "$res" = '1' ] && {
+			disoverride=1
+			setconfig disoverride $disoverride
+			echo -----------------------------------------------	  
+			echo -e "\033[32m设置成功！\033[0m"
+		}
+		override
+	;;
+	*)
+		errornum
+	;;
+	esac
+}
 clashlink(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
@@ -236,14 +426,12 @@ clashlink(){
 	echo -e " 3 \033[36m还原\033[0m配置文件"
 	echo -e " 4 \033[33m更新\033[0m配置文件"
 	echo -e " 5 设置\033[36m自动更新\033[0m"
+	echo -e " 6 配置文件\033[32m覆写\033[0m"
 	echo -----------------------------------------------
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ];then
-		errornum
-	elif [ "$num" = 0 ];then
-		i=
-	elif [ "$num" = 1 ];then
+	case "$num" in
+	1)
 		if [ -n "$Url" ];then
 			echo -----------------------------------------------
 			echo -e "\033[33m检测到已记录的链接内容：\033[0m"
@@ -259,8 +447,8 @@ clashlink(){
 			fi
 		fi
 		getlink
-	  
-	elif [ "$num" = 2 ];then
+	;;
+	2)
 		echo -----------------------------------------------
 		echo -e "\033[33m此功能可能会导致严重bug！！！\033[0m"
 		echo -e "强烈建议你使用\033[32m在线生成配置文件功能！\033[0m"
@@ -276,8 +464,8 @@ clashlink(){
 			sleep 1
 			getlink
 		fi
-		
-	elif [ "$num" = 3 ];then
+	;;
+	3)
 		yamlbak=$yaml.bak
 		if [ ! -f "$yaml".bak ];then
 			echo -----------------------------------------------
@@ -298,8 +486,8 @@ clashlink(){
 				clashlink
 			fi
 		fi
-		
-	elif [ "$num" = 4 ];then
+	;;
+	4)
 		if [ -z "$Url" -a -z "$Https" ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m没有找到你的配置文件/订阅链接！请先输入链接！\033[0m"
@@ -317,12 +505,16 @@ clashlink(){
 				clashlink
 			fi
 		fi
-		
-	elif [ "$num" = 5 ];then
+	;;
+	5)
 		clashcron
-	else
+	;;
+	6)
+		override
+	;;
+	*)
 		errornum
-	fi
+	esac
 }
 #下载更新相关
 gettar(){

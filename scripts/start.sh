@@ -117,6 +117,13 @@ cronset(){
 	croncmd $tmpcron
 	rm -f $tmpcron
 }
+get_save(){
+	if curl --version > /dev/null 2>&1;then
+		curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1"
+	elif [ -n "$(wget --help 2>&1|grep '\-\-method')" ];then
+		wget -q --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" -O - "$1"
+	fi
+}
 put_save(){
 	if curl --version > /dev/null 2>&1;then
 		curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
@@ -128,15 +135,21 @@ mark_time(){
 	echo `date +%s` > /tmp/clash_start_time
 }
 getlanip(){
-	host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
-	host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
+	i=1
+	while [ "$i" -le "10" ];do
+		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
+		host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
+		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
+		[ -f /tmp/ShellClash_log ] && break
+		sleep 2 && i=$((i+1))
+	done
 	#添加自定义ipv4局域网网段
 	host_ipv4="$host_ipv4$cust_host_ipv4"
 	#缺省配置
 	[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
 	[ -z "$host_ipv6" ] && host_ipv6='fe80::/10 fd00::/8'
 	#获取本机出口IP地址
-	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot'| grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g' )
+	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot|docker' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g' )
 	[ -z "$local_ipv4" ] && local_ipv4=$(ip route 2>&1 | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u )
 	#保留地址
 	reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
@@ -164,15 +177,8 @@ https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full.ini
 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full_Block.ini
 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini
 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini
-https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_pro.ini
-https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/connershua_backtocn.ini
-https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/dlercloud_lige_platinum.ini
-https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/basic.ini
-https://subconverter.oss-ap-southeast-1.aliyuncs.com/Rules/RemoteConfig/special/netease.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_Google.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Games.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Mini_Games.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ACL4SSR_Online_Full_Games.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiCountry.ini
+https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_BackCN.ini
 EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
@@ -1014,13 +1020,6 @@ stop_firewall(){
 }
 #面板配置保存相关
 web_save(){
-	get_save(){
-		if curl --version > /dev/null 2>&1;then
-			curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1"
-		elif [ -n "$(wget --help 2>&1|grep '\-\-method')" ];then
-			wget -q --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" -O - "$1"
-		fi
-	}
 	#使用get_save获取面板节点设置
 	get_save http://127.0.0.1:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
 	while read line ;do
@@ -1277,7 +1276,8 @@ afstart(){
 start_old(){
 	#使用传统后台执行二进制文件的方式执行
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
-		su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
+		ckcmd su && su=su
+		$su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
 	else
 		ckcmd nohup && nohup=nohup
 		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
@@ -1301,7 +1301,7 @@ start)
 		bfstart
 		stop_firewall #清理路由策略
 		#使用内置规则强行覆盖config配置文件
-		[ "$modify_yaml" != "已开启" ] && modify_yaml
+		[ "$disoverride" != "1" ] && modify_yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			start_old
@@ -1413,6 +1413,9 @@ webget)
 		fi
 		[ "$result" = "200" ] && exit 0 || exit 1
 		;;
+get_save)
+		get_save $2
+	;;
 web_save)
 		getconfig
 		web_save
