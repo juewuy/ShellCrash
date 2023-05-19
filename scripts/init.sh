@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.7.7
+version=1.7.8
 
 setdir(){
 	dir_avail(){
