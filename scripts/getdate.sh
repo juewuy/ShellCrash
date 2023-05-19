@@ -719,7 +719,7 @@ setcore(){
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/$geotype
+	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -800,7 +800,7 @@ getdb(){
 			rm -rf $bindir/ui
 		fi
 	fi
-	dblink="${update_url}/bin/${db_type}.tar.gz"
+	dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
 	$clashdir/start.sh webget /tmp/clashdb.tar.gz $dblink
