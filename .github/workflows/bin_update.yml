@@ -32,6 +32,8 @@ jobs:
         
     - name: Update Dashboard
       run: |
+        mkdir -p bin/dashboard
+        mkdir -p bin/geodata
         cd bin/dashboard
         echo 下载官方面板
         curl -kfSL -o clashdb.zip  https://github.com/Dreamacro/clash-dashboard/archive/gh-pages.zip
