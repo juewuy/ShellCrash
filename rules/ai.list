@@ -7,3 +7,7 @@ DOMAIN-SUFFIX,opendns.com
 DOMAIN-SUFFIX,bing.com
 DOMAIN-SUFFIX,civitai.com
 DOMAIN,bard.google.com
+DOMAIN-SUFFIX,sentry.io
+DOMAIN-SUFFIX,intercom.io
+DOMAIN-SUFFIX,featuregates.org
+DOMAIN-SUFFIX,statsigapi.net
