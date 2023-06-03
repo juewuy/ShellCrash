@@ -23,7 +23,7 @@ ckstatus(){
 	#检查时间戳
 	touch /tmp/clash_start_time
 	#使用source加载配置文件
-	source $CFG_PATH
+	source $CFG_PATH > /dev/null
 	versionsh=$(cat $clashdir/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
 	#设置默认核心资源目录
@@ -361,7 +361,7 @@ log_pusher(){
 	esac
 }
 setport(){
-	source $CFG_PATH
+	source $CFG_PATH > /dev/null
 	[ -z "$secret" ] && secret=未设置
 	[ -z "$authentication" ] && auth=未设置 || auth=******
 	inputport(){
@@ -738,7 +738,7 @@ checkport(){
 			echo -e "\033[0m-----------------------------------------------"
 			echo -e "\033[36m请修改默认端口配置！\033[0m"
 			setport
-			source $CFG_PATH
+			source $CFG_PATH > /dev/null
 			checkport
 		fi
 	done
@@ -1390,6 +1390,7 @@ clashadv(){
 	[ "$disoverride" != "1" ] && {
 		echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
 		echo -e " 5 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
+		echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	}
 	echo -----------------------------------------------
 	echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
@@ -1441,6 +1442,10 @@ clashadv(){
 		setconfig proxies_bypass $proxies_bypass
 		echo -e "\033[32m设置成功！\033[0m"
 		sleep 1		
+		clashadv
+	;;
+	6)
+		setdns	
 		clashadv
 	;;
 	9)

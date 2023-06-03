@@ -8,8 +8,7 @@ getconfig(){
 	[ -d "/jffs/clash" ] && clashdir=/jffs/clash
 	[ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 	[ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
-	ccfg=$clashdir/mark
-	[ -f $ccfg ] && source $ccfg
+	source $clashdir/mark &> /dev/null
 	#默认设置
 	[ -z "$bindir" ] && bindir=$clashdir
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
@@ -222,7 +221,6 @@ EOF`
 				logger "配置文件获取失败！" 31
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
 				logger "正在重试第$retry次/共4次！" 33
-				sed -i '/server_link=*/'d $ccfg
 				if [ "$server_link" -ge 5 ]; then
 					server_link=0
 				fi
@@ -340,33 +338,72 @@ modify_yaml(){
 	[ -z "$mode" ] && mode='Rule'
 	#分割配置文件
 	mkdir -p $tmpdir > /dev/null
-	yaml_p=$(grep -n "^prox" $yaml | head -1 | cut -d ":" -f 1) #获取节点起始行号
-	yaml_r=$(grep -n "^rules:" $yaml | head -1 | cut -d ":" -f 1) #获取规则起始行号
-	if [ "$yaml_p" -lt "$yaml_r" ];then
-		sed -n "${yaml_p},${yaml_r}p" $yaml > $tmpdir/proxy.yaml
-		cat $yaml | sed -n "${yaml_r},\$p" | sed '1d' | sed 's/^ *-/ -/g' > $tmpdir/rule.yaml #切割rule并对齐
-	else
-		cat $yaml | sed -n "${yaml_r},${yaml_p}p" | sed '1d' | sed '$d' | sed 's/^ *-/ -/g' > $tmpdir/rule.yaml #切割rule并对齐
-		sed -n "${yaml_p},\$p" $yaml > $tmpdir/proxy.yaml
-		sed -n "${yaml_r}p" $yaml >> $tmpdir/proxy.yaml #将rule字段附在末尾
-	fi
+	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
+	for char in $yaml_char;do
+		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $yaml > $tmpdir/${char}.yaml
+	done
 	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxy.yaml || \
-		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' $tmpdir/proxy.yaml
+	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxies.yaml || \
+		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' $tmpdir/proxies.yaml
+	#插入自定义策略组
+	sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" $tmpdir/proxy-groups.yaml
+	[ -f $clashdir/proxy-groups.yaml ] && {
+		#获取空格数
+		space_name=$(grep -E '^ *- name: ' $tmpdir/proxy-groups.yaml | head -n 1 | grep -oE '^ *') 
+		space_proxy=$(grep -A 1 'proxies:$' $tmpdir/proxy-groups.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') 
+		#合并自定义策略组到proxy-groups.yaml
+		cat $clashdir/proxy-groups.yaml | sed "/^#/d" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $tmpdir/proxy-groups_add.yaml 
+		cat $tmpdir/proxy-groups.yaml  >> $tmpdir/proxy-groups_add.yaml
+		mv -f $tmpdir/proxy-groups_add.yaml $tmpdir/proxy-groups.yaml
+		oldIFS="$IFS"
+		while read line;do #将自定义策略组插入现有的proxy-group
+				new_group=$(echo $line | grep -Eo '^ *- name:.*#' | cut -d'#' -f1 | sed 's/.*name: //g')
+				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
+				IFS="#"
+				for name in $proxy_groups; do
+					line_a=$(grep -n "\- name: $name" $tmpdir/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+					line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+					line_c=$((line_a + line_b - 1)) #计算需要插入的行号
+					space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+					sed -i "${line_c}a\\${space}- ${new_group}#自定义策略组" $tmpdir/proxy-groups.yaml
+				done
+				IFS="$oldIFS"
+		done <<< $(grep "\- name: " $clashdir/proxy-groups.yaml)
+	}	
+	#插入自定义代理
+	sed -i "/#自定义代理/d" $tmpdir/proxies.yaml
+	[ -f $clashdir/proxies.yaml ] && {
+		space_proxy=$(cat $tmpdir/proxies.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
+		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed '$a\' | sed 's/#.*/ #自定义代理/g' >> $tmpdir/proxies.yaml #插入节点
+		oldIFS="$IFS"
+		while read line;do #将节点插入proxy-group
+				proxy_name=$(echo $line | grep -Eo 'name: .+, ' | cut -d',' -f1 | sed 's/name: //g')
+				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
+				IFS="#"
+				for name in $proxy_groups; do
+					line_a=$(grep -n "\- name: $name" $tmpdir/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+					line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+					line_c=$((line_a + line_b - 1)) #计算需要插入的行号
+					space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+					sed -i "${line_c}a\\${space}- ${proxy_name}#自定义代理" $tmpdir/proxy-groups.yaml
+				done
+				IFS="$oldIFS"
+		done <<< $(sed "/^#/d" $clashdir/proxies.yaml)
+	}
 	#节点绕过功能支持
-	sed -i "/#节点绕过/d" $tmpdir/rule.yaml
+	sed -i "/#节点绕过/d" $tmpdir/rules.yaml
 	[ "$proxies_bypass" = "已启用" ] && {
-		cat /tmp/clash_$USER/proxy.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
-		cat /tmp/clash_$USER/proxy.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
-		cat $tmpdir/rule.yaml >> $tmpdir/proxies_bypass 
-		mv -f $tmpdir/proxies_bypass $tmpdir/rule.yaml
+		cat /tmp/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
+		cat /tmp/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
+		cat $tmpdir/rules.yaml >> $tmpdir/proxies_bypass 
+		mv -f $tmpdir/proxies_bypass $tmpdir/rules.yaml
 	}
 	#插入自定义规则
-	sed -i "/#自定义规则/d" $tmpdir/rule.yaml
+	sed -i "/#自定义规则/d" $tmpdir/rules.yaml
 	[ -f $clashdir/rules.yaml ] && {
-		cat $clashdir/rules.yaml | sed 's/^ *-/ -/g' | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $tmpdir/rules.yaml
-		cat $tmpdir/rule.yaml >> $tmpdir/rules.yaml
-		mv -f $tmpdir/rules.yaml $tmpdir/rule.yaml
+		cat $clashdir/rules.yaml | sed 's/^ *-/ -/g' | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $tmpdir/rules.add
+		cat $tmpdir/rules.yaml >> $tmpdir/rules.add
+		mv -f $tmpdir/rules.add $tmpdir/rules.yaml
 	}
 	#添加配置
 ###################################
@@ -411,46 +448,21 @@ EOF
 		done < $sys_hosts
 	fi
 	#合并文件
-	[ -f $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
-	[ -f $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
-	[ -f $tmpdir/proxy.yaml ] && yaml_proxy=$tmpdir/proxy.yaml
-	[ -f $tmpdir/rule.yaml ] && yaml_rule=$tmpdir/rule.yaml
-	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_proxy $yaml_rule > $tmpdir/config.yaml
+	[ -s $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
+	for char in $yaml_char;do
+		[ -s $tmpdir/${char}.yaml ] && {
+			sed -i "1i\\${char}:" $tmpdir/${char}.yaml
+			yaml_add="$yaml_add $tmpdir/${char}.yaml"
+		}
+	done	
+	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_add > $tmpdir/config.yaml
 	#测试自定义配置文件
 	$bindir/clash -t -d $bindir -f $tmpdir/config.yaml >/dev/null
 	if [ "$?" != 0 ];then
 		logger "$($bindir/clash -t -d $bindir -f $tmpdir/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
-		sed -i "/#自定义/d" $tmpdir/config.yaml
-	fi
-	#插入自定义代理
-	sed -i "/#自定义代理/d" $tmpdir/config.yaml
-	space=$(sed -n '/^proxies:/{n;p}' $tmpdir/config.yaml | grep -oE '^ *') #获取空格数
-	if [ -f $clashdir/proxies.yaml ];then
-		sed -i '/^$/d' $clashdir/proxies.yaml && echo >> $clashdir/proxies.yaml #处理换行
-		while read line;do
-			[ -z "$(echo "$line" | grep '^proxies:')" ] && \
-			[ -z "$(echo "$line" | grep '#')" ] && \
-			[ -n "$(echo "$line" | grep '\- ')" ] && \
-			line=$(echo "$line" | sed 's#/#\\/#') && \
-			sed -i "/^proxies:/a\\$space$line #自定义代理" $tmpdir/config.yaml
-		done < $clashdir/proxies.yaml
-	fi
-
-	#插入自定义策略组
-	sed -i "/#自定义策略组/d" $tmpdir/config.yaml
-	space=$(sed -n '/^proxy-groups:/{n;p}' $tmpdir/config.yaml | grep -oE '^ *') #获取原始配置空格数
-	if [ -f $clashdir/proxy-groups.yaml ];then
-		c_space=$(sed -n '/^proxy-groups:/{n;p}' $clashdir/proxy-groups.yaml | grep -oE '^ *') #获取自定义配置空格数
-		[ -n "$c_space" ] && sed -i "s/$c_space/$space/g" $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理缩进空格数
-		sed -i '/^$/d' $clashdir/proxy-groups.yaml && echo >> $clashdir/proxy-groups.yaml #处理换行
-		cat $clashdir/proxy-groups.yaml | awk '{array[NR]=$0} END { for(i=NR;i>0;i--){print array[i];} }' | while IFS= read line;do
-			[ -z "$(echo "$line" | grep '^proxy-groups:')" ] && \
-			[ -n "${line// /}" ] && \
-			[ -z "$(echo "$line" | grep '#')" ] && \
-			line=$(echo "$line" | sed 's#/#\\/#') && \
-			sed -i "/^proxy-groups:/a\\$line #自定义策略组" $tmpdir/config.yaml
-		done
+		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  $tmpdir/config.yaml 
+		sed -i "/#自定义/d" $tmpdir/config.yaml  
 	fi
 	#存档
 	if [ "$clashdir" = "$bindir" ];then
@@ -459,10 +471,10 @@ EOF
 	elif [ "$tmpdir" != "$bindir" ];then
 		mv -f $tmpdir/config.yaml $bindir/config.yaml
 	fi
-	rm -f $tmpdir/set.yaml
-	rm -f $tmpdir/proxy.yaml
-	rm -f $tmpdir/hosts.yaml
-	rm -f $tmpdir/rule.yaml
+	#清理缓存
+	for char in $yaml_char set hosts;do
+		rm -f $tmpdir/${char}.yaml
+	done
 }
 #设置路由规则
 cn_ip_route(){	

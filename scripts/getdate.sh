@@ -275,43 +275,244 @@ setrules(){
 		;;
 		esac
 	}
+	del_rule_type(){
+		echo -----------------------------------------------
+		echo -e "输入对应数字即可移除相应规则:"
+		cat $clashdir/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
+		echo -----------------------------------------------	
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num
+		case $num in
+		0)	;;
+		'')	;;
+		*)
+			if [ $num -le $(cat $clashdir/rules.yaml | grep -Ev '^#' | wc -l) ];then
+				sed -i "$num{/^\s*[^#]/d}" $clashdir/rules.yaml
+				del_rule_type
+			else
+				errornum
+			fi
+		;;
+		esac
+	}
 	echo -----------------------------------------------
-	echo -e "当前已添加的自定义规则为:"
-	cat $clashdir/rules.yaml | grep -Ev '^#' | awk '{print " "NR" "$2" "$3}'
-	
-	echo -----------------------------------------------	
-	echo -e "\033[33m输入规则对应数字可以移除对应规则\033[0m"
-	echo -e " a 新建自定义规则"
-	echo -e " b 清空自定义规则"
+	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
+	echo -e "\033[36m如需批量操作，请手动编辑：$clashdir/rules.yaml\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 新增自定义规则"
+	echo -e " 2 管理自定义规则"
+	echo -e " 3 清空规则列表"
+	echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
 	echo -e " 0 返回上级菜单"
-	read -p "请输入对应字母或数字 > " char
-	case $char in
-	a)
+	read -p "请输入对应数字 > " num
+	case $num in
+	1)
 		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		rule_group="DIRECT#REJECT$(grep -o '\- name:.*' $clashdir/config.yaml | sed 's/- name: /#/g' | tr -d '\n')"
+		rule_group="DIRECT#REJECT$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
 		set_rule_type
 		setrules
 	;;
-	b)
-		sed -i '/^\s*[^#]/d' $clashdir/rules.yaml
+	2)
+		del_rule_type
 		setrules
 	;;
-	0)
+	3)
+		read -p "确认清空全部自定义规则？(1/0) > " res
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/rules.yaml
+		setrules
 	;;
-	"")
-		errornum
+	4)
+		echo -----------------------------------------------
+		if [ "$proxies_bypass" = "未启用" ];then
+			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
+			echo -e "\033[33m请确保下游设备使用的节点与ShellClash中使用的节点相同，否则无法生效！\033[0m"
+			read -p "启用节点绕过？(1/0) > " res
+			[ "$res" = "1" ] && proxies_bypass=已启用
+		else
+			proxies_bypass=未启用
+		fi
+		setconfig proxies_bypass $proxies_bypass
+		sleep 1		
+		setrules
 	;;
 	*)
-		if [ $char -le $(cat $clashdir/rules.yaml | grep -Ev '^#' | wc -l) ];then
-			sed -i "$char{/^\s*[^#]/d}" $clashdir/rules.yaml
-		else
-			errornum
-		fi
-		sleep 1
-		setrules
+		errornum
 	;;
 	esac
 }
+setgroups(){
+	set_group_type(){
+		echo -----------------------------------------------	
+		echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
+		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中自动指定\033[0m"
+		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$clashdir/proxy-groups.yaml\033[0m"
+		read -p "请输入自定义策略组名称 > " new_group_name
+		echo -----------------------------------------------	
+		echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
+		echo $group_type_cn | awk '{for(i=1;i<=NF;i++){print i" "$i}}'
+		read -p "请输入对应数字 > " num
+		new_group_type=$(echo $group_type | awk '{print $'"$num"'}')
+		if [ "$num" = "1" ];then
+			unset new_group_url interval
+		else
+			read -p "请输入测速地址，回车则默认使用https://www.gstatic.com/generate_204 > " new_group_url
+			[ -z "$new_group_url" ] && new_group_url=https://www.gstatic.com/generate_204
+			new_group_url="url: '$new_group_url'"
+			interval="interval: 300"
+		fi
+		set_group_add
+		#添加自定义策略组
+		cat >> $clashdir/proxy-groups.yaml <<EOF
+  - name: $new_group_name
+    type: $new_group_type
+    $new_group_url
+    $interval
+    proxies:
+     - DIRECT
+EOF
+		echo -----------------------------------------------	
+		echo -e "\033[32m添加成功！\033[0m"
+		
+	}
+	set_group_add(){
+		echo -----------------------------------------------	
+		echo -e "\033[36m请选择想要将本策略添加到的策略组\033[0m"
+		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
+		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+		echo -e " 0 跳过添加"
+		read -p "请输入对应数字(多个用空格隔开) > " char	
+		case $char in
+		0) ;;
+		*) 
+			for num in $char;do
+				rule_group_set=$(echo $proxy_group|cut -d'#' -f$num)
+				rule_group_add="${rule_group_add}#${rule_group_set}"
+			done
+			if [ -n "$rule_group_add" ];then
+				new_group_name="$new_group_name$rule_group_add" 
+				unset rule_group_add
+			else
+				errornum
+			fi
+		;;
+		esac
+	}
+	echo -----------------------------------------------
+	echo -e "\033[33m你可以在这里快捷管理自定义策略组\033[0m"
+	echo -e "\033[36m如需修改或批量操作，请手动编辑：$clashdir/proxy-groups.yaml\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 添加自定义策略组"
+	echo -e " 2 清空自定义策略组"
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	case $num in
+	1)
+		group_type="select url-test fallback load-balance"
+		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
+		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		set_group_type
+		setgroups
+	;;
+	2)
+		read -p "确认清空全部自定义策略组？(1/0) > " res
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/proxy-groups.yaml
+		setgroups
+	;;
+	*)
+		errornum
+	;;
+	esac
+}
+setproxies(){
+	set_proxy_type(){
+		echo -----------------------------------------------	
+		echo -e "\033[33m注意节点格式必须是单行,不包括括号,name:必须写在最前,例如：\033[0m"
+		echo -e "\033[36m【name: \"test\", server: 192.168.1.1, port: 12345, type: socks5, udp: true】\033[0m"
+		echo -e "更多写法请参考：\033[32m https://juewuy.github.io/ \033[0m"
+		read -p "请输入节点 > " proxy_state_set
+		[ -n "$(echo $proxy_state_set | grep -E "^name:")" ] && set_group_add || errornum
+	}
+	set_group_add(){
+		echo -----------------------------------------------	
+		echo -e "\033[36m请选择想要将节点添加到的策略组\033[0m"
+		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
+		echo -e "\033[33m如需自定义策略组，请先使用【管理自定义策略组功能】添加\033[0m"
+		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字(多个用空格隔开) > " char	
+		case $char in
+		0) ;;
+		*) 
+			for num in $char;do
+				rule_group_set=$(echo $proxy_group|cut -d'#' -f$num)
+				rule_group_add="${rule_group_add}#${rule_group_set}"
+			done
+			if [ -n "$rule_group_add" ];then
+				echo "- {$proxy_state_set}$rule_group_add" >> $clashdir/proxies.yaml
+				echo -----------------------------------------------	
+				echo -e "\033[32m添加成功！\033[0m"
+				unset rule_group_add
+			else
+				errornum
+			fi
+		;;
+		esac
+	}
+	echo -----------------------------------------------
+	echo -e "\033[33m你可以在这里快捷管理自定义节点\033[0m"
+	echo -e "\033[36m如需批量操作，请手动编辑：$clashdir/proxies.yaml\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 添加自定义节点"
+	echo -e " 2 管理自定义节点"
+	echo -e " 3 清空自定义节点"
+	echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	case $num in
+	1)
+		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
+		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		set_proxy_type
+		setproxies
+	;;
+	2)
+		echo -e "当前已添加的自定义节点为:"
+		cat $clashdir/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
+		echo -----------------------------------------------	
+		echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
+		read -p "请输入对应数字 > " num
+		if [ $num -le $(cat $clashdir/proxies.yaml | grep -Ev '^#' | wc -l) ];then
+			sed -i "$num{/^\s*[^#]/d}" $clashdir/proxies.yaml
+		else
+			errornum
+		fi
+		setproxies
+	;;
+	3)
+		read -p "确认清空全部自定义节点？(1/0) > " res
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/proxies.yaml
+		setproxies
+	;;
+	4)
+		echo -----------------------------------------------
+		if [ "$proxies_bypass" = "未启用" ];then
+			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
+			echo -e "\033[33m请确保下游设备使用的节点与ShellClash中使用的节点相同，否则无法生效！\033[0m"
+			read -p "启用节点绕过？(1/0) > " res
+			[ "$res" = "1" ] && proxies_bypass=已启用
+		else
+			proxies_bypass=未启用
+		fi
+		setconfig proxies_bypass $proxies_bypass
+		sleep 1		
+		setrules
+	;;
+	*)
+		errornum
+	;;
+	esac
+}
+
 override(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
@@ -321,9 +522,9 @@ override(){
 	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
 	echo -e " 2 配置\033[33m内置DNS服务\033[0m"
 	echo -e " 3 \033[36m管理\033[0m自定义规则"
-	#echo -e " 4 \033[36m管理\033[0m自定义节点"
-	#echo -e " 5 \033[36m管理\033[0m自定义代理链"
-	echo -e " 6 \033[32m自定义\033[0m其他功能"
+	echo -e " 4 \033[36m管理\033[0m自定义节点"
+	echo -e " 5 \033[36m管理\033[0m自定义策略组"
+	echo -e " 7 \033[32m自定义\033[0m其他功能"
 	[ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
 	echo -----------------------------------------------
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
@@ -345,16 +546,7 @@ override(){
 		override
 	;;
 	2)
-		source $CFG_PATH
-		if [ "$dns_no" = "已禁用" ];then
-			read -p "检测到内置DNS已被禁用，是否启用内置DNS？(1/0) > " res
-			if [ "$res" = "1" ];then
-				setconfig dns_no
-				setdns
-			fi
-		else
-			setdns
-		fi
+		setdns
 		override	
 	;;
 	3)
@@ -386,7 +578,8 @@ EOF
 #script:
 #listeners:
 EOF
-		echo -e "\033[32m已经创建自定义功能文件：$clashdir/user.yaml ！\033[0m"
+		echo -e "\033[32m已经创建自定义设定文件：$clashdir/user.yaml ！\033[0m"
+		echo -e "\033[32m已经创建自定义功能文件：$clashdir/others.yaml ！\033[0m"
 		echo -e "\033[33m可用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能\033[0m"		
 		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
 		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
