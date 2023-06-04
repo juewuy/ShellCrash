@@ -721,7 +721,7 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p $clashdir > /dev/null
-		tar -zxvf '$tmpdir/clashfm.tar.gz' -C $clashdir/
+		tar -zxvf "$tmpdir/clashfm.tar.gz" -C $clashdir/
 		if [ $? -ne 0 ];then
 			rm -rf $tmpdir/clashfm.tar.gz
 			echo -e "\033[33m文件解压失败！\033[0m"
