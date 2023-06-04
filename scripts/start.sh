@@ -1,13 +1,15 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+#初始化目录
+[ -d "/etc/storage/clash" ] && clashdir=/etc/storage/clash
+[ -d "/jffs/clash" ] && clashdir=/jffs/clash
+[ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
+[ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
+tmpdir=/tmp/clash_$USER && [ ! -f $tmpdir ] && mkdir -p $tmpdir
 #脚本内部工具
 getconfig(){
 	#加载配置文件
-	[ -d "/etc/storage/clash" ] && clashdir=/etc/storage/clash
-	[ -d "/jffs/clash" ] && clashdir=/jffs/clash
-	[ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
-	[ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 	source $clashdir/mark &> /dev/null
 	#默认设置
 	[ -z "$bindir" ] && bindir=$clashdir
@@ -52,8 +54,8 @@ logger(){
 	#$1日志内容$2显示颜色$3是否推送
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
 	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
-	echo $log_text >> /tmp/ShellClash_log
-	[ "$(wc -l /tmp/ShellClash_log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d' /tmp/ShellClash_log
+	echo $log_text >> $tmpdir/ShellClash_log
+	[ "$(wc -l  $tmpdir/ShellClash_log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d'  $tmpdir/ShellClash_log
 	[ -z "$3" ] && {
 		getconfig
 		[ -n "$device_name" ] && log_text="$log_text($device_name)"
@@ -108,7 +110,7 @@ croncmd(){
 }
 cronset(){
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
-	tmpcron=/tmp/cron_$USER
+	tmpcron=$tmpdir/cron_$USER
 	croncmd -l > $tmpcron 
 	sed -i "/$1/d" $tmpcron
 	sed -i '/^$/d' $tmpcron
@@ -131,7 +133,7 @@ put_save(){
 	fi
 }
 mark_time(){
-	echo `date +%s` > /tmp/clash_start_time
+	echo `date +%s` > $tmpdir/clash_start_time
 }
 getlanip(){
 	i=1
@@ -139,7 +141,7 @@ getlanip(){
 		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
 		host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
-		[ -f /tmp/ShellClash_log ] && break
+		[ -f  $tmpdir/ShellClash_log ] && break
 		sleep 2 && i=$((i+1))
 	done
 	#添加自定义ipv4局域网网段
@@ -193,7 +195,7 @@ EOF`
 	echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
 	#获取在线yaml文件
 	yaml=$clashdir/config.yaml
-	yamlnew=/tmp/clash_config_$USER.yaml
+	yamlnew=$tmpdir/clash_config_$USER.yaml
 	rm -rf $yamlnew
 	$0 webget $yamlnew $Https
 	if [ "$?" = "1" ];then
@@ -206,7 +208,7 @@ EOF`
 		else
 			if [ "$retry" = 4 ];then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
-				echo -e "\033[32m你也可以尝试使用浏览器下载配置文件后，使用WinSCP手动上传到/tmp目录！\033[0m"
+				echo -e "\033[32m你也可以尝试使用浏览器下载配置文件后，使用WinSCP手动上传到$tmpdir目录！\033[0m"
 				exit 1
 			elif [ "$retry" = 3 ];then
 				retry=4
@@ -260,12 +262,12 @@ EOF`
 		fi
 		#检测并去除无效节点组
 		[ -n "$url_type" ] && ckcmd xargs && {
-			cat $yamlnew | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > /tmp/clash_proxies_$USER
+			cat $yamlnew | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > $tmpdir/clash_proxies_$USER
 			while read line ;do
 				sed -i "/- $line/d" $yamlnew
 				sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
-			done < /tmp/clash_proxies_$USER
-			rm -rf /tmp/clash_proxies_$USER
+			done < $tmpdir/clash_proxies_$USER
+			rm -rf $tmpdir/clash_proxies_$USER
 		}
 		#使用核心内置test功能检测
 		if [ -x $bindir/clash ];then
@@ -332,12 +334,10 @@ modify_yaml(){
 	
 	#设置目录
 	yaml=$clashdir/config.yaml
-	tmpdir=/tmp/clash_$USER
 	#预读取变量
 	mode=$(grep "^mode" $yaml | head -1 | awk '{print $2}')
 	[ -z "$mode" ] && mode='Rule'
 	#分割配置文件
-	mkdir -p $tmpdir > /dev/null
 	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
 	for char in $yaml_char;do
 		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $yaml > $tmpdir/${char}.yaml
@@ -356,7 +356,7 @@ modify_yaml(){
 		cat $tmpdir/proxy-groups.yaml  >> $tmpdir/proxy-groups_add.yaml
 		mv -f $tmpdir/proxy-groups_add.yaml $tmpdir/proxy-groups.yaml
 		oldIFS="$IFS"
-		while read line;do #将自定义策略组插入现有的proxy-group
+		grep "\- name: " $clashdir/proxy-groups.yaml | sed "/^#/d" | while read line;do #将自定义策略组插入现有的proxy-group
 				new_group=$(echo $line | grep -Eo '^ *- name:.*#' | cut -d'#' -f1 | sed 's/.*name: //g')
 				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
 				IFS="#"
@@ -368,7 +368,7 @@ modify_yaml(){
 					sed -i "${line_c}a\\${space}- ${new_group}#自定义策略组" $tmpdir/proxy-groups.yaml
 				done
 				IFS="$oldIFS"
-		done <<< $(grep "\- name: " $clashdir/proxy-groups.yaml)
+		done
 	}	
 	#插入自定义代理
 	sed -i "/#自定义代理/d" $tmpdir/proxies.yaml
@@ -376,7 +376,7 @@ modify_yaml(){
 		space_proxy=$(cat $tmpdir/proxies.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
 		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed '$a\' | sed 's/#.*/ #自定义代理/g' >> $tmpdir/proxies.yaml #插入节点
 		oldIFS="$IFS"
-		while read line;do #将节点插入proxy-group
+		cat $clashdir/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
 				proxy_name=$(echo $line | grep -Eo 'name: .+, ' | cut -d',' -f1 | sed 's/name: //g')
 				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
 				IFS="#"
@@ -388,13 +388,13 @@ modify_yaml(){
 					sed -i "${line_c}a\\${space}- ${proxy_name}#自定义代理" $tmpdir/proxy-groups.yaml
 				done
 				IFS="$oldIFS"
-		done <<< $(sed "/^#/d" $clashdir/proxies.yaml)
+		done
 	}
 	#节点绕过功能支持
 	sed -i "/#节点绕过/d" $tmpdir/rules.yaml
 	[ "$proxies_bypass" = "已启用" ] && {
-		cat /tmp/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
-		cat /tmp/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
+		cat $tmpdir/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
+		cat $tmpdir/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
 		cat $tmpdir/rules.yaml >> $tmpdir/proxies_bypass 
 		mv -f $tmpdir/proxies_bypass $tmpdir/rules.yaml
 	}
@@ -488,10 +488,10 @@ cn_ip_route(){
 		fi
 	}
 	[ -f $bindir/cn_ip.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
-			echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > /tmp/cn_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> /tmp/cn_$USER.ipset
+			echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > $tmpdir/cn_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> $tmpdir/cn_$USER.ipset
 			ipset -! flush cn_ip 2>/dev/null
-			ipset -! restore < /tmp/cn_$USER.ipset 
+			ipset -! restore < $tmpdir/cn_$USER.ipset 
 			rm -rf cn_$USER.ipset
 	}
 }
@@ -507,10 +507,10 @@ cn_ipv6_route(){
 	}
 	[ -f $bindir/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			#ipv6
-			echo "create cn_ip6 hash:net family inet6 hashsize 1024 maxelem 65536" > /tmp/cn6_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/cn_ipv6.txt >> /tmp/cn6_$USER.ipset
+			echo "create cn_ip6 hash:net family inet6 hashsize 1024 maxelem 65536" > $tmpdir/cn6_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/cn_ipv6.txt >> $tmpdir/cn6_$USER.ipset
 			ipset -! flush cn_ip6 2>/dev/null
-			ipset -! restore < /tmp/cn6_$USER.ipset 
+			ipset -! restore < $tmpdir/cn6_$USER.ipset 
 			rm -rf cn6_$USER.ipset
 	}
 }
@@ -1033,17 +1033,17 @@ stop_firewall(){
 #面板配置保存相关
 web_save(){
 	#使用get_save获取面板节点设置
-	get_save http://127.0.0.1:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > /tmp/clash_web_check_$USER
+	get_save http://127.0.0.1:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > $tmpdir/clash_web_check_$USER
 	while read line ;do
 		def=$(echo $line | awk -F "[[,]" '{print $2}')
 		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g' | sed 's/"type":.*//g' |  sed 's/,//g')
-		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> /tmp/clash_web_save_$USER
-	done < /tmp/clash_web_check_$USER
-	rm -rf /tmp/clash_web_check_$USER
+		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> $tmpdir/clash_web_save_$USER
+	done < $tmpdir/clash_web_check_$USER
+	rm -rf $tmpdir/clash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
-	if [ -s /tmp/clash_web_save_$USER ];then
-		compare /tmp/clash_web_save_$USER $clashdir/web_save
-		[ "$?" = 0 ] && rm -rf /tmp/clash_web_save_$USER || mv -f /tmp/clash_web_save_$USER $clashdir/web_save
+	if [ -s $tmpdir/clash_web_save_$USER ];then
+		compare $tmpdir/clash_web_save_$USER $clashdir/web_save
+		[ "$?" = 0 ] && rm -rf $tmpdir/clash_web_save_$USER || mv -f $tmpdir/clash_web_save_$USER $clashdir/web_save
 	else
 		echo > $clashdir/web_save
 	fi
@@ -1077,7 +1077,7 @@ catpac(){
 	[ -n "$host" ] && host_pac=$host
 	[ -z "$host_pac" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	cat > /tmp/clash_pac <<EOF
+	cat > $tmpdir/clash_pac <<EOF
 //如看见此处内容，请重新安装本地面板！
 //之后返回上一级页面，清理浏览器缓存并刷新页面！
 function FindProxyForURL(url, host) {
@@ -1096,8 +1096,8 @@ function FindProxyForURL(url, host) {
 		return "PROXY $host_pac:$mix_port; DIRECT; SOCKS5 $host_pac:$mix_port"
 }
 EOF
-	compare /tmp/clash_pac $bindir/ui/pac
-	[ "$?" = 0 ] && rm -rf /tmp/clash_pac || mv -f /tmp/clash_pac $bindir/ui/pac
+	compare $tmpdir/clash_pac $bindir/ui/pac
+	[ "$?" = 0 ] && rm -rf $tmpdir/clash_pac || mv -f $tmpdir/clash_pac $bindir/ui/pac
 }
 bfstart(){
 	#读取配置文件
@@ -1223,7 +1223,7 @@ afstart(){
 	#读取配置文件
 	getconfig
 	#延迟启动
-	[ ! -f /tmp/clash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+	[ ! -f $tmpdir/clash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
 		logger "clash将延迟$start_delay秒启动" 31 pushoff
 		sleep $start_delay
 	}

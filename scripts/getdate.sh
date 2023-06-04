@@ -711,7 +711,7 @@ clashlink(){
 }
 #下载更新相关
 gettar(){
-	$clashdir/start.sh webget /tmp/clashfm.tar.gz $tarurl
+	$clashdir/start.sh webget $tmpdir/clashfm.tar.gz $tarurl
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -721,9 +721,9 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p $clashdir > /dev/null
-		tar -zxvf '/tmp/clashfm.tar.gz' -C $clashdir/
+		tar -zxvf '$tmpdir/clashfm.tar.gz' -C $clashdir/
 		if [ $? -ne 0 ];then
-			rm -rf /tmp/clashfm.tar.gz
+			rm -rf $tmpdir/clashfm.tar.gz
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
 		else
@@ -792,21 +792,21 @@ getcore(){
 	#获取在线clash核心文件
 	echo -----------------------------------------------
 	echo 正在在线获取clash核心文件……
-	$clashdir/start.sh webget /tmp/clash.new $corelink
+	$clashdir/start.sh webget $tmpdir/clash.new $corelink
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
-		rm -rf /tmp/clash.new
+		rm -rf $tmpdir/clash.new
 		[ -z "$custcorelink" ] && error_down
 	else
-		chmod +x /tmp/clash.new 
-		clashv=$(/tmp/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+		chmod +x $tmpdir/clash.new 
+		clashv=$($tmpdir/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 		if [ -z "$clashv" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
-			rm -rf /tmp/clash.new
+			rm -rf $tmpdir/clash.new
 			setcpucore
 		else
 			echo -e "\033[32m$clashcore核心下载成功！\033[0m"
-			mv -f /tmp/clash.new $bindir/clash
+			mv -f $tmpdir/clash.new $bindir/clash
 			chmod +x $bindir/clash 
 			setconfig clashcore $clashcore
 			setconfig clashv $version
@@ -912,13 +912,13 @@ setcore(){
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	$clashdir/start.sh webget /tmp/$geoname $update_url/bin/geodata/$geotype
+	$clashdir/start.sh webget $tmpdir/$geoname $update_url/bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		error_down
 	else
-		mv -f /tmp/$geoname $bindir/$geoname
+		mv -f $tmpdir/$geoname $bindir/$geoname
 		echo -----------------------------------------------
 		echo -e "\033[32mGeoIP/CN_IP数据库文件下载成功！\033[0m"
 		Geo_v=$GeoIP_v
@@ -996,7 +996,7 @@ getdb(){
 	dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	$clashdir/start.sh webget /tmp/clashdb.tar.gz $dblink
+	$clashdir/start.sh webget $tmpdir/clashdb.tar.gz $dblink
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -1006,10 +1006,10 @@ getdb(){
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		mkdir -p $dbdir > /dev/null
-		tar -zxvf "/tmp/clashdb.tar.gz" -C $dbdir > /dev/null
+		tar -zxvf "$tmpdir/clashdb.tar.gz" -C $dbdir > /dev/null
 		if [ $? -ne 0 ];then
-			tar -zxvf "/tmp/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
-			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf /tmp/clashfm.tar.gz && exit 1 
+			tar -zxvf "$tmpdir/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
+			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf $tmpdir/clashfm.tar.gz && exit 1 
 		fi
 		#修改默认host和端口
 		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" ];then
@@ -1023,7 +1023,7 @@ getdb(){
 		setconfig hostdir \'$hostdir\'
 		echo -----------------------------------------------
 		echo -e "\033[32m面板安装成功！\033[0m"
-		rm -rf /tmp/clashdb.tar.gz
+		rm -rf $tmpdir/clashdb.tar.gz
 		sleep 1
 	fi
 }
@@ -1103,20 +1103,20 @@ getcrt(){
 	crtlink="${update_url}/bin/fix/ca-certificates.crt"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	$clashdir/start.sh webget /tmp/ca-certificates.crt $crtlink
+	$clashdir/start.sh webget $tmpdir/ca-certificates.crt $crtlink
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		error_down
 	else
 		echo -----------------------------------------------
-		mv -f /tmp/ca-certificates.crt $crtdir
-		$clashdir/start.sh webget /tmp/ssl_test https://baidu.com echooff rediron skipceroff
+		mv -f $tmpdir/ca-certificates.crt $crtdir
+		$clashdir/start.sh webget $tmpdir/ssl_test https://baidu.com echooff rediron skipceroff
 		if [ "$?" = "1" ];then
 			export CURL_CA_BUNDLE=$crtdir
 			echo "export CURL_CA_BUNDLE=$crtdir" >> /etc/profile
 		fi
-		rm -rf /tmp/ssl_test
+		rm -rf $tmpdir/ssl_test
 		echo -e "\033[32m证书安装成功！\033[0m"
 		sleep 1
 	fi
@@ -1214,15 +1214,15 @@ setserver(){
 	elif [ "$num" = 9 ]; then
 		echo -----------------------------------------------
 		echo -e "\033[33m如无法连接，请务必先启用clash服务！！！\033[0m"
-		$clashdir/start.sh webget /tmp/clashrelease https://raw.githubusercontent.com/juewuy/ShellClash/master/bin/release_version echooff rediroff 2>/tmp/clashrelease
+		$clashdir/start.sh webget $tmpdir/clashrelease https://raw.githubusercontent.com/juewuy/ShellClash/master/bin/release_version echooff rediroff 2>$tmpdir/clashrelease
 		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
-		cat /tmp/clashrelease | awk '{print " "NR" "$1}'
+		cat $tmpdir/clashrelease | awk '{print " "NR" "$1}'
 		echo -e " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" -o "$num" = 0 ]; then
 			setserver
-		elif [ $num -le $(cat /tmp/clashrelease 2>/dev/null | awk 'END{print NR}') ]; then
-			release_version=$(cat /tmp/clashrelease | awk '{print $1}' | sed -n "$num"p)
+		elif [ $num -le $(cat $tmpdir/clashrelease 2>/dev/null | awk 'END{print NR}') ]; then
+			release_version=$(cat $tmpdir/clashrelease | awk '{print $1}' | sed -n "$num"p)
 			update_url="https://raw.githubusercontent.com/juewuy/ShellClash/$release_version"
 			saveserver
 			release_url=''
@@ -1230,7 +1230,7 @@ setserver(){
 			echo -----------------------------------------------
 			echo -e "\033[31m输入有误，请重新输入！\033[0m"
 		fi
-		rm -rf /tmp/clashrelease
+		rm -rf $tmpdir/clashrelease
 	else
 		errornum
 	fi
@@ -1240,25 +1240,25 @@ checkupdate(){
 if [ -z "$release_new" ];then
 	if [ -n "$release_url" ];then
 		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && check_url=$release_url@master || check_url=$release_url/master
-		$clashdir/start.sh webget /tmp/clashversion $check_url/bin/release_version echoon rediroff 2>/tmp/clashversion
-		release_new=$(cat /tmp/clashversion | head -1)
+		$clashdir/start.sh webget $tmpdir/clashversion $check_url/bin/release_version echoon rediroff 2>$tmpdir/clashversion
+		release_new=$(cat $tmpdir/clashversion | head -1)
 		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && update_url=$release_url@$release_new || update_url=$release_url/$release_new
 		setconfig update_url \'$update_url\'
 		release_type=正式版
 	else
 		release_type=测试版
 	fi	
-	$clashdir/start.sh webget /tmp/clashversion $update_url/bin/version echooff 
-	[ "$?" = "0" ] && release_new=$(cat /tmp/clashversion | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
+	$clashdir/start.sh webget $tmpdir/clashversion $update_url/bin/version echooff 
+	[ "$?" = "0" ] && release_new=$(cat $tmpdir/clashversion | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
 	if [ -n "$release_new" ];then
-		source /tmp/clashversion 2>/dev/null
+		source $tmpdir/clashversion 2>/dev/null
 	else
 		echo -e "\033[31m检查更新失败！请切换其他安装源！\033[0m"
 		echo -e "\033[36m如全部安装源都无法使用，请先运行clash服务后再使用更新功能！\033[0m"
 		sleep 1
 		setserver
 	fi
-	rm -rf /tmp/clashversion
+	rm -rf $tmpdir/clashversion
 fi
 }
 update(){
@@ -1425,14 +1425,14 @@ userguide(){
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#设置加密DNS
-	$clashdir/start.sh webget /tmp/ssl_test https://doh.pub echooff rediron
+	$clashdir/start.sh webget $tmpdir/ssl_test https://doh.pub echooff rediron
 	if [ "$?" = "0" ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
 		setconfig dns_nameserver \'"$dns_nameserver"\'
 		setconfig dns_fallback \'"$dns_fallback"\' 
 	fi
-	rm -rf /tmp/ssl_test
+	rm -rf $tmpdir/ssl_test
 	#开启公网访问
 	sethost(){
 		read -p "请输入你的公网IP地址 > " host

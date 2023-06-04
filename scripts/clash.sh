@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 CFG_PATH=$clashdir/mark
-
+tmpdir=/tmp/clash_$USER && [ ! -f $tmpdir ] && mkdir -p $tmpdir
 #读取配置相关
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -21,7 +21,7 @@ ckstatus(){
 	#检查重复行并去除
 	[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH
 	#检查时间戳
-	touch /tmp/clash_start_time
+	touch $tmpdir/clash_start_time
 	#使用source加载配置文件
 	source $CFG_PATH > /dev/null
 	versionsh=$(cat $clashdir/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
@@ -68,8 +68,8 @@ ckstatus(){
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 		#获取运行时长
-		touch /tmp/clash_start_time #用于延迟启动的校验
-		start_time=$(cat /tmp/clash_start_time)
+		touch $tmpdir/clash_start_time #用于延迟启动的校验
+		start_time=$(cat $tmpdir/clash_start_time)
 		if [ -n "$start_time" ]; then 
 			time=$((`date +%s`-start_time))
 			day=$((time/86400))
@@ -213,7 +213,7 @@ log_pusher(){
 	case $num in
 	1)
 		echo -----------------------------------------------
-		cat /tmp/ShellClash_log
+		cat $tmpdir/ShellClash_log
 		exit
 	;;
 	2)
@@ -541,7 +541,6 @@ setdns(){
 		else
 			echo -e "\033[31m当前设备未安装OpenSSL，无法启用加密DNS，Linux系统请自行搜索安装方式！\033[0m"
 		fi
-		rm -rf /tmp/ssl_test
 		sleep 2
 		setdns
 		
@@ -1593,9 +1592,9 @@ tools(){
 		echo -----------------------------------------------
 		if [ ! -f $clashdir/ShellDDNS.sh ];then
 			echo -e "正在获取在线脚本……"
-			$clashdir/start.sh webget /tmp/ShellDDNS.sh $update_url/tools/ShellDDNS.sh
+			$clashdir/start.sh webget $tmpdir/ShellDDNS.sh $update_url/tools/ShellDDNS.sh
 			if [ "$?" = "0" ];then
-				mv -f /tmp/ShellDDNS.sh $clashdir/ShellDDNS.sh
+				mv -f $tmpdir/ShellDDNS.sh $clashdir/ShellDDNS.sh
 				source $clashdir/ShellDDNS.sh
 			else
 				echo -e "\033[31m文件下载失败！\033[0m"
@@ -1646,9 +1645,9 @@ tools(){
 				tunfixlink="${update_url}/bin/fix/tun.ko"
 				echo -----------------------------------------------
 				echo 正在连接服务器获取Tun模块补丁文件…………
-				$clashdir/start.sh webget /tmp/tun.ko $tunfixlink
+				$clashdir/start.sh webget $tmpdir/tun.ko $tunfixlink
 				if [ "$?" = "0" ];then
-					mv -f /tmp/tun.ko $clashdir && \
+					mv -f $tmpdir/tun.ko $clashdir && \
 					$clashdir/misnap_init.sh tunfix && \
 					echo -e "\033[32m设置成功！请重启clash服务！\033[0m"
 				else
@@ -1706,7 +1705,7 @@ clashcron(){
 						read -p  "是否确认添加定时任务？(1/0) > " res
 						if [ "$res" = '1' ]; then
 							cronwords="$min $hour * * $week $cronset #$week1的$hour点$min分$cronname"
-							tmpcron=/tmp/cron_$USER
+							tmpcron=$tmpdir/cron_$USER
 							croncmd -l > $tmpcron
 							sed -i "/$cronname/d" $tmpcron
 							sed -i '/^$/d' $tmpcron
@@ -1736,9 +1735,9 @@ clashcron(){
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 9 ]; then
-			croncmd -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && croncmd /tmp/conf
+			croncmd -l > $tmpdir/conf && sed -i "/$cronname/d" $tmpdir/conf && croncmd $tmpdir/conf
 			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
-			rm -f /tmp/conf
+			rm -f $tmpdir/conf
 			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
 		elif [ "$num" = 8 ]; then	
@@ -1820,9 +1819,9 @@ clashcron(){
 		read -p "请输入备注的关键词 > " txt
 		[ -n "$txt" ] && {
 			cronname=$txt
-			croncmd -l > /tmp/conf && sed -i "/$cronname/d" /tmp/conf && croncmd /tmp/conf
+			croncmd -l > $tmpdir/conf && sed -i "/$cronname/d" $tmpdir/conf && croncmd $tmpdir/conf
 			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
-			rm -f /tmp/conf
+			rm -f $tmpdir/conf
 			echo -----------------------------------------------
 			echo -e "所有关键词\033[32m$cronname\033[0m匹配的定时任务均已删除！\033[0m"
 			sleep 1
