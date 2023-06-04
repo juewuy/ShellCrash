@@ -393,8 +393,8 @@ modify_yaml(){
 	#节点绕过功能支持
 	sed -i "/#节点绕过/d" $tmpdir/rules.yaml
 	[ "$proxies_bypass" = "已启用" ] && {
-		cat $tmpdir/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
-		cat $tmpdir/clash_$USER/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
+		cat $tmpdir/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
+		cat $tmpdir/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
 		cat $tmpdir/rules.yaml >> $tmpdir/proxies_bypass 
 		mv -f $tmpdir/proxies_bypass $tmpdir/rules.yaml
 	}
