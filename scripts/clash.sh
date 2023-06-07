@@ -291,7 +291,9 @@ log_pusher(){
 			read -p "确认关闭Bark日志推送？(1/0) > " res
 			[ "$res" = 1 ] && {
 				push_bark=
+				bark_param=
 				setconfig push_bark
+				setconfig bark_param
 			}
 		else
 			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
@@ -302,6 +304,14 @@ log_pusher(){
 			if [ -n "$url" ];then
 				push_bark=$url
 				setconfig push_bark $url
+				echo -----------------------------------------------
+				echo -e "\033[32m例: ?group=ShellClash\033[0m"
+				read -p "请输入你的Bark请求参数(默认回车为空) > " param
+				param=$(echo $param | sed 's/\&/\\\&/g')
+				if [ -n "$param" ];then
+					bark_param=$param
+					setconfig bark_param \'$param\'
+				fi
 				$clashdir/start.sh logger "已完成Bark日志推送设置！" 32
 			else
 				echo -e "\033[31m输入错误，请重新输入！\033[0m"
