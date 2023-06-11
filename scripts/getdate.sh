@@ -276,8 +276,8 @@ setrules(){
 		esac
 	}
 	del_rule_type(){
-		echo -----------------------------------------------
 		echo -e "输入对应数字即可移除相应规则:"
+		sed -i '/^ *$/d' $clashdir/rules.yaml
 		cat $clashdir/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
 		echo -----------------------------------------------	
 		echo -e " 0 返回上级菜单"
@@ -286,7 +286,7 @@ setrules(){
 		0)	;;
 		'')	;;
 		*)
-			if [ $num -le $(cat $clashdir/rules.yaml | grep -Ev '^#' | wc -l) ];then
+			if [ $num -le $(cat $clashdir/rules.yaml | grep -Ev '^#' | grep -Ev '^ *$' | wc -l) ];then
 				sed -i "$num{/^\s*[^#]/d}" $clashdir/rules.yaml
 				del_rule_type
 			else
@@ -313,7 +313,13 @@ setrules(){
 		setrules
 	;;
 	2)
-		del_rule_type
+		echo -----------------------------------------------
+		if [ -s $clashdir/rules.yaml ];then
+			del_rule_type
+		else
+			echo -e "请先添加自定义规则！"
+			sleep 1
+		fi
 		setrules
 	;;
 	3)
@@ -346,7 +352,7 @@ setgroups(){
 		echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
 		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中自动指定\033[0m"
 		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$clashdir/proxy-groups.yaml\033[0m"
-		read -p "请输入自定义策略组名称 > " new_group_name
+		read -p "请输入自定义策略组名称(不支持纯数字) > " new_group_name
 		echo -----------------------------------------------	
 		echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
 		echo $group_type_cn | awk '{for(i=1;i<=NF;i++){print i" "$i}}'
@@ -370,6 +376,7 @@ setgroups(){
     proxies:
      - DIRECT
 EOF
+		sed -i "/^ *$/d" $clashdir/proxy-groups.yaml
 		echo -----------------------------------------------	
 		echo -e "\033[32m添加成功！\033[0m"
 		
@@ -378,7 +385,9 @@ EOF
 		echo -----------------------------------------------	
 		echo -e "\033[36m请选择想要将本策略添加到的策略组\033[0m"
 		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
+		echo -----------------------------------------------	
 		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+		echo -----------------------------------------------	
 		echo -e " 0 跳过添加"
 		read -p "请输入对应数字(多个用空格隔开) > " char	
 		case $char in
@@ -402,20 +411,26 @@ EOF
 	echo -e "\033[36m如需修改或批量操作，请手动编辑：$clashdir/proxy-groups.yaml\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 添加自定义策略组"
-	echo -e " 2 清空自定义策略组"
+	echo -e " 2 查看自定义策略组"
+	echo -e " 3 清空自定义策略组"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
 	1)
 		group_type="select url-test fallback load-balance"
 		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
-		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_group_type
 		setgroups
 	;;
 	2)
+		echo -----------------------------------------------
+		cat $clashdir/proxy-groups.yaml
+		setgroups
+	;;
+	3)
 		read -p "确认清空全部自定义策略组？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/proxy-groups.yaml
+		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > $clashdir/proxy-groups.yaml
 		setgroups
 	;;
 	*)
@@ -437,7 +452,9 @@ setproxies(){
 		echo -e "\033[36m请选择想要将节点添加到的策略组\033[0m"
 		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
 		echo -e "\033[33m如需自定义策略组，请先使用【管理自定义策略组功能】添加\033[0m"
+		echo -----------------------------------------------	
 		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+		echo -----------------------------------------------	
 		echo -e " 0 返回上级菜单"
 		read -p "请输入对应数字(多个用空格隔开) > " char	
 		case $char in
@@ -471,20 +488,27 @@ setproxies(){
 	case $num in
 	1)
 		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_proxy_type
 		setproxies
 	;;
-	2)
-		echo -e "当前已添加的自定义节点为:"
-		cat $clashdir/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
-		echo -----------------------------------------------	
-		echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
-		read -p "请输入对应数字 > " num
-		if [ $num -le $(cat $clashdir/proxies.yaml | grep -Ev '^#' | wc -l) ];then
-			sed -i "$num{/^\s*[^#]/d}" $clashdir/proxies.yaml
+	2)	
+		echo -----------------------------------------------
+		sed -i '/^ *$/d' $clashdir/proxies.yaml
+		if [ -s $clashdir/proxies.yaml ];then
+			echo -e "当前已添加的自定义节点为:"
+			cat $clashdir/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
+			echo -----------------------------------------------	
+			echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
+			read -p "请输入对应数字 > " num
+			if [ $num -le $(cat $clashdir/proxies.yaml | grep -Ev '^#' | wc -l) ];then
+				sed -i "$num{/^\s*[^#]/d}" $clashdir/proxies.yaml
+			else
+				errornum
+			fi
 		else
-			errornum
+			echo -e "请先添加自定义节点！"
+			sleep 1
 		fi
 		setproxies
 	;;
@@ -521,10 +545,10 @@ override(){
 	echo -----------------------------------------------
 	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
 	echo -e " 2 配置\033[33m内置DNS服务\033[0m"
-	echo -e " 3 \033[36m管理\033[0m自定义规则"
-	echo -e " 4 \033[36m管理\033[0m自定义节点"
-	echo -e " 5 \033[36m管理\033[0m自定义策略组"
-	echo -e " 7 \033[32m自定义\033[0m其他功能"
+	echo -e " 3 管理\033[36m自定义规则\033[0m"
+	echo -e " 4 管理\033[33m自定义节点\033[0m"
+	echo -e " 5 管理\033[36m自定义策略组\033[0m"
+	echo -e " 6 \033[32m自定义\033[0m其他功能"
 	[ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
 	echo -----------------------------------------------
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
@@ -583,7 +607,7 @@ EOF
 		echo -e "\033[33m可用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能\033[0m"		
 		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
 		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
-		echo -e "Linux本机请\n使用\033[33mVim\033[0m进行编辑(不支持路由设备)！\033[0m"
+		echo -e "Linux本机可\n使用\033[33mvim\033[0m进行编辑(路由设备可能不显示中文请勿使用)！\033[0m"
 		sleep 3
 		override
 	;;
@@ -616,7 +640,7 @@ clashlink(){
 	echo -----------------------------------------------
 	echo -e " 1 在线\033[32m生成Clash配置文件\033[0m"
 	echo -e " 2 导入\033[33mClash配置文件链接\033[0m"
-	echo -e " 3 \033[36m还原\033[0m配置文件"
+	echo -e " 3 \033[36m管理\033[0m配置文件"
 	echo -e " 4 \033[33m更新\033[0m配置文件"
 	echo -e " 5 设置\033[36m自动更新\033[0m"
 	echo -e " 6 配置文件\033[32m覆写\033[0m"
@@ -659,17 +683,16 @@ clashlink(){
 		fi
 	;;
 	3)
-		yamlbak=$yaml.bak
-		if [ ! -f "$yaml".bak ];then
+		if [ ! -f $clashdir/config.yaml.bak ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
 			clashlink
 		else
 			echo -----------------------------------------------
-			echo -e 备份文件共有"\033[32m`wc -l < $yamlbak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < $yaml`\033[0m"行内容
+			echo -e 备份文件共有"\033[32m`wc -l < $clashdir/config.yaml.bak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < $clashdir/config.yaml`\033[0m"行内容
 			read -p "确认还原配置文件？此操作不可逆！[1/0] > " res
 			if [ "$res" = '1' ]; then
-				mv $yamlbak $yaml
+				mv $clashdir/config.yaml.bak $clashdir/config.yaml
 				echo -----------------------------------------------
 				echo -e "\033[32m配置文件已还原！请手动重启clash服务！\033[0m"
 				sleep 1
@@ -1467,12 +1490,12 @@ userguide(){
 		fi
 	fi
 	#小米设备软固化
-	# if [ "$systype" = "mi_snapshot" ];then
-		# echo -----------------------------------------------
-		# echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
-		# read -p "是否启用软固化功能？(1/0) > " res
-		# [ "$res" = 1 ] && setconfig mi_autoSSH 已启用
-	# fi
+	if [ "$systype" = "mi_snapshot" ];then
+		echo -----------------------------------------------
+		echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
+		read -p "是否启用软固化功能？(1/0) > " res
+		[ "$res" = 1 ] && autoSSH
+	fi
 	#提示导入订阅或者配置文件
 	echo -----------------------------------------------
 	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"

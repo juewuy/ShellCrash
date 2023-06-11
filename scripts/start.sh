@@ -347,12 +347,13 @@ modify_yaml(){
 		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' $tmpdir/proxies.yaml
 	#插入自定义策略组
 	sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" $tmpdir/proxy-groups.yaml
-	[ -f $clashdir/proxy-groups.yaml ] && {
+	sed -i "/#自定义策略组/d" $tmpdir/proxy-groups.yaml
+	[ -n "$(grep -Ev '^#' $clashdir/proxy-groups.yaml 2>/dev/null)" ] && {
 		#获取空格数
 		space_name=$(grep -E '^ *- name: ' $tmpdir/proxy-groups.yaml | head -n 1 | grep -oE '^ *') 
 		space_proxy=$(grep -A 1 'proxies:$' $tmpdir/proxy-groups.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') 
 		#合并自定义策略组到proxy-groups.yaml
-		cat $clashdir/proxy-groups.yaml | sed "/^#/d" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $tmpdir/proxy-groups_add.yaml 
+		cat $clashdir/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $tmpdir/proxy-groups_add.yaml 
 		cat $tmpdir/proxy-groups.yaml  >> $tmpdir/proxy-groups_add.yaml
 		mv -f $tmpdir/proxy-groups_add.yaml $tmpdir/proxy-groups.yaml
 		oldIFS="$IFS"
@@ -362,19 +363,21 @@ modify_yaml(){
 				IFS="#"
 				for name in $proxy_groups; do
 					line_a=$(grep -n "\- name: $name" $tmpdir/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
-					line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
-					line_c=$((line_a + line_b - 1)) #计算需要插入的行号
-					space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
-					sed -i "${line_c}a\\${space}- ${new_group}#自定义策略组" $tmpdir/proxy-groups.yaml
+					[ -n "$line_a" ] && {
+						line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
+						space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${new_group} #自定义策略组" $tmpdir/proxy-groups.yaml
+					}
 				done
 				IFS="$oldIFS"
 		done
 	}	
 	#插入自定义代理
 	sed -i "/#自定义代理/d" $tmpdir/proxies.yaml
-	[ -f $clashdir/proxies.yaml ] && {
+	[ -n "$(grep -Ev '^#' $clashdir/proxies.yaml 2>/dev/null)" ] && {
 		space_proxy=$(cat $tmpdir/proxies.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
-		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed '$a\' | sed 's/#.*/ #自定义代理/g' >> $tmpdir/proxies.yaml #插入节点
+		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> $tmpdir/proxies.yaml #插入节点
 		oldIFS="$IFS"
 		cat $clashdir/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
 				proxy_name=$(echo $line | grep -Eo 'name: .+, ' | cut -d',' -f1 | sed 's/name: //g')
@@ -382,10 +385,12 @@ modify_yaml(){
 				IFS="#"
 				for name in $proxy_groups; do
 					line_a=$(grep -n "\- name: $name" $tmpdir/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
-					line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
-					line_c=$((line_a + line_b - 1)) #计算需要插入的行号
-					space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
-					sed -i "${line_c}a\\${space}- ${proxy_name}#自定义代理" $tmpdir/proxy-groups.yaml
+					[ -n "$line_a" ] && {
+						line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
+						space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${proxy_name} #自定义代理" $tmpdir/proxy-groups.yaml
+					}
 				done
 				IFS="$oldIFS"
 		done
@@ -401,10 +406,12 @@ modify_yaml(){
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $tmpdir/rules.yaml
 	[ -f $clashdir/rules.yaml ] && {
-		cat $clashdir/rules.yaml | sed 's/^ *-/ -/g' | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $tmpdir/rules.add
+		cat $clashdir/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $tmpdir/rules.add
 		cat $tmpdir/rules.yaml >> $tmpdir/rules.add
 		mv -f $tmpdir/rules.add $tmpdir/rules.yaml
 	}
+	#对齐rules中的空格
+	sed -i 's/^ *-/ -/g' $tmpdir/rules.yaml
 	#添加配置
 ###################################
 	cat > $tmpdir/set.yaml <<EOF
@@ -483,7 +490,7 @@ cn_ip_route(){
 			mv $clashdir/cn_ip.txt $bindir/cn_ip.txt
 		else
 			logger "未找到cn_ip列表，正在下载！" 33
-			$0 webget $bindir/cn_ip.txt "$update_url/bin/china_ip_list.txt"
+			$0 webget $bindir/cn_ip.txt "$update_url/bin/geodata/china_ip_list.txt"
 			[ "$?" = "1" ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败！" 31 
 		fi
 	}
@@ -501,7 +508,7 @@ cn_ipv6_route(){
 			mv $clashdir/cn_ipv6.txt $bindir/cn_ipv6.txt
 		else
 			logger "未找到cn_ipv6列表，正在下载！" 33
-			$0 webget $bindir/cn_ipv6.txt "$update_url/bin/china_ipv6_list.txt"
+			$0 webget $bindir/cn_ipv6.txt "$update_url/bin/geodata/china_ipv6_list.txt"
 			[ "$?" = "1" ] && rm -rf $bindir/cn_ipv6.txt && logger "列表下载失败！" 31 
 		fi
 	}
@@ -1166,8 +1173,8 @@ bfstart(){
 			mv $clashdir/Country.mmdb $bindir/Country.mmdb
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			$0 webget $bindir/Country.mmdb $update_url/bin/cn_mini.mmdb
-			[ "$?" = "1" ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出！" 31 && exit 1
+			$0 webget $bindir/Country.mmdb $update_url/bin/geodata/cn_mini.mmdb
+			[ "$?" = "1" ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
 		fi
@@ -1189,8 +1196,8 @@ bfstart(){
 			mv -f $clashdir/GeoSite.dat $bindir/GeoSite.dat
 		else
 			logger "未找到geosite数据库，正在下载！" 33
-			$0 webget $bindir/GeoSite.dat $update_url/bin/geosite.dat
-			[ "$?" = "1" ] && rm -rf $bindir/GeoSite.dat && logger "数据库下载失败，已退出！" 31 && exit 1
+			$0 webget $bindir/GeoSite.dat $update_url/bin/geodata/geosite.dat
+			[ "$?" = "1" ] && rm -rf $bindir/GeoSite.dat && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 		fi
 	fi
 	#本机代理准备
