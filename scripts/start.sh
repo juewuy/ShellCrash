@@ -74,7 +74,7 @@ logger(){
 			fi
 		}
 		[ -n "$push_bark" ] && {
-			url=${push_bark}/${log_text}
+			url=${push_bark}/${log_text}${bark_param}
 			if curl --version &> /dev/null;then 
 				curl -kfsSl --connect-timeout 3 "$url" &>/dev/null 
 			else
