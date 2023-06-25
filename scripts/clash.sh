@@ -888,7 +888,7 @@ localproxy(){
 	[ -f /etc/rc.common -a -w /etc/passwd ] && local_enh=1
 	echo -----------------------------------------------
 	[ -n "$local_enh" ] && {
-		[ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
+		ckcmd iptables && [ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
 		ckcmd nft && echo -e " 2 使用\033[32mnftables增强模式\033[0m配置(支持docker,推荐！)"
 	}
 	echo -e " 3 使用\033[33m环境变量\033[0m方式配置(部分应用可能无法使用,不推荐！)"
@@ -1499,7 +1499,7 @@ autoSSH(){
 	mi_autoSSH=已配置
 	cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
 	cp -f /etc/dropbear/authorized_keys $clashdir/authorized_keys 2>/dev/null
-	cwcmd nvram && {
+	ckcmd nvram && {
 		nvram set ssh_en=1  
 		nvram set telnet_en=1  
 		nvram set uart_en=1  
@@ -1578,7 +1578,7 @@ tools(){
 			}
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
-	[ "$mi_autoSSH" = "已启用" ] && mi_autoSSH_type=32m已配置 || mi_autoSSH_type=31m未配置
+	[ "$mi_autoSSH" = "已配置" ] && mi_autoSSH_type=32m已配置 || mi_autoSSH_type=31m未配置
 	[ -f $clashdir/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
 	#
 	echo -----------------------------------------------

@@ -375,6 +375,7 @@ modify_yaml(){
 	}	
 	#插入自定义代理
 	sed -i "/#自定义代理/d" $tmpdir/proxies.yaml
+	sed -i "/#自定义代理/d" $tmpdir/proxy-groups.yaml
 	[ -n "$(grep -Ev '^#' $clashdir/proxies.yaml 2>/dev/null)" ] && {
 		space_proxy=$(cat $tmpdir/proxies.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
 		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> $tmpdir/proxies.yaml #插入节点
@@ -1219,7 +1220,7 @@ bfstart(){
 				[ -z "$(grep 'procd_set_param user shellclash' /etc/init.d/clash)" ] && \
     			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellclash' /etc/init.d/clash
 			elif [ -w "$servdir" ]; then
-				setconfig ExecStart "/bin/su shellclash -c \"$bindir/clash -d $bindir\"" $servdir
+				setconfig ExecStart "/bin/su shellclash -c \"$bindir/clash -d $bindir >/dev/null\"" $servdir
 				systemctl daemon-reload >/dev/null
 			fi
 		fi

@@ -6,6 +6,9 @@ error_down(){
 	sleep 1
 	setserver
 }
+dir_avail(){
+	df $2 $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep Ava |awk '{print $2}'
+	}
 #导入订阅、配置文件相关
 linkconfig(){
 	echo -----------------------------------------------
@@ -350,7 +353,7 @@ setgroups(){
 	set_group_type(){
 		echo -----------------------------------------------	
 		echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
-		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中自动指定\033[0m"
+		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m"
 		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$clashdir/proxy-groups.yaml\033[0m"
 		read -p "请输入自定义策略组名称(不支持纯数字) > " new_group_name
 		echo -----------------------------------------------	
@@ -419,7 +422,7 @@ EOF
 	1)
 		group_type="select url-test fallback load-balance"
 		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
-		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml 2>/dev/null| sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_group_type
 		setgroups
 	;;
@@ -488,13 +491,13 @@ setproxies(){
 	case $num in
 	1)
 		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_proxy_type
 		setproxies
 	;;
 	2)	
 		echo -----------------------------------------------
-		sed -i '/^ *$/d' $clashdir/proxies.yaml
+		sed -i '/^ *$/d' $clashdir/proxies.yaml 2>/dev/null
 		if [ -s $clashdir/proxies.yaml ];then
 			echo -e "当前已添加的自定义节点为:"
 			cat $clashdir/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
@@ -514,7 +517,7 @@ setproxies(){
 	;;
 	3)
 		read -p "确认清空全部自定义节点？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/proxies.yaml
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/proxies.yaml 2>/dev/null
 		setproxies
 	;;
 	4)
@@ -726,7 +729,12 @@ clashlink(){
 		clashcron
 	;;
 	6)
+		checkcfg=$(cat $CFG_PATH)
 		override
+		if [ -n "$PID" ];then
+			checkcfg_new=$(cat $CFG_PATH)
+			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+		fi
 	;;
 	*)
 		errornum
@@ -1295,6 +1303,12 @@ update(){
 	clash_v=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 	[ -z "$clash_v" ] && clash_v=$clashv
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
+	echo -----------------------------------------------
+	echo -e "当前目录(\033[32m$clashdir\033[0m)剩余空间：\033[36m$(dir_avail $clashdir -h)\033[0m" 
+	[ "$(dir_avail $clashdir)" -le 5120 ] && {
+		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m" 
+		sleep 1
+	}
 	echo -----------------------------------------------
 	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh$release_type\033[0m"
 	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_n\033[0m"
