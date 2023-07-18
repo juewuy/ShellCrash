@@ -11,3 +11,5 @@ DOMAIN-SUFFIX,sentry.io
 DOMAIN-SUFFIX,intercom.io
 DOMAIN-SUFFIX,featuregates.org
 DOMAIN-SUFFIX,statsigapi.net
+DOMAIN-SUFFIX,claude.ai
+DOMAIN-SUFFIX,Anthropic.com
