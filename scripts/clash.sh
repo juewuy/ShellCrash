@@ -961,13 +961,12 @@ setboot(){
 	2)
 		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
 			echo -e "\033[33m改为使用保守模式启动clash服务！！\033[0m"
-			echo -e "\033[31m注意：部分设备保守模式可能无法禁用开机启动！！\033[0m"
 			start_old=已开启
 			setconfig start_old $start_old
 			$clashdir/start.sh stop
 		else
 			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
-				echo -e "\033[32m改为使用默认方式启动clash服务！！\033[0m"
+				echo -e "\033[32m改为使用系统守护进程启动clash服务！！\033[0m"
 				$clashdir/start.sh cronset "ShellClash初始化"
 				start_old=未开启
 				setconfig start_old $start_old
@@ -1316,7 +1315,12 @@ clashcfg(){
 		clashcfg  
 
 	elif [ "$num" = 5 ]; then	
+		checkcfg_mac=$(cat $clashdir/mac)
 		macfilter
+		if [ -n "$PID" ];then
+			checkcfg_mac_new=$(cat $clashdir/mac)
+			[ "$checkcfg_mac" != "$checkcfg_mac_new" ] && checkrestart
+		fi
 		clashcfg
 		
 	elif [ "$num" = 6 ]; then	

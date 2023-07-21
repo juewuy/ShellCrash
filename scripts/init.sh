@@ -229,6 +229,8 @@ fi
 #删除临时文件
 rm -rf /tmp/*lash*gz
 rm -rf /tmp/SC_tmp
-
+#转换&清理旧版本文件
+mkdir -p $clashdir/configs
+mkdir -p $clashdir/tools
 sleep 1
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m clash \033[0;33m命令开始使用！\033[0m"

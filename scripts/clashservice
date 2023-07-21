@@ -10,6 +10,7 @@ DIR=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 [ -z "$DIR" ] && DIR=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 BINDIR=$(cat $DIR/mark | grep bindir | awk -F "=" '{print $2}')
 [ -z "$BINDIR" ] && BINDIR=$DIR
+TMPDIR=/tmp/clash_$USER
 
 start_service() {
 	#检测必须文件
@@ -20,7 +21,7 @@ start_service() {
 		procd_set_param respawn
 		procd_set_param stderr 0
 		procd_set_param stdout 0
-		procd_set_param command $BINDIR/clash -d $BINDIR
+		procd_set_param command $BINDIR/clash -d $BINDIR -f $TMPDIR/config.yaml
 		procd_close_instance
 		#其他设置
 		$DIR/start.sh afstart
@@ -33,7 +34,7 @@ start() {
 		$DIR/start.sh bfstart
 		if [ "$?" = "0" ];then
 			#创建后台进程
-			service_start  $BINDIR/clash -d $BINDIR
+			service_start  $BINDIR/clash -d $BINDIR -f $TMPDIR/config.yaml
 			#其他设置
 			$DIR/start.sh afstart
 			#设置守护进程

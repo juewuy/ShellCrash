@@ -539,7 +539,6 @@ setproxies(){
 	;;
 	esac
 }
-
 override(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
@@ -547,11 +546,10 @@ override(){
 	echo -e "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
-	echo -e " 2 配置\033[33m内置DNS服务\033[0m"
-	echo -e " 3 管理\033[36m自定义规则\033[0m"
-	echo -e " 4 管理\033[33m自定义节点\033[0m"
-	echo -e " 5 管理\033[36m自定义策略组\033[0m"
-	echo -e " 6 \033[32m自定义\033[0m其他功能"
+	echo -e " 2 管理\033[36m自定义规则\033[0m"
+	echo -e " 3 管理\033[33m自定义节点\033[0m"
+	echo -e " 4 管理\033[36m自定义策略组\033[0m"
+	echo -e " 5 \033[32m自定义\033[0m高级功能"
 	[ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
 	echo -----------------------------------------------
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
@@ -573,24 +571,21 @@ override(){
 		override
 	;;
 	2)
-		setdns
-		override	
-	;;
-	3)
 		setrules
 		override
 	;;
-	4)
+	3)
 		setproxies
 		override
 	;;
-	5)
+	4)
 		setgroups
 		override
 	;;
-	6)
+	5)
 		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
-#用于编写自定义设定(可参考https://lancellc.gitbook.io/clash)
+#用于编写自定义设定(可参考https://lancellc.gitbook.io/clash/clash-config-file/general 或 https://docs.metacubex.one/function/general)
+#端口之类请在脚本中修改，否则不会加载
 #port: 7890
 EOF
 		[ ! -f $clashdir/others.yaml ] && cat > $clashdir/others.yaml <<EOF
@@ -605,9 +600,13 @@ EOF
 #script:
 #listeners:
 EOF
+		echo -----------------------------------------------
 		echo -e "\033[32m已经创建自定义设定文件：$clashdir/user.yaml ！\033[0m"
+		echo -e "\033[33m可用于编写自定义的DNS，等功能\033[0m"
+		echo -----------------------------------------------
 		echo -e "\033[32m已经创建自定义功能文件：$clashdir/others.yaml ！\033[0m"
 		echo -e "\033[33m可用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能\033[0m"		
+		echo -----------------------------------------------
 		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
 		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
 		echo -e "Linux本机可\n使用\033[33mvim\033[0m进行编辑(路由设备可能不显示中文请勿使用)！\033[0m"
@@ -635,6 +634,7 @@ EOF
 	;;
 	esac
 }
+
 clashlink(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
@@ -1404,10 +1404,17 @@ userguide(){
 			errornum
 			forwhat
 		elif [ "$num" = 1 ];then
+			#设置运行模式
 			redir_mod="Redir模式"
 			ckcmd nft && redir_mod="Nft基础"
-			ckcmd nft && modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
+			modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
 			setconfig redir_mod "$redir_mod"
+			#自动识别IPV6
+			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {
+				setconfig ipv6_redir 已开启
+				setconfig ipv6_support 已开启
+				setconfig ipv6_dns 已开启
+			}
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
 			ckcmd systemctl && systemctl enable clash.service > /dev/null 2>&1
@@ -1549,7 +1556,8 @@ testcommand(){
 		$clashdir/start.sh stop
 		echo -----------------------------------------------
 		if $clashdir/clash -v &>/dev/null;then
-			$clashdir/clash -t -d $clashdir	
+			clash -s modify_yaml &>/dev/null
+			$clashdir/clash -t -d $clashdir	-f $tmpdir/config.yaml
 			[ "$?" = 0 ] && testover=32m测试通过！|| testover=31m出现错误！请截图后到TG群询问！！！
 			echo -e "\033[$testover\033[0m"
 		else

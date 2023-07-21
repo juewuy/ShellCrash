@@ -163,7 +163,7 @@ getyaml(){
 	#前后端订阅服务器地址索引，可在此处添加！
 	Server=`sed -n ""$server_link"p"<<EOF
 https://api.dler.io
-https://api.v1.mk
+https://sub.d1.mk
 https://sub.xeton.dev
 https://v.id9.cc
 https://sub.maoxiongnet.com
@@ -183,7 +183,7 @@ https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Ba
 EOF`
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		[ -n "$(echo $Url | grep -oE 'vless:')" -a -z "$retry" ] && Server='https://api.v1.mk'
+		[ -n "$(echo $Url | grep -oE 'vless:')" -a -z "$retry" ] && Server='https://sub.d1.mk'
 		[ -n "$(echo $Url | grep -oE 'hysteria:')" -a -z "$retry" ] && Server='https://sub.jwsc.eu.org'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
@@ -334,9 +334,6 @@ modify_yaml(){
 	
 	#设置目录
 	yaml=$clashdir/config.yaml
-	#预读取变量
-	mode=$(grep "^mode" $yaml | head -1 | awk '{print $2}')
-	[ -z "$mode" ] && mode='Rule'
 	#分割配置文件
 	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
 	for char in $yaml_char;do
@@ -457,28 +454,32 @@ EOF
 	fi
 	#合并文件
 	[ -s $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
-	for char in $yaml_char;do
+	[ -s $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
+	[ -s $tmpdir/others.yaml ] && yaml_others=$clashdir/others.yaml
+	yaml_add=
+	for char in $yaml_char;do #将额外配置文件合并
 		[ -s $tmpdir/${char}.yaml ] && {
 			sed -i "1i\\${char}:" $tmpdir/${char}.yaml
 			yaml_add="$yaml_add $tmpdir/${char}.yaml"
 		}
 	done	
-	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_add > $tmpdir/config.yaml
+	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_others $yaml_add > $tmpdir/config.yaml
 	#测试自定义配置文件
 	$bindir/clash -t -d $bindir -f $tmpdir/config.yaml >/dev/null
 	if [ "$?" != 0 ];then
 		logger "$($bindir/clash -t -d $bindir -f $tmpdir/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
-		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  $tmpdir/config.yaml 
-		sed -i "/#自定义/d" $tmpdir/config.yaml  
+		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  $tmpdir/proxy-groups.yaml  
+		cut -c 1- $tmpdir/set.yaml $yaml_add > $tmpdir/config.yaml
+		sed -i "/#自定义/d" $tmpdir/config.yaml 
 	fi
 	#存档
-	if [ "$clashdir" = "$bindir" ];then
-		cmp -s $tmpdir/config.yaml $yaml >/dev/null 2>&1
-		[ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
-	elif [ "$tmpdir" != "$bindir" ];then
-		mv -f $tmpdir/config.yaml $bindir/config.yaml
-	fi
+	# if [ "$clashdir" = "$bindir" ];then
+		# cmp -s $tmpdir/config.yaml $yaml >/dev/null 2>&1
+		# [ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
+	# elif [ "$tmpdir" != "$bindir" ];then
+		# mv -f $tmpdir/config.yaml $bindir/config.yaml
+	# fi
 	#清理缓存
 	for char in $yaml_char set hosts;do
 		rm -f $tmpdir/${char}.yaml
@@ -740,9 +741,12 @@ start_tun(){
 	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	#屏蔽QUIC
 	if [ "$quic_rj" = 已启用 ];then
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && {
+			set_cn_ip='-m set ! --match-set cn_ip dst'
+			set_cn_ip6='-m set ! --match-set cn_ip6 dst'
+		}
 		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
-		#ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
+		ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT >/dev/null 2>&1
 	fi
 	modprobe xt_mark &>/dev/null && {
 		i=1
@@ -1220,7 +1224,7 @@ bfstart(){
 				[ -z "$(grep 'procd_set_param user shellclash' /etc/init.d/clash)" ] && \
     			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellclash' /etc/init.d/clash
 			elif [ -w "$servdir" ]; then
-				setconfig ExecStart "/bin/su shellclash -c \"$bindir/clash -d $bindir >/dev/null\"" $servdir
+				setconfig ExecStart "/bin/su shellclash -c \"$bindir/clash -d $bindir -f $tmpdir/config.yaml >/dev/null\"" $servdir
 				systemctl daemon-reload >/dev/null
 			fi
 		fi
@@ -1297,10 +1301,10 @@ start_old(){
 	#使用传统后台执行二进制文件的方式执行
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		ckcmd su && su=su
-		$su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
+		$su shellclash -c "$bindir/clash -d $bindir -f $tmpdir/config.yaml >/dev/null" &
 	else
 		ckcmd nohup && nohup=nohup
-		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
+		$nohup $bindir/clash -d $bindir -f $tmpdir/config.yaml >/dev/null 2>&1 &
 	fi
 	afstart
 	$0 daemon
@@ -1321,7 +1325,7 @@ start)
 		bfstart
 		stop_firewall #清理路由策略
 		#使用内置规则强行覆盖config配置文件
-		[ "$disoverride" != "1" ] && modify_yaml
+		[ "$disoverride" != "1" ] && modify_yaml || ln -s $clashdir/config.yaml $tmpdir/config.yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			start_old
