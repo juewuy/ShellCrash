@@ -21,8 +21,8 @@ autoSSH(){
 	[ "$(nvram get telnet_en)" = 0 ] && nvram set telnet_en=1
 	nvram commit &> /dev/null
 	#备份还原SSH秘钥
-	[ -f $clashdir/dropbear_rsa_host_key ] && ln -sf $clashdir/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
-	[ -f $clashdir/authorized_keys ] && ln -sf $clashdir/authorized_keys /etc/dropbear/authorized_keys
+	[ -f $clashdir/configs/dropbear_rsa_host_key ] && ln -sf $clashdir/configs/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
+	[ -f $clashdir/configs/authorized_keys ] && ln -sf $clashdir/configs/authorized_keys /etc/dropbear/authorized_keys
 	#自动清理升级备份文件夹
 	rm -rf /data/etc_bak
 }
@@ -34,7 +34,7 @@ tunfix(){
 	mkdir -p /tmp/overlay/work
 	mount -o noatime,lowerdir=${ko_dir},upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" ${ko_dir}
 	#将tun.ko链接到lib
-	ln -s $clashdir/tun.ko ${ko_dir}/tun.ko
+	ln -s $clashdir/configs/tun.ko ${ko_dir}/tun.ko
 }
 init(){
 	#等待启动完成
@@ -57,7 +57,7 @@ init(){
 	#启动服务
 	if [ ! -f $clashdir/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
-		[ -f $clashdir/tun.ko ] && tunfix
+		[ -f $clashdir/configs/tun.ko ] && tunfix
 		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable

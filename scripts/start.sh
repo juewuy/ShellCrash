@@ -6,11 +6,12 @@
 [ -d "/jffs/clash" ] && clashdir=/jffs/clash
 [ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 [ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
-tmpdir=/tmp/clash_$USER && [ ! -f $tmpdir ] && mkdir -p $tmpdir
+CFG_PATH=$clashdir/configs/ShellClash.cfg
+TMPDIR=/tmp/clash_$USER && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
 #脚本内部工具
 getconfig(){
 	#加载配置文件
-	source $clashdir/mark &> /dev/null
+	source $CFG_PATH &> /dev/null
 	#默认设置
 	[ -z "$bindir" ] && bindir=$clashdir
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
@@ -32,6 +33,8 @@ getconfig(){
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$multiport" ] && multiport='22,53,80,123,143,194,443,465,587,853,993,995,5222,8080,8443'
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
+	#yaml
+	[ -z "$yaml" ] && yaml=$clashdir/yamls/config.yaml
 }
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -54,8 +57,8 @@ logger(){
 	#$1日志内容$2显示颜色$3是否推送
 	[ -n "$2" ] && echo -e "\033[$2m$1\033[0m"
 	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
-	echo $log_text >> $tmpdir/ShellClash_log
-	[ "$(wc -l  $tmpdir/ShellClash_log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d'  $tmpdir/ShellClash_log
+	echo $log_text >> $TMPDIR/ShellClash_log
+	[ "$(wc -l  $TMPDIR/ShellClash_log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d'  $TMPDIR/ShellClash_log
 	[ -z "$3" ] && {
 		getconfig
 		[ -n "$device_name" ] && log_text="$log_text($device_name)"
@@ -110,7 +113,7 @@ croncmd(){
 }
 cronset(){
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
-	tmpcron=$tmpdir/cron_$USER
+	tmpcron=$TMPDIR/cron_$USER
 	croncmd -l > $tmpcron 
 	sed -i "/$1/d" $tmpcron
 	sed -i '/^$/d' $tmpcron
@@ -133,7 +136,7 @@ put_save(){
 	fi
 }
 mark_time(){
-	echo `date +%s` > $tmpdir/clash_start_time
+	echo `date +%s` > $TMPDIR/clash_start_time
 }
 getlanip(){
 	i=1
@@ -141,7 +144,7 @@ getlanip(){
 		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
 		host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
-		[ -f  $tmpdir/ShellClash_log ] && break
+		[ -f  $TMPDIR/ShellClash_log ] && break
 		sleep 2 && i=$((i+1))
 	done
 	#添加自定义ipv4局域网网段
@@ -160,31 +163,12 @@ getlanip(){
 getyaml(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
-	#前后端订阅服务器地址索引，可在此处添加！
-	Server=`sed -n ""$server_link"p"<<EOF
-https://api.dler.io
-https://sub.d1.mk
-https://sub.xeton.dev
-https://v.id9.cc
-https://sub.maoxiongnet.com
-http://sub2.jwsc.eu.org
-EOF`
-	Config=`sed -n ""$rule_link"p"<<EOF
-https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Mini.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Block.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Nano.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full.ini
-https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full_Block.ini
-https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini
-https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiCountry.ini
-https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_BackCN.ini
-EOF`
+	Server=$(grep -aE '^3|^4' $clashdir/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' $clashdir/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	[ "$retry" = 4 ] && Server=$(grep -aE '^499' $clashdir/servers.list | awk '{print $3}')
+	Config=$(grep -aE '^5' $clashdir/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		[ -n "$(echo $Url | grep -oE 'vless:')" -a -z "$retry" ] && Server='https://sub.d1.mk'
-		[ -n "$(echo $Url | grep -oE 'hysteria:')" -a -z "$retry" ] && Server='https://sub.jwsc.eu.org'
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
 		url_type=true
 	fi
@@ -194,8 +178,7 @@ EOF`
 	echo -e "链接地址为：\033[4;32m$Https\033[0m"
 	echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
 	#获取在线yaml文件
-	yaml=$clashdir/config.yaml
-	yamlnew=$tmpdir/clash_config_$USER.yaml
+	yamlnew=$TMPDIR/clash_config_$USER.yaml
 	rm -rf $yamlnew
 	$0 webget $yamlnew $Https
 	if [ "$?" = "1" ];then
@@ -208,14 +191,13 @@ EOF`
 		else
 			if [ "$retry" = 4 ];then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
-				echo -e "\033[32m你也可以尝试使用浏览器下载配置文件后，使用WinSCP手动上传到$tmpdir目录！\033[0m"
+				echo -e "\033[32m你也可以尝试使用浏览器下载配置文件后，使用WinSCP手动上传到$TMPDIR目录！\033[0m"
 				exit 1
 			elif [ "$retry" = 3 ];then
 				retry=4
 				logger "配置文件获取失败！将尝试使用http协议备用服务器获取！" 31
-				echo -e "\033[32m如担心数据安全，请在5s内使用【ctrl+c】退出！\033[0m"
-				sleep 5
-				server_link=6
+				echo -e "\033[32m如担心数据安全，请在3s内使用【Ctrl+c】退出！\033[0m"
+				sleep 3
 				Https=""
 				getyaml
 			else
@@ -262,12 +244,12 @@ EOF`
 		fi
 		#检测并去除无效节点组
 		[ -n "$url_type" ] && ckcmd xargs && {
-			cat $yamlnew | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > $tmpdir/clash_proxies_$USER
+			cat $yamlnew | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > $TMPDIR/clash_proxies_$USER
 			while read line ;do
 				sed -i "/- $line/d" $yamlnew
 				sed -i "/- name: $line/,/- DIRECT/d" $yamlnew
-			done < $tmpdir/clash_proxies_$USER
-			rm -rf $tmpdir/clash_proxies_$USER
+			done < $TMPDIR/clash_proxies_$USER
+			rm -rf $TMPDIR/clash_proxies_$USER
 		}
 		#使用核心内置test功能检测
 		if [ -x $bindir/clash ];then
@@ -294,14 +276,9 @@ modify_yaml(){
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$skip_cert" ] && skip_cert=已开启
-	#默认fake-ip过滤列表
-	fake_ft_df='"*.lan", "time.windows.com", "time.nist.gov", "time.apple.com", "time.asia.apple.com", "*.ntp.org.cn", "*.openwrt.pool.ntp.org", "time1.cloud.tencent.com", "time.ustc.edu.cn", "pool.ntp.org", "ntp.ubuntu.com", "ntp.aliyun.com", "ntp1.aliyun.com", "ntp2.aliyun.com", "ntp3.aliyun.com", "ntp4.aliyun.com", "ntp5.aliyun.com", "ntp6.aliyun.com", "ntp7.aliyun.com", "time1.aliyun.com", "time2.aliyun.com", "time3.aliyun.com", "time4.aliyun.com", "time5.aliyun.com", "time6.aliyun.com", "time7.aliyun.com", "*.time.edu.cn", "time1.apple.com", "time2.apple.com", "time3.apple.com", "time4.apple.com", "time5.apple.com", "time6.apple.com", "time7.apple.com", "time1.google.com", "time2.google.com", "time3.google.com", "time4.google.com", "music.163.com", "*.music.163.com", "*.126.net", "musicapi.taihe.com", "music.taihe.com", "songsearch.kugou.com", "trackercdn.kugou.com", "*.kuwo.cn", "api-jooxtt.sanook.com", "api.joox.com", "joox.com", "y.qq.com", "*.y.qq.com", "streamoc.music.tc.qq.com", "mobileoc.music.tc.qq.com", "isure.stream.qqmusic.qq.com", "dl.stream.qqmusic.qq.com", "aqqmusic.tc.qq.com", "amobile.music.tc.qq.com", "*.xiami.com", "*.music.migu.cn", "music.migu.cn", "*.msftconnecttest.com", "*.msftncsi.com", "localhost.ptlogin2.qq.com", "*.*.*.srv.nintendo.net", "*.*.stun.playstation.net", "xbox.*.*.microsoft.com", "*.*.xboxlive.com", "proxy.golang.org","*.sgcc.com.cn","*.alicdn.com","*.aliyuncs.com"'
-	lan='allow-lan: true'
-	log='log-level: info'
 	[ "$ipv6_support" = "已开启" ] && ipv6='ipv6: true' || ipv6='ipv6: false'
-	[ "$ipv6_dns" = "已开启" ] && dns_v6='ipv6: true' || dns_v6='ipv6: false'
+	[ "$ipv6_dns" = "已开启" ] && dns_v6='true' || dns_v6='false'
 	external="external-controller: 0.0.0.0:$db_port"
-	[ -d $clashdir/ui ] && db_ui=ui
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
 		[ "$clashcore" = 'clash.meta' ] && tun_meta=', device: utun, auto-route: false'
 		tun="tun: {enable: true, stack: system$tun_meta}"
@@ -314,128 +291,64 @@ modify_yaml(){
 		find_process='find-process-mode: "off"'
 	}
 	#dns配置
-	[ -z "$(cat $clashdir/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
-		[ "$clashcore" = 'clash.meta' ] && dns_default_meta=', https://1.0.0.1/dns-query, https://223.5.5.5/dns-query'
-		dns_default="114.114.114.114, 223.5.5.5$dns_default_meta"
-		if [ -f $clashdir/fake_ip_filter ];then
-			while read line;do
-				fake_ft_ad=$fake_ft_ad,\"$line\"
-			done < $clashdir/fake_ip_filter
-		fi
+	[ -z "$(cat $clashdir/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
+		[ "$clashcore" = 'clash.meta' ] && dns_default_meta='- https://223.5.5.5/dns-query'
+		cat > $TMPDIR/dns.yaml <<EOF
+dns:
+  enable: true
+  listen: 0.0.0.0:$dns_port
+  use-hosts: true
+  ipv6: $dns_v6
+  default-nameserver:
+    - 114.114.114.114
+    - 223.5.5.5
+    $dns_default_meta
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+EOF
 		if [ "$dns_mod" = "fake-ip" ];then
-			dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, fake-ip-range: 198.18.0.1/16, enhanced-mode: fake-ip, fake-ip-filter: ['${fake_ft_df}${fake_ft_ad}'], default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver', 127.0.0.1:53], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+			cat $clashdir/configs/fake_ip_filter.list $clashdir/configs/fake_ip_filter | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >> $TMPDIR/dns.yaml
 		else
-			dns='dns: {enable: true, '$dns_v6', listen: 0.0.0.0:'$dns_port', use-hosts: true, enhanced-mode: redir-host, default-nameserver: ['$dns_default', 127.0.0.1:53], nameserver: ['$dns_nameserver$dns_local'], fallback: ['$dns_fallback'], fallback-filter: {geoip: true}}'
+			echo "    - '+.*'" >> $TMPDIR/dns.yaml
 		fi
-	}
+		cat >> $TMPDIR/dns.yaml <<EOF
+  nameserver: [$dns_nameserver]
+  fallback: [$dns_fallback]
+  fallback-filter:
+    geoip: true
+EOF
+		[ -s $clashdir/configs/fallback_filter.list ] && {
+			echo "    domain:" >> $TMPDIR/dns.yaml
+			cat $clashdir/configs/fallback_filter.list | grep '\.' | sed "s/^/      - '/" | sed "s/$/'/" >> $TMPDIR/dns.yaml
+		}		
+}
 	#域名嗅探配置
 	[ "$sniffer" = "已启用" ] && [ "$clashcore" = "clash.meta" ] && sniffer_set="sniffer: {enable: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}}}"
 	[ "$clashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
-	
-	#设置目录
-	yaml=$clashdir/config.yaml
-	#分割配置文件
-	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
-	for char in $yaml_char;do
-		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $yaml > $tmpdir/${char}.yaml
-	done
-	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $tmpdir/proxies.yaml || \
-		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' $tmpdir/proxies.yaml
-	#插入自定义策略组
-	sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" $tmpdir/proxy-groups.yaml
-	sed -i "/#自定义策略组/d" $tmpdir/proxy-groups.yaml
-	[ -n "$(grep -Ev '^#' $clashdir/proxy-groups.yaml 2>/dev/null)" ] && {
-		#获取空格数
-		space_name=$(grep -E '^ *- name: ' $tmpdir/proxy-groups.yaml | head -n 1 | grep -oE '^ *') 
-		space_proxy=$(grep -A 1 'proxies:$' $tmpdir/proxy-groups.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') 
-		#合并自定义策略组到proxy-groups.yaml
-		cat $clashdir/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $tmpdir/proxy-groups_add.yaml 
-		cat $tmpdir/proxy-groups.yaml  >> $tmpdir/proxy-groups_add.yaml
-		mv -f $tmpdir/proxy-groups_add.yaml $tmpdir/proxy-groups.yaml
-		oldIFS="$IFS"
-		grep "\- name: " $clashdir/proxy-groups.yaml | sed "/^#/d" | while read line;do #将自定义策略组插入现有的proxy-group
-				new_group=$(echo $line | grep -Eo '^ *- name:.*#' | cut -d'#' -f1 | sed 's/.*name: //g')
-				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
-				IFS="#"
-				for name in $proxy_groups; do
-					line_a=$(grep -n "\- name: $name" $tmpdir/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
-					[ -n "$line_a" ] && {
-						line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
-						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
-						space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
-						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${new_group} #自定义策略组" $tmpdir/proxy-groups.yaml
-					}
-				done
-				IFS="$oldIFS"
-		done
-	}	
-	#插入自定义代理
-	sed -i "/#自定义代理/d" $tmpdir/proxies.yaml
-	sed -i "/#自定义代理/d" $tmpdir/proxy-groups.yaml
-	[ -n "$(grep -Ev '^#' $clashdir/proxies.yaml 2>/dev/null)" ] && {
-		space_proxy=$(cat $tmpdir/proxies.yaml | grep -E '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
-		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> $tmpdir/proxies.yaml #插入节点
-		oldIFS="$IFS"
-		cat $clashdir/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
-				proxy_name=$(echo $line | grep -Eo 'name: .+, ' | cut -d',' -f1 | sed 's/name: //g')
-				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
-				IFS="#"
-				for name in $proxy_groups; do
-					line_a=$(grep -n "\- name: $name" $tmpdir/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
-					[ -n "$line_a" ] && {
-						line_b=$(grep -A 8 "\- name: $name" $tmpdir/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
-						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
-						space=$(sed -n "$((line_c + 1))p" $tmpdir/proxy-groups.yaml | grep -oE '^ *') #获取空格数
-						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${proxy_name} #自定义代理" $tmpdir/proxy-groups.yaml
-					}
-				done
-				IFS="$oldIFS"
-		done
-	}
-	#节点绕过功能支持
-	sed -i "/#节点绕过/d" $tmpdir/rules.yaml
-	[ "$proxies_bypass" = "已启用" ] && {
-		cat $tmpdir/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $tmpdir/proxies_bypass
-		cat $tmpdir/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $tmpdir/proxies_bypass
-		cat $tmpdir/rules.yaml >> $tmpdir/proxies_bypass 
-		mv -f $tmpdir/proxies_bypass $tmpdir/rules.yaml
-	}
-	#插入自定义规则
-	sed -i "/#自定义规则/d" $tmpdir/rules.yaml
-	[ -f $clashdir/rules.yaml ] && {
-		cat $clashdir/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $tmpdir/rules.add
-		cat $tmpdir/rules.yaml >> $tmpdir/rules.add
-		mv -f $tmpdir/rules.add $tmpdir/rules.yaml
-	}
-	#对齐rules中的空格
-	sed -i 's/^ *-/ -/g' $tmpdir/rules.yaml
-	#添加配置
-###################################
-	cat > $tmpdir/set.yaml <<EOF
+	#生成set.yaml
+	cat > $TMPDIR/set.yaml <<EOF
 mixed-port: $mix_port
 redir-port: $redir_port
 tproxy-port: $tproxy_port
 authentication: ["$authentication"]
-$lan
-mode: $mode
-$log
+allow-lan: true
+mode: Rule
+log-level: info
 $ipv6
 external-controller: :$db_port
-external-ui: $db_ui
+external-ui: ui
 secret: $secret
 $tun
 $exper
-$dns
 $sniffer_set
 store-selected: $restore
 $find_process
 EOF
-###################################
 	#读取本机hosts并生成配置文件
-	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -E '^hosts:' $clashdir/user.yaml 2>/dev/null)" ];then
+	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -aE '^hosts:' $clashdir/user.yaml 2>/dev/null)" ];then
 		#NTP劫持
-		cat >> $tmpdir/hosts.yaml <<EOF
+		cat >> $TMPDIR/hosts.yaml <<EOF
 hosts:
    'time.android.com': 203.107.6.88
    'time.facebook.com': 203.107.6.88  
@@ -448,41 +361,121 @@ EOF
 			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
 			hosts_ip=$(echo $line | awk '{print $1}')  && \
 			hosts_domain=$(echo $line | awk '{print $2}') && \
-			[ -z "$(cat $tmpdir/hosts.yaml | grep -oE "$hosts_domain")" ] && \
-			echo "   '$hosts_domain': $hosts_ip" >> $tmpdir/hosts.yaml
+			[ -z "$(cat $TMPDIR/hosts.yaml | grep -oE "$hosts_domain")" ] && \
+			echo "   '$hosts_domain': $hosts_ip" >> $TMPDIR/hosts.yaml
 		done < $sys_hosts
-	fi
+	fi	
+	#分割配置文件
+	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
+	for char in $yaml_char;do
+		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $yaml > $TMPDIR/${char}.yaml
+	done
+	#跳过本地tls证书验证
+	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $TMPDIR/proxies.yaml || \
+		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' $TMPDIR/proxies.yaml
+	#插入自定义策略组
+	sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" $TMPDIR/proxy-groups.yaml
+	sed -i "/#自定义策略组/d" $TMPDIR/proxy-groups.yaml
+	[ -n "$(grep -Ev '^#' $clashdir/proxy-groups.yaml 2>/dev/null)" ] && {
+		#获取空格数
+		space_name=$(grep -aE '^ *- name: ' $TMPDIR/proxy-groups.yaml | head -n 1 | grep -oE '^ *') 
+		space_proxy=$(grep -A 1 'proxies:$' $TMPDIR/proxy-groups.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') 
+		#合并自定义策略组到proxy-groups.yaml
+		cat $clashdir/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $TMPDIR/proxy-groups_add.yaml 
+		cat $TMPDIR/proxy-groups.yaml  >> $TMPDIR/proxy-groups_add.yaml
+		mv -f $TMPDIR/proxy-groups_add.yaml $TMPDIR/proxy-groups.yaml
+		oldIFS="$IFS"
+		grep "\- name: " $clashdir/proxy-groups.yaml | sed "/^#/d" | while read line;do #将自定义策略组插入现有的proxy-group
+				new_group=$(echo $line | grep -Eo '^ *- name:.*#' | cut -d'#' -f1 | sed 's/.*name: //g')
+				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
+				IFS="#"
+				for name in $proxy_groups; do
+					line_a=$(grep -n "\- name: $name" $TMPDIR/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+					[ -n "$line_a" ] && {
+						line_b=$(grep -A 8 "\- name: $name" $TMPDIR/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
+						space=$(sed -n "$((line_c + 1))p" $TMPDIR/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${new_group} #自定义策略组" $TMPDIR/proxy-groups.yaml
+					}
+				done
+				IFS="$oldIFS"
+		done
+	}	
+	#插入自定义代理
+	sed -i "/#自定义代理/d" $TMPDIR/proxies.yaml
+	sed -i "/#自定义代理/d" $TMPDIR/proxy-groups.yaml
+	[ -n "$(grep -Ev '^#' $clashdir/proxies.yaml 2>/dev/null)" ] && {
+		space_proxy=$(cat $TMPDIR/proxies.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
+		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> $TMPDIR/proxies.yaml #插入节点
+		oldIFS="$IFS"
+		cat $clashdir/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
+				proxy_name=$(echo $line | grep -Eo 'name: .+, ' | cut -d',' -f1 | sed 's/name: //g')
+				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
+				IFS="#"
+				for name in $proxy_groups; do
+					line_a=$(grep -n "\- name: $name" $TMPDIR/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+					[ -n "$line_a" ] && {
+						line_b=$(grep -A 8 "\- name: $name" $TMPDIR/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
+						space=$(sed -n "$((line_c + 1))p" $TMPDIR/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${proxy_name} #自定义代理" $TMPDIR/proxy-groups.yaml
+					}
+				done
+				IFS="$oldIFS"
+		done
+	}
+	#节点绕过功能支持
+	sed -i "/#节点绕过/d" $TMPDIR/rules.yaml
+	[ "$proxies_bypass" = "已启用" ] && {
+		cat $TMPDIR/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT #节点绕过|g' >> $TMPDIR/proxies_bypass
+		cat $TMPDIR/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $TMPDIR/proxies_bypass
+		cat $TMPDIR/rules.yaml >> $TMPDIR/proxies_bypass 
+		mv -f $TMPDIR/proxies_bypass $TMPDIR/rules.yaml
+	}
+	#插入自定义规则
+	sed -i "/#自定义规则/d" $TMPDIR/rules.yaml
+	[ -f $clashdir/rules.yaml ] && {
+		cat $clashdir/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $TMPDIR/rules.add
+		cat $TMPDIR/rules.yaml >> $TMPDIR/rules.add
+		mv -f $TMPDIR/rules.add $TMPDIR/rules.yaml
+	}
+	#对齐rules中的空格
+	sed -i 's/^ *-/ -/g' $TMPDIR/rules.yaml
 	#合并文件
-	[ -s $clashdir/user.yaml ] && yaml_user=$clashdir/user.yaml
-	[ -s $tmpdir/hosts.yaml ] && yaml_hosts=$tmpdir/hosts.yaml
-	[ -s $tmpdir/others.yaml ] && yaml_others=$clashdir/others.yaml
+	[ -s $clashdir/user.yaml ] && {
+		yaml_user=$clashdir/user.yaml
+		#set和user去重,且优先使用user.yaml
+		cp -f $TMPDIR/set.yaml $TMPDIR/set_bak.yaml
+		for char in mode allow-lan log-level tun experimental interface-name dns store-selected;do
+			[ -n "$(grep -E "^$char" $yaml_user)" ] && sed -i "/^$char/d" $TMPDIR/set.yaml
+		done
+	}
+	[ -s $TMPDIR/dns.yaml ] && yaml_dns=$TMPDIR/dns.yaml
+	[ -s $TMPDIR/hosts.yaml ] && yaml_hosts=$TMPDIR/hosts.yaml
+	[ -s $TMPDIR/others.yaml ] && yaml_others=$clashdir/others.yaml
 	yaml_add=
 	for char in $yaml_char;do #将额外配置文件合并
-		[ -s $tmpdir/${char}.yaml ] && {
-			sed -i "1i\\${char}:" $tmpdir/${char}.yaml
-			yaml_add="$yaml_add $tmpdir/${char}.yaml"
+		[ -s $TMPDIR/${char}.yaml ] && {
+			sed -i "1i\\${char}:" $TMPDIR/${char}.yaml
+			yaml_add="$yaml_add $TMPDIR/${char}.yaml"
 		}
 	done	
-	cut -c 1- $tmpdir/set.yaml $yaml_hosts $yaml_user $yaml_others $yaml_add > $tmpdir/config.yaml
+	#合并完整配置文件
+	cut -c 1- $TMPDIR/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add > $TMPDIR/config.yaml
 	#测试自定义配置文件
-	$bindir/clash -t -d $bindir -f $tmpdir/config.yaml >/dev/null
+	$bindir/clash -t -d $bindir -f $TMPDIR/config.yaml >/dev/null
 	if [ "$?" != 0 ];then
-		logger "$($bindir/clash -t -d $bindir -f $tmpdir/config.yaml | grep -Eo 'error.*=.*')" 31
+		logger "$($bindir/clash -t -d $bindir -f $TMPDIR/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
-		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  $tmpdir/proxy-groups.yaml  
-		cut -c 1- $tmpdir/set.yaml $yaml_add > $tmpdir/config.yaml
-		sed -i "/#自定义/d" $tmpdir/config.yaml 
+		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  $TMPDIR/proxy-groups.yaml
+		mv -f $TMPDIR/set_bak.yaml $TMPDIR/set.yaml &>/dev/null
+		#合并基础配置文件
+		cut -c 1- $TMPDIR/set.yaml $yaml_dns $yaml_add > $TMPDIR/config.yaml
+		sed -i "/#自定义/d" $TMPDIR/config.yaml 
 	fi
-	#存档
-	# if [ "$clashdir" = "$bindir" ];then
-		# cmp -s $tmpdir/config.yaml $yaml >/dev/null 2>&1
-		# [ "$?" != 0 ] && mv -f $tmpdir/config.yaml $yaml || rm -f $tmpdir/config.yaml
-	# elif [ "$tmpdir" != "$bindir" ];then
-		# mv -f $tmpdir/config.yaml $bindir/config.yaml
-	# fi
 	#清理缓存
-	for char in $yaml_char set hosts;do
-		rm -f $tmpdir/${char}.yaml
+	for char in $yaml_char set set_bak dns hosts;do
+		rm -f $TMPDIR/${char}.yaml
 	done
 }
 #设置路由规则
@@ -497,10 +490,10 @@ cn_ip_route(){
 		fi
 	}
 	[ -f $bindir/cn_ip.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
-			echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > $tmpdir/cn_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> $tmpdir/cn_$USER.ipset
+			echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > $TMPDIR/cn_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> $TMPDIR/cn_$USER.ipset
 			ipset -! flush cn_ip 2>/dev/null
-			ipset -! restore < $tmpdir/cn_$USER.ipset 
+			ipset -! restore < $TMPDIR/cn_$USER.ipset 
 			rm -rf cn_$USER.ipset
 	}
 }
@@ -516,10 +509,10 @@ cn_ipv6_route(){
 	}
 	[ -f $bindir/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			#ipv6
-			echo "create cn_ip6 hash:net family inet6 hashsize 1024 maxelem 65536" > $tmpdir/cn6_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/cn_ipv6.txt >> $tmpdir/cn6_$USER.ipset
+			echo "create cn_ip6 hash:net family inet6 hashsize 1024 maxelem 65536" > $TMPDIR/cn6_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/cn_ipv6.txt >> $TMPDIR/cn6_$USER.ipset
 			ipset -! flush cn_ip6 2>/dev/null
-			ipset -! restore < $tmpdir/cn6_$USER.ipset 
+			ipset -! restore < $TMPDIR/cn6_$USER.ipset 
 			rm -rf cn6_$USER.ipset
 	}
 }
@@ -535,12 +528,12 @@ start_redir(){
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
 	iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	#局域网设备过滤
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		for mac in $(cat $clashdir/mac); do #mac白名单
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
+		for mac in $(cat $clashdir/configs/mac); do #mac白名单
 			iptables -t nat -A clash -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 		done
 	else
-		for mac in $(cat $clashdir/mac); do #mac黑名单
+		for mac in $(cat $clashdir/configs/mac); do #mac黑名单
 			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
 		done
 		#仅代理本机局域网网段流量
@@ -561,12 +554,12 @@ start_redir(){
 		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
 		ip6tables -t nat -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		#局域网设备过滤
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-			for mac in $(cat $clashdir/mac); do #mac白名单
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
+			for mac in $(cat $clashdir/configs/mac); do #mac白名单
 				ip6tables -t nat -A clashv6 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 			done
 		else
-			for mac in $(cat $clashdir/mac); do #mac黑名单
+			for mac in $(cat $clashdir/configs/mac); do #mac黑名单
 				ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
 			done
 			#仅代理本机局域网网段流量
@@ -586,12 +579,12 @@ start_ipt_dns(){
 	}
 	#设置dns转发
 	iptables -t nat -N clash_dns
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		for mac in $(cat $clashdir/mac); do #mac白名单
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
+		for mac in $(cat $clashdir/configs/mac); do #mac白名单
 			iptables -t nat -A clash_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 		done
 	else
-		for mac in $(cat $clashdir/mac); do #mac黑名单
+		for mac in $(cat $clashdir/configs/mac); do #mac黑名单
 			iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
 		done	
 		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
@@ -600,12 +593,12 @@ start_ipt_dns(){
 	#ipv6DNS
 	if [ -n "$(lsmod | grep 'ip6table_nat')" -a -n "$(lsmod | grep 'xt_nat')" ];then
 		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-			for mac in $(cat $clashdir/mac); do #mac白名单
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
+			for mac in $(cat $clashdir/configs/mac); do #mac白名单
 				ip6tables -t nat -A clashv6_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 			done
 		else
-			for mac in $(cat $clashdir/mac); do #mac黑名单
+			for mac in $(cat $clashdir/configs/mac); do #mac黑名单
 				ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN
 			done	
 			ip6tables -t nat -A clashv6_dns -p udp -j REDIRECT --to $dns_port
@@ -633,12 +626,12 @@ start_tproxy(){
 	iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	#tcp&udp分别进代理链
 	tproxy_set(){
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-		for mac in $(cat $clashdir/mac); do #mac白名单
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
+		for mac in $(cat $clashdir/configs/mac); do #mac白名单
 			iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 		done
 	else
-		for mac in $(cat $clashdir/mac); do #mac黑名单
+		for mac in $(cat $clashdir/configs/mac); do #mac黑名单
 			iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 		done
 		#仅代理本机局域网网段流量
@@ -671,14 +664,14 @@ start_tproxy(){
 		ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		#tcp&udp分别进代理链
 		tproxy_set6(){
-			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
+			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
 				#mac白名单
-				for mac in $(cat $clashdir/mac); do
+				for mac in $(cat $clashdir/configs/mac); do
 					ip6tables -t mangle -A clashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 				done
 			else
 				#mac黑名单
-				for mac in $(cat $clashdir/mac); do
+				for mac in $(cat $clashdir/configs/mac); do
 					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 				done
 				#仅代理本机局域网网段流量
@@ -769,12 +762,12 @@ start_tun(){
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
 		iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 		#局域网设备过滤
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-			for mac in $(cat $clashdir/mac); do #mac白名单
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
+			for mac in $(cat $clashdir/configs/mac); do #mac白名单
 				iptables -t mangle -A clash -m mac --mac-source $mac -j MARK --set-mark $fwmark
 			done
 		else
-			for mac in $(cat $clashdir/mac); do #mac黑名单
+			for mac in $(cat $clashdir/configs/mac); do #mac黑名单
 				iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
 			done
 			#仅代理本机局域网网段流量
@@ -798,12 +791,12 @@ start_tun(){
 			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
 			ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 			#局域网设备过滤
-			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/mac)" ];then
-				for mac in $(cat $clashdir/mac); do #mac白名单
+			if [ "$macfilter_type" = "白名单" -a -n "$(cat $clashdir/configs/mac)" ];then
+				for mac in $(cat $clashdir/configs/mac); do #mac白名单
 					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark $fwmark
 				done
 			else
-				for mac in $(cat $clashdir/mac); do #mac黑名单
+				for mac in $(cat $clashdir/configs/mac); do #mac黑名单
 					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
 				done
 				#仅代理本机局域网网段流量
@@ -833,8 +826,8 @@ start_nft(){
 	}
 	[ -n "$(echo $redir_mod|grep Nft)" ] && {
 		#过滤局域网设备
-		[ -n "$(cat $clashdir/mac)" ] && {
-			MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
+		[ -n "$(cat $clashdir/configs/mac)" ] && {
+			MAC=$(awk '{printf "%s, ",$1}' $clashdir/configs/mac)
 			[ "$macfilter_type" = "黑名单" ] && \
 				nft add rule inet shellclash prerouting ether saddr {$MAC} return || \
 				nft add rule inet shellclash prerouting ether saddr != {$MAC} return
@@ -902,8 +895,8 @@ start_nft(){
 start_nft_dns(){
 	nft add chain inet shellclash dns { type nat hook prerouting priority -100 \; }
 	#过滤局域网设备
-	[ -n "$(cat $clashdir/mac)" ] && {
-		MAC=$(awk '{printf "%s, ",$1}' $clashdir/mac)
+	[ -n "$(cat $clashdir/configs/mac)" ] && {
+		MAC=$(awk '{printf "%s, ",$1}' $clashdir/configs/mac)
 		[ "$macfilter_type" = "黑名单" ] && \
 			nft add rule inet shellclash dns ether saddr {$MAC} return || \
 			nft add rule inet shellclash dns ether saddr != {$MAC} return
@@ -979,7 +972,7 @@ stop_firewall(){
 		iptables -t mangle -F clash 2> /dev/null
 		iptables -t mangle -X clash 2> /dev/null
 		#公网访问
-		for ip in $host_ipv4 $local_ipv4;do
+		for ip in $host_ipv4 $local_ipv4 $reserve_ipv4;do
 			iptables -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2> /dev/null
 			iptables -D INPUT -p tcp -s $ip --dport $db_port -j ACCEPT 2> /dev/null
 		done
@@ -1045,19 +1038,19 @@ stop_firewall(){
 #面板配置保存相关
 web_save(){
 	#使用get_save获取面板节点设置
-	get_save http://127.0.0.1:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -E '^"all".*"Selector"' > $tmpdir/clash_web_check_$USER
+	get_save http://127.0.0.1:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -aE '^"all".*"Selector"' > $TMPDIR/clash_web_check_$USER
 	while read line ;do
 		def=$(echo $line | awk -F "[[,]" '{print $2}')
 		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g' | sed 's/"type":.*//g' |  sed 's/,//g')
-		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> $tmpdir/clash_web_save_$USER
-	done < $tmpdir/clash_web_check_$USER
-	rm -rf $tmpdir/clash_web_check_$USER
+		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> $TMPDIR/clash_web_save_$USER
+	done < $TMPDIR/clash_web_check_$USER
+	rm -rf $TMPDIR/clash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
-	if [ -s $tmpdir/clash_web_save_$USER ];then
-		compare $tmpdir/clash_web_save_$USER $clashdir/web_save
-		[ "$?" = 0 ] && rm -rf $tmpdir/clash_web_save_$USER || mv -f $tmpdir/clash_web_save_$USER $clashdir/web_save
+	if [ -s $TMPDIR/clash_web_save_$USER ];then
+		compare $TMPDIR/clash_web_save_$USER $clashdir/configs/web_save
+		[ "$?" = 0 ] && rm -rf $TMPDIR/clash_web_save_$USER || mv -f $TMPDIR/clash_web_save_$USER $clashdir/configs/web_save
 	else
-		echo > $clashdir/web_save
+		echo > $clashdir/configs/web_save
 	fi
 }
 web_restore(){
@@ -1074,11 +1067,11 @@ web_restore(){
 		i=$((i+1))
 	done
 	#发送数据
-	num=$(cat $clashdir/web_save | wc -l)
+	num=$(cat $clashdir/configs/web_save | wc -l)
 	i=1
 	while [ "$i" -le "$num" ];do
-		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' $clashdir/web_save | sed 's/ /%20/g')
-		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $clashdir/web_save)
+		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' $clashdir/configs/web_save | sed 's/ /%20/g')
+		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $clashdir/configs/web_save)
 		put_save http://127.0.0.1:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
 		i=$((i+1))
 	done
@@ -1089,7 +1082,7 @@ catpac(){
 	[ -n "$host" ] && host_pac=$host
 	[ -z "$host_pac" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	cat > $tmpdir/clash_pac <<EOF
+	cat > $TMPDIR/clash_pac <<EOF
 //如看见此处内容，请重新安装本地面板！
 //之后返回上一级页面，清理浏览器缓存并刷新页面！
 function FindProxyForURL(url, host) {
@@ -1108,8 +1101,8 @@ function FindProxyForURL(url, host) {
 		return "PROXY $host_pac:$mix_port; DIRECT; SOCKS5 $host_pac:$mix_port"
 }
 EOF
-	compare $tmpdir/clash_pac $bindir/ui/pac
-	[ "$?" = 0 ] && rm -rf $tmpdir/clash_pac || mv -f $tmpdir/clash_pac $bindir/ui/pac
+	compare $TMPDIR/clash_pac $bindir/ui/pac
+	[ "$?" = 0 ] && rm -rf $TMPDIR/clash_pac || mv -f $TMPDIR/clash_pac $bindir/ui/pac
 }
 bfstart(){
 	#读取配置文件
@@ -1117,7 +1110,7 @@ bfstart(){
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master
 	#检查yaml配置文件
-	if [ ! -f $clashdir/config.yaml ];then
+	if [ ! -f $yaml ];then
 		if [ -n "$Url" -o -n "$Https" ];then
 			logger "未找到配置文件，正在下载！" 33
 			getyaml
@@ -1128,7 +1121,7 @@ bfstart(){
 		fi
 	fi
 	#检测vless/hysteria协议
-	if [ -n "$(cat $clashdir/config.yaml | grep -oE 'type: vless|type: hysteria')" ] && [ "$clashcore" != "clash.meta" ];then
+	if [ -n "$(cat $yaml | grep -oE 'type: vless|type: hysteria')" ] && [ "$clashcore" != "clash.meta" ];then
 		echo -----------------------------------------------
 		logger "检测到vless/hysteria协议！将改为使用clash.meta核心启动！" 33
 		rm -rf $bindir/clash
@@ -1137,7 +1130,7 @@ bfstart(){
 		echo -----------------------------------------------
 	fi
 	#检测是否存在高级版规则
-	if [ "$clashcore" = "clash" -a -n "$(cat $clashdir/config.yaml | grep -E '^script:|proxy-providers|rule-providers|rule-set')" ];then
+	if [ "$clashcore" = "clash" -a -n "$(cat $yaml | grep -aE '^script:|proxy-providers|rule-providers|rule-set')" ];then
 		echo -----------------------------------------------
 		logger "检测到高级规则！将改为使用clash.meta核心启动！" 33
 		rm -rf $bindir/clash
@@ -1195,7 +1188,7 @@ bfstart(){
 	#生成pac文件
 	catpac
 	#预下载GeoSite数据库
-	if [ "$clashcore" = "clash.meta" ] && [ ! -f $bindir/GeoSite.dat ] && [ -n "$(cat $clashdir/config.yaml|grep -Ei 'geosite')" ];then
+	if [ "$clashcore" = "clash.meta" ] && [ ! -f $bindir/GeoSite.dat ] && [ -n "$(cat $yaml|grep -Ei 'geosite')" ];then
 		[ -f $clashdir/geosite.dat ] && mv -f $clashdir/geosite.dat $clashdir/GeoSite.dat
 		if [ -f $clashdir/GeoSite.dat ];then
 			mv -f $clashdir/GeoSite.dat $bindir/GeoSite.dat
@@ -1224,7 +1217,7 @@ bfstart(){
 				[ -z "$(grep 'procd_set_param user shellclash' /etc/init.d/clash)" ] && \
     			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellclash' /etc/init.d/clash
 			elif [ -w "$servdir" ]; then
-				setconfig ExecStart "/bin/su shellclash -c \"$bindir/clash -d $bindir -f $tmpdir/config.yaml >/dev/null\"" $servdir
+				setconfig ExecStart "/bin/su shellclash -c \"$bindir/clash -d $bindir -f $TMPDIR/config.yaml >/dev/null\"" $servdir
 				systemctl daemon-reload >/dev/null
 			fi
 		fi
@@ -1235,7 +1228,7 @@ afstart(){
 	#读取配置文件
 	getconfig
 	#延迟启动
-	[ ! -f $tmpdir/clash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+	[ ! -f $TMPDIR/clash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
 		logger "clash将延迟$start_delay秒启动" 31 pushoff
 		sleep $start_delay
 	}
@@ -1285,7 +1278,7 @@ afstart(){
 		[ -f $clashdir/cron ] && croncmd $clashdir/cron	
 		#启用面板配置自动保存
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
-		[ -f $clashdir/web_save ] && web_restore & #后台还原面板配置
+		[ -f $clashdir/configs/web_save ] && web_restore & #后台还原面板配置
 		#推送日志
 		{ sleep 5;logger Clash服务已启动！;} &
 		#同步本机时间
@@ -1301,10 +1294,10 @@ start_old(){
 	#使用传统后台执行二进制文件的方式执行
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		ckcmd su && su=su
-		$su shellclash -c "$bindir/clash -d $bindir -f $tmpdir/config.yaml >/dev/null" &
+		$su shellclash -c "$bindir/clash -d $bindir -f $TMPDIR/config.yaml >/dev/null" &
 	else
 		ckcmd nohup && nohup=nohup
-		$nohup $bindir/clash -d $bindir -f $tmpdir/config.yaml >/dev/null 2>&1 &
+		$nohup $bindir/clash -d $bindir -f $TMPDIR/config.yaml >/dev/null 2>&1 &
 	fi
 	afstart
 	$0 daemon
@@ -1325,7 +1318,7 @@ start)
 		bfstart
 		stop_firewall #清理路由策略
 		#使用内置规则强行覆盖config配置文件
-		[ "$disoverride" != "1" ] && modify_yaml || ln -s $clashdir/config.yaml $tmpdir/config.yaml
+		[ "$disoverride" != "1" ] && modify_yaml || ln -s $yaml $TMPDIR/config.yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			start_old

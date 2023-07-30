@@ -12,17 +12,8 @@ dir_avail(){
 #导入订阅、配置文件相关
 linkconfig(){
 	echo -----------------------------------------------
-	echo 当前使用规则为：$rule_link
-	echo " 1	Acl4SSR全能优化版(推荐)"
-	echo " 2	Acl4SSR精简优化版(推荐)"
-	echo " 3	Acl4SSR全能优化+去广告增强"
-	echo " 4	Acl4SSR极简版(适合自建)"
-	echo " 5	Acl4SSR分流&游戏增强"
-	echo " 6	Acl4SSR分流&游戏&去广告增强"
-	echo " 7	洞主规则精简版"
-	echo " 8	洞主规则重度完整版"
-	echo " 9	Acl4SSR多国精简"
-	echo " 10	Acl4SSR回国专用"
+	echo 当前使用规则为：$(grep -aE '^5' $clashdir/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $2}')
+	grep -aE '^5' $clashdir/configs/servers.list | awk '{print " "NR"	"$2$4}'
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
@@ -42,12 +33,8 @@ linkserver(){
 	echo -----------------------------------------------
 	echo -e "\033[36m以下为互联网采集的第三方服务器，具体安全性请自行斟酌！\033[0m"
 	echo -e "\033[32m感谢以下作者的无私奉献！！！\033[0m"
-	echo 当前使用后端为：$server_link
-	echo 1 api.dler.io			（墙洞提供）
-	echo 2 api.v1.mk			（肥羊提供,支持vless）
-	echo 3 sub.xeton.dev		（SUB作者提供）
-	echo 4 v.id9.cc				（品云提供,支持vless）
-	echo 5 sub.maoxiongnet.com	（猫熊提供）
+	echo 当前使用后端为：$(grep -aE '^5' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $2}')
+	grep -aE '^3|^4' $clashdir/configs/servers.list | awk '{print " "NR"	"$3"	"$2}'
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
@@ -268,7 +255,7 @@ setrules(){
 				rule_group_set=$(echo $rule_group|cut -d'#' -f$num)
 				rule_all="- ${rule_type_set},${rule_state_set},${rule_group_set}"
 				[ -n "$(echo IP-CIDR SRC-IP-CIDR IP-CIDR6|grep "$rule_type_set")" ] && rule_all="${rule_all},no-resolve"
-				echo $rule_all >> $clashdir/rules.yaml
+				echo $rule_all >> $YAMLSDIR/rules.yaml
 				echo -----------------------------------------------	
 				echo -e "\033[32m添加成功！\033[0m"
 			fi
@@ -280,8 +267,8 @@ setrules(){
 	}
 	del_rule_type(){
 		echo -e "输入对应数字即可移除相应规则:"
-		sed -i '/^ *$/d' $clashdir/rules.yaml
-		cat $clashdir/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
+		sed -i '/^ *$/d' $YAMLSDIR/rules.yaml
+		cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
 		echo -----------------------------------------------	
 		echo -e " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
@@ -289,8 +276,8 @@ setrules(){
 		0)	;;
 		'')	;;
 		*)
-			if [ $num -le $(cat $clashdir/rules.yaml | grep -Ev '^#' | grep -Ev '^ *$' | wc -l) ];then
-				sed -i "$num{/^\s*[^#]/d}" $clashdir/rules.yaml
+			if [ $num -le $(cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | grep -Ev '^ *$' | wc -l) ];then
+				sed -i "$num{/^\s*[^#]/d}" $YAMLSDIR/rules.yaml
 				del_rule_type
 			else
 				errornum
@@ -300,7 +287,7 @@ setrules(){
 	}
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
-	echo -e "\033[36m如需批量操作，请手动编辑：$clashdir/rules.yaml\033[0m"
+	echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/rules.yaml\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 新增自定义规则"
 	echo -e " 2 管理自定义规则"
@@ -311,13 +298,13 @@ setrules(){
 	case $num in
 	1)
 		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		rule_group="DIRECT#REJECT$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
+		rule_group="DIRECT#REJECT$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
 		set_rule_type
 		setrules
 	;;
 	2)
 		echo -----------------------------------------------
-		if [ -s $clashdir/rules.yaml ];then
+		if [ -s $YAMLSDIR/rules.yaml ];then
 			del_rule_type
 		else
 			echo -e "请先添加自定义规则！"
@@ -327,7 +314,7 @@ setrules(){
 	;;
 	3)
 		read -p "确认清空全部自定义规则？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/rules.yaml
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $YAMLSDIR/rules.yaml
 		setrules
 	;;
 	4)
@@ -354,7 +341,7 @@ setgroups(){
 		echo -----------------------------------------------	
 		echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
 		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m"
-		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$clashdir/proxy-groups.yaml\033[0m"
+		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$YAMLSDIR/proxy-groups.yaml\033[0m"
 		read -p "请输入自定义策略组名称(不支持纯数字) > " new_group_name
 		echo -----------------------------------------------	
 		echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
@@ -371,7 +358,7 @@ setgroups(){
 		fi
 		set_group_add
 		#添加自定义策略组
-		cat >> $clashdir/proxy-groups.yaml <<EOF
+		cat >> $YAMLSDIR/proxy-groups.yaml <<EOF
   - name: $new_group_name
     type: $new_group_type
     $new_group_url
@@ -379,7 +366,7 @@ setgroups(){
     proxies:
      - DIRECT
 EOF
-		sed -i "/^ *$/d" $clashdir/proxy-groups.yaml
+		sed -i "/^ *$/d" $YAMLSDIR/proxy-groups.yaml
 		echo -----------------------------------------------	
 		echo -e "\033[32m添加成功！\033[0m"
 		
@@ -411,7 +398,7 @@ EOF
 	}
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理自定义策略组\033[0m"
-	echo -e "\033[36m如需修改或批量操作，请手动编辑：$clashdir/proxy-groups.yaml\033[0m"
+	echo -e "\033[36m如需修改或批量操作，请手动编辑：$YAMLSDIR/proxy-groups.yaml\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 添加自定义策略组"
 	echo -e " 2 查看自定义策略组"
@@ -422,18 +409,18 @@ EOF
 	1)
 		group_type="select url-test fallback load-balance"
 		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
-		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml 2>/dev/null| sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null| sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_group_type
 		setgroups
 	;;
 	2)
 		echo -----------------------------------------------
-		cat $clashdir/proxy-groups.yaml
+		cat $YAMLSDIR/proxy-groups.yaml
 		setgroups
 	;;
 	3)
 		read -p "确认清空全部自定义策略组？(1/0) > " res
-		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > $clashdir/proxy-groups.yaml
+		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > $YAMLSDIR/proxy-groups.yaml
 		setgroups
 	;;
 	*)
@@ -468,7 +455,7 @@ setproxies(){
 				rule_group_add="${rule_group_add}#${rule_group_set}"
 			done
 			if [ -n "$rule_group_add" ];then
-				echo "- {$proxy_state_set}$rule_group_add" >> $clashdir/proxies.yaml
+				echo "- {$proxy_state_set}$rule_group_add" >> $YAMLSDIR/proxies.yaml
 				echo -----------------------------------------------	
 				echo -e "\033[32m添加成功！\033[0m"
 				unset rule_group_add
@@ -480,7 +467,7 @@ setproxies(){
 	}
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理自定义节点\033[0m"
-	echo -e "\033[36m如需批量操作，请手动编辑：$clashdir/proxies.yaml\033[0m"
+	echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/proxies.yaml\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 添加自定义节点"
 	echo -e " 2 管理自定义节点"
@@ -491,21 +478,21 @@ setproxies(){
 	case $num in
 	1)
 		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		proxy_group="$(cat $clashdir/proxy-groups.yaml $clashdir/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_proxy_type
 		setproxies
 	;;
 	2)	
 		echo -----------------------------------------------
-		sed -i '/^ *$/d' $clashdir/proxies.yaml 2>/dev/null
-		if [ -s $clashdir/proxies.yaml ];then
+		sed -i '/^ *$/d' $YAMLSDIR/proxies.yaml 2>/dev/null
+		if [ -s $YAMLSDIR/proxies.yaml ];then
 			echo -e "当前已添加的自定义节点为:"
-			cat $clashdir/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
+			cat $YAMLSDIR/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
 			echo -----------------------------------------------	
 			echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
 			read -p "请输入对应数字 > " num
-			if [ $num -le $(cat $clashdir/proxies.yaml | grep -Ev '^#' | wc -l) ];then
-				sed -i "$num{/^\s*[^#]/d}" $clashdir/proxies.yaml
+			if [ $num -le $(cat $YAMLSDIR/proxies.yaml | grep -Ev '^#' | wc -l) ];then
+				sed -i "$num{/^\s*[^#]/d}" $YAMLSDIR/proxies.yaml
 			else
 				errornum
 			fi
@@ -517,7 +504,7 @@ setproxies(){
 	;;
 	3)
 		read -p "确认清空全部自定义节点？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $clashdir/proxies.yaml 2>/dev/null
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $YAMLSDIR/proxies.yaml 2>/dev/null
 		setproxies
 	;;
 	4)
@@ -583,12 +570,12 @@ override(){
 		override
 	;;
 	5)
-		[ ! -f $clashdir/user.yaml ] && cat > $clashdir/user.yaml <<EOF
+		[ ! -f $YAMLSDIR/user.yaml ] && cat > $YAMLSDIR/user.yaml <<EOF
 #用于编写自定义设定(可参考https://lancellc.gitbook.io/clash/clash-config-file/general 或 https://docs.metacubex.one/function/general)
 #端口之类请在脚本中修改，否则不会加载
 #port: 7890
 EOF
-		[ ! -f $clashdir/others.yaml ] && cat > $clashdir/others.yaml <<EOF
+		[ ! -f $YAMLSDIR/others.yaml ] && cat > $YAMLSDIR/others.yaml <<EOF
 #用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能
 #可参考 https://github.com/MetaCubeX/Clash.Meta/blob/Meta/docs/config.yaml 或 https://lancellc.gitbook.io/clash/clash-config-file/an-example-configuration-file
 #此处内容会被添加在配置文件的“proxy-group：”模块的末尾与“rules：”模块之前的位置
@@ -601,10 +588,10 @@ EOF
 #listeners:
 EOF
 		echo -----------------------------------------------
-		echo -e "\033[32m已经创建自定义设定文件：$clashdir/user.yaml ！\033[0m"
+		echo -e "\033[32m已经创建自定义设定文件：$YAMLSDIR/user.yaml ！\033[0m"
 		echo -e "\033[33m可用于编写自定义的DNS，等功能\033[0m"
 		echo -----------------------------------------------
-		echo -e "\033[32m已经创建自定义功能文件：$clashdir/others.yaml ！\033[0m"
+		echo -e "\033[32m已经创建自定义功能文件：$YAMLSDIR/others.yaml ！\033[0m"
 		echo -e "\033[33m可用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能\033[0m"		
 		echo -----------------------------------------------
 		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
@@ -686,16 +673,16 @@ clashlink(){
 		fi
 	;;
 	3)
-		if [ ! -f $clashdir/config.yaml.bak ];then
+		if [ ! -f $YAMLSDIR/config.yaml.bak ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
 			clashlink
 		else
 			echo -----------------------------------------------
-			echo -e 备份文件共有"\033[32m`wc -l < $clashdir/config.yaml.bak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < $clashdir/config.yaml`\033[0m"行内容
+			echo -e 备份文件共有"\033[32m`wc -l < $YAMLSDIR/config.yaml.bak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < $YAMLSDIR/config.yaml`\033[0m"行内容
 			read -p "确认还原配置文件？此操作不可逆！[1/0] > " res
 			if [ "$res" = '1' ]; then
-				mv $clashdir/config.yaml.bak $clashdir/config.yaml
+				mv $YAMLSDIR/config.yaml.bak $YAMLSDIR/config.yaml
 				echo -----------------------------------------------
 				echo -e "\033[32m配置文件已还原！请手动重启clash服务！\033[0m"
 				sleep 1
@@ -1194,45 +1181,24 @@ setserver(){
 	echo -e "\033[30;47m切换ShellClash版本及更新源地址\033[0m"
 	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 \033[33m稳定版\033[0m&Jsdelivr-CDN源"
-	echo -e " 2 \033[33m稳定版\033[0m&Github源(须clash服务启用)"
-	echo -e " 3 \033[32m公测版\033[0m&Github源(须clash服务启用)"
-	echo -e " 4 \033[32m公测版\033[0m&ShellClash私人源"
-	echo -e " 5 \033[32m公测版\033[0m&Jsdelivr-CDN源(推荐)"
-	echo -e " 7 \033[31m内测版\033[0m(请加TG讨论组:\033[4;36mhttps://t.me/ShellClash\033[0m)"
-	echo -e " 8 自定义源地址(用于本地源或自建源)"
-	echo -e " 9 \033[31m版本回退\033[0m"
+	grep -aE '^1|^2' $clashdir/configs/servers.list | awk '{print " "NR" "$4" "$2}'
+	echo -----------------------------------------------
+	echo -e " a 自定义源地址(用于本地源或自建源)"
+	echo -e " b \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
-	if	[ -z "$num" ]; then 
-		errornum
-	elif [ "$num" = 1 ]; then
-		release_url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash'
+	case $num in
+	[0-99])
+		release_type=$(grep -aE '^1|^2' $clashdir/configs/servers.list | sed -n ""$num"p" | awk '{print $4}')
+		if [ "release_type" = "稳定版" ];then
+			release_url=$(grep -aE '^1' $clashdir/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+		else
+			update_url=$(grep -aE '^1|^2' $clashdir/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+			unset release_url
+		fi
 		saveserver
-	elif [ "$num" = 2 ]; then
-		release_url='https://raw.githubusercontent.com/juewuy/ShellClash'
-		saveserver
-	elif [ "$num" = 3 ]; then
-		update_url='https://raw.githubusercontent.com/juewuy/ShellClash/master'
-		release_url=''
-		saveserver
-	elif [ "$num" = 4 ]; then
-		update_url='https://gh.jwsc.eu.org/master'
-		release_url=''
-		saveserver
-	elif [ "$num" = 5 ]; then
-		update_url='https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master'
-		release_url=''
-		saveserver
-	elif [ "$num" = 6 ]; then
-		update_url='https://raw.staticdn.net/juewuy/ShellClash/master'
-		release_url=''
-		saveserver
-	elif [ "$num" = 7 ]; then
-		update_url='http://t.jwsc.eu.org'
-		release_url=''
-		saveserver
-	elif [ "$num" = 8 ]; then
+	;;
+	a)
 		echo -----------------------------------------------
 		read -p "请输入个人源路径 > " update_url
 		if [ -z "$update_url" ];then
@@ -1240,9 +1206,10 @@ setserver(){
 			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 		else
 			saveserver
-			release_url=''
+			unset release_url
 		fi
-	elif [ "$num" = 9 ]; then
+	;;
+	b)
 		echo -----------------------------------------------
 		echo -e "\033[33m如无法连接，请务必先启用clash服务！！！\033[0m"
 		$clashdir/start.sh webget $tmpdir/clashrelease https://raw.githubusercontent.com/juewuy/ShellClash/master/bin/release_version echooff rediroff 2>$tmpdir/clashrelease
@@ -1256,15 +1223,17 @@ setserver(){
 			release_version=$(cat $tmpdir/clashrelease | awk '{print $1}' | sed -n "$num"p)
 			update_url="https://raw.githubusercontent.com/juewuy/ShellClash/$release_version"
 			saveserver
-			release_url=''
+			unset release_url
 		else
 			echo -----------------------------------------------
 			echo -e "\033[31m输入有误，请重新输入！\033[0m"
 		fi
 		rm -rf $tmpdir/clashrelease
-	else
+	;;
+	*)
 		errornum
-	fi
+	;;
+	esac
 }
 #检查更新
 checkupdate(){
@@ -1613,7 +1582,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		sed -n '1,40p' $clashdir/config.yaml
+		sed -n '1,40p' $YAMLSDIR/config.yaml
 		echo -----------------------------------------------
 		exit;
 	elif [ "$num" = 6 ]; then

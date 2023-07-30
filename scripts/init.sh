@@ -230,7 +230,21 @@ fi
 rm -rf /tmp/*lash*gz
 rm -rf /tmp/SC_tmp
 #转换&清理旧版本文件
+mkdir -p $clashdir/yamls
 mkdir -p $clashdir/configs
 mkdir -p $clashdir/tools
+for file in config.yaml config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml others.yaml ;do
+	mv -f $clashdir/$file $clashdir/yamls/$file
+done
+for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallback_filter.list;do
+	mv -f $clashdir/$file $clashdir/configs/$file
+done
+	mv -f $clashdir/mark $clashdir/configs/ShellClash.cfg
+for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh;do
+	mv -f $clashdir/$file $clashdir/tools/$file
+done
+for file in log clash.service mark? mark.bak;do
+	rm -rf $clashdir/$file
+done
 sleep 1
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m clash \033[0;33m命令开始使用！\033[0m"

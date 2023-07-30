@@ -8,7 +8,7 @@ USE_PROCD=1
 #获取目录
 DIR=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 [ -z "$DIR" ] && DIR=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
-BINDIR=$(cat $DIR/mark | grep bindir | awk -F "=" '{print $2}')
+BINDIR=$(cat $DIR/configs/ShellClash.cfg | grep bindir | awk -F "=" '{print $2}')
 [ -z "$BINDIR" ] && BINDIR=$DIR
 TMPDIR=/tmp/clash_$USER
 

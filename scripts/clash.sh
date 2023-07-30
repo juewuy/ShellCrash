@@ -1,12 +1,13 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-CFG_PATH=$clashdir/mark
-tmpdir=/tmp/clash_$USER && [ ! -f $tmpdir ] && mkdir -p $tmpdir
+CFG_PATH=$clashdir/configs/ShellClash.cfg
+YAMLSDIR=$clashdir/yamls
+TMPDIR=/tmp/clash_$USER && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
 #读取配置相关
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
+	[ -z "$3" ] && configpath=$CFG_PATH || configpath=$3
 	[ -n "$(grep -E "^${1}=" $configpath)" ] && sed -i "s#^${1}=\(.*\)#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 ckcmd(){
@@ -16,14 +17,18 @@ ckstatus(){
 
 	#服务器缺省地址
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellClash
-	#检查/读取标识文件
-	[ ! -f $CFG_PATH ] && echo '#标识clash运行状态的文件，不明勿动！' > $CFG_PATH
-	#检查重复行并去除
-	[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH
-	#检查时间戳
-	touch $tmpdir/clash_start_time
-	#使用source加载配置文件
-	source $CFG_PATH > /dev/null
+	#检查/读取脚本配置文件
+	if [ -f $CFG_PATH ];then
+		#检查重复行并去除
+		[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH
+		#检查时间戳
+		touch $TMPDIR/clash_start_time
+		#使用source加载配置文件
+		source $CFG_PATH > /dev/null
+	else
+		mkdir -p $clashdir/configs
+		echo '#标识clash运行状态的文件，不明勿动！' > $CFG_PATH
+	fi
 	versionsh=$(cat $clashdir/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
 	#设置默认核心资源目录
@@ -37,7 +42,7 @@ ckstatus(){
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	#检查mac地址记录
-	[ ! -f $clashdir/mac ] && touch $clashdir/mac
+	[ ! -f $clashdir/configs/mac ] && touch $clashdir/configs/mac
 	#获取本机host地址
 	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'lan' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
@@ -68,8 +73,8 @@ ckstatus(){
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 		#获取运行时长
-		touch $tmpdir/clash_start_time #用于延迟启动的校验
-		start_time=$(cat $tmpdir/clash_start_time)
+		touch $TMPDIR/clash_start_time #用于延迟启动的校验
+		start_time=$(cat $TMPDIR/clash_start_time)
 		if [ -n "$start_time" ]; then 
 			time=$((`date +%s`-start_time))
 			day=$((time/86400))
@@ -132,9 +137,9 @@ ckstatus(){
 		file=/tmp/$file
 		$bindir/clash -t -d $bindir -f $file &>/dev/null && {
 		echo -e "发现可用的YAML配置文件： \033[36m$file\033[0m "
-		read -p "加载为config.yaml配置文件/或者移除该文件？(1/0) > " res
+		read -p "加载为yaml配置文件/或者移除该文件？(1/0) > " res
 		[ "$res" = 1 ] && {
-			mv -f $file $clashdir/config.yaml
+			mv -f $file $clashdir/yamls/config.yaml
 			echo -e "\033[32m配置文件加载完成！\033[0m " 
 			sleep 1
 		}
@@ -177,7 +182,7 @@ startover(){
 }
 clashstart(){
 	#检查yaml配置文件
-	if [ ! -f "$clashdir/config.yaml" ];then
+	if [ ! -f $clashdir/yamls/config.yaml ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
 		source $clashdir/getdate.sh && clashlink
@@ -213,7 +218,7 @@ log_pusher(){
 	case $num in
 	1)
 		echo -----------------------------------------------
-		cat $tmpdir/ShellClash_log
+		cat $TMPDIR/ShellClash_log
 		exit
 	;;
 	2)
@@ -756,7 +761,7 @@ macfilter(){
 	add_mac(){
 		echo -----------------------------------------------
 		echo 已添加的mac地址：
-		cat $clashdir/mac
+		cat $clashdir/configs/mac
 		echo -----------------------------------------------
 		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
 		cat $dhcpdir | awk '{print " "NR" "$3,$2,$4}'
@@ -767,9 +772,9 @@ macfilter(){
 		read -p "请输入对应序号或直接输入mac地址 > " num
 		if [ -z "$num" -o "$num" = 0 ]; then
 			i=
-		elif [ -n "$(echo $num | grep -E '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')" ];then
-			if [ -z "$(cat $clashdir/mac | grep -E "$num")" ];then
-				echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >> $clashdir/mac
+		elif [ -n "$(echo $num | grep -aE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')" ];then
+			if [ -z "$(cat $clashdir/configs/mac | grep -E "$num")" ];then
+				echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >> $clashdir/configs/mac
 			else
 				echo -----------------------------------------------
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
@@ -777,8 +782,8 @@ macfilter(){
 			add_mac
 		elif [ $num -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
 			macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
-			if [ -z "$(cat $clashdir/mac | grep -E "$macadd")" ];then
-				echo $macadd >> $clashdir/mac
+			if [ -z "$(cat $clashdir/configs/mac | grep -E "$macadd")" ];then
+				echo $macadd >> $clashdir/configs/mac
 			else
 				echo -----------------------------------------------
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
@@ -792,12 +797,12 @@ macfilter(){
 	}
 	del_mac(){
 		echo -----------------------------------------------
-		if [ -z "$(cat $clashdir/mac)" ];then
+		if [ -z "$(cat $clashdir/configs/mac)" ];then
 			echo -e "\033[31m列表中没有需要移除的设备！\033[0m"
 		else
 			echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[0m"
 			i=1
-			for mac in $(cat $clashdir/mac); do
+			for mac in $(cat $clashdir/configs/mac); do
 				dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
 				dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
 				dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
@@ -809,8 +814,8 @@ macfilter(){
 			read -p "请输入需要移除的设备的对应序号 > " num
 			if [ -z "$num" ]||[ "$num" -le 0 ]; then
 				n=
-			elif [ $num -le $(cat $clashdir/mac | wc -l) ];then
-				sed -i "${num}d" $clashdir/mac
+			elif [ $num -le $(cat $clashdir/configs/mac | wc -l) ];then
+				sed -i "${num}d" $clashdir/configs/mac
 				echo -----------------------------------------------
 				echo -e "\033[32m对应设备已移除！\033[0m"
 				del_mac
@@ -839,11 +844,11 @@ macfilter(){
 	echo -e "\033[30;47m请在此添加或移除设备\033[0m"
 	echo -e "当前过滤方式为：\033[33m$macfilter_type模式\033[0m"
 	echo -e "仅列表内设备\033[36m$macfilter_scrip经过\033[0mClash内核"
-	if [ -n "$(cat $clashdir/mac)" ]; then
+	if [ -n "$(cat $clashdir/configs/mac)" ]; then
 		echo -----------------------------------------------
 		echo -e "当前已过滤设备为：\033[36m"
 		echo -e "\033[33m   设备IP       设备mac地址       设备名称\033[0m"
-		for mac in $(cat $clashdir/mac); do
+		for mac in $(cat $clashdir/configs/mac); do
 			dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
 			dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
 			dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
@@ -874,7 +879,7 @@ macfilter(){
 		del_mac
 		macfilter
 	elif [ "$num" = 4 ]; then
-		:>$clashdir/mac
+		:>$clashdir/configs/mac
 		echo -----------------------------------------------
 		echo -e "\033[31m设备列表已清空！\033[0m"
 		macfilter
@@ -1210,26 +1215,30 @@ clashcfg(){
 		echo -e "示例：*.b.com"
 		echo -e "示例：*.*.b.com\033[0m"
 		echo -----------------------------------------------
-		if [ -f $clashdir/fake_ip_filter ];then
+		if [ -s $clashdir/configs/fake_ip_filter ];then
 			echo -e "\033[33m已添加Fake-ip过滤地址：\033[0m"
-			cat $clashdir/fake_ip_filter | awk '{print NR" "$1}'
+			cat $clashdir/configs/fake_ip_filter | awk '{print NR" "$1}'
 		else
 			echo -e "\033[33m你还未添加Fake-ip过滤地址\033[0m" 
 		fi
 		echo -----------------------------------------------
 		echo -e "\033[32m输入数字直接移除对应地址，输入地址直接添加！\033[0m"
 		read -p "请输入数字或地址 > " input
-		if [ -z "$input" -o "input" = 0 ];then
-			i=
-		elif [ "$input" -le "$(cat $clashdir/fake_ip_filter | wc -l)" ];then
-			sed -i "${input}d" $clashdir/fake_ip_filter	2>/dev/null
+		case $input in
+		0) ;;
+		'') ;;
+		[0-99])
+			sed -i "${input}d" $clashdir/configs/fake_ip_filter	2>/dev/null
 			echo -e "\033[32m移除成功！\033[0m"	
 			fake_ip_filter
-		else
+		;;
+		*)
 			echo -e "你输入的地址是：\033[32m$input\033[0m"	
 			read -p "确认添加？(1/0) > " res
-			[ "$res" = 1 ] && echo $input >> $clashdir/fake_ip_filter || fake_ip_filter
-		fi
+			[ "$res" = 1 ] && echo $input >> $clashdir/configs/fake_ip_filter
+			fake_ip_filter
+		;;
+		esac
 	}
 	#获取设置默认显示
 	[ -z "$skip_cert" ] && skip_cert=已开启
@@ -1239,7 +1248,7 @@ clashcfg(){
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$quic_rj" ] && quic_rj=未开启
-	[ -z "$(cat $clashdir/mac)" ] && mac_return=未开启 || mac_return=已启用
+	[ -z "$(cat $clashdir/configs/mac)" ] && mac_return=未开启 || mac_return=已启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
@@ -1315,10 +1324,10 @@ clashcfg(){
 		clashcfg  
 
 	elif [ "$num" = 5 ]; then	
-		checkcfg_mac=$(cat $clashdir/mac)
+		checkcfg_mac=$(cat $clashdir/configs/mac)
 		macfilter
 		if [ -n "$PID" ];then
-			checkcfg_mac_new=$(cat $clashdir/mac)
+			checkcfg_mac_new=$(cat $clashdir/configs/mac)
 			[ "$checkcfg_mac" != "$checkcfg_mac_new" ] && checkrestart
 		fi
 		clashcfg
@@ -1357,7 +1366,6 @@ clashcfg(){
 		echo -----------------------------------------------
 		if [ "$dns_mod" = "fake-ip" ];then
 			fake_ip_filter
-			clashcfg
 		else
 			if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
 				if [ "$cn_ip_route" = "未开启" ]; then 
@@ -1501,8 +1509,8 @@ autoSSH(){
 	echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
 	read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
 	mi_autoSSH=已配置
-	cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/dropbear_rsa_host_key 2>/dev/null
-	cp -f /etc/dropbear/authorized_keys $clashdir/authorized_keys 2>/dev/null
+	cp -f /etc/dropbear/dropbear_rsa_host_key $clashdir/configs/dropbear_rsa_host_key 2>/dev/null
+	cp -f /etc/dropbear/authorized_keys $clashdir/configs/authorized_keys 2>/dev/null
 	ckcmd nvram && {
 		nvram set ssh_en=1  
 		nvram set telnet_en=1  
@@ -1583,7 +1591,7 @@ tools(){
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	[ "$mi_autoSSH" = "已配置" ] && mi_autoSSH_type=32m已配置 || mi_autoSSH_type=31m未配置
-	[ -f $clashdir/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
+	[ -f $clashdir/configs/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
@@ -1625,17 +1633,17 @@ tools(){
 		
 	elif [ "$num" = 7 ]; then
 		echo -----------------------------------------------
-		if [ ! -f $clashdir/ShellDDNS.sh ];then
+		if [ ! -f $clashdir/tools/ShellDDNS.sh ];then
 			echo -e "正在获取在线脚本……"
-			$clashdir/start.sh webget $tmpdir/ShellDDNS.sh $update_url/tools/ShellDDNS.sh
+			$clashdir/start.sh webget $TMPDIR/ShellDDNS.sh $update_url/tools/ShellDDNS.sh
 			if [ "$?" = "0" ];then
-				mv -f $tmpdir/ShellDDNS.sh $clashdir/ShellDDNS.sh
-				source $clashdir/ShellDDNS.sh
+				mv -f $TMPDIR/ShellDDNS.sh $clashdir/tools/ShellDDNS.sh
+				source $clashdir/tools/ShellDDNS.sh
 			else
 				echo -e "\033[31m文件下载失败！\033[0m"
 			fi
 		else
-			source $clashdir/ShellDDNS.sh
+			source $clashdir/tools/ShellDDNS.sh
 		fi
 		sleep 1
 		tools  
@@ -1655,10 +1663,10 @@ tools(){
 		fi
 		tools		
 	elif [ "$num" = 8 ]; then
-		if [ -f $clashdir/tun.ko ];then
+		if [ -f $clashdir/configs/tun.ko ];then
 			read -p "是否禁用此功能并移除相关补丁？(1/0) > " res
 			[ "$res" = 1 ] && {
-				rm -rf $clashdir/tun.ko
+				rm -rf $clashdir/configs/tun.ko
 				echo -e "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
 			}
 		elif [ -z "$(modinfo tun)" ];then
@@ -1670,9 +1678,9 @@ tools(){
 				tunfixlink="${update_url}/bin/fix/tun.ko"
 				echo -----------------------------------------------
 				echo 正在连接服务器获取Tun模块补丁文件…………
-				$clashdir/start.sh webget $tmpdir/tun.ko $tunfixlink
+				$clashdir/start.sh webget $TMPDIR/tun.ko $tunfixlink
 				if [ "$?" = "0" ];then
-					mv -f $tmpdir/tun.ko $clashdir && \
+					mv -f $TMPDIR/tun.ko $clashdir && \
 					$clashdir/misnap_init.sh tunfix && \
 					echo -e "\033[32m设置成功！请重启clash服务！\033[0m"
 				else
@@ -1730,7 +1738,7 @@ clashcron(){
 						read -p  "是否确认添加定时任务？(1/0) > " res
 						if [ "$res" = '1' ]; then
 							cronwords="$min $hour * * $week $cronset #$week1的$hour点$min分$cronname"
-							tmpcron=$tmpdir/cron_$USER
+							tmpcron=$TMPDIR/cron_$USER
 							croncmd -l > $tmpcron
 							sed -i "/$cronname/d" $tmpcron
 							sed -i '/^$/d' $tmpcron
@@ -1760,9 +1768,9 @@ clashcron(){
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 9 ]; then
-			croncmd -l > $tmpdir/conf && sed -i "/$cronname/d" $tmpdir/conf && croncmd $tmpdir/conf
+			croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
 			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
-			rm -f $tmpdir/conf
+			rm -f $TMPDIR/conf
 			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
 		elif [ "$num" = 8 ]; then	
@@ -1844,9 +1852,9 @@ clashcron(){
 		read -p "请输入备注的关键词 > " txt
 		[ -n "$txt" ] && {
 			cronname=$txt
-			croncmd -l > $tmpdir/conf && sed -i "/$cronname/d" $tmpdir/conf && croncmd $tmpdir/conf
+			croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
 			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
-			rm -f $tmpdir/conf
+			rm -f $TMPDIR/conf
 			echo -----------------------------------------------
 			echo -e "所有关键词\033[32m$cronname\033[0m匹配的定时任务均已删除！\033[0m"
 			sleep 1
@@ -1980,8 +1988,18 @@ case "$1" in
 		$shtype -x $clashdir/start.sh $2 $3 $4 $5 $6
 	;;
 	-u)
-		read -p "确认卸载ShellClash？（警告：该操作不可逆！）[1/0] " res
+		read -p "确认卸载ShellClash？(警告：该操作不可逆！)[1/0] > " res
 		if [ "$res" = '1' ]; then
+			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
+			if [ "$res" = '1' ]; then
+				mv -f $clashdir/configs /tmp/clash_$USER
+				mv -f $clashdir/yamls /tmp/clash_$USER
+				rm -rf $clashdir/*
+				mv -f /tmp/clash_$USER/configs $clashdir
+				mv -f /tmp/clash_$USER/yamls $clashdir
+			else
+				rm -rf $clashdir
+			fi
 			$clashdir/start.sh stop
 			$clashdir/start.sh cronset "clash服务"
 			$clashdir/start.sh cronset "订阅链接"
@@ -1996,7 +2014,6 @@ case "$1" in
 			sed -i '/ShellClash初始化/'d /etc/storage/started_script.sh 2>/dev/null
 			sed -i '/ShellClash初始化/'d /jffs/.asusrouter 2>/dev/null
 			rm -rf $bindir 
-			rm -rf $clashdir
 			rm -rf /etc/init.d/clash
 			rm -rf /etc/systemd/system/clash.service
 			rm -rf /usr/lib/systemd/system/clash.service
