@@ -7,7 +7,7 @@
 [ -z "$clashdir" ] && clashdir=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
 [ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 CFG_PATH=$clashdir/configs/ShellClash.cfg
-TMPDIR=/tmp/clash_$USER && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
+TMPDIR=/tmp/ShellClash && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
 #脚本内部工具
 getconfig(){
 	#加载配置文件
@@ -38,7 +38,7 @@ getconfig(){
 }
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=$clashdir/mark || configpath=$3
+	[ -z "$3" ] && configpath=$CFG_PATH || configpath=$3
 	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 ckcmd(){
@@ -143,8 +143,8 @@ getlanip(){
 	while [ "$i" -le "10" ];do
 		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
 		host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
-		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
 		[ -f  $TMPDIR/ShellClash_log ] && break
+		[ -n "$host_ipv4" -o -n "$host_ipv6" ] && break
 		sleep 2 && i=$((i+1))
 	done
 	#添加自定义ipv4局域网网段
@@ -163,10 +163,10 @@ getlanip(){
 getyaml(){
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
-	Server=$(grep -aE '^3|^4' $clashdir/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' $clashdir/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ "$retry" = 4 ] && Server=$(grep -aE '^499' $clashdir/servers.list | awk '{print $3}')
-	Config=$(grep -aE '^5' $clashdir/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	Server=$(grep -aE '^3|^4' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	[ "$retry" = 4 ] && Server=$(grep -aE '^499' $clashdir/configs/servers.list | awk '{print $3}')
+	Config=$(grep -aE '^5' $clashdir/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
 		Https="$Server/sub?target=clash&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
@@ -257,7 +257,7 @@ getyaml(){
 			if [ "$?" != "0" ];then
 				logger "配置文件加载失败！请查看报错信息！" 31
 				$bindir/clash -t -d $bindir -f $yamlnew
-				echo "$($bindir/clash -t -d $bindir -f $yamlnew)" >> $clashdir/log
+				echo "$($bindir/clash -t -d $bindir -f $yamlnew)" >> $TMPDIR/ShellClash_log
 				exit 1
 			fi
 		fi
@@ -308,7 +308,7 @@ dns:
   fake-ip-filter:
 EOF
 		if [ "$dns_mod" = "fake-ip" ];then
-			cat $clashdir/configs/fake_ip_filter.list $clashdir/configs/fake_ip_filter | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >> $TMPDIR/dns.yaml
+			cat $clashdir/configs/fake_ip_filter $clashdir/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >> $TMPDIR/dns.yaml
 		else
 			echo "    - '+.*'" >> $TMPDIR/dns.yaml
 		fi
@@ -434,16 +434,16 @@ EOF
 	}
 	#插入自定义规则
 	sed -i "/#自定义规则/d" $TMPDIR/rules.yaml
-	[ -f $clashdir/rules.yaml ] && {
-		cat $clashdir/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $TMPDIR/rules.add
+	[ -f $clashdir/yamls/rules.yaml ] && {
+		cat $clashdir/yamls/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $TMPDIR/rules.add
 		cat $TMPDIR/rules.yaml >> $TMPDIR/rules.add
 		mv -f $TMPDIR/rules.add $TMPDIR/rules.yaml
 	}
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' $TMPDIR/rules.yaml
 	#合并文件
-	[ -s $clashdir/user.yaml ] && {
-		yaml_user=$clashdir/user.yaml
+	[ -s $clashdir/yamls/user.yaml ] && {
+		yaml_user=$clashdir/yamls/user.yaml
 		#set和user去重,且优先使用user.yaml
 		cp -f $TMPDIR/set.yaml $TMPDIR/set_bak.yaml
 		for char in mode allow-lan log-level tun experimental interface-name dns store-selected;do
@@ -452,7 +452,7 @@ EOF
 	}
 	[ -s $TMPDIR/dns.yaml ] && yaml_dns=$TMPDIR/dns.yaml
 	[ -s $TMPDIR/hosts.yaml ] && yaml_hosts=$TMPDIR/hosts.yaml
-	[ -s $TMPDIR/others.yaml ] && yaml_others=$clashdir/others.yaml
+	[ -s $TMPDIR/others.yaml ] && yaml_others=$clashdir/yamls/others.yaml
 	yaml_add=
 	for char in $yaml_char;do #将额外配置文件合并
 		[ -s $TMPDIR/${char}.yaml ] && {
@@ -473,6 +473,8 @@ EOF
 		cut -c 1- $TMPDIR/set.yaml $yaml_dns $yaml_add > $TMPDIR/config.yaml
 		sed -i "/#自定义/d" $TMPDIR/config.yaml 
 	fi
+	#建立软连接
+	[ "$TMPDIR" = "$bindir" ] || ln -sf $TMPDIR/config.yaml $bindir/config.yaml
 	#清理缓存
 	for char in $yaml_char set set_bak dns hosts;do
 		rm -f $TMPDIR/${char}.yaml
@@ -887,8 +889,10 @@ start_nft(){
 		}
 		#Docker
 		type docker &>/dev/null && {
-			ip rule add fwmark $fwmark table 102 2> /dev/null
-			ip route add local 172.16.0.0/12 dev lo table 102 2> /dev/null
+			nft add chain inet shellclash docker { type nat hook prerouting priority -100 \; }
+			nft add rule inet shellclash docker ip saddr != {172.16.0.0/12} return
+			nft add rule inet shellclash docker udp dport 53 redirect to $dns_port
+			nft add rule inet shellclash docker meta l4proto tcp mark set $fwmark redirect to $redir_port
 		}
 	}
 }
@@ -953,7 +957,7 @@ stop_firewall(){
 		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 		#本机代理
-		iptables -t nat -D OUTPUT -p tcp -j clash_out 2> /dev/null
+		iptables -t nat -D OUTPUT -p tcp $ports -j clash_out 2> /dev/null
 		iptables -t nat -F clash_out 2> /dev/null
 		iptables -t nat -X clash_out 2> /dev/null	
 		iptables -t nat -D OUTPUT -p udp --dport 53 -j clash_dns_out 2> /dev/null
@@ -1027,8 +1031,6 @@ stop_firewall(){
 	ip route del local default dev lo table 100 2> /dev/null
 	ip -6 rule del fwmark $fwmark table 101 2> /dev/null
 	ip -6 route del local ::/0 dev lo table 101 2> /dev/null
-	ip rule del fwmark $fwmark table 102 2> /dev/null
-	ip route del local 172.16.0.0/12 dev lo table 102 2> /dev/null
 	#重置nftables相关规则
 	ckcmd nft && {
 		nft flush table inet shellclash >/dev/null 2>&1
@@ -1222,6 +1224,8 @@ bfstart(){
 			fi
 		fi
 	fi
+	#生成配置文件
+	[ "$disoverride" != "1" ] && modify_yaml || ln -s $yaml $bindir/config.yaml
 }
 afstart(){
 
@@ -1275,7 +1279,7 @@ afstart(){
 		#标记启动时间
 		mark_time
 		#加载定时任务
-		[ -f $clashdir/cron ] && croncmd $clashdir/cron	
+		[ -f $clashdir/tools/cron ] && croncmd $clashdir/tools/cron	
 		#启用面板配置自动保存
 		cronset '#每10分钟保存节点配置' "*/10 * * * * test -n \"\$(pidof clash)\" && $clashdir/start.sh web_save #每10分钟保存节点配置"
 		[ -f $clashdir/configs/web_save ] && web_restore & #后台还原面板配置
@@ -1294,10 +1298,10 @@ start_old(){
 	#使用传统后台执行二进制文件的方式执行
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		ckcmd su && su=su
-		$su shellclash -c "$bindir/clash -d $bindir -f $TMPDIR/config.yaml >/dev/null" &
+		$su shellclash -c "$bindir/clash -d $bindir >/dev/null" &
 	else
 		ckcmd nohup && nohup=nohup
-		$nohup $bindir/clash -d $bindir -f $TMPDIR/config.yaml >/dev/null 2>&1 &
+		$nohup $bindir/clash -d $bindir >/dev/null 2>&1 &
 	fi
 	afstart
 	$0 daemon
@@ -1317,8 +1321,6 @@ start)
 		#检测必须文件并下载
 		bfstart
 		stop_firewall #清理路由策略
-		#使用内置规则强行覆盖config配置文件
-		[ "$disoverride" != "1" ] && modify_yaml || ln -s $yaml $TMPDIR/config.yaml
 		#使用不同方式启动clash服务
 		if [ "$start_old" = "已开启" ];then
 			start_old

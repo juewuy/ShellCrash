@@ -3,7 +3,7 @@
 
 CFG_PATH=$clashdir/configs/ShellClash.cfg
 YAMLSDIR=$clashdir/yamls
-TMPDIR=/tmp/clash_$USER && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
+TMPDIR=/tmp/ShellClash && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
 #读取配置相关
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -1745,7 +1745,7 @@ clashcron(){
 							echo "$cronwords" >> $tmpcron
 							croncmd $tmpcron
 							#华硕/Padavan固件存档在本地,其他则删除
-							[ "$clashdir" = "/jffs/clash" -o "$clashdir" = "/etc/storage/clash" ] && mv -f $tmpcron $clashdir/cron || rm -f $tmpcron
+							[ "$clashdir" = "/jffs/clash" -o "$clashdir" = "/etc/storage/clash" ] && mv -f $tmpcron $clashdir/tools/cron || rm -f $tmpcron
 							echo -----------------------------------------------
 							echo -e "\033[31m定时任务已添加！！！\033[0m"
 						fi
@@ -1769,7 +1769,7 @@ clashcron(){
 			i=
 		elif [ "$num" = 9 ]; then
 			croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
-			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
+			sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
 			rm -f $TMPDIR/conf
 			echo -----------------------------------------------
 			echo -e "\033[31m定时任务：$cronname已删除！\033[0m"
@@ -1853,7 +1853,7 @@ clashcron(){
 		[ -n "$txt" ] && {
 			cronname=$txt
 			croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
-			sed -i "/$cronname/d" $clashdir/cron 2>/dev/null
+			sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
 			rm -f $TMPDIR/conf
 			echo -----------------------------------------------
 			echo -e "所有关键词\033[32m$cronname\033[0m匹配的定时任务均已删除！\033[0m"
