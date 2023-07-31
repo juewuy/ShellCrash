@@ -1591,7 +1591,7 @@ tools(){
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	[ "$mi_autoSSH" = "已配置" ] && mi_autoSSH_type=32m已配置 || mi_autoSSH_type=31m未配置
-	[ -f $clashdir/configs/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
+	[ -f $clashdir/tools/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
