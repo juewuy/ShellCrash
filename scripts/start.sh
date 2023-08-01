@@ -1107,6 +1107,12 @@ EOF
 	[ "$?" = 0 ] && rm -rf $TMPDIR/clash_pac || mv -f $TMPDIR/clash_pac $bindir/ui/pac
 }
 bfstart(){
+	#小米7000/小米万兆tproxy
+ 	if [ -f /etc/init.d/qca-nss-ecm ];then
+  		sed -i 's/ip6tables=1/ip6tables=0/g' /etc/init.d/qca-nss-ecm
+    		sed -i 's/iptables=1/iptables=0/g' /etc/init.d/qca-nss-ecm
+      		/etc/init.d/qca-nss-ecm restart
+	fi
 	#读取配置文件
 	getconfig
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
