@@ -55,18 +55,14 @@ init(){
 	cp -f $clashdir/clashservice /etc/init.d/clash
 	chmod 755 /etc/init.d/clash
 	#启动服务
-	#小米7000/小米万兆tproxy
- 	if [ -f /etc/init.d/qca-nss-ecm ];then
-  		if [ cat /proc/sys/net/bridge/bridge-nf-call-iptables ];then
-    			sysctl -w net.bridge.bridge-nf-call-iptables=0
-       		fi
-	 	if [ cat /proc/sys/net/bridge/bridge-nf-call-ip6tables ];then
-   			sysctl -w net.bridge.bridge-nf-call-ip6tables=0
-      		fi
-	fi
 	if [ ! -f $clashdir/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
 		[ -f $clashdir/configs/tun.ko ] && tunfix
+		#小米7000/小米万兆修复tproxy
+		[ -f /etc/init.d/qca-nss-ecm ] && {
+			[ -f /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=0
+			[ -f /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0
+		}
 		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable
