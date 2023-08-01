@@ -34,7 +34,7 @@ tunfix(){
 	mkdir -p /tmp/overlay/work
 	mount -o noatime,lowerdir=${ko_dir},upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" ${ko_dir}
 	#将tun.ko链接到lib
-	ln -s $clashdir/configs/tun.ko ${ko_dir}/tun.ko
+	ln -sf $clashdir/tools/tun.ko ${ko_dir}/tun.ko
 }
 init(){
 	#等待启动完成

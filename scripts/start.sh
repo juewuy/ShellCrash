@@ -376,16 +376,16 @@ EOF
 	#插入自定义策略组
 	sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" $TMPDIR/proxy-groups.yaml
 	sed -i "/#自定义策略组/d" $TMPDIR/proxy-groups.yaml
-	[ -n "$(grep -Ev '^#' $clashdir/proxy-groups.yaml 2>/dev/null)" ] && {
+	[ -n "$(grep -Ev '^#' $clashdir/yamls/proxy-groups.yaml 2>/dev/null)" ] && {
 		#获取空格数
 		space_name=$(grep -aE '^ *- name: ' $TMPDIR/proxy-groups.yaml | head -n 1 | grep -oE '^ *') 
 		space_proxy=$(grep -A 1 'proxies:$' $TMPDIR/proxy-groups.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') 
 		#合并自定义策略组到proxy-groups.yaml
-		cat $clashdir/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $TMPDIR/proxy-groups_add.yaml 
+		cat $clashdir/yamls/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $TMPDIR/proxy-groups_add.yaml 
 		cat $TMPDIR/proxy-groups.yaml  >> $TMPDIR/proxy-groups_add.yaml
 		mv -f $TMPDIR/proxy-groups_add.yaml $TMPDIR/proxy-groups.yaml
 		oldIFS="$IFS"
-		grep "\- name: " $clashdir/proxy-groups.yaml | sed "/^#/d" | while read line;do #将自定义策略组插入现有的proxy-group
+		grep "\- name: " $clashdir/yamls/proxy-groups.yaml | sed "/^#/d" | while read line;do #将自定义策略组插入现有的proxy-group
 				new_group=$(echo $line | grep -Eo '^ *- name:.*#' | cut -d'#' -f1 | sed 's/.*name: //g')
 				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
 				IFS="#"
@@ -404,11 +404,11 @@ EOF
 	#插入自定义代理
 	sed -i "/#自定义代理/d" $TMPDIR/proxies.yaml
 	sed -i "/#自定义代理/d" $TMPDIR/proxy-groups.yaml
-	[ -n "$(grep -Ev '^#' $clashdir/proxies.yaml 2>/dev/null)" ] && {
+	[ -n "$(grep -Ev '^#' $clashdir/yamls/proxies.yaml 2>/dev/null)" ] && {
 		space_proxy=$(cat $TMPDIR/proxies.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
-		cat $clashdir/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> $TMPDIR/proxies.yaml #插入节点
+		cat $clashdir/yamls/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> $TMPDIR/proxies.yaml #插入节点
 		oldIFS="$IFS"
-		cat $clashdir/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
+		cat $clashdir/yamls/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
 				proxy_name=$(echo $line | grep -Eo 'name: .+, ' | cut -d',' -f1 | sed 's/name: //g')
 				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
 				IFS="#"

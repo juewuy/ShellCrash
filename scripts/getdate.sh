@@ -1582,7 +1582,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		sed -n '1,40p' $YAMLSDIR/config.yaml
+		sed -n '1,40p' $clashdir/config.yaml
 		echo -----------------------------------------------
 		exit;
 	elif [ "$num" = 6 ]; then
