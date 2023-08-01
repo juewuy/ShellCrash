@@ -1107,6 +1107,15 @@ EOF
 	[ "$?" = 0 ] && rm -rf $TMPDIR/clash_pac || mv -f $TMPDIR/clash_pac $bindir/ui/pac
 }
 bfstart(){
+	#小米7000/小米万兆tproxy
+ 	if [ -f /etc/init.d/qca-nss-ecm ];then
+  		if [ cat /proc/sys/net/bridge/bridge-nf-call-iptables ];then
+    			sysctl -w net.bridge.bridge-nf-call-iptables=0
+       		fi
+	 	if [ cat /proc/sys/net/bridge/bridge-nf-call-ip6tables ];then
+   			sysctl -w net.bridge.bridge-nf-call-ip6tables=0
+      		fi
+	fi
 	#读取配置文件
 	getconfig
 	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
