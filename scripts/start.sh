@@ -1354,7 +1354,7 @@ stop)
 		PID=$(pidof clash) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
 		stop_firewall #清理路由策略
 		$0 unset_proxy #禁用本机代理
-		[ "$HARDWARE" = "RA70" -a -e /sys/module/shortcut_fe ] && insmod /lib/modules/$kernel_version/shortcut-fe-cm.ko
+		[ "$HARDWARE" = "RA70" -a -e /sys/module/shortcut_fe ] && insmod /lib/modules/`uname -r`/shortcut-fe-cm.ko
         ;;
 restart)
         $0 stop
