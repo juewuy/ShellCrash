@@ -2019,7 +2019,7 @@ case "$1" in
 			rm -rf /usr/lib/systemd/system/clash.service
 			rm -rf /www/clash
 			rm -rf /tmp/clash_$USER
-			sed -Ei s/0:7890/7890:7890/g /etc/passwd
+			sed -Ei s/:0:7890/:7890:7890/g /etc/passwd
 			userdel -r shellclash 2>/dev/null
 			nvram set script_usbmount="" 2>/dev/null
 			nvram commit 2>/dev/null
