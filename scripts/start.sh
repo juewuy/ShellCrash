@@ -728,6 +728,7 @@ start_output(){
 		[ "$dns_no" != "已禁用" ] && iptables -t nat -A PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port
 	}
 }
+HARDWARE=`uci get /usr/share/xiaoqiang/xiaoqiang_version.version.HARDWARE`
 start_tun(){
 	modprobe tun &>/dev/null
 	#允许流量
@@ -808,6 +809,11 @@ start_tun(){
 			fi	
 			ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
 			[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
+		}
+  		#修复小米AX9000开启QOS时导致TUN失效问题
+		[ "$HARDWARE" = "RA70" ] && {
+			grep -qw $clashdir /etc/init.d/shortcut-fe || sed -i "/start()/a\ \\t$clashdir/start.sh restart" /etc/init.d/shortcut-fe
+			[ -e /sys/module/shortcut_fe_cm ] && rmmod shortcut_fe_cm
 		}
 	} &
 }
@@ -1036,6 +1042,8 @@ stop_firewall(){
 		nft flush table inet shellclash >/dev/null 2>&1
 		nft delete table inet shellclash >/dev/null 2>&1
 	}
+ 	#恢复小米AX9000硬件加速模块
+	[ "$HARDWARE" = "RA70" -a -e /sys/module/shortcut_fe ] && insmod /lib/modules/`uname -r`/shortcut-fe-cm.ko
 }
 #面板配置保存相关
 web_save(){
@@ -1306,7 +1314,6 @@ start_old(){
 	afstart
 	$0 daemon
 }
-HARDWARE=`uci get /usr/share/xiaoqiang/xiaoqiang_version.version.HARDWARE`
 case "$1" in
 
 bfstart)
@@ -1331,11 +1338,6 @@ start)
 		else
 			start_old
 		fi
-  		#小米AX9000修复开启QOS时导致TUN失效问题
-		[ "$HARDWARE" = "RA70" ] && {
-			grep -qw $clashdir /etc/init.d/shortcut-fe || sed -i "/start()/a\ \\t$clashdir/start.sh restart" /etc/init.d/shortcut-fe
-			[ -e /sys/module/shortcut_fe_cm ] && rmmod shortcut_fe_cm
-		}
 	;;
 stop)	
 		getconfig
@@ -1354,7 +1356,6 @@ stop)
 		PID=$(pidof clash) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
 		stop_firewall #清理路由策略
 		$0 unset_proxy #禁用本机代理
-		[ "$HARDWARE" = "RA70" -a -e /sys/module/shortcut_fe ] && insmod /lib/modules/`uname -r`/shortcut-fe-cm.ko
         ;;
 restart)
         $0 stop
