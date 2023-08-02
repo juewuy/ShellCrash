@@ -1306,7 +1306,7 @@ start_old(){
 	afstart
 	$0 daemon
 }
-
+HARDWARE=`uci get /usr/share/xiaoqiang/xiaoqiang_version.version.HARDWARE`
 case "$1" in
 
 bfstart)
@@ -1331,6 +1331,11 @@ start)
 		else
 			start_old
 		fi
+  		#小米AX9000修复开启QOS时导致TUN失效问题
+		[ "$HARDWARE" = "RA70" ] && {
+			grep -qw $clashdir /etc/init.d/shortcut-fe || sed -i "/start()/a\ \\t$clashdir/start.sh restart" /etc/init.d/shortcut-fe
+			[ -e /sys/module/shortcut_fe_cm ] && rmmod shortcut_fe_cm
+		}
 	;;
 stop)	
 		getconfig
@@ -1349,6 +1354,7 @@ stop)
 		PID=$(pidof clash) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
 		stop_firewall #清理路由策略
 		$0 unset_proxy #禁用本机代理
+		[ "$HARDWARE" = "RA70" -a -e /sys/module/shortcut_fe ] && insmod /lib/modules/$kernel_version/shortcut-fe-cm.ko
         ;;
 restart)
         $0 stop
