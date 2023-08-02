@@ -58,8 +58,9 @@ init(){
 	if [ ! -f $clashdir/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
 		[ -f $clashdir/configs/tun.ko ] && tunfix
-		#小米7000/小米万兆修复tproxy
-		[ -f /etc/init.d/qca-nss-ecm ] && {
+  		#小米7000/小米万兆修复tproxy
+		HARDWARE=`uci get /usr/share/xiaoqiang/xiaoqiang_version.version.HARDWARE`
+		[ "$HARDWARE" = "RC06" -o "$HARDWARE" = "RC01" ] && {
 			[ -f /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=0
 			[ -f /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0
 		}
