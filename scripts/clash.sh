@@ -182,15 +182,15 @@ startover(){
 }
 clashstart(){
 	#检查yaml配置文件
-	if [ ! -f $clashdir/yamls/config.yaml ];then
-		echo -----------------------------------------------
+	echo -----------------------------------------------
+	if [ -s $clashdir/yamls/config.yaml -o -n "$Url" -o -n "$Https" ];then
+		$clashdir/start.sh start
+		sleep 1
+		[ -n "$(pidof clash)" ] && startover
+	else
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
 		source $clashdir/getdate.sh && clashlink
 	fi
-	echo -----------------------------------------------
-	$clashdir/start.sh start
-	sleep 1
-	[ -n "$(pidof clash)" ] && startover
 }
 checkrestart(){
 	echo -----------------------------------------------
@@ -1663,10 +1663,10 @@ tools(){
 		fi
 		tools		
 	elif [ "$num" = 8 ]; then
-		if [ -f $clashdir/configs/tun.ko ];then
+		if [ -f $clashdir/tools/tun.ko ];then
 			read -p "是否禁用此功能并移除相关补丁？(1/0) > " res
 			[ "$res" = 1 ] && {
-				rm -rf $clashdir/configs/tun.ko
+				rm -rf $clashdir/tools/tun.ko
 				echo -e "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
 			}
 		elif [ -z "$(modinfo tun)" ];then
@@ -1680,7 +1680,7 @@ tools(){
 				echo 正在连接服务器获取Tun模块补丁文件…………
 				$clashdir/start.sh webget $TMPDIR/tun.ko $tunfixlink
 				if [ "$?" = "0" ];then
-					mv -f $TMPDIR/tun.ko $clashdir && \
+					mv -f $TMPDIR/tun.ko $clashdir/tools/tun.ko && \
 					$clashdir/misnap_init.sh tunfix && \
 					echo -e "\033[32m设置成功！请重启clash服务！\033[0m"
 				else

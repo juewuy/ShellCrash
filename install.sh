@@ -2,8 +2,11 @@
 # Copyright (C) Juewuy
 
 type bash &>/dev/null && shtype=bash || shtype=sh 
-echo='echo -e' && [ -n "$(echo -e|grep e)" ] && echo=echo
-
+echo='echo -e' 
+[ -n "$(echo -e|grep e)" ] && {
+	echo "\033[31m不支持dash环境安装！请先输入bash命令后再运行安装命令！\033[0m"
+	exit
+}
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
 echo "**                ShellClash                 **"

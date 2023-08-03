@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.7.10d
+version=1.7.10e
 
 setdir(){
 	dir_avail(){
@@ -233,9 +233,10 @@ rm -rf /tmp/SC_tmp
 #转换&清理旧版本文件
 mkdir -p $clashdir/yamls
 mkdir -p $clashdir/tools
-for file in config.yaml config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml others.yaml ;do
+for file in config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml others.yaml ;do
 	mv -f $clashdir/$file $clashdir/yamls/$file 2>/dev/null
 done
+	[ ! -L $clashdir/config.yaml ] && mv -f $clashdir/config.yaml $clashdir/yamls/config.yaml 2>/dev/null
 for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallback_filter.list;do
 	mv -f $clashdir/$file $clashdir/configs/$file 2>/dev/null
 done
