@@ -61,8 +61,8 @@ init(){
 		#小米7000/小米万兆修复tproxy
 		HARDWARE=`uci get /usr/share/xiaoqiang/xiaoqiang_version.version.HARDWARE`
 		[ "$HARDWARE" = "RC06" -o "$HARDWARE" = "RC01" ] && {
-			[ -f /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=0
-			[ -f /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0
+			[ -e /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=0
+			[ -e /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0
 		}
 		#启动服务
 		/etc/init.d/clash start
