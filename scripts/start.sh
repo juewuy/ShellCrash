@@ -1043,7 +1043,7 @@ stop_firewall(){
 		nft delete table inet shellclash >/dev/null 2>&1
 	}
  	#恢复小米AX9000硬件加速模块
-	[ "$HARDWARE" = "RA70" -a -e /sys/module/shortcut_fe ] && insmod /lib/modules/`uname -r`/shortcut-fe-cm.ko
+	[ "$HARDWARE" = "RA70" -a -n "$(pidof statisticsservice)" -a -e /sys/module/shortcut_fe ] && insmod /lib/modules/`uname -r`/shortcut-fe-cm.ko 2> dev/null
 }
 #面板配置保存相关
 web_save(){
