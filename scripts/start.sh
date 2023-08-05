@@ -141,9 +141,9 @@ mark_time(){
 getlanip(){
 	i=1
 	while [ "$i" -le "10" ];do
-		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
-		host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -f  $TMPDIR/ShellClash_log ] && break
+		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot|metric' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
+		host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -n "$host_ipv4" -o -n "$host_ipv6" ] && break
 		sleep 2 && i=$((i+1))
 	done
@@ -288,7 +288,7 @@ modify_yaml(){
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#Meta内核专属配置
 	[ "$clashcore" = 'clash.meta' ] && {
-		find_process='find-process-mode: "off"'
+		[ "$redir_mod" != "纯净模式" ] && find_process='find-process-mode: "off"'
 	}
 	#dns配置
 	[ -z "$(cat $clashdir/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
@@ -890,7 +890,8 @@ start_nft(){
 		#Docker
 		type docker &>/dev/null && {
 			nft add chain inet shellclash docker { type nat hook prerouting priority -100 \; }
-			nft add rule inet shellclash docker ip saddr != {172.16.0.0/12} return
+			nft add rule inet shellclash docker ip saddr != {172.16.0.0/12} return #进代理docker网段
+			nft add rule inet shellclash docker ip daddr {$RESERVED_IP} return #过滤保留地址
 			nft add rule inet shellclash docker udp dport 53 redirect to $dns_port
 			nft add rule inet shellclash docker meta l4proto tcp mark set $fwmark redirect to $redir_port
 		}

@@ -17,11 +17,12 @@ linkconfig(){
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ] || [ "$num" -gt 10 ];then
+	totalnum=$(grep -acE '^5' $clashdir/configs/servers.list )
+	if [ -z "$num" ] || [ "$num" -gt "$totalnum" ];then
 		errornum
 	elif [ "$num" = 0 ];then
 		echo 
-	elif [ "$num" -le 10 ];then
+	elif [ "$num" -le "$totalnum" ];then
 		#将对应标记值写入mark
 		rule_link=$num
 		setconfig rule_link $rule_link
@@ -33,16 +34,17 @@ linkserver(){
 	echo -----------------------------------------------
 	echo -e "\033[36m以下为互联网采集的第三方服务器，具体安全性请自行斟酌！\033[0m"
 	echo -e "\033[32m感谢以下作者的无私奉献！！！\033[0m"
-	echo 当前使用后端为：$(grep -aE '^5' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $2}')
+	echo 当前使用后端为：$(grep -aE '^3|^4' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
 	grep -aE '^3|^4' $clashdir/configs/servers.list | awk '{print " "NR"	"$3"	"$2}'
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ] || [ "$num" -gt 5 ];then
+	totalnum=$(grep -acE '^3|^4' $clashdir/configs/servers.list )
+	if [ -z "$num" ] || [ "$num" -gt "$totalnum" ];then
 		errornum
 	elif [ "$num" = 0 ];then
 		echo
-	elif [ "$num" -le 5 ];then
+	elif [ "$num" -le "$totalnum" ];then
 		#将对应标记值写入mark
 		server_link=$num
 		setconfig server_link $server_link
@@ -1394,8 +1396,10 @@ userguide(){
 				echo -----------------------------------------------
 				echo -e "\033[33m检测到你的设备尚未开启ip转发，局域网设备将无法正常连接网络，是否立即开启？\033[0m"
 				read -p "是否开启？(1/0) > " res
-				[ "$res" = 1 ] && echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
-				[ "$?" = 0 ] && /etc/init.d/procps restart && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！" || echo "开启失败！请自行谷歌查找当前设备的开启方法！"
+				[ "$res" = 1 ] && {
+					echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
+					sysctl -w net.ipv4.ip_forward=1
+				} && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！" || echo "开启失败！请自行谷歌查找当前设备的开启方法！"
 			fi
 		elif [ "$num" = 2 ];then
 			setconfig redir_mod "纯净模式"
