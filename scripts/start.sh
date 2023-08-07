@@ -141,10 +141,10 @@ mark_time(){
 getlanip(){
 	i=1
 	while [ "$i" -le "10" ];do
-		[ -f  $TMPDIR/ShellClash_log ] && break
 		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot|metric' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
-		host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
-		[ -n "$host_ipv4" -o -n "$host_ipv6" ] && break
+		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
+		[ -f  $TMPDIR/ShellClash_log ] && break
+		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
 		sleep 2 && i=$((i+1))
 	done
 	#添加自定义ipv4局域网网段
@@ -1041,7 +1041,7 @@ stop_firewall(){
 #面板配置保存相关
 web_save(){
 	#使用get_save获取面板节点设置
-	get_save http://127.0.0.1:${db_port}/proxies | awk -F "{" '{for(i=1;i<=NF;i++) print $i}' | grep -aE '^"all".*"Selector"' > $TMPDIR/clash_web_check_$USER
+	get_save http://127.0.0.1:${db_port}/proxies | awk -F ':\\{"' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '^all".*"Selector"' > $TMPDIR/clash_web_check_$USER
 	while read line ;do
 		def=$(echo $line | awk -F "[[,]" '{print $2}')
 		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g' | sed 's/"type":.*//g' |  sed 's/,//g')

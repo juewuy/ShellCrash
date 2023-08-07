@@ -1990,6 +1990,10 @@ case "$1" in
 	-u)
 		read -p "确认卸载ShellClash？(警告：该操作不可逆！)[1/0] > " res
 		if [ "$res" = '1' ]; then
+			$clashdir/start.sh stop
+			$clashdir/start.sh cronset "clash服务"
+			$clashdir/start.sh cronset "订阅链接"
+			$clashdir/start.sh cronset "ShellClash初始化"
 			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
 				mv -f $clashdir/configs /tmp/clash_$USER
@@ -2000,10 +2004,6 @@ case "$1" in
 			else
 				rm -rf $clashdir
 			fi
-			$clashdir/start.sh stop
-			$clashdir/start.sh cronset "clash服务"
-			$clashdir/start.sh cronset "订阅链接"
-			$clashdir/start.sh cronset "ShellClash初始化"
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
 			sed -i '/alias clash=*/'d $profile
