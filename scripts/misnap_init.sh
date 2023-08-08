@@ -58,10 +58,20 @@ init(){
 	if [ ! -f $clashdir/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
 		[ -f $clashdir/configs/tun.ko ] && tunfix
+  		#获取小米路由器型号，根据型号修复tun/tproxy。分型号修复是因为AX9000的qca-nss-ecm与7000/万兆不同
+		HARDWARE=`uci get /usr/share/xiaoqiang/xiaoqiang_version.version.HARDWARE`
+		#小米AX9000修复开启qos时导致tun失效
+		[ "$HARDWARE" = "RA70" ] && {
+			grep -qw ShellClash.cfg /etc/init.d/shortcut-fe || sed -i "/shortcut-fe-cm.ko\"/a\ \t\tsource \$clashdir\/configs\/ShellClash.cfg" /etc/init.d/shortcut-fe
+			grep -qw ShellClash.path /etc/init.d/shortcut-fe || sed -i "/shortcut-fe-cm.ko\"/a\ \t\tclashdir=\"\$(uci get firewall.ShellClash.path | sed \'s\/\\\/misnap_init.sh\/\/\')\"" /etc/init.d/shortcut-fe
+			sed -i "s@\[ -d /sys/module/shortcut_fe_cm ] |@\[ -d /sys/module/shortcut_fe_cm -o -n \"\$(pidof clash)\" -a \"\$redir_mod\" = \"混合模式\" -o -n \"\$(pidof clash)\" -a \"\$redir_mode\" = \"Tun模式\" ] |@" /etc/init.d/shortcut-fe
+		}
 		#小米7000/小米万兆修复tproxy
-		[ -f /etc/init.d/qca-nss-ecm ] && {
-			[ -f /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=0
-			[ -f /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0
+		[ "$HARDWARE" = "RC06" -o "$HARDWARE" = "RC01" ] && {
+			grep -qw ShellClash.path /etc/init.d/qca-nss-ecm || sed -i "/sysctl -w net.bridge.bridge-nf-call-ip6tables=1/i\ \t\tclashdir=\"\$(uci get firewall.ShellClash.path | sed \'s\/\\\/misnap_init.sh\/\/\')\"" /etc/init.d/qca-nss-ecm
+			grep -qw ShellClash.cfg /etc/init.d/qca-nss-ecm || sed -i "/sysctl -w net.bridge.bridge-nf-call-ip6tables=1/i\ \t\tsource \$clashdir\/configs\/ShellClash.cfg" /etc/init.d/qca-nss-ecm
+			[ -n "$(cat /etc/init.d/qca-nss-ecm | grep Tproxy | grep ip6tables=1)" ] || sed -i "s/sysctl -w net.bridge.bridge-nf-call-ip6tables=1/\[ -n \"\$(pidof clash)\" -a \"\$redir_mod\" = \"Tproxy混合\" -o -n \"\$(pidof clash)\" -a \"\$redir_mode\" = \"Tproxy模式\" ] \|\| sysctl -w net.bridge.bridge-nf-call-ip6tables=1/" /etc/init.d/qca-nss-ecm
+			[ -n "$(cat /etc/init.d/qca-nss-ecm | grep Tproxy | grep iptables=1)" ] || sed -i "s/sysctl -w net.bridge.bridge-nf-call-iptables=1/\[ -n \"\$(pidof clash)\" -a \"\$redir_mod\" = \"Tproxy混合\" -o -n \"\$(pidof clash)\" -a \"\$redir_mode\" = \"Tproxy模式\" ] \|\| sysctl -w net.bridge.bridge-nf-call-iptables=1/" /etc/init.d/qca-nss-ecm
 		}
 		#启动服务
 		/etc/init.d/clash start
