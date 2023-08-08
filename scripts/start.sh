@@ -8,6 +8,7 @@
 [ -z "$clashdir" ] && clashdir=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
 CFG_PATH=$clashdir/configs/ShellClash.cfg
 TMPDIR=/tmp/ShellClash && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
+HARDWARE=`uci get /usr/share/xiaoqiang/xiaoqiang_version.version.HARDWARE`
 #脚本内部工具
 getconfig(){
 	#加载配置文件
@@ -692,6 +693,11 @@ start_tproxy(){
 			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellClash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
 		}	
 	}
+	#小米7000/小米万兆修复tproxy
+	[ "$HARDWARE" = "RC06" -o "$HARDWARE" = "RC01" ] && {
+		[ -e /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=0 2> dev/null
+		[ -e /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0 2> dev/null
+	}
 }
 start_output(){
 	#获取局域网host地址
@@ -809,6 +815,8 @@ start_tun(){
 			ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
 			[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
 		}
+		#小米AX9000修复开启qos导致tun失效
+		[ "$HARDWARE" = "RA70" -a -d /sys/module/shortcut_fe_cm ] && rmmod shortcut_fe_cm
 	} &
 }
 start_nft(){
@@ -1036,6 +1044,13 @@ stop_firewall(){
 	ckcmd nft && {
 		nft flush table inet shellclash >/dev/null 2>&1
 		nft delete table inet shellclash >/dev/null 2>&1
+	}
+	#小米AX9000加速模块恢复
+	[ "$HARDWARE" = "RA70" -a -n "$(pidof statisticsservice)" -a -d /sys/module/shortcut_fe ] && insmod /lib/modules/`uname -r`/shortcut-fe-cm.ko 2> dev/null
+	#小米7000/小米万兆加速模块恢复
+	[ "$HARDWARE" = "RC06" -o "$HARDWARE" = "RC01" ] && {
+		[ -e /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=1 2> dev/null
+		[ -e /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=1 2> dev/null
 	}
 }
 #面板配置保存相关
