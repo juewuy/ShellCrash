@@ -1092,7 +1092,6 @@ clashcfg(){
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
 		[ -n "$(lsmod | grep '^tun')" ] || ip tuntap &>/dev/null && sup_tun=1
 		ckcmd nft && sup_nft=1
-		#[ -n "$(lsmod | grep 'nft_tproxy')" ] && sup_nft=2
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启clash服务以生效！\033[0m"
@@ -1125,7 +1124,12 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 3 ]; then
-			redir_mod=Tproxy混合	
+			if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
+				read -p "当前设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
+				[ "$res" = '1' ] && $clashdir/misnap_init.sh tproxyfix && redir_mod=Tproxy混合
+			else
+				redir_mod=Tproxy混合
+			fi	
 			set_redir_config
 			
 		elif [ "$num" = 4 ]; then
@@ -1133,7 +1137,12 @@ clashcfg(){
 			set_redir_config
 			
 		elif [ "$num" = 5 ]; then
-			redir_mod=Tproxy模式	
+			if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
+				read -p "当前设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
+				[ "$res" = '1' ] && $clashdir/misnap_init.sh tproxyfix && redir_mod=Tproxy模式
+			else
+				redir_mod=Tproxy模式
+			fi	
 			set_redir_config
 			
 		elif [ "$num" = 6 ]; then

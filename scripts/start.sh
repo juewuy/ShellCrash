@@ -452,7 +452,7 @@ EOF
 	}
 	[ -s $TMPDIR/dns.yaml ] && yaml_dns=$TMPDIR/dns.yaml
 	[ -s $TMPDIR/hosts.yaml ] && yaml_hosts=$TMPDIR/hosts.yaml
-	[ -s $TMPDIR/others.yaml ] && yaml_others=$clashdir/yamls/others.yaml
+	[ -s $clashdir/yamls/others.yaml ] && yaml_others=$clashdir/yamls/others.yaml
 	yaml_add=
 	for char in $yaml_char;do #将额外配置文件合并
 		[ -s $TMPDIR/${char}.yaml ] && {
@@ -1226,7 +1226,7 @@ bfstart(){
 		fi
 	fi
 	#生成配置文件
-	[ "$disoverride" != "1" ] && modify_yaml || ln -s $yaml $bindir/config.yaml
+	[ "$disoverride" != "1" ] && modify_yaml || ln -sf $yaml $bindir/config.yaml
 }
 afstart(){
 

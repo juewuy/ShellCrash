@@ -36,6 +36,11 @@ tunfix(){
 	#将tun.ko链接到lib
 	ln -sf $clashdir/tools/tun.ko ${ko_dir}/tun.ko
 }
+tproxyfix(){
+	sed -i 's/sysctl -w net.bridge.bridge-nf-call-ip/#sysctl -w net.bridge.bridge-nf-call-ip/g' /etc/init.d/qca-nss-ecm
+	sysctl -w net.bridge.bridge-nf-call-iptables=0
+	sysctl -w net.bridge.bridge-nf-call-ip6tables=0
+}
 init(){
 	#等待启动完成
 	log_file=$(uci get system.@system[0].log_file)
@@ -59,10 +64,7 @@ init(){
 		#AX6S/AX6000修复tun功能
 		[ -f $clashdir/configs/tun.ko ] && tunfix
 		#小米7000/小米万兆修复tproxy
-		[ -f /etc/init.d/qca-nss-ecm ] && {
-			[ -f /proc/sys/net/bridge/bridge-nf-call-iptables ] && sysctl -w net.bridge.bridge-nf-call-iptables=0
-			[ -f /proc/sys/net/bridge/bridge-nf-call-ip6tables ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0
-		}
+		[ -f /etc/init.d/qca-nss-ecm ] && [ -n "$(grep 'redir_mod=Tproxy' $clashdir/configs/ShellClash.cfg )" ] && tproxyfix
 		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable
@@ -71,6 +73,7 @@ init(){
 
 case "$1" in
 	tunfix) tunfix ;;
+	tproxyfix) tproxyfix ;;
 	init) init ;;
 	*)
 		if [ -z $(pidof clash) ];then
