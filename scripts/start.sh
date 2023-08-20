@@ -467,6 +467,8 @@ EOF
 	if [ "$?" != 0 ];then
 		logger "$($bindir/clash -t -d $bindir -f $TMPDIR/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
+		logger "错误详情请参考 $TMPDIR/error.yaml 文件！" 33
+		mv -f $TMPDIR/config.yaml $TMPDIR/error.yaml &>/dev/null
 		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  $TMPDIR/proxy-groups.yaml
 		mv -f $TMPDIR/set_bak.yaml $TMPDIR/set.yaml &>/dev/null
 		#合并基础配置文件
