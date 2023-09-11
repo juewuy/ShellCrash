@@ -141,7 +141,7 @@ mark_time(){
 getlanip(){
 	i=1
 	while [ "$i" -le "10" ];do
-		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot|metric' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' ) #ipv4局域网网段
+		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | awk '{print $2}' ) #ipv4局域网网段
 		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -f  $TMPDIR/ShellClash_log ] && break
 		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
