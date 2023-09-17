@@ -670,7 +670,7 @@ setipv6(){
 setfirewall(){
 	set_cust_host_ipv4(){		
 		echo -----------------------------------------------
-		echo -e "当前已自动设置透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | tr '\n' ' ' && echo ) \033[0m"
+		echo -e "当前已自动设置透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ' && echo ) \033[0m"
 		echo -e "当前已添加的自定义网段为:\033[36m$cust_host_ipv4\033[0m"
 		echo -----------------------------------------------	
 		echo -e "\033[33m自定义网段不会覆盖自动获取的网段地址，无需重复添加\033[0m"
