@@ -300,7 +300,7 @@ setrules(){
 	case $num in
 	1)
 		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		rule_group="DIRECT#REJECT$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
+		rule_group="DIRECT#REJECT$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
 		set_rule_type
 		setrules
 	;;
@@ -411,7 +411,7 @@ EOF
 	1)
 		group_type="select url-test fallback load-balance"
 		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
-		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null| sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_group_type
 		setgroups
 	;;
@@ -845,7 +845,7 @@ setcustcore(){
 	read -p "我确认遇到问题可以自行解决[1/0] > " res
 	[ "$res" = '1' ] && {
 		echo -e "\033[33m请选择需要使用的核心！\033[0m"
-		echo -e "1 \033[32m 测试版ClashPre内核 \033[0m(不兼容redir-host)"
+		echo -e "1 \033[32m 测试版ClashPre内核 \033[0m"
 		echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
 		echo -e "3 \033[33m 自定义内核链接 \033[0m"
 		read -p "请输入对应数字 > " num	
@@ -1032,7 +1032,7 @@ getdb(){
 			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf $TMPDIR/clashfm.tar.gz && exit 1 
 		fi
 		#修改默认host和端口
-		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" ];then
+		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" ];then
 			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
 			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
 		else
@@ -1084,7 +1084,8 @@ setdb(){
 	echo -e " 2 安装\033[32mMeta面板\033[0m(约800kb)"
 	echo -e " 3 安装\033[32mYacd面板\033[0m(约1.1mb)"
 	echo -e " 4 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
-	echo -e " 5 卸载\033[33m本地面板\033[0m"
+	echo -e " 5 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
+	echo -e " 6 卸载\033[33m本地面板\033[0m"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 
@@ -1105,6 +1106,10 @@ setdb(){
 		dbdir
 		getdb
 	elif [ "$num" = '5' ]; then
+		db_type=meta_xd
+		dbdir
+		getdb
+	elif [ "$num" = '6' ]; then
 		read -p "确认卸载本地面板？(1/0) > " res
 		if [ "$res" = 1 ];then
 			rm -rf /www/clash
@@ -1130,6 +1135,7 @@ getcrt(){
 		error_down
 	else
 		echo -----------------------------------------------
+		mkdir -p $openssldir
 		mv -f $TMPDIR/ca-certificates.crt $crtdir
 		$clashdir/start.sh webget $TMPDIR/ssl_test https://baidu.com echooff rediron skipceroff
 		if [ "$?" = "1" ];then

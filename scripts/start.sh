@@ -165,7 +165,7 @@ getyaml(){
 	[ -z "$server_link" ] && server_link=1
 	Server=$(grep -aE '^3|^4' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
 	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ "$retry" = 4 ] && Server=$(grep -aE '^499' $clashdir/configs/servers.list | awk '{print $3}')
+	[ "$retry" = 4 ] && Server=$(grep -aE '^497' $clashdir/configs/servers.list | awk '{print $3}')
 	Config=$(grep -aE '^5' $clashdir/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
