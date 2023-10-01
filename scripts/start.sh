@@ -494,7 +494,8 @@ cn_ip_route(){
 		fi
 	}
 	[ -f $bindir/cn_ip.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
-			echo "create cn_ip hash:net family inet hashsize 1024 maxelem 65536" > $TMPDIR/cn_$USER.ipset
+			# see https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-cidr.txt
+			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > $TMPDIR/cn_$USER.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> $TMPDIR/cn_$USER.ipset
 			ipset -! flush cn_ip 2>/dev/null
 			ipset -! restore < $TMPDIR/cn_$USER.ipset 
@@ -513,7 +514,8 @@ cn_ipv6_route(){
 	}
 	[ -f $bindir/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			#ipv6
-			echo "create cn_ip6 hash:net family inet6 hashsize 1024 maxelem 65536" > $TMPDIR/cn6_$USER.ipset
+			#see https://ispip.clang.cn/all_cn_ipv6.txt
+			echo "create cn_ip6 hash:net family inet6 hashsize 2048 maxelem 2048" > $TMPDIR/cn6_$USER.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/cn_ipv6.txt >> $TMPDIR/cn6_$USER.ipset
 			ipset -! flush cn_ip6 2>/dev/null
 			ipset -! restore < $TMPDIR/cn6_$USER.ipset 
