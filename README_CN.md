@@ -143,12 +143,6 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 --
 ### [TG讨论组](https://t.me/ShellCrash) 
 
-## 请喝杯茶：
-
-​		支付宝										微信
-
-##### <img src="http://juewuy.github.io/post-images/1604390977172.png" style="zoom:50%;" /><img src="http://juewuy.github.io/post-images/1604391042406.png" style="zoom:50%;" />
-
 机场推荐：
 --
 #### [大米-群友力荐，流媒体解锁，月付推荐](https://www.bigme.pro/user#/register?code=2PuWY9I7)<br>
