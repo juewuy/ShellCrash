@@ -1,13 +1,10 @@
 <h1 align="center">
-  <img src="https://github.com/Dreamacro/clash/raw/master/docs/logo.png" alt="Clash" width="200">
   <br>ShellClash<br>
 </h1>
 
 
   <p align="center">
-	<a target="_blank" href="https://github.com/Dreamacro/clash/releases">
-    <img src="https://img.shields.io/github/release/Dreamacro/Clash.svg?style=flat-square&label=Clash">
-  </a>
+
   <a target="_blank" href="https://github.com/juewuy/ShellClash/releases">
     <img src="https://img.shields.io/github/release/juewuy/ShellClash.svg?style=flat-square&label=ShellClash&colorB=green">
   </a>
