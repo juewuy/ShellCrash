@@ -1,15 +1,12 @@
 <h1 align="center">
-  <img src="https://github.com/Dreamacro/clash/raw/master/docs/logo.png" alt="Clash" width="200">
-  <br>ShellClash<br>
+  <br>ShellCrash<br>
 </h1>
 
 
   <p align="center">
-	<a target="_blank" href="https://github.com/Dreamacro/clash/releases">
-    <img src="https://img.shields.io/github/release/Dreamacro/Clash.svg?style=flat-square&label=Clash">
-  </a>
-  <a target="_blank" href="https://github.com/juewuy/ShellClash/releases">
-    <img src="https://img.shields.io/github/release/juewuy/ShellClash.svg?style=flat-square&label=ShellClash&colorB=green">
+
+  <a target="_blank" href="https://github.com/juewuy/ShellCrash/releases">
+    <img src="https://img.shields.io/github/release/juewuy/ShellCrash.svg?style=flat-square&label=ShellCrash&colorB=green">
   </a>
 </p>
 
@@ -17,7 +14,7 @@
 
 ## Function introduction: 
 
-~Convenient use in Shell environment through management script [Clash](https://github.com/Dreamacro/clash)<br>~Support management of [Clash functions](https://lancellc.gitbook.io/clash)<br>~Support online import [Clash](https://github.com/Dreamacro/clash) supports sharing, subscription and configuration links<br>~Support configuration timing tasks, support configuration file timing updates<br>~Support online installation and Use local web panel to manage built-in rules<br>~Support routing mode, native mode and other mode switching<br>~Support online update<br>
+~Convenient use in Shell environment through management script [Crash](https://github.com/Dreamacro/Crash)<br>~Support management of [Crash functions](https://lancellc.gitbook.io/Crash)<br>~Support online import [Crash](https://github.com/Dreamacro/Crash) supports sharing, subscription and configuration links<br>~Support configuration timing tasks, support configuration file timing updates<br>~Support online installation and Use local web panel to manage built-in rules<br>~Support routing mode, native mode and other mode switching<br>~Support online update<br>
 
 ## Equipment support:
 
