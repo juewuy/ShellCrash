@@ -698,6 +698,33 @@ setfirewall(){
 		;;
 		esac
 	}
+	set_host_ipv4(){
+		[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
+		echo -----------------------------------------------
+		echo -e "当前默认本地绕过IPv4网段：\033[32m$host_ipv4\033[0m"
+		echo -e "多个地址请用\033[36m空格\033[0m分隔输入"
+		echo -e "如需额外添加IP段，请使用\033[36m自定义透明路由ipv4网段\033[0m"
+		echo -----------------------------------------------
+		echo -e " 1 输入新的IPv4网段"
+		echo -e " 2 \033[33m重置\033[0m默认本地IPv4网段"
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num
+		if [ -z "$num" ]; then 
+			errornum
+		elif [ "$num" = 1 ]; then
+			read -p "请输入新的IPv4网段 > " host_ipv4
+			if [ -n "$host_ipv4" ]; then
+				setconfig host_ipv4 "'$host_ipv4'"
+				echo -e "\033[32m设置成功！！！\033[0m"
+			fi
+			set_host_ipv4
+		elif [ "$num" = 2 ]; then
+			host_ipv4=""
+			setconfig host_ipv4
+			echo -e "\033[33m默认本地IPv4网段已重置！！！\033[0m"
+			set_host_ipv4
+		fi
+	}
 	[ -z "$public_support" ] && public_support=未开启
 	[ -z "$public_mixport" ] && public_mixport=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
@@ -706,6 +733,7 @@ setfirewall(){
 	echo -e " 1 公网访问Dashboard面板:	\033[36m$public_support\033[0m"
 	echo -e " 2 公网访问Socks/Http代理:	\033[36m$public_mixport\033[0m"
 	echo -e " 3 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"	
+	echo -e " 4 修改默认本地绕过IPv4网段:	————Bypass本地网段"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num		
 	case $num in
@@ -738,6 +766,10 @@ setfirewall(){
 		set_cust_host_ipv4
 		setfirewall
 	;;
+ 	4)
+		set_host_ipv4
+		setfirewall
+ 	;;
 	*)
 		errornum
 	;;
