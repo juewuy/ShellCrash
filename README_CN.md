@@ -1,12 +1,11 @@
 <h1 align="center">
-  <img src="https://github.com/Dreamacro/Crash/raw/master/docs/logo.png" alt="Crash" width="200">
   <br>ShellCrash<br>
 </h1>
 
 
   <p align="center">
-	<a target="_blank" href="https://github.com/Dreamacro/Crash/releases">
-    <img src="https://img.shields.io/github/release/Dreamacro/Crash.svg?style=flat-square&label=Crash">
+	<a target="_blank" href="https://github.com/MetaCubeX/mihomo/releases">
+    <img src="https://img.shields.io/github/release/MetaCubeX/mihomo.svg?style=flat-square&label=Core">
   </a>
   <a target="_blank" href="https://github.com/juewuy/ShellCrash/releases">
     <img src="https://img.shields.io/github/release/juewuy/ShellCrash.svg?style=flat-square&label=ShellCrash&colorB=green">
