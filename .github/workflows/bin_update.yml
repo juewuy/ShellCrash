@@ -36,7 +36,7 @@ jobs:
         mkdir -p bin/geodata
         cd bin/dashboard
         echo 下载官方面板
-        curl -kfSL -o clashdb.zip  https://github.com/Dreamacro/clash-dashboard/archive/gh-pages.zip
+        # curl -kfSL -o clashdb.zip  https://github.com/Dreamacro/clash-dashboard/archive/gh-pages.zip
         echo 下载Meta面板
         curl -kfSL -o meta_db.zip  https://github.com/MetaCubeX/Razord-meta/archive/gh-pages.zip
         echo 下载yacd面板
@@ -46,12 +46,12 @@ jobs:
         echo 下载meta-xd面板
         curl -kfSL -o meta_xd.zip  https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
         echo 解压缩
-        unzip -o clashdb.zip > /dev/null
+        # unzip -o clashdb.zip > /dev/null
         unzip -o yacd.zip > /dev/null
-        cd clash-dashboard-gh-pages
-        tar -zcvf clashdb.tar.gz * > /dev/null
-        mv -f clashdb.tar.gz ../
-        cd ..
+        # cd clash-dashboard-gh-pages
+        # tar -zcvf clashdb.tar.gz * > /dev/null
+        # mv -f clashdb.tar.gz ../
+        # cd ..
         cd yacd-gh-pages
         echo yacd特殊处理
         find -name '*.map' | xargs  rm -rf

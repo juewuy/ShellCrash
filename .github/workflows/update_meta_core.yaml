@@ -9,7 +9,7 @@ on:
 env:
   download_tag: ${{ github.event.inputs.tag }}
   download_version: ''
-  download_url: https://github.com/MetaCubeX/Clash.Meta/releases/download
+  download_url: https://github.com/MetaCubeX/mihomo/releases/download
 jobs:
   Update:
     runs-on: ubuntu-latest
@@ -25,7 +25,7 @@ jobs:
     - name: Download Core
       run: |
         if [ "${download_tag}" = "Prerelease-Alpha" ] || [ "${download_tag}" = "Prerelease-Beta" ];then
-          download_version=$(curl -sL https://api.github.com/repos/MetaCubeX/Clash.Meta/releases/tags/${download_tag} | grep linux-arm64 | head -n 1 | sed 's_.gz.*__;s_.*arm64-__')
+          download_version=$(curl -sL https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/${download_tag} | grep linux-arm64 | head -n 1 | sed 's_.gz.*__;s_.*arm64-__')
         else
           download_version=${download_tag}
         fi
@@ -34,7 +34,7 @@ jobs:
         new_name=(amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat)
         mkdir tmp
         for((i=0;i<7;i++));do
-          wget "${download_url}/${download_tag}/Clash.Meta-linux-${archs[i]}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${new_name[i]}
+          wget "${download_url}/${download_tag}/mihomo-linux-${archs[i]}-${download_version}.gz" -O - | gunzip -c > ./tmp/clash-linux-${new_name[i]}
           chmod +x ./tmp/clash-linux-${new_name[i]}
           if [ "${archs[i]}" != "armv5" ];then
             if [[ ${archs[i]} = mips* ]];then
