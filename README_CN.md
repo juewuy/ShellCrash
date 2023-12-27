@@ -17,16 +17,21 @@
 功能简介：
 --
 
-~通过管理脚本在Shell环境下便捷使用[Crash](https://github.com/Dreamacro/Crash)<br>
-~支持在Shell环境下管理[Crash各种功能](https://lancellc.gitbook.io/Crash)<br>
-~支持在线导入[Crash](https://github.com/Dreamacro/Crash)支持的分享、订阅及配置链接<br>~支持配置定时任务，支持配置文件定时更新<br>~支持在线安装及使用本地网页面板管理内置规则<br>
-~支持路由模式、本机模式等多种模式切换<br>~支持在线更新<br>
+~通过管理脚本在Shell环境下便捷使用<br>
+~支持在Shell环境下管理<br>
+~支持在线导入订阅及配置链接<br>
+~支持配置定时任务，支持配置文件定时更新<br>
+~支持在线安装及使用本地网页面板管理内置规则<br>
+~支持路由模式、本机模式等多种模式切换<br>
+~支持在线更新<br>
 
 设备支持：
 --
 
 ~支持各种基于OpenWrt或使用OpenWrt二次定制开发的路由器设备<br>
-~支持各种运行标准Linux系统（如Debian/CenOS/Armbian等）的设备<br>~兼容Padavan固件（保守模式）、潘多拉固件以及华硕/梅林固件<br>~兼容各类使用Linux内核定制开发的各类型设备<br>
+~支持各种运行标准Linux系统（如Debian/CenOS/Armbian等）的设备<br>
+~兼容Padavan固件（保守模式）、潘多拉固件以及华硕/梅林固件<br>
+~兼容各类使用Linux内核定制开发的各类型设备<br>
 
 ——————————<br>
 ~更多设备支持，请提issue或前往TG群反馈（需提供设备名称及运行uname -a返回的设备核心信息）<br>
@@ -109,15 +114,9 @@ export url='http://t.jwsc.eu.org' && wget -q -O /tmp/install.sh $url/install.sh 
 安装完成管理脚本后，执行如下命令使用~
 
 ```Shell
-Crash 		#进入对话脚本
-Crash -h 	#脚本帮助及说明
-Crash -u 	#卸载脚本
-Crash -t 	#测试模式运行
-Crash -s start 	#启动服务
-Crash -s stop 	#停止服务
+Clash 		#进入对话
+Clash -h 	#帮助列表
 ```
-
-
 
 #### **运行时的额外依赖**：<br>
 
@@ -140,9 +139,9 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 交流反馈：
 --
-### [TG讨论组](https://t.me/ShellCrash) 
+### [TG讨论组](https://t.me/ShellClash) 
 
 机场推荐：
 --
-#### [大米-群友力荐，流媒体解锁，月付推荐](https://www.bigme.pro/user#/register?code=2PuWY9I7)<br>
+#### [大米-群友力荐，流媒体解锁，月付推荐](https://cloud.bigme.pro/user#/register?code=2PuWY9I7)<br>
 #### [Dler-老牌稳定，流媒体解锁，年付推荐](https://dler.best/auth/register?affid=89698)<br>
