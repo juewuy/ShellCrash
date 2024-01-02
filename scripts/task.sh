@@ -69,7 +69,7 @@ update_shellclash(){ #自动更新脚本
 			return 1
 		else
 			#解压
-			tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/
+			tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/ || tar -zxvf "$TMPDIR/clashfm.tar.gz" --no-same-owner -C $CRASHDIR/
 			if [ $? -ne 0 ];then
 				rm -rf $TMPDIR/clashfm.tar.gz
 				logger "任务:【自动更新内核】出错-解压失败！"

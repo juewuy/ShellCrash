@@ -744,7 +744,7 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p $CRASHDIR > /dev/null
-		tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/
+		tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/ || tar -zxvf "$TMPDIR/clashfm.tar.gz" --no-same-owner -C $CRASHDIR/
 		if [ $? -ne 0 ];then
 			rm -rf $TMPDIR/clashfm.tar.gz
 			echo -e "\033[33m文件解压失败！\033[0m"

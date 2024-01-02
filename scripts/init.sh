@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.2d
+version=1.8.2e
 
 setdir(){
 	dir_avail(){
@@ -143,6 +143,7 @@ $CRASHDIR/start.sh stop 2>/dev/null #防止进程冲突
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot #NETGEAR设备
 
 #检查环境变量
+[ -z "$CRASHDIR" -a -n "$clashdir" ] && CRASHDIR=$clashdir
 [ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && {
 	setdir
 }
