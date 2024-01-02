@@ -1,0 +1,16 @@
+#任务ID#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)
+
+101#$clashdir/start.sh start#启动clash服务
+102#$clashdir/start.sh stop#停止clash服务
+103#$clashdir/start.sh restart#重启clash服务
+104#$clashdir/start.sh getyaml && $clashdir/start.sh restart#更新订阅并重启服务
+105#$clashdir/start.sh updateyaml#热更新订阅
+106#$clashdir/start.sh web_save#自动保存面板配置
+107#$clashdir/start.sh ntp#自动同步ntp时间
+
+111#$clashdir/task/task.sh update_core#自动更新内核
+112#$clashdir/task/task.sh update_shellclash#自动更新脚本
+113#$clashdir/task/task.sh update_mmdb#自动更新数据库文件
+
+121#$clashdir/task/task.sh reset_firewall#重设透明路由防火墙
+

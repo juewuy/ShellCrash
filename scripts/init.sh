@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.1
+version=1.8.2d
 
 setdir(){
 	dir_avail(){
@@ -76,7 +76,7 @@ if [ -n "$systype" ];then
 	}
 	[ "$systype" = "ng_snapshot" ] && dir=/tmp/mnt
 else
-	echo -e "\033[33m安装ShellClash至少需要预留约1MB的磁盘空间\033[0m"	
+	echo -e "\033[33m安装ShellCrash至少需要预留约1MB的磁盘空间\033[0m"	
 	echo -e " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
 	echo -e " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux系统)"
 	echo -e " 3 在\033[32m当前用户目录\033[0m下安装(适合非root用户)"
@@ -119,16 +119,16 @@ if [ ! -w $dir ];then
 else
 	echo -e "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir -h)"
 	read -p "确认安装？(1/0) > " res
-	[ "$res" = "1" ] && clashdir=$dir/clash || setdir
+	[ "$res" = "1" ] && CRASHDIR=$dir/clash || setdir
 fi
 }
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=$clashdir/configs/ShellClash.cfg || configpath=$3
+	[ -z "$3" ] && configpath=$CRASHDIR/configs/ShellCrash.cfg || configpath=$3
 	[ -n "$(grep -E "^${1}=" $configpath)" ] && sed -i "s#^${1}=\(.*\)#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 
-$clashdir/start.sh stop 2>/dev/null #防止进程冲突
+$CRASHDIR/start.sh stop 2>/dev/null #防止进程冲突
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
 	systype=Padavan #老毛子固件
@@ -143,30 +143,30 @@ $clashdir/start.sh stop 2>/dev/null #防止进程冲突
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot #NETGEAR设备
 
 #检查环境变量
-[ -z "$clashdir" -a -d /tmp/SC_tmp ] && {
+[ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && {
 	setdir
 }
 #移动文件
-mkdir -p $clashdir
-mv -f /tmp/SC_tmp/* $clashdir 2>/dev/null
+mkdir -p $CRASHDIR
+mv -f /tmp/SC_tmp/* $CRASHDIR 2>/dev/null
 
 #初始化
-mkdir -p $clashdir/configs
-[ -f "$clashdir/configs/ShellClash.cfg" ] || echo '#ShellClash配置文件，不明勿动！' > $clashdir/configs/ShellClash.cfg
+mkdir -p $CRASHDIR/configs
+[ -f "$CRASHDIR/configs/ShellCrash.cfg" ] || echo '#ShellCrash配置文件，不明勿动！' > $CRASHDIR/configs/ShellCrash.cfg
 #本地安装跳过新手引导
 #[ -z "$url" ] && setconfig userguide 1
 #判断系统类型写入不同的启动文件
 if [ -f /etc/rc.common ];then
 		#设为init.d方式启动
-		cp -f $clashdir/clashservice /etc/init.d/clash
+		cp -f $CRASHDIR/clashservice /etc/init.d/clash
 		chmod 755 /etc/init.d/clash
 else
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
 	if [ -n "$sysdir" -a -z "$WSL_DISTRO_NAME" ];then #wsl环境不使用systemd
 		#设为systemd方式启动
-		mv -f $clashdir/clash.service $sysdir/clash.service 2>/dev/null
-		sed -i "s%/etc/clash%$clashdir%g" $sysdir/clash.service
+		mv -f $CRASHDIR/clash.service $sysdir/clash.service 2>/dev/null
+		sed -i "s%/etc/clash%$CRASHDIR%g" $sysdir/clash.service
 		systemctl daemon-reload
 	else
 		#设为保守模式启动
@@ -175,8 +175,9 @@ else
 fi
 #修饰文件及版本号
 type bash &>/dev/null && shtype=bash || shtype=sh 
-sed -i "s|/bin/sh|/bin/$shtype|" $clashdir/start.sh
-chmod 755 $clashdir/start.sh
+sed -i "s|/bin/sh|/bin/$shtype|" $CRASHDIR/start.sh
+chmod 755 $CRASHDIR/start.sh
+chmod 755 $CRASHDIR/task.sh
 setconfig versionsh_l $version
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
@@ -186,15 +187,15 @@ setconfig versionsh_l $version
 [ -w ~/.bashrc ] && profile=~/.bashrc
 [ -w /etc/profile ] && profile=/etc/profile
 if [ -n "$profile" ];then
-	sed -i '/alias clash=*/'d $profile
-	echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> $profile #设置快捷命令环境变量
-	sed -i '/export clashdir=*/'d $profile
-	echo "export clashdir=\"$clashdir\"" >> $profile #设置clash路径环境变量
+	sed -i '/alias crash=*/'d $profile
+	echo "alias crash=\"$shtype $CRASHDIR/clash.sh\"" >> $profile #设置快捷命令环境变量
+	sed -i '/export CRASHDIR=*/'d $profile
+	echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile #设置clash路径环境变量
 	source $profile &>/dev/null || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
-	[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep clashdir)" ] && { 
-		echo "alias clash=\"$shtype $clashdir/clash.sh\"" >> ~/.zshrc
-		echo "export clashdir=\"$clashdir\"" >> ~/.zshrc
+	[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
+		echo "alias clash=\"$shtype $CRASHDIR/clash.sh\"" >> ~/.zshrc
+		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc &>/dev/null
 	}
 else
@@ -203,49 +204,59 @@ else
 fi
 #梅林/Padavan额外设置
 [ -n "$initdir" ] && {
-	sed -i '/ShellClash初始化/'d $initdir
+	sed -i '/ShellCrash初始化/'d $initdir
 	touch $initdir
-	echo "$clashdir/start.sh init #ShellClash初始化脚本" >> $initdir
+	echo "$CRASHDIR/start.sh init #ShellCrash初始化脚本" >> $initdir
 	chmod a+rx $initdir 2>/dev/null
 	setconfig initdir $initdir
 	}
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ];then
-	chmod 755 $clashdir/misnap_init.sh
-	uci set firewall.ShellClash=include
-	uci set firewall.ShellClash.type='script'
-	uci set firewall.ShellClash.path="$clashdir/misnap_init.sh"
-	uci set firewall.ShellClash.enabled='1'
+	chmod 755 $CRASHDIR/misnap_init.sh
+	uci set firewall.ShellCrash=include
+	uci set firewall.ShellCrash.type='script'
+	uci set firewall.ShellCrash.path="$CRASHDIR/misnap_init.sh"
+	uci set firewall.ShellCrash.enabled='1'
 	uci commit firewall
 	setconfig systype $systype
 else
-	rm -rf $clashdir/misnap_init.sh
+	rm -rf $CRASHDIR/misnap_init.sh
 fi
 #华硕USB启动额外设置
 [ "$usb_status" = "1" ]	&& {
-	echo "$clashdir/start.sh init #ShellClash初始化脚本" > $clashdir/asus_usb_mount.sh
-	nvram set script_usbmount="$clashdir/asus_usb_mount.sh"
+	echo "$CRASHDIR/start.sh init #ShellCrash初始化脚本" > $CRASHDIR/asus_usb_mount.sh
+	nvram set script_usbmount="$CRASHDIR/asus_usb_mount.sh"
 	nvram commit
 }
 #删除临时文件
 rm -rf /tmp/*lash*gz
 rm -rf /tmp/SC_tmp
 #转换&清理旧版本文件
-mkdir -p $clashdir/yamls
-mkdir -p $clashdir/tools
+mkdir -p $CRASHDIR/yamls
+mkdir -p $CRASHDIR/tools
+mkdir -p $CRASHDIR/task
 for file in config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml others.yaml ;do
-	mv -f $clashdir/$file $clashdir/yamls/$file 2>/dev/null
+	mv -f $CRASHDIR/$file $CRASHDIR/yamls/$file 2>/dev/null
 done
-	[ ! -L $clashdir/config.yaml ] && mv -f $clashdir/config.yaml $clashdir/yamls/config.yaml 2>/dev/null
+	[ ! -L $CRASHDIR/config.yaml ] && mv -f $CRASHDIR/config.yaml $CRASHDIR/yamls/config.yaml 2>/dev/null
 for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallback_filter.list;do
-	mv -f $clashdir/$file $clashdir/configs/$file 2>/dev/null
+	mv -f $CRASHDIR/$file $CRASHDIR/configs/$file 2>/dev/null
 done
-	mv -f $clashdir/mark $clashdir/configs/ShellClash.cfg 2>/dev/null
-for file in cron dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh;do
-	mv -f $clashdir/$file $clashdir/tools/$file 2>/dev/null
+	#配置文件改名
+	mv -f $CRASHDIR/mark $CRASHDIR/configs/ShellCrash.cfg 2>/dev/null
+	mv -f $CRASHDIR/configs/ShellClash.cfg $CRASHDIR/configs/ShellCrash.cfg 2>/dev/null
+for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh;do
+	mv -f $CRASHDIR/$file $CRASHDIR/tools/$file 2>/dev/null
+done
+for file in cron task.sh task.list;do
+	mv -f $CRASHDIR/$file $CRASHDIR/task/$file 2>/dev/null
 done
 for file in log clash.service mark? mark.bak;do
-	rm -rf $clashdir/$file
+	rm -rf $CRASHDIR/$file
 done
+#旧版任务清理
+$CRASHDIR/start.sh cronset "clash服务"
+$CRASHDIR/start.sh cronset "订阅链接"
+$CRASHDIR/start.sh cronset "ShellCrash初始化"
 sleep 1
-echo -e "\033[32m脚本初始化完成,请输入\033[30;47m clash \033[0;33m命令开始使用！\033[0m"
+echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"

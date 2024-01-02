@@ -12,18 +12,18 @@ dir_avail(){
 #导入订阅、配置文件相关
 linkconfig(){
 	echo -----------------------------------------------
-	echo 当前使用规则为：$(grep -aE '^5' $clashdir/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $2}')
-	grep -aE '^5' $clashdir/configs/servers.list | awk '{print " "NR"	"$2$4}'
+	echo 当前使用规则为：$(grep -aE '^5' $CRASHDIR/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $2}')
+	grep -aE '^5' $CRASHDIR/configs/servers.list | awk '{print " "NR"	"$2$4}'
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	totalnum=$(grep -acE '^5' $clashdir/configs/servers.list )
+	totalnum=$(grep -acE '^5' $CRASHDIR/configs/servers.list )
 	if [ -z "$num" ] || [ "$num" -gt "$totalnum" ];then
 		errornum
 	elif [ "$num" = 0 ];then
 		echo 
 	elif [ "$num" -le "$totalnum" ];then
-		#将对应标记值写入mark
+		#将对应标记值写入配置
 		rule_link=$num
 		setconfig rule_link $rule_link
 		echo -----------------------------------------------	  
@@ -34,18 +34,18 @@ linkserver(){
 	echo -----------------------------------------------
 	echo -e "\033[36m以下为互联网采集的第三方服务器，具体安全性请自行斟酌！\033[0m"
 	echo -e "\033[32m感谢以下作者的无私奉献！！！\033[0m"
-	echo 当前使用后端为：$(grep -aE '^3|^4' $clashdir/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	grep -aE '^3|^4' $clashdir/configs/servers.list | awk '{print " "NR"	"$3"	"$2}'
+	echo 当前使用后端为：$(grep -aE '^3|^4' $CRASHDIR/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	grep -aE '^3|^4' $CRASHDIR/configs/servers.list | awk '{print " "NR"	"$3"	"$2}'
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	read -p "请输入对应数字 > " num
-	totalnum=$(grep -acE '^3|^4' $clashdir/configs/servers.list )
+	totalnum=$(grep -acE '^3|^4' $CRASHDIR/configs/servers.list )
 	if [ -z "$num" ] || [ "$num" -gt "$totalnum" ];then
 		errornum
 	elif [ "$num" = 0 ];then
 		echo
 	elif [ "$num" -le "$totalnum" ];then
-		#将对应标记值写入mark
+		#将对应标记值写入配置
 		server_link=$num
 		setconfig server_link $server_link
 		echo -----------------------------------------------	  
@@ -93,10 +93,10 @@ linkfilter2(){
 	setconfig include \'$include\'
 }
 getyaml(){
-	$clashdir/start.sh getyaml
+	$CRASHDIR/start.sh getyaml
 	if [ "$?" = 0 ];then
 		if [ "$inuserguide" != 1 ];then
-			read -p "是否启动clash服务以使配置文件生效？(1/0) > " res 
+			read -p "是否启动服务以使配置文件生效？(1/0) > " res 
 			[ "$res" = 1 ] && clashstart || clashsh
 			exit;
 		fi
@@ -142,7 +142,7 @@ getlink(){
 		elif [ "$link" = '1' ]; then
 			if [ -n "$Url_link" ];then
 				i=100
-				#将用户链接写入mark
+				#将用户链接写入配置
 				setconfig Https
 				setconfig Url \'$Url_link\'
 				#获取在线yaml文件
@@ -197,7 +197,7 @@ getlink2(){
 		echo -e "\033[4;32m$link\033[0m"
 		read -p "确认导入配置文件？原配置文件将被更名为config.yaml.bak![1/0] > " res
 			if [ "$res" = '1' ]; then
-				#将用户链接写入mark
+				#将用户链接写入配置
 				sed -i '/Url=*/'d $CFG_PATH
 				setconfig Https \'$link\'
 				setconfig Url
@@ -278,8 +278,10 @@ setrules(){
 		0)	;;
 		'')	;;
 		*)
-			if [ $num -le $(cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | grep -Ev '^ *$' | wc -l) ];then
-				sed -i "$num{/^\s*[^#]/d}" $YAMLSDIR/rules.yaml
+			text=$(cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | sed -n "$num p")
+			if [ -n $text ];then	
+				sed -i "/$text/d" $YAMLSDIR/rules.yaml
+				sleep 1
 				del_rule_type
 			else
 				errornum
@@ -292,7 +294,7 @@ setrules(){
 	echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/rules.yaml\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 新增自定义规则"
-	echo -e " 2 管理自定义规则"
+	echo -e " 2 移除自定义规则"
 	echo -e " 3 清空规则列表"
 	echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
 	echo -e " 0 返回上级菜单"
@@ -323,7 +325,7 @@ setrules(){
 		echo -----------------------------------------------
 		if [ "$proxies_bypass" = "未启用" ];then
 			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
-			echo -e "\033[33m请确保下游设备使用的节点与ShellClash中使用的节点相同，否则无法生效！\033[0m"
+			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
 			read -p "启用节点绕过？(1/0) > " res
 			[ "$res" = "1" ] && proxies_bypass=已启用
 		else
@@ -513,7 +515,7 @@ setproxies(){
 		echo -----------------------------------------------
 		if [ "$proxies_bypass" = "未启用" ];then
 			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
-			echo -e "\033[33m请确保下游设备使用的节点与ShellClash中使用的节点相同，否则无法生效！\033[0m"
+			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
 			read -p "启用节点绕过？(1/0) > " res
 			[ "$res" = "1" ] && proxies_bypass=已启用
 		else
@@ -548,10 +550,10 @@ override(){
 		source $CFG_PATH
 		if [ -n "$(pidof clash)" ];then
 			echo -----------------------------------------------
-			echo -e "\033[33m检测到clash服务正在运行，需要先停止clash服务！\033[0m"
-			read -p "是否停止clash服务？(1/0) > " res
+			echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
+			read -p "是否停止服务？(1/0) > " res
 			if [ "$res" = "1" ];then
-				$clashdir/start.sh stop
+				$CRASHDIR/start.sh stop
 				setport
 			fi
 		else
@@ -686,7 +688,7 @@ clashlink(){
 			if [ "$res" = '1' ]; then
 				mv $YAMLSDIR/config.yaml.bak $YAMLSDIR/config.yaml
 				echo -----------------------------------------------
-				echo -e "\033[32m配置文件已还原！请手动重启clash服务！\033[0m"
+				echo -e "\033[32m配置文件已还原！请手动重启服务！\033[0m"
 				sleep 1
 			else 
 				echo -----------------------------------------------
@@ -715,7 +717,8 @@ clashlink(){
 		fi
 	;;
 	5)
-		clashcron
+		source $CRASHDIR/task/task.sh && task_add
+		clashlink
 	;;
 	6)
 		checkcfg=$(cat $CFG_PATH)
@@ -731,23 +734,23 @@ clashlink(){
 }
 #下载更新相关
 gettar(){
-	$clashdir/start.sh webget $TMPDIR/clashfm.tar.gz $tarurl
+	$CRASHDIR/start.sh webget $TMPDIR/clashfm.tar.gz $tarurl
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
 		error_down
 	else
-		$clashdir/start.sh stop 2>/dev/null
+		$CRASHDIR/start.sh stop 2>/dev/null
 		#解压
 		echo -----------------------------------------------
 		echo 开始解压文件！
-		mkdir -p $clashdir > /dev/null
-		tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $clashdir/
+		mkdir -p $CRASHDIR > /dev/null
+		tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/
 		if [ $? -ne 0 ];then
 			rm -rf $TMPDIR/clashfm.tar.gz
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
 		else
-			source $clashdir/init.sh >/dev/null
+			source $CRASHDIR/init.sh >/dev/null
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi		
 	fi
@@ -757,7 +760,7 @@ getsh(){
 	echo -----------------------------------------------
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
 	echo -e "最新脚本版本为：\033[32m $release_new \033[0m"
-	echo -e "注意更新时会停止clash服务！"
+	echo -e "注意更新时会停止服务！"
 	echo -----------------------------------------------
 	read -p "是否更新脚本？[1/0] > " res
 	if [ "$res" = '1' ]; then
@@ -812,13 +815,14 @@ getcore(){
 	#获取在线clash核心文件
 	echo -----------------------------------------------
 	echo 正在在线获取clash核心文件……
-	$clashdir/start.sh webget $TMPDIR/clash.new $corelink
+	$CRASHDIR/start.sh webget $TMPDIR/clash.new $corelink
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 		rm -rf $TMPDIR/clash.new
 		[ -z "$custcorelink" ] && error_down
 	else
 		chmod +x $TMPDIR/clash.new 
+		$CRASHDIR/start.sh stop
 		clashv=$($TMPDIR/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 		if [ -z "$clashv" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
@@ -829,7 +833,6 @@ getcore(){
 			mv -f $TMPDIR/clash.new $bindir/clash
 			chmod +x $bindir/clash 
 			setconfig clashcore $clashcore
-			setconfig clashv $version
 		fi
 	fi
 }
@@ -838,7 +841,7 @@ setcustcore(){
 	echo -----------------------------------------------
 	echo -e "\033[36m自定义内核均未经过适配，可能存在部分功能不兼容的问题！\033[0m"
 	echo -e "\033[36m如你不熟悉clash的运行机制，请使用脚本已经适配过的内核！\033[0m"
-	echo -e "\033[36m自定义内核不兼容小闪存模式，且下载可能依赖clash服务！\033[0m"
+	echo -e "\033[36m自定义内核不兼容小闪存模式，且下载可能依赖服务！\033[0m"
 	echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
 	echo -----------------------------------------------
 	sleep 1
@@ -852,18 +855,18 @@ setcustcore(){
 		case "$num" in
 		1)
 			clashcore=clashpre
-			custcorelink=https://github.com/juewuy/ShellClash/releases/download/clash.premium.latest/clash-linux-$cpucore
+			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.premium.latest/clash-linux-$cpucore
 			getcore			
 		;;
 		2)
-			clashcore=clash.meta
-			custcorelink=https://github.com/juewuy/ShellClash/releases/download/clash.meta.alpha/clash-linux-$cpucore
+			clashcore=meta
+			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.meta.alpha/clash-linux-$cpucore
 			getcore			
 		;;
 		3)
 			read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
 			[ -n "$link" ] && custcorelink="$link"
-			clashcore=clash.meta
+			clashcore=meta
 			getcore
 		;;
 		*)
@@ -874,7 +877,7 @@ setcustcore(){
 }
 setcore(){
 	#获取核心及版本信息
-	[ ! -f $clashdir/clash ] && clashcore="未安装核心"
+	[ ! -f $CRASHDIR/clash ] && clashcore="未安装核心"
 	###
 	echo -----------------------------------------------
 	[ -z "$cpucore" ] && getcpucore
@@ -912,7 +915,7 @@ setcore(){
 		getcore
 	;;
 	3)
-		clashcore=clash.meta
+		clashcore=meta
 		custcorelink=''
 		getcore
 	;;
@@ -932,7 +935,7 @@ setcore(){
 getgeo(){
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	$clashdir/start.sh webget $TMPDIR/$geoname $update_url/bin/geodata/$geotype
+	$CRASHDIR/start.sh webget $TMPDIR/$geoname $update_url/bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -940,26 +943,29 @@ getgeo(){
 	else
 		mv -f $TMPDIR/$geoname $bindir/$geoname
 		echo -----------------------------------------------
-		echo -e "\033[32mGeoIP/CN_IP数据库文件下载成功！\033[0m"
-		Geo_v=$GeoIP_v
-		setconfig Geo_v $GeoIP_v
-		if [ "$geoname" = "Country.mmdb" ];then
-			geotype=$geotype
-			setconfig geotype $geotype
-		fi
+		echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
+		#全球版GeoIP和精简版CN-IP数据库不共存
+		[ "$geoname" = "Country.mmdb" ] && {
+			setconfig Country_v
+			setconfig cn_mini_v
+		}
+		geo_v="$(echo $geotype | awk -F "." '{print $1}')_v"
+		setconfig $geo_v $GeoIP_v
 	fi
+	sleep 1
 }
 setgeo(){
+	[ -n "$cn_mini.mmdb_v" ] && geo_type_des=精简版 || geo_type_des=全球版 
 	echo -----------------------------------------------
-	[ "$geotype" = "cn_mini.mmdb" ] && echo -e "当前使用的是\033[47;30m精简版数据库\033[0m" || echo -e "当前使用的是\033[47;30m全球版数据库\033[0m"
-	echo -e "\033[36m请选择需要更新/切换的GeoIP/CN_IP数据库：\033[0m"
+	echo -e "\033[36m请选择需要更新的GeoIP/CN_IP数据库：\033[0m"
+	echo -e "\033[36m全球版GeoIP和精简版CN-IP数据库不共存\033[0m"
+	echo -e "在线数据库最新版本：\033[32m$GeoIP_v\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 由\033[32malecthw\033[0m提供的全球版GeoIP数据库(约6mb)"
-	echo -e " 2 由\033[32mHackl0us\033[0m提供的精简版CN-IP数据库(约0.2mb)"
-	echo -e " 3 由\033[32m17mon\033[0m提供的CN-IP文件(需启用CN_IP绕过，约0.2mb)"
-	echo -e " 4 由\033[32mChanthMiao\033[0m提供的CN-IPV6文件(需ipv6启用CN_IP绕过，约50kb)"
-	[ "$clashcore" = "clash.meta" ] && \
-	echo -e " 5 由\033[32mLoyalsoldier\033[0m提供的GeoSite数据库(限Meta内核，约4.5mb)"
+	echo -e " 1 全球版GeoIP数据库(约6mb)	\033[33m$Country_v\033[0m"
+	echo -e " 2 精简版CN-IP数据库(约0.2mb)	\033[33m$cn_mini_v\033[0m"
+	echo -e " 3 CN-IP绕过文件(约0.2mb)	\033[33m$china_ip_list_v\033[0m"
+	echo -e " 4 CN-IPV6绕过文件(约50kb)	\033[33m$china_ipv6_list_v\033[0m"
+	echo -e " 5 GeoSite数据库(约4.5mb)	\033[33m$geosite_v\033[0m"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -967,10 +973,12 @@ setgeo(){
 		geotype=Country.mmdb
 		geoname=Country.mmdb
 		getgeo
+		setgeo
 	elif [ "$num" = '2' ]; then
 		geotype=cn_mini.mmdb
 		geoname=Country.mmdb
 		getgeo
+		setgeo
 	elif [ "$num" = '3' ]; then
 		if [ "$cn_ip_route" = "已开启" ]; then
 			geotype=china_ip_list.txt
@@ -981,6 +989,7 @@ setgeo(){
 			echo -e "\033[31m未开启绕过内核功能，无需更新CN-IP文件！！\033[0m"	
 			sleep 1
 		fi
+		setgeo
 	elif [ "$num" = '4' ]; then
 		if [ "$cn_ipv6_route" = "已开启" -a "$ipv6_redir" = "已开启" ]; then
 			geotype=china_ipv6_list.txt
@@ -991,10 +1000,18 @@ setgeo(){
 			echo -e "\033[31m未开启ipv6下CN绕过功能，无需更新CN-IPV6文件！！\033[0m"	
 			sleep 1
 		fi
+		setgeo
 	elif [ "$num" = '5' ]; then
-		geotype=geosite.dat
-		geoname=GeoSite.dat
-		getgeo
+		if [ "$clashcore" = "meta" ]; then
+			geotype=geosite.dat
+			geoname=GeoSite.dat
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m当前未使用meta内核，无需更新GeoSite数据库！！\033[0m"	
+			sleep 1
+		fi
+		setgeo
 	else
 		update
 	fi
@@ -1002,21 +1019,21 @@ setgeo(){
 
 getdb(){
 	#下载及安装
-	if [ -f /www/clash/index.html -o -f $clashdir/ui/index.html ];then
+	if [ -f /www/clash/index.html -o -f $CRASHDIR/ui/index.html ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
 		echo -----------------------------------------------
 		read -p "是否覆盖安装？[1/0] > " res
 		if [ "$res" = 1 ]; then
 			rm -rf /www/clash
-			rm -rf $clashdir/ui
+			rm -rf $CRASHDIR/ui
 			rm -rf $bindir/ui
 		fi
 	fi
 	dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	$clashdir/start.sh webget $TMPDIR/clashdb.tar.gz $dblink
+	$CRASHDIR/start.sh webget $TMPDIR/clashdb.tar.gz $dblink
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -1053,14 +1070,14 @@ setdb(){
 			echo -----------------------------------------------
 			echo -e "请选择面板\033[33m安装目录：\033[0m"
 			echo -----------------------------------------------
-			echo -e " 1 在$clashdir/ui目录安装"
+			echo -e " 1 在$CRASHDIR/ui目录安装"
 			echo -e " 2 在/www/clash目录安装"
 			echo -----------------------------------------------
 			echo " 0 返回上级菜单"
 			read -p "请输入对应数字 > " num
 
 			if [ "$num" = '1' ]; then
-				dbdir=$clashdir/ui
+				dbdir=$CRASHDIR/ui
 				hostdir=":$db_port/ui"
 			elif [ "$num" = '2' ]; then
 				dbdir=/www/clash
@@ -1069,7 +1086,7 @@ setdb(){
 				setdb
 			fi
 		else
-				dbdir=$clashdir/ui
+				dbdir=$CRASHDIR/ui
 				hostdir=":$db_port/ui"
 		fi
 	}
@@ -1113,7 +1130,7 @@ setdb(){
 		read -p "确认卸载本地面板？(1/0) > " res
 		if [ "$res" = 1 ];then
 			rm -rf /www/clash
-			rm -rf $clashdir/ui
+			rm -rf $CRASHDIR/ui
 			rm -rf $bindir/ui
 			echo -----------------------------------------------
 			echo -e "\033[31m面板已经卸载！\033[0m"
@@ -1128,7 +1145,7 @@ getcrt(){
 	crtlink="${update_url}/bin/fix/ca-certificates.crt"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	$clashdir/start.sh webget $TMPDIR/ca-certificates.crt $crtlink
+	$CRASHDIR/start.sh webget $TMPDIR/ca-certificates.crt $crtlink
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -1137,7 +1154,7 @@ getcrt(){
 		echo -----------------------------------------------
 		mkdir -p $openssldir
 		mv -f $TMPDIR/ca-certificates.crt $crtdir
-		$clashdir/start.sh webget $TMPDIR/ssl_test https://baidu.com echooff rediron skipceroff
+		$CRASHDIR/start.sh webget $TMPDIR/ssl_test https://baidu.com echooff rediron skipceroff
 		if [ "$?" = "1" ];then
 			export CURL_CA_BUNDLE=$crtdir
 			echo "export CURL_CA_BUNDLE=$crtdir" >> /etc/profile
@@ -1178,7 +1195,7 @@ setcrt(){
 #安装源
 setserver(){
 	saveserver(){
-		#写入mark文件
+		#写入配置文件
 		setconfig update_url \'$update_url\'
 		setconfig release_url \'$release_url\'
 		echo -----------------------------------------------
@@ -1186,10 +1203,10 @@ setserver(){
 		release_new=""
 	}
 	echo -----------------------------------------------
-	echo -e "\033[30;47m切换ShellClash版本及更新源地址\033[0m"
+	echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
 	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
 	echo -----------------------------------------------
-	grep -aE '^1|^2' $clashdir/configs/servers.list | awk '{print " "NR" "$4" "$2}'
+	grep -aE '^1|^2' $CRASHDIR/configs/servers.list | awk '{print " "NR" "$4" "$2}'
 	echo -----------------------------------------------
 	echo -e " a 自定义源地址(用于本地源或自建源)"
 	echo -e " b \033[31m版本回退\033[0m"
@@ -1197,11 +1214,11 @@ setserver(){
 	read -p "请输入对应数字 > " num
 	case $num in
 	[0-99])
-		release_type=$(grep -aE '^1|^2' $clashdir/configs/servers.list | sed -n ""$num"p" | awk '{print $4}')
+		release_type=$(grep -aE '^1|^2' $CRASHDIR/configs/servers.list | sed -n ""$num"p" | awk '{print $4}')
 		if [ "release_type" = "稳定版" ];then
-			release_url=$(grep -aE '^1' $clashdir/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+			release_url=$(grep -aE '^1' $CRASHDIR/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
 		else
-			update_url=$(grep -aE '^1|^2' $clashdir/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+			update_url=$(grep -aE '^1|^2' $CRASHDIR/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
 			unset release_url
 		fi
 		saveserver
@@ -1219,8 +1236,8 @@ setserver(){
 	;;
 	b)
 		echo -----------------------------------------------
-		echo -e "\033[33m如无法连接，请务必先启用clash服务！！！\033[0m"
-		$clashdir/start.sh webget $TMPDIR/clashrelease https://raw.githubusercontent.com/juewuy/ShellClash/master/bin/release_version echooff rediroff 2>$TMPDIR/clashrelease
+		echo -e "\033[33m如无法连接，请务必先启用服务！！！\033[0m"
+		$CRASHDIR/start.sh webget $TMPDIR/clashrelease https://raw.githubusercontent.com/juewuy/ShellCrash/master/bin/release_version echooff rediroff 2>$TMPDIR/clashrelease
 		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
 		cat $TMPDIR/clashrelease | awk '{print " "NR" "$1}'
 		echo -e " 0 返回上级菜单"
@@ -1229,7 +1246,7 @@ setserver(){
 			setserver
 		elif [ $num -le $(cat $TMPDIR/clashrelease 2>/dev/null | awk 'END{print NR}') ]; then
 			release_version=$(cat $TMPDIR/clashrelease | awk '{print $1}' | sed -n "$num"p)
-			update_url="https://raw.githubusercontent.com/juewuy/ShellClash/$release_version"
+			update_url="https://raw.githubusercontent.com/juewuy/ShellCrash/$release_version"
 			saveserver
 			unset release_url
 		else
@@ -1248,7 +1265,7 @@ checkupdate(){
 if [ -z "$release_new" ];then
 	if [ -n "$release_url" ];then
 		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && check_url=$release_url@master || check_url=$release_url/master
-		$clashdir/start.sh webget $TMPDIR/clashversion $check_url/bin/release_version echoon rediroff 2>$TMPDIR/clashversion
+		$CRASHDIR/start.sh webget $TMPDIR/clashversion $check_url/bin/release_version echoon rediroff 2>$TMPDIR/clashversion
 		release_new=$(cat $TMPDIR/clashversion | head -1)
 		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && update_url=$release_url@$release_new || update_url=$release_url/$release_new
 		setconfig update_url \'$update_url\'
@@ -1256,13 +1273,13 @@ if [ -z "$release_new" ];then
 	else
 		release_type=测试版
 	fi	
-	$clashdir/start.sh webget $TMPDIR/clashversion $update_url/bin/version echooff 
+	$CRASHDIR/start.sh webget $TMPDIR/clashversion $update_url/bin/version echooff 
 	[ "$?" = "0" ] && release_new=$(cat $TMPDIR/clashversion | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
 	if [ -n "$release_new" ];then
 		source $TMPDIR/clashversion 2>/dev/null
 	else
 		echo -e "\033[31m检查更新失败！请切换其他安装源！\033[0m"
-		echo -e "\033[36m如全部安装源都无法使用，请先运行clash服务后再使用更新功能！\033[0m"
+		echo -e "\033[36m如全部安装源都无法使用，请先运行服务后再使用更新功能！\033[0m"
 		sleep 1
 		setserver
 	fi
@@ -1273,30 +1290,27 @@ update(){
 	echo -----------------------------------------------
 	echo -ne "\033[32m正在检查更新！\033[0m\r"
 	checkupdate
-	[ "$clashcore" = "clash" ] && clash_n=$clash_v || clash_n=$clashpre_v
-	[ "$clashcore" = "clashpre" ] && clash_n=$clashpre_v
-	[ "$clashcore" = "clash.net" ] && clash_n=$clashnet_v
-	[ "$clashcore" = "clash.meta" ] && clash_n=$meta_v
 	clash_v=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 	[ -z "$clash_v" ] && clash_v=$clashv
+	clash_v_new=$(eval echo \$${clashcore}_v)
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
-	echo -e "当前目录(\033[32m$clashdir\033[0m)剩余空间：\033[36m$(dir_avail $clashdir -h)\033[0m" 
-	[ "$(dir_avail $clashdir)" -le 5120 ] && {
+	echo -e "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail $CRASHDIR -h)\033[0m" 
+	[ "$(dir_avail $CRASHDIR)" -le 5120 ] && {
 		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m" 
 		sleep 1
 	}
 	echo -----------------------------------------------
 	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh$release_type\033[0m"
-	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_n\033[0m"
-	echo -e " 3 更新\033[32mGeoIP/CN-IP	\033[33m$Geo_v\033[0m > \033[32m$GeoIP_v\033[0m"
+	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_v_new\033[0m"
+	echo -e " 3 更新\033[32m数据库文件\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
 	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
 	echo -----------------------------------------------
 	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
-	echo -e " 8 \033[32m重新初始化运行环境\033[0m"
-	echo -e " 9 \033[31m卸载\033[34mShellClash\033[0m"
+	echo -e " 8 \033[32m配置自动更新\033[0m"
+	echo -e " 9 \033[31m卸载ShellCrash\033[0m"
 	echo -----------------------------------------------
 	echo -e "99 \033[36m鸣谢！\033[0m"
 	echo -e " 0 返回上级菜单" 
@@ -1336,7 +1350,7 @@ update(){
 		setserver
 		update
 	elif [ "$num" = 8 ]; then
-		source $clashdir/init.sh
+		source $CRASHDIR/task/task.sh && task_add
 		update		
 		
 	elif [ "$num" = 9 ]; then
@@ -1367,7 +1381,7 @@ userguide(){
 
 	forwhat(){
 		echo -----------------------------------------------
-		echo -e "\033[30;46m 欢迎使用ShellClash新手引导！ \033[0m"
+		echo -e "\033[30;46m 欢迎使用ShellCrash新手引导！ \033[0m"
 		echo -----------------------------------------------
 		echo -e "\033[33m请先选择你的使用环境： \033[0m"
 		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
@@ -1395,7 +1409,7 @@ userguide(){
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
 			ckcmd systemctl && systemctl enable clash.service > /dev/null 2>&1
-			rm -rf $clashdir/.dis_startup
+			rm -rf $CRASHDIR/.dis_startup
 			autostart=enable
 			#检测IP转发
 			if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
@@ -1423,7 +1437,7 @@ userguide(){
 	}
 	forwhat
 	#检测小内存模式
-	dir_size=$(df $clashdir | awk '{print $4}' | sed 1d)
+	dir_size=$(df $CRASHDIR | awk '{print $4}' | sed 1d)
 	if [ "$dir_size" -lt 10240 ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m检测到你的安装目录空间不足10M，是否开启小闪存模式？\033[0m"
@@ -1448,7 +1462,7 @@ userguide(){
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#设置加密DNS
-	$clashdir/start.sh webget $TMPDIR/ssl_test https://doh.pub echooff rediron
+	$CRASHDIR/start.sh webget $TMPDIR/ssl_test https://doh.pub echooff rediron
 	if [ "$?" = "0" ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
@@ -1489,6 +1503,8 @@ userguide(){
 			setconfig authentication \'$authentication\'
 		fi
 	fi
+	#启用推荐的自动任务配置
+	source $CRASHDIR/task/task.sh && task_recom
 	#小米设备软固化
 	if [ "$systype" = "mi_snapshot" ];then
 		echo -----------------------------------------------
@@ -1499,7 +1515,7 @@ userguide(){
 	#提示导入订阅或者配置文件
 	echo -----------------------------------------------
 	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
-	echo -e "\033[0m你必须拥有一份yaml格式的配置文件才能运行clash服务！\033[0m"
+	echo -e "\033[0m你必须拥有一份yaml格式的配置文件才能运行服务！\033[0m"
 	echo -----------------------------------------------
 	read -p "现在开始导入？(1/0) > " res
 	[ "$res" = 1 ] && inuserguide=1 && clashlink && inuserguide=""
@@ -1507,7 +1523,7 @@ userguide(){
 	echo -----------------------------------------------
 	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
 	echo -----------------------------------------------
-	read -p "立即启动clash服务？(1/0) > " res 
+	read -p "立即启动服务？(1/0) > " res 
 	[ "$res" = 1 ] && clashstart && sleep 2
 	clashsh
 }
@@ -1517,7 +1533,7 @@ testcommand(){
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
 	echo -----------------------------------------------
-	echo " 1 查看Clash运行时的报错信息(会停止clash服务)"
+	echo " 1 查看Clash运行时的报错信息(会停止服务)"
 	echo " 2 查看系统DNS端口(:53)占用 "
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看clash相关路由规则"
@@ -1532,11 +1548,11 @@ testcommand(){
 	elif [ "$num" = 0 ]; then
 		clashsh
 	elif [ "$num" = 1 ]; then
-		$clashdir/start.sh stop
+		$CRASHDIR/start.sh stop
 		echo -----------------------------------------------
-		if $clashdir/clash -v &>/dev/null;then
+		if $CRASHDIR/clash -v &>/dev/null;then
 			clash -s modify_yaml &>/dev/null
-			$clashdir/clash -t -d $clashdir	-f $TMPDIR/config.yaml
+			$CRASHDIR/clash -t -d $CRASHDIR	-f $TMPDIR/config.yaml
 			[ "$?" = 0 ] && testover=32m测试通过！|| testover=31m出现错误！请截图后到TG群询问！！！
 			echo -e "\033[$testover\033[0m"
 		else
@@ -1592,7 +1608,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		sed -n '1,40p' $clashdir/config.yaml
+		sed -n '1,40p' $CRASHDIR/config.yaml
 		echo -----------------------------------------------
 		exit;
 	elif [ "$num" = 6 ]; then
@@ -1612,3 +1628,9 @@ testcommand(){
 		clashsh
 	fi
 }
+
+case "$1" in
+	*)
+		$1
+	;;
+esac

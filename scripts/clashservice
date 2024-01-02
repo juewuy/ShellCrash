@@ -6,9 +6,9 @@ SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1
 USE_PROCD=1
 #获取目录
-DIR=$(cat /etc/profile | grep clashdir | awk -F "\"" '{print $2}')
-[ -z "$DIR" ] && DIR=$(cat ~/.bashrc | grep clashdir | awk -F "\"" '{print $2}')
-BINDIR=$(cat $DIR/configs/ShellClash.cfg | grep bindir | awk -F "=" '{print $2}')
+DIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
+[ -z "$DIR" ] && DIR=$(cat ~/.bashrc | grep CRASHDIR | awk -F "\"" '{print $2}')
+BINDIR=$(cat $DIR/configs/ShellCrash.cfg | grep bindir | awk -F "=" '{print $2}')
 [ -z "$BINDIR" ] && BINDIR=$DIR
 
 start_service() {

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-clashdir="$(uci get firewall.ShellClash.path | sed 's/\/misnap_init.sh//')"
+CRASHDIR="$(uci get firewall.ShellClash.path | sed 's/\/misnap_init.sh//')"
 profile=/etc/profile
 
 autoSSH(){
@@ -13,7 +13,7 @@ autoSSH(){
 	[ -z "$(pidof dropbear)" -o -z "$(netstat -ntul | grep :22)" ] && {
 		sed -i 's/channel=.*/channel="debug"/g' /etc/init.d/dropbear
 		/etc/init.d/dropbear restart
-		mi_autoSSH_pwd=$(grep 'mi_autoSSH_pwd=' $clashdir/mark | awk -F "=" '{print $2}')
+		mi_autoSSH_pwd=$(grep 'mi_autoSSH_pwd=' $CRASHDIR/configs/ShellCrash.cfg | awk -F "=" '{print $2}')
 		[ -n "$mi_autoSSH_pwd" ] && echo -e "$mi_autoSSH_pwd\n$mi_autoSSH_pwd" | passwd root
 	}
 	#配置nvram
@@ -21,8 +21,8 @@ autoSSH(){
 	[ "$(nvram get telnet_en)" = 0 ] && nvram set telnet_en=1
 	nvram commit &> /dev/null
 	#备份还原SSH秘钥
-	[ -f $clashdir/configs/dropbear_rsa_host_key ] && ln -sf $clashdir/configs/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
-	[ -f $clashdir/configs/authorized_keys ] && ln -sf $clashdir/configs/authorized_keys /etc/dropbear/authorized_keys
+	[ -f $CRASHDIR/configs/dropbear_rsa_host_key ] && ln -sf $CRASHDIR/configs/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
+	[ -f $CRASHDIR/configs/authorized_keys ] && ln -sf $CRASHDIR/configs/authorized_keys /etc/dropbear/authorized_keys
 	#自动清理升级备份文件夹
 	rm -rf /data/etc_bak
 }
@@ -34,7 +34,7 @@ tunfix(){
 	mkdir -p /tmp/overlay/work
 	mount -o noatime,lowerdir=${ko_dir},upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" ${ko_dir}
 	#将tun.ko链接到lib
-	ln -sf $clashdir/tools/tun.ko ${ko_dir}/tun.ko
+	ln -sf $CRASHDIR/tools/tun.ko ${ko_dir}/tun.ko
 }
 tproxyfix(){
 	sed -i 's/sysctl -w net.bridge.bridge-nf-call-ip/#sysctl -w net.bridge.bridge-nf-call-ip/g' /etc/init.d/qca-nss-ecm
@@ -51,20 +51,20 @@ init(){
 	done
 	#初始化环境变量
 	sed -i "/alias clash/d" $profile
-	sed -i "/export clashdir/d" $profile
-	echo "alias clash=\"$clashdir/clash.sh\"" >>$profile
-	echo "export clashdir=\"$clashdir\"" >>$profile
+	sed -i "/export CRASHDIR/d" $profile
+	echo "alias clash=\"$CRASHDIR/clash.sh\"" >>$profile
+	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
 	#软固化功能
 	autoSSH
 	#设置init.d服务
-	cp -f $clashdir/clashservice /etc/init.d/clash
+	cp -f $CRASHDIR/clashservice /etc/init.d/clash
 	chmod 755 /etc/init.d/clash
 	#启动服务
-	if [ ! -f $clashdir/.dis_startup ]; then
+	if [ ! -f $CRASHDIR/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
-		[ -f $clashdir/configs/tun.ko ] && tunfix
+		[ -f $CRASHDIR/configs/tun.ko ] && tunfix
 		#小米7000/小米万兆修复tproxy
-		[ -f /etc/init.d/qca-nss-ecm ] && [ -n "$(grep 'redir_mod=Tproxy' $clashdir/configs/ShellClash.cfg )" ] && tproxyfix
+		[ -f /etc/init.d/qca-nss-ecm ] && [ -n "$(grep 'redir_mod=Tproxy' $CRASHDIR/configs/ShellClash.cfg )" ] && tproxyfix
 		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable
