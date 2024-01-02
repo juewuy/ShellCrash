@@ -1213,7 +1213,9 @@ setserver(){
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
-	[0-99])
+	0)
+	;;
+	[1-99])
 		release_type=$(grep -aE '^1|^2' $CRASHDIR/configs/servers.list | sed -n ""$num"p" | awk '{print $4}')
 		if [ "release_type" = "稳定版" ];then
 			release_url=$(grep -aE '^1' $CRASHDIR/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.2e
+version=1.8.2f
 
 setdir(){
 	dir_avail(){
@@ -195,7 +195,7 @@ if [ -n "$profile" ];then
 	source $profile &>/dev/null || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
 	[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
-		echo "alias clash=\"$shtype $CRASHDIR/clash.sh\"" >> ~/.zshrc
+		echo "alias crash=\"$shtype $CRASHDIR/clash.sh\"" >> ~/.zshrc
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc &>/dev/null
 	}
