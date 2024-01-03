@@ -147,7 +147,6 @@ cronset(){
 	rm -f $tmpcron
 	#华硕/Padavan固件存档在本地,其他则删除
 	[ "$CRASHDIR" = "/jffs/clash" -o "$CRASHDIR" = "/etc/storage/clash" ] && mv -f $tmpcron $CRASHDIR/task/cron || rm -f $tmpcron
-	echo -e "任务:【$1】\033[32m添加成功！\033[0m"
 }
 set_cron(){
 	[ -z $week ] && week=*
@@ -161,13 +160,20 @@ set_cron(){
 		cronset "$cron_time$task_name" "$task_txt"
 	fi
 	unset week hour min
+	echo -e "任务:【$cron_time$task_name】\033[32m添加成功！\033[0m"
 	sleep 1
 }
 set_service(){
-	# 参数1代表要任务类型,参数2代表任务ID，参数3代表任务描述
+	# 参数1代表要任务类型,参数2代表任务ID,参数3代表任务描述,参数4代表running任务运行间隔
 	task_file=$CRASHDIR/task/$1
 	[ -s $task_file ] && sed -i "/$3/d" $task_file
-	echo "$CRASHDIR/task/task.sh $2 $3" >> $task_file
+	if [ "$1" = "running" ];then
+		task_txt="$4 * * * * $CRASHDIR/task/task.sh $2 $3"
+		echo "$task_txt" >> $task_file #运行时每分钟执行的任务特殊处理
+		[ -n "$(pidof clash)" ] && cronset "$3" "$task_txt"
+	else
+		echo "$CRASHDIR/task/task.sh $2 $3" >> $task_file
+	fi
 	echo -e "任务:【$3】\033[32m添加成功！\033[0m"
 	sleep 1
 }
@@ -248,6 +254,7 @@ task_del(){ #任务删除
 	#删除条件任务
 	sed -i "/$1/d" $CRASHDIR/task/bfstart 2>/dev/null
 	sed -i "/$1/d" $CRASHDIR/task/afstart 2>/dev/null
+	sed -i "/$1/d" $CRASHDIR/task/running 2>/dev/null
 	sed -i "/$1/d" $CRASHDIR/task/affirewall 2>/dev/null
 }
 task_type(){ #任务条件选择菜单
@@ -260,13 +267,15 @@ task_type(){ #任务条件选择菜单
 	echo -e " 4 定时任务\033[32m每分钟执行\033[0m"
 	echo -e " 5 服务\033[33m启动前执行\033[0m"
 	echo -e " 6 服务\033[33m启动后执行\033[0m"
-	echo -e " 7 防火墙服务\033[33m重启后执行\033[0m"
+	echo -e " 7 服务\033[33m运行时每分钟执行\033[0m"
+	echo -e " 8 防火墙服务\033[33m重启后执行\033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单" 
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	
 	0)
+		return 1
 	;;
 	1)
 		echo -----------------------------------------------
@@ -310,20 +319,30 @@ task_type(){ #任务条件选择菜单
 		set_service afstart "$task_id" "服务启动后$task_name"
 	;;
 	7)
+		echo -----------------------------------------------
+		echo -e " 输入10即每隔10分钟运行一次，1440即每隔24小时运行一次"	
+		read -p "想每隔多少分钟执行一次？（整数） > " num
+		min="*/$num"
+		set_service running "$task_id" "运行时每$num分钟$task_name" "$min"
+	;;
+	8)
 		echo -e "该功能会将相关启动代码注入到/etc/init.d/firewall中"
 		read -p "是否继续？(1/0) > " res
 		[ "$res" = 1 ] && set_service affirewall "$task_id" "防火墙重启后$task_name"
 	;;
 	*)
 		errornum
+		return 1
 	;;
 	esac
 }
 task_manager(){ #任务管理列表
 	echo -----------------------------------------------
 	#抽取并生成临时列表
-	croncmd -l  | grep -oE "$CRASHDIR/task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > $TMPDIR/task_list
+	croncmd -l > $TMPDIR/task_cronlist
+	cat $TMPDIR/task_cronlist $CRASHDIR/task/running | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > $TMPDIR/task_list
 	cat $CRASHDIR/task/bfstart $CRASHDIR/task/afstart $CRASHDIR/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> $TMPDIR/task_list
+	rm -rf $TMPDIR/task_cronlist
 	#判断为空则返回
 	if [ ! -s $TMPDIR/task_list ];then
 		echo -e "\033[31m当前没有可供管理的任务！\033[36m"
@@ -406,9 +425,10 @@ task_recom(){ #任务推荐
 	echo -----------------------------------------------
 	read -p "是否启用？(1/0) > " res	
 	[ "$res" = 1 ] && {
-		cronset "每隔10分钟自动保存面板配置" "*/10 * * * * $CRASHDIR/task/task.sh 106 每隔10分钟自动保存面板配置"
-		cronset "在每周3的3点整更新订阅并重启服务" "0 3 * * 3 /data/clash/task/task.sh 104 在每周3的3点整更新订阅并重启服务"
-		set_service afstart "107" "服务启动后自动同步ntp时间"
+		set_service running "106" "运行时每10分钟自动保存面板配置" "1/10"
+		set_service afstart "107" "服务启动后自动同步ntp时间" 
+		cronset "在每周3的3点整更新订阅并重启服务" "0 3 * * 3 $CRASHDIR/task/task.sh 104 在每周3的3点整更新订阅并重启服务" && \
+		echo -e "任务:【在每周3的3点整更新订阅并重启服务】\033[32m添加成功！\033[0m"
 	}
 }
 task_menu(){ #任务菜单

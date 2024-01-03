@@ -1298,6 +1298,12 @@ afstart(){
 		{ sleep 5;logger Clash服务已启动！;} & #推送日志
 		#执行条件任务
 		[ -s $CRASHDIR/task/afstart ] && { source $CRASHDIR/task/afstart ;} &
+		[ -s $CRASHDIR/task/running ] && {
+			cronset '运行时每'
+			while read line ;do
+				cronset '2fjdi124dd12s' "$line"
+			done < $CRASHDIR/task/running
+		}
 		[ -s $CRASHDIR/task/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
 			#注入防火墙
 			line=$(grep -En "fw3 restart" /etc/init.d/firewall | cut -d ":" -f 1)
@@ -1354,9 +1360,9 @@ stop)
 		logger Clash服务即将关闭……
 		[ -n "$(pidof clash)" ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
-		cronset "clash保守模式守护进程"
-		cronset "保存面板配置"
-		cronset "流媒体预解析"
+		cronset '保守模式守护进程'
+		cronset '运行时每'
+		cronset '流媒体预解析'
 		#多种方式结束进程
 		if [ -f /etc/rc.common ];then
 			/etc/init.d/clash stop >/dev/null 2>&1
@@ -1465,7 +1471,7 @@ web_restore)
 	;;
 daemon)
 		getconfig
-		cronset '#clash保守模式守护进程' "*/1 * * * * test -z \"\$(pidof clash)\" && $CRASHDIR/start.sh restart #clash保守模式守护进程"
+		cronset '保守模式守护进程' "*/1 * * * * test -z \"\$(pidof clash)\" && $CRASHDIR/start.sh restart #保守模式守护进程"
 	;;
 cronset)
 		cronset $2 $3
