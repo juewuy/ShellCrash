@@ -1815,6 +1815,7 @@ case "$1" in
 		echo "	-t 测试模式"
 		echo "	-h 帮助列表"
 		echo "	-u 卸载脚本"
+		echo "	-i 初始化脚本"
 		echo -----------------------------------------
 		echo "	clash -s start	启动服务"
 		echo "	clash -s stop		停止服务"
@@ -1831,6 +1832,9 @@ case "$1" in
 	;;
 	-s)
 		$CRASHDIR/start.sh $2 $3 $4 $5 $6
+	;;
+	-i)
+		source $CRASHDIR/init.sh
 	;;
 	-st)
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
@@ -1874,6 +1878,9 @@ case "$1" in
 			userdel -r shellclash 2>/dev/null
 			nvram set script_usbmount="" 2>/dev/null
 			nvram commit 2>/dev/null
+			uci delete firewall.ShellClash
+			uci delete firewall.ShellCrash
+			uci commit firewall
 			echo -----------------------------------------------
 			echo -e "\033[36m已卸载ShellCrash相关文件！有缘再会！\033[0m"
 			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"

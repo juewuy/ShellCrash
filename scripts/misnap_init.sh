@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-CRASHDIR="$(uci get firewall.ShellClash.path | sed 's/\/misnap_init.sh//')"
+CRASHDIR="$(uci get firewall.ShellCrash.path | sed 's/\/misnap_init.sh//')"
 profile=/etc/profile
 
 autoSSH(){

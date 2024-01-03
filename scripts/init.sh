@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.2g
+version=1.8.2h
 
 setdir(){
 	dir_avail(){
@@ -214,6 +214,8 @@ fi
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ];then
 	chmod 755 $CRASHDIR/misnap_init.sh
+	uci delete firewall.ShellClash
+	uci delete firewall.ShellCrash
 	uci set firewall.ShellCrash=include
 	uci set firewall.ShellCrash.type='script'
 	uci set firewall.ShellCrash.path="$CRASHDIR/misnap_init.sh"
