@@ -50,9 +50,9 @@ init(){
 		[ -n "$(grep 'init complete' $log_file)" ] && i=20 || i=$((i + 1))
 	done
 	#初始化环境变量
-	sed -i "/alias clash/d" $profile
+	sed -i "/alias crash/d" $profile
 	sed -i "/export CRASHDIR/d" $profile
-	echo "alias clash=\"$CRASHDIR/clash.sh\"" >>$profile
+	echo "alias crash=\"$CRASHDIR/clash.sh\"" >>$profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
 	#软固化功能
 	autoSSH
@@ -64,7 +64,7 @@ init(){
 		#AX6S/AX6000修复tun功能
 		[ -f $CRASHDIR/configs/tun.ko ] && tunfix
 		#小米7000/小米万兆修复tproxy
-		[ -f /etc/init.d/qca-nss-ecm ] && [ -n "$(grep 'redir_mod=Tproxy' $CRASHDIR/configs/ShellClash.cfg )" ] && tproxyfix
+		[ -f /etc/init.d/qca-nss-ecm ] && [ -n "$(grep 'redir_mod=Tproxy' $CRASHDIR/configs/ShellCrash.cfg )" ] && tproxyfix
 		#启动服务
 		/etc/init.d/clash start
 		/etc/init.d/clash enable

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.2h
+version=1.8.2i
 
 setdir(){
 	dir_avail(){
@@ -178,7 +178,6 @@ fi
 type bash &>/dev/null && shtype=bash || shtype=sh 
 sed -i "s|/bin/sh|/bin/$shtype|" $CRASHDIR/start.sh
 chmod 755 $CRASHDIR/start.sh
-chmod 755 $CRASHDIR/task.sh
 setconfig versionsh_l $version
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
@@ -254,6 +253,7 @@ done
 for file in cron task.sh task.list;do
 	mv -f $CRASHDIR/$file $CRASHDIR/task/$file 2>/dev/null
 done
+chmod 755 $CRASHDIR/task/task.sh
 for file in log clash.service mark? mark.bak;do
 	rm -rf $CRASHDIR/$file
 done
