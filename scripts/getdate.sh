@@ -278,7 +278,7 @@ setrules(){
 		0)	;;
 		'')	;;
 		*)
-			text=$(cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | sed -n "$num p")
+			text=$(cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | sed -n "$num p" | awk '{print $2}')
 			if [ -n $text ];then	
 				sed -i "/$text/d" $YAMLSDIR/rules.yaml
 				sleep 1
