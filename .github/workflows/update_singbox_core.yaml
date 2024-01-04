@@ -1,9 +1,11 @@
 name: Update Sing-Box Core 
 on: 
-  schedule:
-    - cron: 0 20 * * *
   workflow_dispatch:
-
+    inputs:
+      tag:
+        description: 'tag of Sing-Box, such as 1.7.8 ,don't include "v"'
+        required: true
+        type: string
 env:
   download_tag: ${{ github.event.inputs.tag }}
   download_version: ''
