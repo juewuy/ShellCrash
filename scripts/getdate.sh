@@ -932,133 +932,88 @@ setcore(){
 	esac
 }
 
-getdb(){
-	dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
+getgeo(){
 	echo -----------------------------------------------
-	echo 正在连接服务器获取安装文件…………
-	$CRASHDIR/start.sh webget $TMPDIR/clashdb.tar.gz $dblink
+	echo 正在从服务器获取数据库文件…………
+	$CRASHDIR/start.sh webget $TMPDIR/$geoname $update_url/bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
-		echo -----------------------------------------------
 		error_down
-		setdb
 	else
-		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
-		mkdir -p $dbdir > /dev/null
-		tar -zxvf "$TMPDIR/clashdb.tar.gz" -C $dbdir > /dev/null
-		if [ $? -ne 0 ];then
-			tar -zxvf "$TMPDIR/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
-			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf $TMPDIR/clashfm.tar.gz && exit 1 
-		fi
-		#修改默认host和端口
-		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" ];then
-			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
-			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
-		else
-			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
-			#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
-		fi
-		#写入配置文件
-		setconfig hostdir \'$hostdir\'
+		mv -f $TMPDIR/$geoname $bindir/$geoname
 		echo -----------------------------------------------
-		echo -e "\033[32m面板安装成功！\033[0m"
-		rm -rf $TMPDIR/clashdb.tar.gz
+		echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
+		#全球版GeoIP和精简版CN-IP数据库不共存
+		[ "$geoname" = "Country.mmdb" ] && {
+			setconfig Country_v
+			setconfig cn_mini_v
+		}
+		geo_v="$(echo $geotype | awk -F "." '{print $1}')_v"
+		setconfig $geo_v $GeoIP_v
 	fi
 	sleep 1
 }
-setdb(){
-	dbdir(){
-		if [ -f /www/clash/CNAME -o -f $CRASHDIR/ui/CNAME ];then
-			echo -----------------------------------------------
-			echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
-			echo -----------------------------------------------
-			read -p "是否覆盖安装？[1/0] > " res
-			if [ "$res" = 1 ]; then
-				rm -rf $bindir/ui
-				[ -f /www/clash/CNAME ] && rm -rf /www/clash && dbdir=/www/clash
-				[ -f $CRASHDIR/ui/CNAME ] && rm -rf $CRASHDIR/ui && dbdir=$CRASHDIR/ui
-				getdb
-			else
-				setdb
-				echo -e "\033[33m安装已取消！\033[0m"
-			fi
-		elif [ -w /www -a -n "$(pidof nginx)" ];then
-			echo -----------------------------------------------
-			echo -e "请选择面板\033[33m安装目录：\033[0m"
-			echo -----------------------------------------------
-			echo -e " 1 在$CRASHDIR/ui目录安装"
-			echo -e " 2 在/www/clash目录安装"
-			echo -----------------------------------------------
-			echo " 0 返回上级菜单"
-			read -p "请输入对应数字 > " num
-
-			if [ "$num" = '1' ]; then
-				dbdir=$CRASHDIR/ui
-				hostdir=":$db_port/ui"
-				getdb
-			elif [ "$num" = '2' ]; then
-				dbdir=/www/clash
-				hostdir='/clash'
-				getdb
-			else
-				setdb
-				echo -e "\033[33m安装已取消！\033[0m"
-			fi
-		else
-				dbdir=$CRASHDIR/ui
-				hostdir=":$db_port/ui"
-				getdb
-		fi
-	}
-
+setgeo(){
+	[ -n "$cn_mini.mmdb_v" ] && geo_type_des=精简版 || geo_type_des=全球版 
 	echo -----------------------------------------------
-	echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
-	echo -e "\033[32m打开管理面板的速度更快且更稳定\033[0m"
+	echo -e "\033[36m请选择需要更新的GeoIP/CN_IP数据库：\033[0m"
+	echo -e "\033[36m全球版GeoIP和精简版CN-IP数据库不共存\033[0m"
+	echo -e "在线数据库最新版本：\033[32m$GeoIP_v\033[0m"
 	echo -----------------------------------------------
-	echo -e "请选择面板\033[33m安装类型：\033[0m"
-	echo -----------------------------------------------
-	echo -e " 1 安装\033[32m官方面板\033[0m(约500kb)"
-	echo -e " 2 安装\033[32mMeta面板\033[0m(约800kb)"
-	echo -e " 3 安装\033[32mYacd面板\033[0m(约1.1mb)"
-	echo -e " 4 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
-	echo -e " 5 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
-	echo -e " 6 卸载\033[33m本地面板\033[0m"
+	echo -e " 1 全球版GeoIP数据库(约6mb)	\033[33m$Country_v\033[0m"
+	echo -e " 2 精简版CN-IP数据库(约0.2mb)	\033[33m$cn_mini_v\033[0m"
+	echo -e " 3 CN-IP绕过文件(约0.2mb)	\033[33m$china_ip_list_v\033[0m"
+	echo -e " 4 CN-IPV6绕过文件(约50kb)	\033[33m$china_ipv6_list_v\033[0m"
+	echo -e " 5 GeoSite数据库(约4.5mb)	\033[33m$geosite_v\033[0m"
 	echo " 0 返回上级菜单"
+	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
-
 	if [ "$num" = '1' ]; then
-		db_type=clashdb
-		dbdir
-		getdb
+		geotype=Country.mmdb
+		geoname=Country.mmdb
+		getgeo
+		setgeo
 	elif [ "$num" = '2' ]; then
-		db_type=meta_db
-		dbdir
-		getdb
+		geotype=cn_mini.mmdb
+		geoname=Country.mmdb
+		getgeo
+		setgeo
 	elif [ "$num" = '3' ]; then
-		db_type=yacd
-		dbdir
-		getdb
-	elif [ "$num" = '4' ]; then
-		db_type=meta_yacd
-		dbdir
-		getdb
-	elif [ "$num" = '5' ]; then
-		db_type=meta_xd
-		dbdir
-		getdb
-	elif [ "$num" = '6' ]; then
-		read -p "确认卸载本地面板？(1/0) > " res
-		if [ "$res" = 1 ];then
-			rm -rf /www/clash
-			rm -rf $CRASHDIR/ui
-			rm -rf $bindir/ui
+		if [ "$cn_ip_route" = "已开启" ]; then
+			geotype=china_ip_list.txt
+			geoname=cn_ip.txt
+			getgeo
+		else
 			echo -----------------------------------------------
-			echo -e "\033[31m面板已经卸载！\033[0m"
+			echo -e "\033[31m未开启绕过内核功能，无需更新CN-IP文件！！\033[0m"	
 			sleep 1
 		fi
+		setgeo
+	elif [ "$num" = '4' ]; then
+		if [ "$cn_ipv6_route" = "已开启" -a "$ipv6_redir" = "已开启" ]; then
+			geotype=china_ipv6_list.txt
+			geoname=cn_ipv6.txt
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m未开启ipv6下CN绕过功能，无需更新CN-IPV6文件！！\033[0m"	
+			sleep 1
+		fi
+		setgeo
+	elif [ "$num" = '5' ]; then
+		if [ "$clashcore" = "meta" ]; then
+			geotype=geosite.dat
+			geoname=GeoSite.dat
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m当前未使用meta内核，无需更新GeoSite数据库！！\033[0m"	
+			sleep 1
+		fi
+		setgeo
 	else
-		errornum
+		update
 	fi
 }
 
