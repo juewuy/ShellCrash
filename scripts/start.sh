@@ -136,7 +136,7 @@ put_save(){
 	fi
 }
 mark_time(){
-	echo `date +%s` > $TMPDIR/clash_start_time
+	echo `date +%s` > $TMPDIR/crash_start_time
 }
 getlanip(){
 	i=1
@@ -1270,7 +1270,7 @@ afstart(){
 	#读取配置文件
 	getconfig
 	#延迟启动
-	[ ! -f $TMPDIR/clash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+	[ ! -f $TMPDIR/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
 		logger "clash将延迟$start_delay秒启动" 31 pushoff
 		sleep $start_delay
 	}
@@ -1418,11 +1418,11 @@ init)
 				profile=$(cat /etc/profile | grep -oE '\-f.*jffs.*profile' | awk '{print $2}')
 			fi
 		fi
-		sed -i "/alias clash/d" $profile 
+		sed -i "/alias crash/d" $profile 
 		sed -i "/export CRASHDIR/d" $profile 
-		echo "alias clash=\"$CRASHDIR/clash.sh\"" >> $profile 
+		echo "alias crash=\"$CRASHDIR/clash.sh\"" >> $profile 
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile 
-		[ -f $CRASHDIR/.dis_startup ] && cronset "clash保守模式守护进程" || $0 start
+		[ -f $CRASHDIR/.dis_startup ] && cronset "保守模式守护进程" || $0 start
         ;;
 getyaml)	
 		getconfig

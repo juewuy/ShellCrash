@@ -199,7 +199,7 @@ log_pusher(){ #日志菜单
 	[ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
 	[ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
 	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
-	[ -n "$task_push" ] && task_push=32m已启用 || task_push=33m未启用
+	[ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
 	[ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	echo -----------------------------------------------
 	echo -e " 1 查看\033[36m运行日志\033[0m"
@@ -207,7 +207,7 @@ log_pusher(){ #日志菜单
 	echo -e " 3 PushDeer推送	——\033[$stat_Deer\033[0m"
 	echo -e " 4 Bark推送-IOS	——\033[$stat_bark\033[0m"
 	echo -e " 5 Passover推送	——\033[$stat_Po\033[0m"
-	echo -e " 6 推送任务日志	——\033[$task_push\033[0m"
+	echo -e " 6 推送任务日志	——\033[$stat_task\033[0m"
 	echo -e " 8 设置设备名称	——\033[$device_s\033[0m"
 	echo -e " 9 清空日志文件"
 	echo -----------------------------------------------
@@ -369,7 +369,7 @@ log_pusher(){ #日志菜单
 		log_pusher
 	;;
 	6)	
-		[ "$task_push" = 1 ] && task_push= || task_push=1
+		[ "$task_push" = 1 ] && task_push='' || task_push=1
 		setconfig task_push $task_push
 		sleep 1
 		log_pusher		

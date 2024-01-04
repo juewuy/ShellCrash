@@ -163,12 +163,13 @@ set_cron(){
 	sleep 1
 }
 set_service(){
-	# 参数1代表要任务类型,参数2代表任务ID,参数3代表任务描述,参数4代表running任务运行间隔
+	# 参数1代表要任务类型,参数2代表任务ID,参数3代表任务描述,参数4代表running任务cron时间
 	task_file=$CRASHDIR/task/$1
 	[ -s $task_file ] && sed -i "/$3/d" $task_file
+	 #运行时每分钟执行的任务特殊处理
 	if [ "$1" = "running" ];then
-		task_txt="$4 * * * * $CRASHDIR/task/task.sh $2 $3"
-		echo "$task_txt" >> $task_file #运行时每分钟执行的任务特殊处理
+		task_txt="$4 $CRASHDIR/task/task.sh $2 $3"
+		echo "$task_txt" >> $task_file
 		[ -n "$(pidof clash)" ] && cronset "$3" "$task_txt"
 	else
 		echo "$CRASHDIR/task/task.sh $2 $3" >> $task_file
@@ -320,9 +321,18 @@ task_type(){ #任务条件选择菜单
 	7)
 		echo -----------------------------------------------
 		echo -e " 输入10即每隔10分钟运行一次，1440即每隔24小时运行一次"	
-		read -p "想每隔多少分钟执行一次？（整数） > " num
-		min="*/$num"
-		set_service running "$task_id" "运行时每$num分钟$task_name" "$min"
+		echo -e " 大于60分钟的数值将按小时取整"	
+		read -p "想每隔多少分钟执行一次？（1-1440的整数） > " num
+		if [ "$num" -lt 60 ];then
+			min="$num"
+			cron_time="*/$min * * * *"
+			time_des="$min分钟"
+		else
+			hour="$((num / 60))"
+			cron_time="* */$hour * * *"
+			time_des="$hour小时"
+		fi
+		set_service running "$task_id" "运行时每$time_des$task_name" "$cron_time"
 	;;
 	8)
 		echo -e "该功能会将相关启动代码注入到/etc/init.d/firewall中"
@@ -339,7 +349,7 @@ task_manager(){ #任务管理列表
 	echo -----------------------------------------------
 	#抽取并生成临时列表
 	croncmd -l > $TMPDIR/task_cronlist
-	cat $TMPDIR/task_cronlist $CRASHDIR/task/running | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > $TMPDIR/task_list
+	cat $TMPDIR/task_cronlist $CRASHDIR/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > $TMPDIR/task_list
 	cat $CRASHDIR/task/bfstart $CRASHDIR/task/afstart $CRASHDIR/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> $TMPDIR/task_list
 	rm -rf $TMPDIR/task_cronlist
 	#判断为空则返回
