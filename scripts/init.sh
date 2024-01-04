@@ -213,8 +213,8 @@ fi
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ];then
 	chmod 755 $CRASHDIR/misnap_init.sh
-	uci delete firewall.ShellClash
-	uci delete firewall.ShellCrash
+	uci delete firewall.ShellClash 2>/dev/null
+	uci delete firewall.ShellCrash 2>/dev/null
 	uci set firewall.ShellCrash=include
 	uci set firewall.ShellCrash.type='script'
 	uci set firewall.ShellCrash.path="$CRASHDIR/misnap_init.sh"
@@ -258,8 +258,8 @@ for file in log clash.service mark? mark.bak;do
 	rm -rf $CRASHDIR/$file
 done
 #旧版任务清理
-$CRASHDIR/start.sh cronset "clash服务"
-$CRASHDIR/start.sh cronset "订阅链接"
-$CRASHDIR/start.sh cronset "ShellCrash初始化"
+$CRASHDIR/start.sh cronset "clash服务" 2>/dev/null
+$CRASHDIR/start.sh cronset "订阅链接" 2>/dev/null
+$CRASHDIR/start.sh cronset "ShellCrash初始化" 2>/dev/null
 sleep 1
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"

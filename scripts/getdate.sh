@@ -1019,7 +1019,7 @@ setgeo(){
 
 getdb(){
 	#下载及安装
-	if [ -f /www/clash/index.html -o -f $CRASHDIR/ui/index.html ];then
+	if [ -f /www/clash/CNAME -o -f $CRASHDIR/ui/CNAME ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
 		echo -----------------------------------------------
@@ -1028,41 +1028,43 @@ getdb(){
 			rm -rf /www/clash
 			rm -rf $CRASHDIR/ui
 			rm -rf $bindir/ui
-		fi
-	fi
-	dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
-	echo -----------------------------------------------
-	echo 正在连接服务器获取安装文件…………
-	$CRASHDIR/start.sh webget $TMPDIR/clashdb.tar.gz $dblink
-	if [ "$?" = "1" ];then
-		echo -----------------------------------------------
-		echo -e "\033[31m文件下载失败！\033[0m"
-		echo -----------------------------------------------
-		error_down
-		setdb
-	else
-		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
-		mkdir -p $dbdir > /dev/null
-		tar -zxvf "$TMPDIR/clashdb.tar.gz" -C $dbdir > /dev/null
-		if [ $? -ne 0 ];then
-			tar -zxvf "$TMPDIR/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
-			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf $TMPDIR/clashfm.tar.gz && exit 1 
-		fi
-		#修改默认host和端口
-		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" ];then
-			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
-			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
+			dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
+			echo -----------------------------------------------
+			echo 正在连接服务器获取安装文件…………
+			$CRASHDIR/start.sh webget $TMPDIR/clashdb.tar.gz $dblink
+			if [ "$?" = "1" ];then
+				echo -----------------------------------------------
+				echo -e "\033[31m文件下载失败！\033[0m"
+				echo -----------------------------------------------
+				error_down
+				setdb
+			else
+				echo -e "\033[33m下载成功，正在解压文件！\033[0m"
+				mkdir -p $dbdir > /dev/null
+				tar -zxvf "$TMPDIR/clashdb.tar.gz" -C $dbdir > /dev/null
+				if [ $? -ne 0 ];then
+					tar -zxvf "$TMPDIR/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
+					[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf $TMPDIR/clashfm.tar.gz && exit 1 
+				fi
+				#修改默认host和端口
+				if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" ];then
+					sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
+					sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
+				else
+					sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
+					#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
+				fi
+				#写入配置文件
+				setconfig hostdir \'$hostdir\'
+				echo -----------------------------------------------
+				echo -e "\033[32m面板安装成功！\033[0m"
+				rm -rf $TMPDIR/clashdb.tar.gz
+			fi
 		else
-			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
-			#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
+			echo -e "\033[33m安装已取消！\033[0m"
 		fi
-		#写入配置文件
-		setconfig hostdir \'$hostdir\'
-		echo -----------------------------------------------
-		echo -e "\033[32m面板安装成功！\033[0m"
-		rm -rf $TMPDIR/clashdb.tar.gz
-		sleep 1
 	fi
+	sleep 1
 }
 setdb(){
 	dbdir(){

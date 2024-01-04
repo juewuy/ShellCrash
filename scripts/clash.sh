@@ -167,13 +167,7 @@ errornum(){
 }
 startover(){
 	echo -e "\033[32m服务已启动！\033[0m"
-	if [ -n "$hostdir" ];then
-		echo -e "请使用 \033[4;32mhttp://$host$hostdir\033[0m 管理内置规则"
-	else
-		echo -e "可使用 \033[4;32mhttp://clash.razord.top\033[0m 管理内置规则"
-		echo -e "Host地址:\033[36m $host \033[0m 端口:\033[36m $db_port \033[0m"
-		echo -e "推荐前往更新菜单安装本地Dashboard面板，连接更稳定！\033[0m"
-	fi
+	echo -e "请使用 \033[4;32mhttp://$host$hostdir\033[0m 管理内置规则"
 	if [ "$redir_mod" = "纯净模式" ];then
 		echo -----------------------------------------------
 		echo -e "其他设备可以使用PAC配置连接：\033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
@@ -200,7 +194,7 @@ checkrestart(){
 	[ "$res" = 1 ] && clashstart
 }
 #功能相关
-log_pusher(){
+log_pusher(){ #日志菜单
 	[ -n "$push_TG" ] && stat_TG=32m已启用 || stat_TG=33m未启用
 	[ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
 	[ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
@@ -214,14 +208,20 @@ log_pusher(){
 	echo -e " 4 Bark推送-IOS	——\033[$stat_bark\033[0m"
 	echo -e " 5 Passover推送	——\033[$stat_Po\033[0m"
 	echo -e " 6 推送任务日志	——\033[$task_push\033[0m"
-	echo -e " 9 设置设备名称	——\033[$device_s\033[0m"
+	echo -e " 8 设置设备名称	——\033[$device_s\033[0m"
+	echo -e " 9 清空日志文件"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num	
 	case $num in
 	1)
-		echo -----------------------------------------------
-		cat $TMPDIR/ShellCrash.log
-		exit
+		if [ -s $TMPDIR/ShellCrash.log ];then
+			echo -----------------------------------------------
+			cat $TMPDIR/ShellCrash.log
+			exit 0
+		else
+			echo -e "\033[31m未找到相关日志！\033[0m"
+		fi
+		sleep 1
 	;;
 	2)
 		echo -----------------------------------------------
@@ -374,9 +374,15 @@ log_pusher(){
 		sleep 1
 		log_pusher		
 	;;
-	9)	
+	8)	
 		read -p "请输入本设备自定义推送名称 > " device_name
 		setconfig device_name $device_name
+		sleep 1
+		log_pusher		
+	;;
+	9)	
+		echo -e "\033[33m运行日志及任务日志均已清空！\033[0m"
+		rm -rf $TMPDIR/ShellCrash.log
 		sleep 1
 		log_pusher		
 	;;

@@ -28,13 +28,13 @@ update_core(){ #自动更新内核
 	clash_v_new=$(eval echo \$${clashcore}_v)
 	clash_v_now=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 	if [ -z "$clash_v_new" -o "$clash_v_new" = "clash_v_now" ];then
-		logger "任务:【自动更新内核】中止-未检测到版本更新"
+		logger "任务【自动更新内核】中止-未检测到版本更新"
 		exit 1
 	else
 		#更新内核
 		$CRASHDIR/start.sh webget $TMPDIR/clash.new "$update_url/bin/$clashcore/clash-linux-$cpucore"
 		if [ "$?" != "0" ];then
-			logger "任务:【自动更新内核】出错-下载失败！"
+			logger "任务【自动更新内核】出错-下载失败！"
 			rm -rf $TMPDIR/clash.new
 			return 1
 		else
@@ -42,13 +42,13 @@ update_core(){ #自动更新内核
 			$CRASHDIR/start.sh stop
 			clashv=$($TMPDIR/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 			if [ -z "$clashv" ];then
-				logger "任务:【自动更新内核】出错-下载失败！"
+				logger "任务【自动更新内核】出错-下载失败！"
 				rm -rf $TMPDIR/clash.new
 				[ $clashcore = meta ] && $CRASHDIR/start.sh start
 				return 1
 			else
 				mv -f $TMPDIR/clash.new $bindir/clash
-				logger "任务:【自动更新内核】下载完成，正在重启服务！"
+				logger "任务【自动更新内核】下载完成，正在重启服务！"
 				$CRASHDIR/start.sh start
 				return 0
 			fi
@@ -59,20 +59,20 @@ update_shellclash(){ #自动更新脚本
 	#检查版本
 	check_update
 	if [ -z "$versionsh" -o "$versionsh" = "versionsh_l" ];then
-		logger "任务:【自动更新脚本】中止-未检测到版本更新"
+		logger "任务【自动更新脚本】中止-未检测到版本更新"
 		exit 1
 	else	
 		$CRASHDIR/start.sh webget $TMPDIR/clashfm.tar.gz "$update_url/bin/clashfm.tar.gz"
 		if [ "$?" != "0" ];then
 			rm -rf $TMPDIR/clashfm.tar.gz
-			logger "任务:【自动更新内核】出错-下载失败！"
+			logger "任务【自动更新内核】出错-下载失败！"
 			return 1
 		else
 			#解压
 			tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/ || tar -zxvf "$TMPDIR/clashfm.tar.gz" --no-same-owner -C $CRASHDIR/
 			if [ $? -ne 0 ];then
 				rm -rf $TMPDIR/clashfm.tar.gz
-				logger "任务:【自动更新内核】出错-解压失败！"
+				logger "任务【自动更新内核】出错-解压失败！"
 				return 1
 			else
 				source $CRASHDIR/init.sh >/dev/null
@@ -89,18 +89,18 @@ update_mmdb(){ #自动更新数据库
 		geo_v_new=$GeoIP_v
 		geo_v_now=$(eval echo \$$geo_v)
 		if [ -z "$geo_v_new" -o "$geo_v_new" = "$geo_v_now" ];then
-			logger "任务:【自动更新数据库文件】跳过-未检测到$2版本更新"
+			logger "任务【自动更新数据库文件】跳过-未检测到$2版本更新"
 		else
 			#更新文件
 			$CRASHDIR/start.sh webget $TMPDIR/$1 "$update_url/bin/geodata/$2"
 			if [ "$?" != "0" ];then
-				logger "任务:【自动更新数据库文件】更新【$2】下载失败！"
+				logger "任务【自动更新数据库文件】更新【$2】下载失败！"
 				rm -rf $TMPDIR/$1
 				return 1
 			else
 				mv -f $TMPDIR/$1 $bindir/$1
 				setconfig $geo_v $GeoIP_v
-				logger "任务:【自动更新数据库文件】更新【$2】成功！"
+				logger "任务【自动更新数据库文件】更新【$2】成功！"
 				return 0
 			fi
 		fi
@@ -144,7 +144,6 @@ cronset(){
 	sed -i '/^$/d' $tmpcron
 	echo "$2" >> $tmpcron
 	croncmd $tmpcron
-	rm -f $tmpcron
 	#华硕/Padavan固件存档在本地,其他则删除
 	[ "$CRASHDIR" = "/jffs/clash" -o "$CRASHDIR" = "/etc/storage/clash" ] && mv -f $tmpcron $CRASHDIR/task/cron || rm -f $tmpcron
 }
@@ -160,7 +159,7 @@ set_cron(){
 		cronset "$cron_time$task_name" "$task_txt"
 	fi
 	unset week hour min
-	echo -e "任务:【$cron_time$task_name】\033[32m添加成功！\033[0m"
+	echo -e "任务【$cron_time$task_name】\033[32m添加成功！\033[0m"
 	sleep 1
 }
 set_service(){
@@ -174,7 +173,7 @@ set_service(){
 	else
 		echo "$CRASHDIR/task/task.sh $2 $3" >> $task_file
 	fi
-	echo -e "任务:【$3】\033[32m添加成功！\033[0m"
+	echo -e "任务【$3】\033[32m添加成功！\033[0m"
 	sleep 1
 }
 #任务界面
@@ -249,9 +248,9 @@ task_add(){ #任务添加
 task_del(){ #任务删除
 	#删除定时任务
 	croncmd -l > $TMPDIR/cron && sed -i "/$1/d" $TMPDIR/cron && croncmd $TMPDIR/cron
-	sed -i "/$1/d" $CRASHDIR/task/cron 2>/dev/null
 	rm -f $TMPDIR/cron
 	#删除条件任务
+	sed -i "/$1/d" $CRASHDIR/task/cron 2>/dev/null
 	sed -i "/$1/d" $CRASHDIR/task/bfstart 2>/dev/null
 	sed -i "/$1/d" $CRASHDIR/task/afstart 2>/dev/null
 	sed -i "/$1/d" $CRASHDIR/task/running 2>/dev/null
@@ -359,7 +358,7 @@ task_manager(){ #任务管理列表
 		0)
 		;;	
 		d)
-			task_del "$CRASHDIR\/task\/task.sh"
+			task_del "task.sh"
 			echo -e "\033[31m全部任务已清空！\033[36m"
 			sleep 1			
 		;;			
@@ -390,7 +389,7 @@ task_manager(){ #任务管理列表
 			3)
 				task_command=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $2}')
 				eval $task_command && task_res='执行成功！' || task_res='执行失败！'
-				logger "任务:【$task_des】$task_res" 33 off
+				logger "任务【$task_des】$task_res" 33 off
 				sleep 1
 			;;	
 			4)
@@ -425,10 +424,10 @@ task_recom(){ #任务推荐
 	echo -----------------------------------------------
 	read -p "是否启用？(1/0) > " res	
 	[ "$res" = 1 ] && {
-		set_service running "106" "运行时每10分钟自动保存面板配置" "1/10"
+		set_service running "106" "运行时每10分钟自动保存面板配置" "*/10"
 		set_service afstart "107" "服务启动后自动同步ntp时间" 
 		cronset "在每周3的3点整更新订阅并重启服务" "0 3 * * 3 $CRASHDIR/task/task.sh 104 在每周3的3点整更新订阅并重启服务" && \
-		echo -e "任务:【在每周3的3点整更新订阅并重启服务】\033[32m添加成功！\033[0m"
+		echo -e "任务【在每周3的3点整更新订阅并重启服务】\033[32m添加成功！\033[0m"
 	}
 }
 task_menu(){ #任务菜单
@@ -458,8 +457,13 @@ task_menu(){ #任务菜单
 		task_menu
 	;;	
 	3)
-		echo -----------------------------------------------
-		cat $TMPDIR/ShellCrash.log | grep '任务:'
+		if [ -n "$(cat $TMPDIR/ShellCrash.log | grep '任务【')" ];then
+			echo -----------------------------------------------
+			cat $TMPDIR/ShellCrash.log | grep '任务【'
+		else
+			echo -e "\033[31m未找到任务相关执行日志！\033[0m"
+		fi
+		sleep 1
 		task_menu
 	;;
 	4)
@@ -495,7 +499,7 @@ case "$1" in
 	[1-9][0-9][0-9])
 		task_command=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep "$1" | awk -F '#' '{print $2}')
 		task_name=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep "$1" | awk -F '#' '{print $3}')
-		#logger "任务:$task_name 开始执行"
+		#logger "任务$task_name 开始执行"
 		eval $task_command && task_res=成功 || task_res=失败
 		logger "任务【$2】执行$task_res"
 	;;

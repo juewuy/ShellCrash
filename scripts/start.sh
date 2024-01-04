@@ -58,7 +58,7 @@ logger(){
 	[ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
 	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
 	echo $log_text >> $TMPDIR/ShellCrash.log
-	[ "$(wc -l  $TMPDIR/ShellCrash.log | awk '{print $1}')" -gt 99 ] && sed -i '1,5d'  $TMPDIR/ShellCrash.log
+	[ "$(wc -l  $TMPDIR/ShellCrash.log | awk '{print $1}')" -gt 99 ] && sed -i '1,50d'  $TMPDIR/ShellCrash.log
 	[ -z "$3" ] && {
 		getconfig
 		[ -n "$device_name" ] && log_text="$log_text($device_name)"
@@ -1093,14 +1093,35 @@ web_restore(){
 	done
 }
 #启动相关
+makehtml(){
+	cat > $bindir/ui/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShellCrash面板提示</title>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px;">
+        <h1>您还未安装本地面板</h1>
+		<h3>请在脚本更新功能中(9-4)安装<br>或者使用在线面板：</h3>
+        <a href="https://metacubexd.pages.dev" style="font-size: 24px;">Meta XD面板(推荐)<br></a>
+        <a href="https://yacd.metacubex.one" style="font-size: 24px;">Meta YACD面板(推荐)<br></a>
+        <a href="https://yacd.haishan.me" style="font-size: 24px;">Clash YACD面板<br></a>
+        <a href="https://clash.razord.top" style="font-size: 24px;">Clash Razord面板<br></a>
+        <a style="font-size: 16px;"><br>如已安装，请使用Ctrl+F5强制刷新！<br></a>		
+    </div>
+</body>
+</html
+EOF
+}
 catpac(){
 	#获取本机host地址
 	[ -n "$host" ] && host_pac=$host
 	[ -z "$host_pac" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	cat > $TMPDIR/clash_pac <<EOF
-//如看见此处内容，请重新安装本地面板！
-//之后返回上一级页面，清理浏览器缓存并刷新页面！
 function FindProxyForURL(url, host) {
 	if (
 		isInNet(host, "0.0.0.0", "255.0.0.0")||
@@ -1197,6 +1218,7 @@ bfstart(){
 	if [ -f $CRASHDIR/ui/index.html -a ! -f $bindir/ui/index.html ];then
 		cp -rf $CRASHDIR/ui $bindir
 	fi
+	[ ! -s $bindir/ui/index.html ] && makehtml #如没有面板则创建跳转界面
 	#检查curl或wget支持
 	curl --version > /dev/null 2>&1
 	[ "$?" = 1 ] && wget --version > /dev/null 2>&1
