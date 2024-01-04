@@ -1018,57 +1018,57 @@ setgeo(){
 }
 
 getdb(){
-	#下载及安装
-	if [ -f /www/clash/CNAME -o -f $CRASHDIR/ui/CNAME ];then
+	dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
+	echo -----------------------------------------------
+	echo 正在连接服务器获取安装文件…………
+	$CRASHDIR/start.sh webget $TMPDIR/clashdb.tar.gz $dblink
+	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
-		echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
+		echo -e "\033[31m文件下载失败！\033[0m"
 		echo -----------------------------------------------
-		read -p "是否覆盖安装？[1/0] > " res
-		if [ "$res" = 1 ]; then
-			rm -rf /www/clash
-			rm -rf $CRASHDIR/ui
-			rm -rf $bindir/ui
-			dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
-			echo -----------------------------------------------
-			echo 正在连接服务器获取安装文件…………
-			$CRASHDIR/start.sh webget $TMPDIR/clashdb.tar.gz $dblink
-			if [ "$?" = "1" ];then
-				echo -----------------------------------------------
-				echo -e "\033[31m文件下载失败！\033[0m"
-				echo -----------------------------------------------
-				error_down
-				setdb
-			else
-				echo -e "\033[33m下载成功，正在解压文件！\033[0m"
-				mkdir -p $dbdir > /dev/null
-				tar -zxvf "$TMPDIR/clashdb.tar.gz" -C $dbdir > /dev/null
-				if [ $? -ne 0 ];then
-					tar -zxvf "$TMPDIR/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
-					[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf $TMPDIR/clashfm.tar.gz && exit 1 
-				fi
-				#修改默认host和端口
-				if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" ];then
-					sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
-					sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
-				else
-					sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
-					#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
-				fi
-				#写入配置文件
-				setconfig hostdir \'$hostdir\'
-				echo -----------------------------------------------
-				echo -e "\033[32m面板安装成功！\033[0m"
-				rm -rf $TMPDIR/clashdb.tar.gz
-			fi
-		else
-			echo -e "\033[33m安装已取消！\033[0m"
+		error_down
+		setdb
+	else
+		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
+		mkdir -p $dbdir > /dev/null
+		tar -zxvf "$TMPDIR/clashdb.tar.gz" -C $dbdir > /dev/null
+		if [ $? -ne 0 ];then
+			tar -zxvf "$TMPDIR/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
+			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf $TMPDIR/clashfm.tar.gz && exit 1 
 		fi
+		#修改默认host和端口
+		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" ];then
+			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
+			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
+		else
+			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
+			#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
+		fi
+		#写入配置文件
+		setconfig hostdir \'$hostdir\'
+		echo -----------------------------------------------
+		echo -e "\033[32m面板安装成功！\033[0m"
+		rm -rf $TMPDIR/clashdb.tar.gz
 	fi
 	sleep 1
 }
 setdb(){
 	dbdir(){
-		if [ -w /www -a -n "$(pidof nginx)" ];then
+		if [ -f /www/clash/CNAME -o -f $CRASHDIR/ui/CNAME ];then
+			echo -----------------------------------------------
+			echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
+			echo -----------------------------------------------
+			read -p "是否覆盖安装？[1/0] > " res
+			if [ "$res" = 1 ]; then
+				rm -rf $bindir/ui
+				[ -f /www/clash/CNAME ] && rm -rf /www/clash && dbdir=/www/clash
+				[ -f $CRASHDIR/ui/CNAME ] && rm -rf $CRASHDIR/ui && dbdir=$CRASHDIR/ui
+				getdb
+			else
+				setdb
+				echo -e "\033[33m安装已取消！\033[0m"
+			fi
+		elif [ -w /www -a -n "$(pidof nginx)" ];then
 			echo -----------------------------------------------
 			echo -e "请选择面板\033[33m安装目录：\033[0m"
 			echo -----------------------------------------------
@@ -1081,15 +1081,19 @@ setdb(){
 			if [ "$num" = '1' ]; then
 				dbdir=$CRASHDIR/ui
 				hostdir=":$db_port/ui"
+				getdb
 			elif [ "$num" = '2' ]; then
 				dbdir=/www/clash
 				hostdir='/clash'
+				getdb
 			else
 				setdb
+				echo -e "\033[33m安装已取消！\033[0m"
 			fi
 		else
 				dbdir=$CRASHDIR/ui
 				hostdir=":$db_port/ui"
+				getdb
 		fi
 	}
 
