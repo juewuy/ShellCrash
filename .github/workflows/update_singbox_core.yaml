@@ -1,11 +1,7 @@
 name: Update Sing-Box Core 
 on: 
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'tag of Sing-Box, such as 1.7.8 ,don't include "v"'
-        required: true
-        type: string
+
 env:
   download_tag: ${{ github.event.inputs.tag }}
   download_version: ''
@@ -24,11 +20,7 @@ jobs:
         tar xf upx-3.93-amd64_linux.tar.xz
     - name: Download Core
       run: |
-        if [ "${download_tag}" = "Prerelease-Alpha" ] || [ "${download_tag}" = "Prerelease-Beta" ];then
-          download_version=$(curl -s -L -o /dev/null -w '%{url_effective}' https://github.com/${download_project}/releases/latest | grep -oE "[^/]+$" | awk -F 'v' '{print $2}')
-        else
-          download_version=${download_tag}
-        fi
+        download_version=$(curl -s -L -o /dev/null -w '%{url_effective}' https://github.com/${download_project}/releases/latest | grep -oE "[^/]+$" | awk -F 'v' '{print $2}')
         echo "download_version=${download_version}" >> ${GITHUB_ENV}
         archs=(386 amd64 armv7 arm64)
         new_name=(386 amd64 armv7 armv8)
