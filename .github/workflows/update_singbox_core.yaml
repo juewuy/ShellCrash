@@ -3,8 +3,6 @@ on:
   workflow_dispatch:
 
 env:
-  download_tag: ${{ github.event.inputs.tag }}
-  download_version: ''
   download_project: SagerNet/sing-box
 jobs:
   Update:
@@ -26,7 +24,7 @@ jobs:
         new_name=(386 amd64 armv7 armv8)
         mkdir tmp
         for((i=0;i<7;i++));do
-          wget "https://github.com/${download_project}/releases/download/${download_tag}/sing-box-${download_version}-linux-${archs[i]}.tar.gz" -O - | tar -zxvf > ./tmp/singbox-linux-${new_name[i]}
+          wget "https://github.com/${download_project}/releases/download/v${download_version}/sing-box-${download_version}-linux-${archs[i]}.tar.gz" -O - | tar -zxvf > ./tmp/singbox-linux-${new_name[i]}
           chmod +x ./tmp/singbox-linux-${new_name[i]}
           if [ "${archs[i]}" != "armv5" ];then
             if [[ ${archs[i]} = mips* ]];then
