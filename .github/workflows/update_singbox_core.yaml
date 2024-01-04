@@ -25,8 +25,8 @@ jobs:
         mkdir tmp
         for((i=0;i<7;i++));do
           wget "https://github.com/${download_project}/releases/download/v${download_version}/sing-box-${download_version}-linux-${archs[i]}.tar.gz" -O ./tmp/core.tar.gz
-          tar -zxvf ./tmp/core.tar.gz --strip-components=1 
-          mv -f ./tmp/sing-box ./tmp/singbox-linux-${new_name[i]}
+          tar -zxvf ./tmp/core.tar.gz
+          mv -f ./tmp/sing-box-${download_version}-linux-${archs[i]}/sing-box ./tmp/singbox-linux-${new_name[i]}
           chmod +x ./tmp/singbox-linux-${new_name[i]}
           if [ "${archs[i]}" != "armv5" ];then
             if [[ ${archs[i]} = mips* ]];then
