@@ -746,7 +746,6 @@ gettar(){
 		mkdir -p $CRASHDIR > /dev/null
 		tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/ || tar -zxvf "$TMPDIR/clashfm.tar.gz" --no-same-owner -C $CRASHDIR/
 		if [ $? -ne 0 ];then
-			rm -rf $TMPDIR/clashfm.tar.gz
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
 		else
@@ -754,6 +753,7 @@ gettar(){
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi		
 	fi
+	rm -rf $TMPDIR/clashfm.tar.gz
 	exit
 }
 getsh(){
@@ -955,6 +955,7 @@ getgeo(){
 	sleep 1
 }
 setgeo(){
+	source $CFG_PATH > /dev/null
 	[ -n "$cn_mini.mmdb_v" ] && geo_type_des=精简版 || geo_type_des=全球版 
 	echo -----------------------------------------------
 	echo -e "\033[36m请选择需要更新的GeoIP/CN_IP数据库：\033[0m"
@@ -969,17 +970,22 @@ setgeo(){
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
-	if [ "$num" = '1' ]; then
+	case "$num" in
+	0)
+	;;
+	1)
 		geotype=Country.mmdb
 		geoname=Country.mmdb
 		getgeo
 		setgeo
-	elif [ "$num" = '2' ]; then
+	;;
+	2)
 		geotype=cn_mini.mmdb
 		geoname=Country.mmdb
 		getgeo
 		setgeo
-	elif [ "$num" = '3' ]; then
+	;;
+	3)
 		if [ "$cn_ip_route" = "已开启" ]; then
 			geotype=china_ip_list.txt
 			geoname=cn_ip.txt
@@ -990,7 +996,8 @@ setgeo(){
 			sleep 1
 		fi
 		setgeo
-	elif [ "$num" = '4' ]; then
+	;;
+	4)
 		if [ "$cn_ipv6_route" = "已开启" -a "$ipv6_redir" = "已开启" ]; then
 			geotype=china_ipv6_list.txt
 			geoname=cn_ipv6.txt
@@ -1001,7 +1008,8 @@ setgeo(){
 			sleep 1
 		fi
 		setgeo
-	elif [ "$num" = '5' ]; then
+	;;
+	5)
 		if [ "$clashcore" = "meta" ]; then
 			geotype=geosite.dat
 			geoname=GeoSite.dat
@@ -1012,9 +1020,11 @@ setgeo(){
 			sleep 1
 		fi
 		setgeo
-	else
-		update
-	fi
+	;;
+	*)
+		errornum
+	;;
+esac
 }
 
 getdb(){
@@ -1115,23 +1125,18 @@ setdb(){
 	if [ "$num" = '1' ]; then
 		db_type=clashdb
 		dbdir
-		getdb
 	elif [ "$num" = '2' ]; then
 		db_type=meta_db
 		dbdir
-		getdb
 	elif [ "$num" = '3' ]; then
 		db_type=yacd
 		dbdir
-		getdb
 	elif [ "$num" = '4' ]; then
 		db_type=meta_yacd
 		dbdir
-		getdb
 	elif [ "$num" = '5' ]; then
 		db_type=meta_xd
 		dbdir
-		getdb
 	elif [ "$num" = '6' ]; then
 		read -p "确认卸载本地面板？(1/0) > " res
 		if [ "$res" = 1 ];then

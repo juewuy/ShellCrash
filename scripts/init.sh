@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.3d
+version=1.8.3e
 
 setdir(){
 	dir_avail(){
@@ -231,7 +231,7 @@ fi
 	nvram commit
 }
 #删除临时文件
-rm -rf /tmp/*lash*gz
+rm -rf /tmp/*rash*gz
 rm -rf /tmp/SC_tmp
 #转换&清理旧版本文件
 mkdir -p $CRASHDIR/yamls
