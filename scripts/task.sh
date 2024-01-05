@@ -25,14 +25,14 @@ check_update(){ #检查更新工具
 update_core(){ #自动更新内核
 	#检查版本
 	check_update
-	clash_v_new=$(eval echo \$${clashcore}_v)
+	clash_v_new=$(eval echo \$${crashcore}_v)
 	clash_v_now=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 	if [ -z "$clash_v_new" -o "$clash_v_new" = "clash_v_now" ];then
 		logger "任务【自动更新内核】中止-未检测到版本更新"
 		exit 1
 	else
 		#更新内核
-		$CRASHDIR/start.sh webget $TMPDIR/clash.new "$update_url/bin/$clashcore/clash-linux-$cpucore"
+		$CRASHDIR/start.sh webget $TMPDIR/clash.new "$update_url/bin/$crashcore/clash-linux-$cpucore"
 		if [ "$?" != "0" ];then
 			logger "任务【自动更新内核】出错-下载失败！"
 			rm -rf $TMPDIR/clash.new
@@ -44,7 +44,7 @@ update_core(){ #自动更新内核
 			if [ -z "$clashv" ];then
 				logger "任务【自动更新内核】出错-下载失败！"
 				rm -rf $TMPDIR/clash.new
-				[ $clashcore = meta ] && $CRASHDIR/start.sh start
+				[ $crashcore = meta ] && $CRASHDIR/start.sh start
 				return 1
 			else
 				mv -f $TMPDIR/clash.new $bindir/clash

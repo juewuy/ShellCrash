@@ -116,12 +116,12 @@ ckstatus(){
 				echo -e " 3 Clash.Meta内核"
 				read -p "请手动确定该内核类型 > " num
 				case "$num" in
-					2) clashcore=clashpre ;;
-					3) clashcore=meta ;;
-					*) clashcore=clash ;;
+					2) crashcore=clashpre ;;
+					3) crashcore=meta ;;
+					*) crashcore=clash ;;
 				esac
 				mv -f $file $bindir/clash && echo -e "\033[32m内核加载完成！\033[0m " && sleep 1
-				setconfig clashcore $clashcore
+				setconfig crashcore $crashcore
 			}
 		else
 			echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
@@ -1095,10 +1095,10 @@ clashcfg(){
 		set_redir_config(){
 			setconfig redir_mod $redir_mod
 			setconfig dns_mod $dns_mod 
-			if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && [ "$clashcore" = "clash" ];then
+			if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && [ "$crashcore" = "clash" ];then
 				rm -rf $bindir/clash
 				rm -rf $CRASHDIR/clash
-				setconfig clashcore meta
+				setconfig crashcore meta
 			fi
 			echo -----------------------------------------------	
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
@@ -1107,7 +1107,7 @@ clashcfg(){
 		[ -n "$(lsmod | grep '^tun')" ] || ip tuntap &>/dev/null && sup_tun=1
 		ckcmd nft && sup_nft=1
 		echo -----------------------------------------------
-		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $clashcore \033[0m"
+		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $crashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
@@ -1421,7 +1421,7 @@ clashadv(){
 	[ -z "$tproxy_mod" ] && tproxy_mod=未开启
 	[ -z "$public_support" ] && public_support=未开启
 	[ -z "$sniffer" ] && sniffer=未启用
-	[ "$clashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && sniffer=已启用
+	[ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && sniffer=已启用
 	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
 	#
 	echo -----------------------------------------------
@@ -1457,14 +1457,14 @@ clashadv(){
 	4)
 		echo -----------------------------------------------
 		if [ "$sniffer" = "未启用" ];then
-			if [ "$clashcore" = "clash" ];then
+			if [ "$crashcore" = "clash" ];then
 				rm -rf $bindir/clash
-				clashcore=meta
-				setconfig clashcore $clashcore
+				crashcore=meta
+				setconfig crashcore $crashcore
 				echo "已将clash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
 			fi
 			sniffer=已启用
-		elif [ "$clashcore" = "clashpre" -a "$dns_mod" = "redir_host" ];then
+		elif [ "$crashcore" = "clashpre" -a "$dns_mod" = "redir_host" ];then
 			echo -e "\033[31m使用clashpre内核且开启redir-host模式时无法关闭！\033[0m"
 		else
 			sniffer=未启用

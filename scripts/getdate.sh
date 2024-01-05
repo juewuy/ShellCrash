@@ -808,31 +808,35 @@ setcpucore(){
 	fi
 }
 getcore(){
-	[ -z "$clashcore" ] && clashcore=clashpre
+	[ -z "$crashcore" ] && crashcore=clashpre
 	[ -z "$cpucore" ] && getcpucore
 	#生成链接
-	[ -z "$custcorelink" ] && corelink="$update_url/bin/$clashcore/clash-linux-$cpucore" || corelink="$custcorelink"
-	#获取在线clash核心文件
+	[ -z "$custcorelink" ] && corelink="$update_url/bin/$crashcore/clash-linux-$cpucore" || corelink="$custcorelink"
+	#获取在线内核文件
 	echo -----------------------------------------------
-	echo 正在在线获取clash核心文件……
-	$CRASHDIR/start.sh webget $TMPDIR/clash.new $corelink
+	echo 正在在线获取$crashcore核心文件……
+	$CRASHDIR/start.sh webget $TMPDIR/core.new $corelink
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
-		rm -rf $TMPDIR/clash.new
+		rm -rf $TMPDIR/core.new
 		[ -z "$custcorelink" ] && error_down
 	else
-		chmod +x $TMPDIR/clash.new 
+		chmod +x $TMPDIR/core.new 
 		$CRASHDIR/start.sh stop
-		clashv=$($TMPDIR/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
-		if [ -z "$clashv" ];then
+		if [ "$crashcore" = singbox ];then
+			core_v=$($TMPDIR/core.new version 2>/dev/null | grep version | awk '{print $3}')
+		else
+			core_v=$($TMPDIR/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+		fi
+		if [ -z "$core_v" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
-			rm -rf $TMPDIR/clash.new
+			rm -rf $TMPDIR/core.new
 			setcpucore
 		else
-			echo -e "\033[32m$clashcore核心下载成功！\033[0m"
-			mv -f $TMPDIR/clash.new $bindir/clash
-			chmod +x $bindir/clash 
-			setconfig clashcore $clashcore
+			echo -e "\033[32m$crashcore核心下载成功！\033[0m"
+			mv -f $TMPDIR/core.new $bindir/CrashCore
+			chmod +x $bindir/CrashCore
+			setconfig crashcore $crashcore
 		fi
 	fi
 }
@@ -840,7 +844,7 @@ setcustcore(){
 	[ -z "$cpucore" ] && getcpucore
 	echo -----------------------------------------------
 	echo -e "\033[36m自定义内核均未经过适配，可能存在部分功能不兼容的问题！\033[0m"
-	echo -e "\033[36m如你不熟悉clash的运行机制，请使用脚本已经适配过的内核！\033[0m"
+	echo -e "\033[36m如你不熟悉相关内核的运行机制，请使用脚本已经适配过的内核！\033[0m"
 	echo -e "\033[36m自定义内核不兼容小闪存模式，且下载可能依赖服务！\033[0m"
 	echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
 	echo -----------------------------------------------
@@ -850,23 +854,29 @@ setcustcore(){
 		echo -e "\033[33m请选择需要使用的核心！\033[0m"
 		echo -e "1 \033[32m 测试版ClashPre内核 \033[0m"
 		echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
-		echo -e "3 \033[33m 自定义内核链接 \033[0m"
+		echo -e "3 \033[32m Sing-Box官方内核  \033[0m"
+		echo -e "4 \033[33m 自定义内核链接 \033[0m"
 		read -p "请输入对应数字 > " num	
 		case "$num" in
 		1)
-			clashcore=clashpre
+			crashcore=clashpre
 			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.premium.latest/clash-linux-$cpucore
 			getcore			
 		;;
 		2)
-			clashcore=meta
+			crashcore=meta
 			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.meta.alpha/clash-linux-$cpucore
 			getcore			
 		;;
 		3)
+			crashcore=singbox
+			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core/singbox-linux-$cpucore
+			getcore			
+		;;
+		4)
 			read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
 			[ -n "$link" ] && custcorelink="$link"
-			clashcore=meta
+			crashcore=meta
 			getcore
 		;;
 		*)
@@ -877,11 +887,11 @@ setcustcore(){
 }
 setcore(){
 	#获取核心及版本信息
-	[ ! -f $CRASHDIR/clash ] && clashcore="未安装核心"
+	[ ! -f $CRASHDIR/CrashCore ] && crashcore="未安装核心"
 	###
 	echo -----------------------------------------------
 	[ -z "$cpucore" ] && getcpucore
-	echo -e "当前clash核心：\033[42;30m $clashcore \033[47;30m$clashv\033[0m"
+	echo -e "当前clash核心：\033[42;30m $crashcore \033[47;30m$clashv\033[0m"
 	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
 	echo -----------------------------------------------
@@ -905,17 +915,17 @@ setcore(){
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	1)
-		clashcore=clash
+		crashcore=clash
 		custcorelink=''
 		getcore
 	;;
 	2)
-		clashcore=clashpre
+		crashcore=clashpre
 		custcorelink=''
 		getcore
 	;;
 	3)
-		clashcore=meta
+		crashcore=meta
 		custcorelink=''
 		getcore
 	;;
@@ -1002,7 +1012,7 @@ setgeo(){
 		fi
 		setgeo
 	elif [ "$num" = '5' ]; then
-		if [ "$clashcore" = "meta" ]; then
+		if [ "$crashcore" = "meta" ]; then
 			geotype=geosite.dat
 			geoname=GeoSite.dat
 			getgeo
@@ -1298,9 +1308,9 @@ update(){
 	echo -----------------------------------------------
 	echo -ne "\033[32m正在检查更新！\033[0m\r"
 	checkupdate
-	clash_v=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
-	[ -z "$clash_v" ] && clash_v=$clashv
-	clash_v_new=$(eval echo \$${clashcore}_v)
+	core_v=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
+	[ -z "$core_v" ] && core_v=$clashv
+	core_v_new=$(eval echo \$${crashcore}_v)
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
 	echo -e "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail $CRASHDIR -h)\033[0m" 
@@ -1310,7 +1320,7 @@ update(){
 	}
 	echo -----------------------------------------------
 	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh$release_type\033[0m"
-	echo -e " 2 切换\033[33mclash核心 	\033[33m$clash_v\033[0m > \033[32m$clash_v_new\033[0m"
+	echo -e " 2 切换\033[33m内核文件 	\033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
 	echo -e " 3 更新\033[32m数据库文件\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
@@ -1431,7 +1441,7 @@ userguide(){
 			fi
 		elif [ "$num" = 2 ];then
 			setconfig redir_mod "纯净模式"
-			setconfig clashcore "clash"
+			setconfig crashcore "clash"
 			setconfig common_ports "未开启"
 			echo -----------------------------------------------
 			echo -e "\033[36m请选择设置本机代理的方式\033[0m"

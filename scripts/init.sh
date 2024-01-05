@@ -247,6 +247,8 @@ done
 	#配置文件改名
 	mv -f $CRASHDIR/mark $CRASHDIR/configs/ShellCrash.cfg 2>/dev/null
 	mv -f $CRASHDIR/configs/ShellClash.cfg $CRASHDIR/configs/ShellCrash.cfg 2>/dev/null
+	#内核改名
+	mv -f $CRASHDIR/clash $CRASHDIR/CrashCore 2>/dev/null
 for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh;do
 	mv -f $CRASHDIR/$file $CRASHDIR/tools/$file 2>/dev/null
 done
@@ -257,6 +259,7 @@ chmod 755 $CRASHDIR/task/task.sh
 for file in log clash.service mark? mark.bak;do
 	rm -rf $CRASHDIR/$file
 done
+
 #旧版任务清理
 $CRASHDIR/start.sh cronset "clash服务" 2>/dev/null
 $CRASHDIR/start.sh cronset "订阅链接" 2>/dev/null
