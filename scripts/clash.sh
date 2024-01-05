@@ -22,12 +22,12 @@ ckstatus(){
 		#检查重复行并去除
 		[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH
 		#检查时间戳
-		touch $TMPDIR/clash_start_time
+		touch $TMPDIR/crash_start_time
 		#使用source加载配置文件
 		source $CFG_PATH > /dev/null
 	else
 		mkdir -p $CRASHDIR/configs
-		echo '#标识clash运行状态的文件，不明勿动！' > $CFG_PATH
+		echo '#标识ShellCrash运行状态的文件，不明勿动！' > $CFG_PATH
 	fi
 	versionsh=$(cat $CRASHDIR/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
@@ -62,10 +62,10 @@ ckstatus(){
 	#开机自启描述
 	if [ "$autostart" = "enable" ]; then
 		auto="\033[32m已设置开机启动！\033[0m"
-		auto1="\033[36m禁用\033[0mclash开机启动"
+		auto1="\033[36m禁用\033[0mShellCrash开机启动"
 	else
 		auto="\033[31m未设置开机启动！\033[0m"
-		auto1="\033[36m允许\033[0mclash开机启动"
+		auto1="\033[36m允许\033[0mShellCrash开机启动"
 	fi
 	#获取运行状态
 	PID=$(pidof clash | awk '{print $NF}')
@@ -73,8 +73,8 @@ ckstatus(){
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 		#获取运行时长
-		touch $TMPDIR/clash_start_time #用于延迟启动的校验
-		start_time=$(cat $TMPDIR/clash_start_time)
+		touch $TMPDIR/crash_start_time #用于延迟启动的校验
+		start_time=$(cat $TMPDIR/crash_start_time)
 		if [ -n "$start_time" ]; then 
 			time=$((`date +%s`-start_time))
 			day=$((time/86400))
@@ -589,7 +589,7 @@ setdns(){
 	elif [ "$num" = 6 ]; then
 		echo -----------------------------------------------
 		if [ "$dns_redir" = "未开启" ]; then 
-			echo -e "\033[31m将使用OpenWrt中Dnsmasq插件自带的DNS转发功能转发DNS请求至clash内核！\033[0m"
+			echo -e "\033[31m将使用OpenWrt中Dnsmasq插件自带的DNS转发功能转发DNS请求至内核！\033[0m"
 			echo -e "\033[33m启用后将禁用本插件自带的iptables转发功能\033[0m"
 			dns_redir=已开启
 			echo -e "\033[32m已启用Dnsmasq转发DNS功能！！！\033[0m"
@@ -761,7 +761,7 @@ checkport(){
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
 		if [ -n "$(netstat -ntul 2>&1 |grep '\:$portx ')" ];then
 			echo -----------------------------------------------
-			echo -e "检测到端口【$portx】被以下进程占用！clash可能无法正常启动！\033[33m"
+			echo -e "检测到端口【$portx】被以下进程占用！内核可能无法正常启动！\033[33m"
 			echo $(netstat -ntul | grep :$portx | head -n 1)
 			echo -e "\033[0m-----------------------------------------------"
 			echo -e "\033[36m请修改默认端口配置！\033[0m"
@@ -926,7 +926,7 @@ localproxy(){
 	3)
 			if [ -z "$authentication" -o "$authentication" = "未设置" ];then
 				local_type="环境变量"
-				echo -e "\033[33m注意，请重启clash后手动输入以下命令使配置生效\033[0m"
+				echo -e "\033[33m注意，请重启ShellCrash服务后手动输入以下命令使配置生效\033[0m"
 				echo -e "【\033[32m source /etc/profile > /dev/null \033[0m】"
 				local_proxy=已开启
 			else
@@ -951,7 +951,7 @@ setboot(){
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用启动设置菜单：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 ${auto_set}\033[0mclash开机启动"
+	echo -e " 1 ${auto_set}\033[0mShellCrash开机启动"
 	echo -e " 2 使用保守模式:	\033[36m$start_old\033[0m	————基于定时任务(每分钟检测)"
 	echo -e " 3 设置自启延时:	\033[36m$delay\033[0m	————用于解决自启后服务受限"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————用于闪存空间不足的设备"
@@ -1283,7 +1283,7 @@ clashcfg(){
 	}
 	echo -e " 4 只代理常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
 	echo -e " 5 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
-	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过clash内核"
+	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过ShellCrash内核"
 	echo -e " 7 屏蔽QUIC流量:	\033[36m$quic_rj\033[0m   ————优化视频性能"
 	[ "$disoverride" != "1" ] && {
 		[ "$dns_mod" = "fake-ip" ] && \
@@ -1372,7 +1372,7 @@ clashcfg(){
 		echo -----------------------------------------------
 		if [ -n "$(echo "$redir_mod" | grep -oE '混合|Tproxy|Tun')" ];then
 			if [ "$quic_rj" = "未开启" ]; then 
-				echo -e "\033[33m已禁止QUIC流量通过clash内核！！\033[0m"
+				echo -e "\033[33m已禁止QUIC流量通过ShellCrash内核！！\033[0m"
 				quic_rj=已启用
 			else
 				echo -e "\033[33m已取消禁止QUIC协议流量！！\033[0m"
@@ -1426,7 +1426,7 @@ clashadv(){
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
-	echo -e "\033[33m如您并不了解clash的运行机制，请勿更改本页面功能！\033[0m"
+	echo -e "\033[33m如您并不了解ShellCrash的运行机制，请勿更改本页面功能！\033[0m"
 	echo -----------------------------------------------
 	[ "$disoverride" != "1" ] && echo -e " 1 ipv6相关"
 	#echo -e " 2 配置Meta特性"
@@ -1461,7 +1461,7 @@ clashadv(){
 				rm -rf $bindir/clash
 				crashcore=meta
 				setconfig crashcore $crashcore
-				echo "已将clash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
+				echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
 			fi
 			sniffer=已启用
 		elif [ "$crashcore" = "clashpre" -a "$dns_mod" = "redir_host" ];then
@@ -1823,8 +1823,8 @@ case "$1" in
 		echo "	-u 卸载脚本"
 		echo "	-i 初始化脚本"
 		echo -----------------------------------------
-		echo "	clash -s start	启动服务"
-		echo "	clash -s stop		停止服务"
+		echo "	crash -s start	启动服务"
+		echo "	crash -s stop		停止服务"
 		echo "	安装目录/start.sh init		开机初始化"
 		echo -----------------------------------------
 		echo "在线求助：t.me/ShellClash"
@@ -1850,9 +1850,9 @@ case "$1" in
 		read -p "确认卸载ShellCrash？(警告：该操作不可逆！)[1/0] > " res
 		if [ "$res" = '1' ]; then
 			$CRASHDIR/start.sh stop
-			$CRASHDIR/start.sh cronset "clash服务"
-			$CRASHDIR/start.sh cronset "订阅链接"
-			$CRASHDIR/start.sh cronset "ShellCrash初始化"
+			$CRASHDIR/start.sh cronset "clash服务" 2>/dev/null
+			$CRASHDIR/start.sh cronset "订阅链接" 2>/dev/null
+			$CRASHDIR/start.sh cronset "ShellCrash初始化" 2>/dev/null
 			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
 				mv -f $CRASHDIR/configs /tmp/clash_$USER
@@ -1884,9 +1884,9 @@ case "$1" in
 			userdel -r shellclash 2>/dev/null
 			nvram set script_usbmount="" 2>/dev/null
 			nvram commit 2>/dev/null
-			uci delete firewall.ShellClash
-			uci delete firewall.ShellCrash
-			uci commit firewall
+			uci delete firewall.ShellClash 2>/dev/null
+			uci delete firewall.ShellCrash 2>/dev/null
+			uci commit firewall 2>/dev/null
 			echo -----------------------------------------------
 			echo -e "\033[36m已卸载ShellCrash相关文件！有缘再会！\033[0m"
 			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
