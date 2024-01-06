@@ -548,7 +548,7 @@ override(){
 	case "$num" in
 	1)
 		source $CFG_PATH
-		if [ -n "$(pidof clash)" ];then
+		if [ -n "$(pidof CrashCore)" ];then
 			echo -----------------------------------------------
 			echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
 			read -p "是否停止服务？(1/0) > " res
@@ -807,11 +807,61 @@ setcpucore(){
 		setconfig cpucore $cpucore
 	fi
 }
+setcoretype(){
+	[ "$crashcore" = singbox ] && core_old=singbox || core_old=clash
+	echo -e "\033[33m请确认该自定义内核的类型：\033[0m"
+	echo -e " 1 Clash基础内核"
+	echo -e " 2 Clash-Premium内核"
+	echo -e " 3 Clash-Meta内核"
+	echo -e " 4 Sing-Box内核"
+	read -p "请输入对应数字 > " num
+	case "$num" in
+		2) crashcore=clashpre ;;
+		3) crashcore=meta ;;
+		4) crashcore=singbox ;;
+		*) crashcore=clash ;;
+	esac
+	[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
+}
+switch_core(){
+	#singbox和clash内核切换时提示是否保留文件
+	[ "$core_new" != "$core_old" ] && {
+		echo -e "\033[33m已从$core_old内核切换至$core_new内核\033[0m"
+		echo -e "\033[33m二者Geo数据库及yaml/json配置文件不通用\033[0m"
+		read -p "是否保留相关数据库文件？(1/0) > " res
+		[ "$res" = '0' ] && [ "$core_old" = "clash" ] && {
+			 rm -rf $CRASHDIR/Country.mmdb
+			 rm -rf $CRASHDIR/GeoSite.dat
+			 setconfig Country_v
+			 setconfig cn_mini_v
+			 setconfig geosite_v
+		}
+		[ "$res" = '0' ] && [ "$core_old" = "singbox" ] && {
+			 rm -rf $CRASHDIR/geoip.db
+			 rm -rf $CRASHDIR/geosite.db
+			 setconfig geoip_cn_v
+			 setconfig geosite_cn_v
+		}
+		read -p "是否保留$core_old相关配置文件？(1/0) > " res
+		[ "$res" = '0' ] && [ "$core_old" = "clash" ] && rm -rf $CRASHDIR/yamls
+		[ "$res" = '0' ] && [ "$core_old" = "singbox" ] && rm -rf $CRASHDIR/jsons			
+	}
+	if [ "$crashcore" = singbox ];then
+		COMMAND="$bindir/CrashCore run -D $bindir -c $TMPDIR/config.json >/dev/null"
+		COMMAND_T="$bindir/CrashCore check -D $bindir -c $TMPDIR/config.json"
+	else
+		COMMAND="$bindir/CrashCore -d $bindir -f $TMPDIR/config.yaml >/dev/null"
+		COMMAND_T="$bindir/CrashCore -t -d $bindir -f $TMPDIR/config.yaml"
+	fi
+	setconfig COMMAND $COMMAND $CRASHDIR/configs/service.env
+	setconfig COMMAND_T $COMMAND_T $CRASHDIR/configs/service.env
+}
 getcore(){
 	[ -z "$crashcore" ] && crashcore=clashpre
 	[ -z "$cpucore" ] && getcpucore
+	[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
 	#生成链接
-	[ -z "$custcorelink" ] && corelink="$update_url/bin/$crashcore/clash-linux-$cpucore" || corelink="$custcorelink"
+	[ -z "$custcorelink" ] && corelink="${update_url}/bin/${crashcore}/${core_new}-linux-${cpucore}" || corelink="$custcorelink"
 	#获取在线内核文件
 	echo -----------------------------------------------
 	echo 正在在线获取$crashcore核心文件……
@@ -820,9 +870,10 @@ getcore(){
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 		rm -rf $TMPDIR/core.new
 		[ -z "$custcorelink" ] && error_down
-	else=
+	else
 		chmod +x $TMPDIR/core.new 
 		$CRASHDIR/start.sh stop
+		[ "$crashcore" = unknow ] && setcoretype
 		if [ "$crashcore" = singbox ];then
 			core_v=$($TMPDIR/core.new version 2>/dev/null | grep version | awk '{print $3}')
 		else
@@ -837,6 +888,8 @@ getcore(){
 			mv -f $TMPDIR/core.new $bindir/CrashCore
 			chmod +x $bindir/CrashCore
 			setconfig crashcore $crashcore
+			setconfig core_v $core_v
+			switch_core
 		fi
 	fi
 }
@@ -876,7 +929,7 @@ setcustcore(){
 		4)
 			read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
 			[ -n "$link" ] && custcorelink="$link"
-			crashcore=meta
+			crashcore=unknow
 			getcore
 		;;
 		*)
@@ -887,11 +940,13 @@ setcustcore(){
 }
 setcore(){
 	#获取核心及版本信息
+	[ -z "$crashcore" ] && crashcore="unknow" 
 	[ ! -f $CRASHDIR/CrashCore ] && crashcore="未安装核心"
+	[ "$crashcore" = singbox ] && core_old=singbox || core_old=clash
 	###
 	echo -----------------------------------------------
 	[ -z "$cpucore" ] && getcpucore
-	echo -e "当前clash核心：\033[42;30m $crashcore \033[47;30m$clashv\033[0m"
+	echo -e "当前内核：\033[42;30m $crashcore \033[47;30m$core_v\033[0m"
 	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
 	echo -----------------------------------------------
@@ -943,9 +998,11 @@ setcore(){
 }
 
 getgeo(){
+	#生成链接
+	[ -z "$custcorelink" ] && geolink="$update_url/bin/geodata/$geotype" || geolink="$custcorelink"
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	$CRASHDIR/start.sh webget $TMPDIR/$geoname $update_url/bin/geodata/$geotype
+	$CRASHDIR/start.sh webget $TMPDIR/$geoname $geolink
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -964,19 +1021,110 @@ getgeo(){
 	fi
 	sleep 1
 }
+setcustgeo(){
+	checkcustgeo(){
+		echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
+		$CRASHDIR/start.sh webget $TMPDIR/github_api https://api.github.com/repos/$project/releases/latest
+		cat $TMPDIR/github_api | grep "browser_download_url" | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|geosite.*\.db"$|geoip.*\.db"$' | sed 's/"//' > $TMPDIR/github_api
+		if [ -s $TMPDIR/github_api ];then
+			echo -----------------------------------------------
+			cat $TMPDIR/github_api | awk '{print " "NR" "$3,$2,$4}'
+			echo -e "0 返回上级菜单"
+			echo -----------------------------------------------
+			read -p "请输入对应数字 > " num	
+			case "$num" in
+			0)
+			;;
+			[1-99])
+				if [ "$num" -le "$(wc -l $TMPDIR/github_api)" ];then
+					geotype=$(sed -n "$num"p $TMPDIR/github_api)
+					[ -n "$(echo $geo_api | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
+					[ -n "$(echo $geo_api | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
+					[ -n "$(echo $geo_api | grep -oiE 'geosite.*db')" ] && geoname=geosite.db
+					[ -n "$(echo $geo_api | grep -oiE 'geoip.*db')" ] && geoname=geoip.db
+					custgeolink=https://raw.githubusercontent.com/$project/release/$geotype
+					getgeo
+				else
+					errornum
+				fi
+			;;
+			*)
+				errornum
+			;;
+			esac
+			rm -rf $TMPDIR/github_api
+		else
+			echo -e "\033[31m查找失败，请检查网络连接！\033[0m"
+			sleep 1
+		fi
+	}
+	echo -----------------------------------------------
+	echo -e "\033[36m自定义数据库需要调用第三方地址，请尽量在服务启动后更新！\033[0m"
+	echo -e "\033[36m自定义数据库不兼容小闪存模式，也不支持自动更新！\033[0m"
+	echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+	echo -----------------------------------------------
+	sleep 1
+	read -p "我确认遇到问题可以自行解决[1/0] > " res
+	[ "$res" = '1' ] && {
+		echo -e "\033[33m此处数据库均源自互联网采集，此处致谢各位作者！\033[0m"
+		echo -e "\033[33m请点击或复制链接前往项目页面查看具体说明！\033[0m"
+		echo -e "\033[33m请选择需要更新的数据库项目来源！\033[0m"
+		echo -----------------------------------------------
+		echo -e "1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (Clash及SingBox)"
+		echo -e "2 \033[36;4mhttps://github.com/DustinWin/clash-geosite\033[0m (Clash及SingBox)"
+		echo -e "3 \033[36;4mhttps://github.com/lyc8503/sing-box-rules\033[0m (仅限SingBox)"
+		echo -e "4 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
+		echo -----------------------------------------------
+		echo -e "9 \033[33m 自定义数据库链接 \033[0m"
+		echo -e "0 返回上级菜单"
+		read -p "请输入对应数字 > " num	
+		case "$num" in
+		0)
+		;;
+		1)
+			project=MetaCubeX/meta-rules-dat
+			checkcustgeo		
+		;;
+		2)
+			project=DustinWin/clash-geosite
+			checkcustgeo		
+		;;
+		3)
+			project=lyc8503/sing-box-rules
+			checkcustgeo		
+		;;
+		4)
+			project=Loyalsoldier/geoip
+			checkcustgeo		
+		;;
+		9)
+			read -p "请输入自定义数据库的链接地址 > " link
+			[ -n "$link" ] && custgeolink="$link"
+			getgeo
+		;;
+		*)
+			errornum
+		;;
+		esac
+	}
+}
 setgeo(){
 	source $CFG_PATH > /dev/null
 	[ -n "$cn_mini.mmdb_v" ] && geo_type_des=精简版 || geo_type_des=全球版 
 	echo -----------------------------------------------
-	echo -e "\033[36m请选择需要更新的GeoIP/CN_IP数据库：\033[0m"
+	echo -e "\033[36m请选择需要更新的Geo/CN数据库文件：\033[0m"
 	echo -e "\033[36m全球版GeoIP和精简版CN-IP数据库不共存\033[0m"
+	echo -e "\033[36mClash内核和SingBox内核的数据库文件不通用\033[0m"
 	echo -e "在线数据库最新版本：\033[32m$GeoIP_v\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 全球版GeoIP数据库(约6mb)	\033[33m$Country_v\033[0m"
-	echo -e " 2 精简版CN-IP数据库(约0.2mb)	\033[33m$cn_mini_v\033[0m"
-	echo -e " 3 CN-IP绕过文件(约0.2mb)	\033[33m$china_ip_list_v\033[0m"
-	echo -e " 4 CN-IPV6绕过文件(约50kb)	\033[33m$china_ipv6_list_v\033[0m"
-	echo -e " 5 GeoSite数据库(约4.5mb)	\033[33m$geosite_v\033[0m"
+	echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
+	echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
+	echo -e " 3 Clash全球版GeoIP数据库(约6mb)	\033[33m$Country_v\033[0m"
+	echo -e " 4 Clash精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
+	echo -e " 5 Meta完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
+	echo -e " 6 SingBox精简版GeoIP_cn数据库(约0.3mb)	\033[33m$Country_v\033[0m"
+	echo -e " 7 SingBox精简版GeoSite数据库(约0.8mb)	\033[33m$cn_mini_v\033[0m"
+	echo -e " 9 \033[32m自定义数据库\033[0m：	\033[33m仅限专业用户使用\033[0m"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -984,18 +1132,6 @@ setgeo(){
 	0)
 	;;
 	1)
-		geotype=Country.mmdb
-		geoname=Country.mmdb
-		getgeo
-		setgeo
-	;;
-	2)
-		geotype=cn_mini.mmdb
-		geoname=Country.mmdb
-		getgeo
-		setgeo
-	;;
-	3)
 		if [ "$cn_ip_route" = "已开启" ]; then
 			geotype=china_ip_list.txt
 			geoname=cn_ip.txt
@@ -1007,7 +1143,7 @@ setgeo(){
 		fi
 		setgeo
 	;;
-	4)
+	2)
 		if [ "$cn_ipv6_route" = "已开启" -a "$ipv6_redir" = "已开启" ]; then
 			geotype=china_ipv6_list.txt
 			geoname=cn_ipv6.txt
@@ -1019,6 +1155,30 @@ setgeo(){
 		fi
 		setgeo
 	;;
+	3)
+		if [ "$crashcore" != "singbox" ]; then
+			geotype=Country.mmdb
+			geoname=Country.mmdb
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m当前未使用clash内核，无需使用此数据库！！\033[0m"	
+			sleep 1
+		fi
+		setgeo
+	;;
+	4)
+		if [ "$crashcore" != "singbox" ]; then
+			geotype=cn_mini.mmdb
+			geoname=Country.mmdb
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m当前未使用clash内核，无需使用此数据库！！\033[0m"	
+			sleep 1
+		fi
+		setgeo
+	;;
 	5)
 		if [ "$crashcore" = "meta" ]; then
 			geotype=geosite.dat
@@ -1026,11 +1186,38 @@ setgeo(){
 			getgeo
 		else
 			echo -----------------------------------------------
-			echo -e "\033[31m当前未使用meta内核，无需更新GeoSite数据库！！\033[0m"	
+			echo -e "\033[31m当前未使用meta内核，无需使用此数据库！！\033[0m"	
 			sleep 1
 		fi
 		setgeo
 	;;
+	6)
+		if [ "$crashcore" = "singbox" ]; then
+			geotype=geoip_cn.db
+			geoname=geoip.db
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m当前未使用singbox内核，无需使用此数据库！！\033[0m"	
+			sleep 1
+		fi
+		setgeo
+	;;
+	7)
+		if [ "$crashcore" = "singbox" ]; then
+			geotype=geosite_cn.db
+			geoname=geosite.db
+			getgeo
+		else
+			echo -----------------------------------------------
+			echo -e "\033[31m当前未使用singbox内核，无需使用此数据库！！\033[0m"	
+			sleep 1
+		fi
+		setgeo
+	;;
+	9)
+		setcustgeo
+	;;	
 	*)
 		errornum
 	;;
@@ -1313,8 +1500,7 @@ update(){
 	echo -----------------------------------------------
 	echo -ne "\033[32m正在检查更新！\033[0m\r"
 	checkupdate
-	core_v=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
-	[ -z "$core_v" ] && core_v=$clashv
+	[ -z "$core_v" ] && core_v=unknow
 	core_v_new=$(eval echo \$${crashcore}_v)
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
@@ -1431,7 +1617,7 @@ userguide(){
 			}
 			#设置开机启动
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
-			ckcmd systemctl && systemctl enable clash.service > /dev/null 2>&1
+			ckcmd systemctl && systemctl enable shellcrash.service > /dev/null 2>&1
 			rm -rf $CRASHDIR/.dis_startup
 			autostart=enable
 			#检测IP转发
@@ -1598,7 +1784,7 @@ testcommand(){
 	elif [ "$num" = 4 ]; then
 
 		if [ -n "$(echo $redir_mod | grep 'Nft')" -o "$local_type" = "nftables增强模式" ];then
-			nft list table inet shellclash
+			nft list table inet shellcrash
 		else
 			echo -------------------Redir---------------------
 			iptables -t nat -L PREROUTING --line-numbers

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.3d
+version=1.8.3e
 
 setdir(){
 	dir_avail(){
@@ -157,17 +157,17 @@ mkdir -p $CRASHDIR/configs
 #本地安装跳过新手引导
 #[ -z "$url" ] && setconfig userguide 1
 #判断系统类型写入不同的启动文件
-if [ -f /etc/rc.common ];then
+if [ -f /etc/rc.common ] && [ -n "$(pidof procd)" ];then
 		#设为init.d方式启动
-		cp -f $CRASHDIR/clashservice /etc/init.d/clash
-		chmod 755 /etc/init.d/clash
+		cp -f $CRASHDIR/crash.rc /etc/init.d/shellcrash
+		chmod 755 /etc/init.d/shellcrash
 else
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
 	if [ -n "$sysdir" -a -z "$WSL_DISTRO_NAME" ];then #wsl环境不使用systemd
 		#设为systemd方式启动
-		mv -f $CRASHDIR/clash.service $sysdir/clash.service 2>/dev/null
-		sed -i "s%/etc/clash%$CRASHDIR%g" $sysdir/clash.service
+		mv -f $CRASHDIR/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
+		sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
 		systemctl daemon-reload
 	else
 		#设为保守模式启动
@@ -188,13 +188,13 @@ setconfig versionsh_l $version
 [ -w /etc/profile ] && profile=/etc/profile
 if [ -n "$profile" ];then
 	sed -i '/alias crash=*/'d $profile
-	echo "alias crash=\"$shtype $CRASHDIR/clash.sh\"" >> $profile #设置快捷命令环境变量
+	echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> $profile #设置快捷命令环境变量
 	sed -i '/export CRASHDIR=*/'d $profile
-	echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile #设置clash路径环境变量
+	echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile #设置路径环境变量
 	source $profile &>/dev/null || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
 	[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
-		echo "alias crash=\"$shtype $CRASHDIR/clash.sh\"" >> ~/.zshrc
+		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc &>/dev/null
 	}
@@ -231,7 +231,7 @@ fi
 	nvram commit
 }
 #删除临时文件
-rm -rf /tmp/*lash*gz
+rm -rf /tmp/*rash*gz
 rm -rf /tmp/SC_tmp
 #转换&清理旧版本文件
 mkdir -p $CRASHDIR/yamls
@@ -256,10 +256,14 @@ for file in cron task.sh task.list;do
 	mv -f $CRASHDIR/$file $CRASHDIR/task/$file 2>/dev/null
 done
 chmod 755 $CRASHDIR/task/task.sh
-for file in log clash.service mark? mark.bak;do
+#旧版文件清理
+rm -rf $sysdir/shellcrash.service
+for file in log shellcrash.service mark? mark.bak;do
 	rm -rf $CRASHDIR/$file
 done
-
+#旧版变量改名
+sed -i "s/clashcore/crashcore/g" $configpath
+sed -i "s/ShellClash/ShellCrash/g" $configpath
 #旧版任务清理
 $CRASHDIR/start.sh cronset "clash服务" 2>/dev/null
 $CRASHDIR/start.sh cronset "订阅链接" 2>/dev/null

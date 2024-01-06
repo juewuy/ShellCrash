@@ -52,13 +52,13 @@ init(){
 	#初始化环境变量
 	sed -i "/alias crash/d" $profile
 	sed -i "/export CRASHDIR/d" $profile
-	echo "alias crash=\"$CRASHDIR/clash.sh\"" >>$profile
+	echo "alias crash=\"$CRASHDIR/menu.sh\"" >>$profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
 	#软固化功能
 	autoSSH
 	#设置init.d服务
-	cp -f $CRASHDIR/clashservice /etc/init.d/clash
-	chmod 755 /etc/init.d/clash
+	cp -f $CRASHDIR/shellcrash.rc /etc/init.d/shellcrash
+	chmod 755 /etc/init.d/shellcrash
 	#启动服务
 	if [ ! -f $CRASHDIR/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
@@ -66,8 +66,8 @@ init(){
 		#小米7000/小米万兆修复tproxy
 		[ -f /etc/init.d/qca-nss-ecm ] && [ -n "$(grep 'redir_mod=Tproxy' $CRASHDIR/configs/ShellCrash.cfg )" ] && tproxyfix
 		#启动服务
-		/etc/init.d/clash start
-		/etc/init.d/clash enable
+		/etc/init.d/shellcrash start
+		/etc/init.d/shellcrash enable
 	fi
 }
 
@@ -76,7 +76,7 @@ case "$1" in
 	tproxyfix) tproxyfix ;;
 	init) init ;;
 	*)
-		if [ -z $(pidof clash) ];then
+		if [ -z $(pidof CrashCore) ];then
 			init &
 		fi
 	;;

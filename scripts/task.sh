@@ -18,44 +18,49 @@ setconfig(){
 
 #任务命令
 check_update(){ #检查更新工具
-	$CRASHDIR/start.sh webget $TMPDIR/clashversion "$update_url/bin/version" echooff
-	[ "$?" = "0" ] && source $TMPDIR/clashversion 2>/dev/null	
-	rm -rf $TMPDIR/clashversion
+	$CRASHDIR/start.sh webget $TMPDIR/crashversion "$update_url/bin/version" echooff
+	[ "$?" = "0" ] && source $TMPDIR/crashversion 2>/dev/null	
+	rm -rf $TMPDIR/crashversion
 }
 update_core(){ #自动更新内核
 	#检查版本
 	check_update
-	clash_v_new=$(eval echo \$${crashcore}_v)
-	clash_v_now=$($bindir/clash -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
-	if [ -z "$clash_v_new" -o "$clash_v_new" = "clash_v_now" ];then
+	crash_v_new=$(eval echo \$${crashcore}_v)
+	if [ -z "$crash_v_new" -o "$crash_v_new" = "core_v" ];then
 		logger "任务【自动更新内核】中止-未检测到版本更新"
 		exit 1
 	else
 		#更新内核
-		$CRASHDIR/start.sh webget $TMPDIR/clash.new "$update_url/bin/$crashcore/clash-linux-$cpucore"
+		[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
+		$CRASHDIR/start.sh webget $TMPDIR/core.new "${update_url}/bin/${crashcore}/${core_new}-linux-${cpucore}"
 		if [ "$?" != "0" ];then
 			logger "任务【自动更新内核】出错-下载失败！"
-			rm -rf $TMPDIR/clash.new
+			rm -rf $TMPDIR/core.new
 			return 1
 		else
-			chmod +x $TMPDIR/clash.new
+			chmod +x $TMPDIR/core.new
 			$CRASHDIR/start.sh stop
-			clashv=$($TMPDIR/clash.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
-			if [ -z "$clashv" ];then
-				logger "任务【自动更新内核】出错-下载失败！"
-				rm -rf $TMPDIR/clash.new
-				[ $crashcore = meta ] && $CRASHDIR/start.sh start
+			if [ "$crashcore" = singbox ];then
+				core_v=$($TMPDIR/core.new version 2>/dev/null | grep version | awk '{print $3}')
+			else
+				core_v=$($TMPDIR/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+			fi
+			if [ -z "$core_v" ];then
+				logger "任务【自动更新内核】出错-内核校验失败！"
+				rm -rf $TMPDIR/core.new
+				$CRASHDIR/start.sh start
 				return 1
 			else
-				mv -f $TMPDIR/clash.new $bindir/clash
+				mv -f $TMPDIR/core.new $bindir/CrashCore
 				logger "任务【自动更新内核】下载完成，正在重启服务！"
+				setconfig core_v $core_v
 				$CRASHDIR/start.sh start
 				return 0
 			fi
 		fi
 	fi
 }
-update_shellclash(){ #自动更新脚本
+update_shellcrash(){ #自动更新脚本
 	#检查版本
 	check_update
 	if [ -z "$versionsh" -o "$versionsh" = "versionsh_l" ];then
@@ -110,6 +115,8 @@ update_mmdb(){ #自动更新数据库
 	[ -n "${china_ip_list_v}" ] && getgeo cn_ip.txt china_ip_list.txt
 	[ -n "${china_ipv6_list_v}" ] && getgeo cn_ipv6.txt china_ipv6_list.txt
 	[ -n "${geosite_v}" ] && getgeo GeoSite.dat geosite.dat
+	[ -n "${geoip_cn_v}" ] && getgeo geoip.db geoip_cn.db
+	[ -n "${geosite_cn_v}" ] && getgeo geosite.db geosite_cn.db
 }
 reset_firewall(){ #重设透明路由防火墙
 	$CRASHDIR/start.sh stop_firewall
@@ -170,7 +177,7 @@ set_service(){
 	if [ "$1" = "running" ];then
 		task_txt="$4 $CRASHDIR/task/task.sh $2 $3"
 		echo "$task_txt" >> $task_file
-		[ -n "$(pidof clash)" ] && cronset "$3" "$task_txt"
+		[ -n "$(pidof CrashCore)" ] && cronset "$3" "$task_txt"
 	else
 		echo "$CRASHDIR/task/task.sh $2 $3" >> $task_file
 	fi
@@ -294,7 +301,7 @@ task_type(){ #任务条件选择菜单
 		echo -e " 输入 6-18 代表\033[36m早6点至晚18点间每小时\033[0m运行"		
 		read -p "想在每日的具体哪个小时执行？（0-23） > " hour		
 		echo -----------------------------------------------
-		read -p "想在具体哪分钟执行？（1-59的整数） > " min
+		read -p "想在具体哪分钟执行？（0-59的整数） > " min
 		cron_time="在每日的$hour点$min分"
 		set_cron
 	;;	
@@ -434,7 +441,7 @@ task_recom(){ #任务推荐
 	echo -----------------------------------------------
 	read -p "是否启用？(1/0) > " res	
 	[ "$res" = 1 ] && {
-		set_service running "106" "运行时每10分钟自动保存面板配置" "*/10"
+		set_service running "106" "运行时每10分钟自动保存面板配置" "*/10 * * * *"
 		set_service afstart "107" "服务启动后自动同步ntp时间" 
 		cronset "在每周3的3点整更新订阅并重启服务" "0 3 * * 3 $CRASHDIR/task/task.sh 104 在每周3的3点整更新订阅并重启服务" && \
 		echo -e "任务【在每周3的3点整更新订阅并重启服务】\033[32m添加成功！\033[0m"

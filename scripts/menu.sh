@@ -55,7 +55,7 @@ ckstatus(){
 	if [ -f /etc/rc.common ];then
 		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable || autostart=disable
 	elif [ -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
-		[ -n "$(systemctl is-enabled clash.service 2>&1 | grep enable)" ] && autostart=enable || autostart=disable
+		[ -n "$(systemctl is-enabled shellcrash.service 2>&1 | grep enable)" ] && autostart=enable || autostart=disable
 	else
 		[ -f $CRASHDIR/.dis_startup ] && autostart=disable || autostart=enable
 	fi
@@ -68,7 +68,7 @@ ckstatus(){
 		auto1="\033[36m允许\033[0mShellCrash开机启动"
 	fi
 	#获取运行状态
-	PID=$(pidof clash | awk '{print $NF}')
+	PID=$(pidof CrashCore | awk '{print $NF}')
 	if [ -n "$PID" ];then
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
@@ -111,17 +111,12 @@ ckstatus(){
 			echo -e "发现可用的内核文件： \033[36m$file\033[0m "
 			read -p "是否加载？(1/0) > " res
 			[ "$res" = 1 ] && {
-				echo -e " 1 Clash内核"
-				echo -e " 2 Clashpre内核"
-				echo -e " 3 Clash.Meta内核"
-				read -p "请手动确定该内核类型 > " num
-				case "$num" in
-					2) crashcore=clashpre ;;
-					3) crashcore=meta ;;
-					*) crashcore=clash ;;
-				esac
-				mv -f $file $bindir/clash && echo -e "\033[32m内核加载完成！\033[0m " && sleep 1
-				setconfig crashcore $crashcore
+				source $CRASHDIR/getdate.sh && setcoretype && \
+				mv -f $file $CRASHDIR/CrashCore && \
+				echo -e "\033[32m内核加载完成！\033[0m " && \
+				setconfig crashcore $crashcore && \
+				switch_core
+				sleep 1
 			}
 		else
 			echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
@@ -180,7 +175,7 @@ clashstart(){
 	if [ -s $CRASHDIR/yamls/config.yaml -o -n "$Url" -o -n "$Https" ];then
 		$CRASHDIR/start.sh start
 		sleep 1
-		[ -n "$(pidof clash)" ] && startover
+		[ -n "$(pidof CrashCore)" ] && startover
 	else
 		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
 		source $CRASHDIR/getdate.sh && clashlink
@@ -903,7 +898,7 @@ macfilter(){
 	fi
 }
 localproxy(){
-	[ -w /etc/systemd/system/clash.service -o -w /usr/lib/systemd/system/clash.service -o -x /bin/su ] && local_enh=1
+	[ -w /etc/systemd/system/shellcrash.service -o -w /usr/lib/systemd/system/shellcrash.service -o -x /bin/su ] && local_enh=1
 	[ -f /etc/rc.common -a -w /etc/passwd ] && local_enh=1
 	echo -----------------------------------------------
 	[ -n "$local_enh" ] && {
@@ -964,13 +959,13 @@ setboot(){
 	1)	
 		if [ "$autostart" = "enable" ]; then
 			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
-			ckcmd systemctl && systemctl disable clash.service > /dev/null 2>&1
+			ckcmd systemctl && systemctl disable shellcrash.service > /dev/null 2>&1
 			touch $CRASHDIR/.dis_startup
 			autostart=disable
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
 		elif [ "$autostart" = "disable" ]; then
 			[ -f /etc/rc.common ] && /etc/init.d/clash enable
-			ckcmd systemctl && systemctl enable clash.service > /dev/null 2>&1
+			ckcmd systemctl && systemctl enable shellcrash.service > /dev/null 2>&1
 			rm -rf $CRASHDIR/.dis_startup
 			autostart=enable
 			echo -e "\033[32m已设置Clash开机启动！\033[0m"
@@ -984,7 +979,7 @@ setboot(){
 			setconfig start_old $start_old
 			$CRASHDIR/start.sh stop
 		else
-			if [ -f /etc/init.d/clash -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
+			if [ -n "$(pidof procd)" -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
 				echo -e "\033[32m改为使用系统守护进程启动服务！！\033[0m"
 				$CRASHDIR/start.sh cronset "ShellCrash初始化"
 				start_old=未开启
@@ -1338,7 +1333,7 @@ clashcfg(){
 			setconfig common_ports $common_ports
 		}
 		echo -----------------------------------------------
-		if [ -n "$(pidof clash)" ];then
+		if [ -n "$(pidof CrashCore)" ];then
 			read -p "切换时将停止服务，是否继续？(1/0) > " res
 			[ "$res" = 1 ] && $CRASHDIR/start.sh stop && set_common_ports
 		else
@@ -1362,7 +1357,7 @@ clashcfg(){
 			local_proxy=未开启
 			setconfig local_proxy $local_proxy
 			setconfig local_type
-			sed -i '/user shellclash/d' /etc/init.d/clash 2>/dev/null
+			sed -i '/user shellcrash/d' /etc/init.d/clash 2>/dev/null
 			echo -e "\033[33m已经停用本机代理规则,请尽快重启服务！！\033[0m"
 		fi
 		sleep 1
@@ -1834,7 +1829,7 @@ case "$1" in
 	;;
 	-t)
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
-		$shtype -x $CRASHDIR/clash.sh
+		$shtype -x $CRASHDIR/menu.sh
 	;;
 	-s)
 		$CRASHDIR/start.sh $2 $3 $4 $5 $6
@@ -1876,12 +1871,12 @@ case "$1" in
 			sed -i '/ShellCrash初始化/'d /jffs/.asusrouter 2>/dev/null
 			rm -rf $bindir 
 			rm -rf /etc/init.d/clash
-			rm -rf /etc/systemd/system/clash.service
-			rm -rf /usr/lib/systemd/system/clash.service
+			rm -rf /etc/systemd/system/shellcrash.service
+			rm -rf /usr/lib/systemd/system/shellcrash.service
 			rm -rf /www/clash
 			rm -rf /tmp/clash_$USER
 			sed -Ei s/0:7890/7890:7890/g /etc/passwd
-			userdel -r shellclash 2>/dev/null
+			userdel -r shellcrash 2>/dev/null
 			nvram set script_usbmount="" 2>/dev/null
 			nvram commit 2>/dev/null
 			uci delete firewall.ShellClash 2>/dev/null
