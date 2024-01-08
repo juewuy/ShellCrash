@@ -1,6 +1,6 @@
 name: Update Sing-Box Core 
 on: 
-    workflow_dispatch:
+  workflow_dispatch:
     inputs:
       version:
         description: 'version of singbox, such as 1.7.8'
