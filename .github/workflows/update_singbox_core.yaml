@@ -1,8 +1,13 @@
 name: Update Sing-Box Core 
 on: 
   workflow_dispatch:
-
+    inputs:
+      version:
+        description: 'version of singbox, such as 1.7.8'
+        required: true
+        type: string
 env:
+  download_version: ${{ github.event.inputs.version }}
   download_project: SagerNet/sing-box
 jobs:
   Update:
@@ -18,7 +23,7 @@ jobs:
         tar xf upx-3.93-amd64_linux.tar.xz
     - name: Download Core
       run: |
-        download_version=$(curl -s -L -o /dev/null -w '%{url_effective}' https://github.com/${download_project}/releases/latest | grep -oE "[^/]+$" | awk -F 'v' '{print $2}')
+        #download_version=$(curl -s -L -o /dev/null -w '%{url_effective}' https://github.com/${download_project}/releases/latest | grep -oE "[^/]+$" | awk -F 'v' '{print $2}')
         echo "download_version=${download_version}" >> ${GITHUB_ENV}
         archs=(386 amd64 armv7 arm64)
         new_name=(386 amd64 armv7 armv8)
@@ -44,7 +49,6 @@ jobs:
       with:
         tag_name: singbox_core
         name: singbox_core
-        body: "The alpha version of singbox core \n这是singbox的官方版本内核文件\nhttps://github.com/SagerNet/sing-box/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
         draft: false
         prerelease: true
         files: |
