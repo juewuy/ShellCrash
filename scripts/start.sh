@@ -2,18 +2,17 @@
 # Copyright (C) Juewuy
 
 #初始化目录
-[ -d "/etc/storage/clash" ] && CRASHDIR=/etc/storage/clash
-[ -d "/jffs/clash" ] && CRASHDIR=/jffs/clash
-[ -z "$CRASHDIR" ] && CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
-[ -z "$CRASHDIR" ] && CRASHDIR=$(cat ~/.bashrc | grep CRASHDIR | awk -F "\"" '{print $2}')
-CFG_PATH=$CRASHDIR/configs/ShellCrash.cfg
-TMPDIR=/tmp/ShellCrash && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
+CRASHDIR=$(cd $(dirname $0);pwd)
+#加载执行目录，失败则初始化
+source ${CRASHDIR}/configs/command.env &>/dev/null
+[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh &>/dev/null
+[ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
+
 #脚本内部工具
-getconfig(){
+getconfig(){ #获取脚本配置
 	#加载配置文件
-	source $CFG_PATH &> /dev/null
+	source ${CRASHDIR}/configs/ShellCrash.cfg >/dev/null
 	#默认设置
-	[ -z "$bindir" ] && bindir=$CRASHDIR
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
@@ -34,21 +33,21 @@ getconfig(){
 	[ -z "$multiport" ] && multiport='22,53,80,123,143,194,443,465,587,853,993,995,5222,8080,8443'
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	#内核配置文件
-	[ -z "$core_config" ] && if [ "$crashcore" = singbox ];then
-		core_config=$CRASHDIR/jsons/config.json
+	if [ "$crashcore" = singbox ];then
+		core_config=${CRASHDIR}/jsons/config.json
 	else
-		core_config=$CRASHDIR/yamls/config.yaml
+		core_config=${CRASHDIR}/yamls/config.yaml
 	fi
 }
-setconfig(){
+setconfig(){ #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=$CFG_PATH || configpath=$3
-	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
+	[ -z "$3" ] && configpath=${CRASHDIR}/configs/ShellCrash.cfg || configpath="${3}"
+	[ -n "$(grep "${1}=" "$configpath")" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
-ckcmd(){
+ckcmd(){ #检查命令是否存在
 	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
 }
-compare(){
+compare(){ #对比文件
 	if [ ! -f $1 -o ! -f $2 ];then
 		return 1
 	elif ckcmd cmp;then
@@ -57,12 +56,12 @@ compare(){
 		[ "$(cat $1)" = "$(cat $2)" ] && return 0 || return 1
 	fi
 }
-logger(){
+logger(){ #日志工具
 	#$1日志内容$2显示颜色$3是否推送
 	[ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
 	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
-	echo $log_text >> $TMPDIR/ShellCrash.log
-	[ "$(wc -l  $TMPDIR/ShellCrash.log | awk '{print $1}')" -gt 99 ] && sed -i '1,50d'  $TMPDIR/ShellCrash.log
+	echo $log_text >> ${TMPDIR}/ShellCrash.log
+	[ "$(wc -l  ${TMPDIR}/ShellCrash.log | awk '{print $1}')" -gt 99 ] && sed -i '1,50d'  ${TMPDIR}/ShellCrash.log
 	[ -z "$3" ] && {
 		getconfig
 		[ -n "$device_name" ] && log_text="$log_text($device_name)"
@@ -102,7 +101,7 @@ logger(){
 		}	
 	} &
 }
-croncmd(){
+croncmd(){ #定时任务工具
 	if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
 		crontab $1
 	else
@@ -115,9 +114,9 @@ croncmd(){
 		[ -f "$1" ] && cat $1 > $crondir/$USER
 	fi
 }
-cronset(){
+cronset(){ #定时任务设置
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
-	tmpcron=$TMPDIR/cron_$USER
+	tmpcron=${TMPDIR}/cron_$USER
 	croncmd -l > $tmpcron 
 	sed -i "/$1/d" $tmpcron
 	sed -i '/^$/d' $tmpcron
@@ -125,29 +124,29 @@ cronset(){
 	croncmd $tmpcron
 	rm -f $tmpcron
 }
-get_save(){
+get_save(){ #获取面板信息
 	if curl --version > /dev/null 2>&1;then
 		curl -s -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1"
 	elif [ -n "$(wget --help 2>&1|grep '\-\-method')" ];then
 		wget -q --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" -O - "$1"
 	fi
 }
-put_save(){
+put_save(){ #推送面板选择
 	if curl --version > /dev/null 2>&1;then
 		curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
 	elif wget --version > /dev/null 2>&1;then
 		wget -q --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
 	fi
 }
-mark_time(){
-	echo `date +%s` > $TMPDIR/crash_start_time
+mark_time(){ #时间戳
+	echo `date +%s` > ${TMPDIR}/crash_start_time
 }
-getlanip(){
+getlanip(){ #获取局域网host地址
 	i=1
 	while [ "$i" -le "10" ];do
 		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' ) #ipv4局域网网段
 		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
-		[ -f  $TMPDIR/ShellCrash.log ] && break
+		[ -f  ${TMPDIR}/ShellCrash.log ] && break
 		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
 		sleep 2 && i=$((i+1))
 	done
@@ -164,7 +163,7 @@ getlanip(){
 	reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fc00::/7 fe80::/10 ff00::/8"
 }
 #配置文件相关
-check_clash_config(){
+check_clash_config(){ #检查clash配置文件
 	#检测节点或providers
 	if [ -z "$(cat $core_config_new | grep -E 'server|proxy-providers' | grep -v 'nameserver' | head -n 1)" ];then
 		echo -----------------------------------------------
@@ -193,45 +192,47 @@ check_clash_config(){
 	fi
 	#检测并去除无效节点组
 	[ -n "$url_type" ] && ckcmd xargs && {
-		cat $core_config_new | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > $TMPDIR/clash_proxies_$USER
+		cat $core_config_new | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > ${TMPDIR}/clash_proxies_$USER
 		while read line ;do
 			sed -i "/- $line/d" $core_config_new
 			sed -i "/- name: $line/,/- DIRECT/d" $core_config_new
-		done < $TMPDIR/clash_proxies_$USER
-		rm -rf $TMPDIR/clash_proxies_$USER
+		done < ${TMPDIR}/clash_proxies_$USER
+		rm -rf ${TMPDIR}/clash_proxies_$USER
 	}
 	#使用核心内置test功能检测
-	if [ -x $bindir/clash ];then
-		$bindir/clash -t -d $bindir -f $core_config_new >/dev/null
+	if [ -x ${BINDIR}/CrashCore ];then
+		${BINDIR}/CrashCore -t -d ${BINDIR} -f $core_config_new >/dev/null
 		if [ "$?" != "0" ];then
 			logger "配置文件加载失败！请查看报错信息！" 31
-			$bindir/clash -t -d $bindir -f $core_config_new
-			echo "$($bindir/clash -t -d $bindir -f $core_config_new)" >> $TMPDIR/ShellCrash.log
+			${BINDIR}/CrashCore -t -d ${BINDIR} -f $core_config_new
+			echo "$($BINDIR/CrashCore -t -d $BINDIR -f $core_config_new)" >> ${TMPDIR}/ShellCrash.log
 			exit 1
 		fi
 	fi
 }
-check_singbox_config(){
+check_singbox_config(){ #检查singbox配置文件
 	#使用核心内置format功能检测并格式化
-	if [ -x $bindir/singbox ];then
-		$bindir/singbox format -c $core_config_new > $TMPDIR/format.json
+	if [ -x ${BINDIR}/CrashCore ];then
+		echo -e "\033[36m已获取配置文件，正在调用内核检查文件可用性！\033[0m"
+		${BINDIR}/CrashCore format -c $core_config_new > ${TMPDIR}/format.json
 		if [ "$?" != "0" ];then
 			logger "配置文件加载失败！请查看报错信息！" 31
-			$bindir/singbox check -c $core_config_new
-			echo "$($bindir/singbox check -c $core_config_new)" >> $TMPDIR/ShellCrash.log
+			${BINDIR}/CrashCore check -c $core_config_new
+			echo "$($BINDIR/CrashCore check -c $core_config_new)" >> ${TMPDIR}/ShellCrash.log
 			exit 1
 		else
-			mv -f $TMPDIR/format.json $core_config_new
+			mv -f ${TMPDIR}/format.json $core_config_new
 		fi
 	fi
 }
-get_core_config(){
+get_core_config(){ #下载内核配置文件
+	getconfig
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
-	Server=$(grep -aE '^3|^4' $CRASHDIR/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' $CRASHDIR/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ "$retry" = 4 ] && Server=$(grep -aE '^497' $CRASHDIR/configs/servers.list | awk '{print $3}')
-	Config=$(grep -aE '^5' $CRASHDIR/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
+	Server=$(grep -aE '^3|^4' ${CRASHDIR}/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' ${CRASHDIR}/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
+	[ "$retry" = 4 ] && Server=$(grep -aE '^497' ${CRASHDIR}/configs/servers.list | awk '{print $3}')
+	Config=$(grep -aE '^5' ${CRASHDIR}/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
 		if [ "$crashcore" = singbox ];then
@@ -241,18 +242,20 @@ get_core_config(){
 			target=clash
 			format=yaml
 		fi
-		Https="$Server/sub?target=$target&insert=true&new_name=true&scv=true&udp=true&exclude=$exclude&include=$include&url=$Url&config=$Config"
+		#Urlencord转码处理保留字符
+		Url=$(echo $Url | sed 's/;/\%3B/g; s|/|\%2F|g; s/?/\%3F/g; s/:/\%3A/g; s/@/\%4O/g; s/=/\%3D/g; s/&/\%26/g')
+		Https="${Server}/sub?target=${target}&insert=true&new_name=true&scv=true&udp=true&exclude=${exclude}&include=${include}&url=${Url}&config=${Config}"
 		url_type=true
 	fi
 	#输出
 	echo -----------------------------------------------
-	logger 正在连接服务器获取$target配置文件…………
+	logger 正在连接服务器获取【${target}】配置文件…………
 	echo -e "链接地址为：\033[4;32m$Https\033[0m"
 	echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
 	#获取在线config文件
-	core_config_new=$TMPDIR/$target_config.$format
-	rm -rf $core_config_new
-	$0 webget $core_config_new $Https
+	core_config_new=${TMPDIR}/${target}_config.${format}
+	rm -rf ${core_config_new}
+	$0 webget "$core_config_new" "$Https"
 	if [ "$?" = "1" ];then
 		if [ -z "$url_type" ];then
 			echo -----------------------------------------------
@@ -263,7 +266,7 @@ get_core_config(){
 		else
 			if [ "$retry" = 4 ];then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
-				echo -e "\033[32m也可用浏览器下载以上链接后，使用WinSCP手动上传到/tmp目录后执行clash命令！\033[0m"
+				echo -e "\033[32m也可用浏览器下载以上链接后，使用WinSCP手动上传到/tmp目录后执行crash命令！\033[0m"
 				exit 1
 			elif [ "$retry" = 3 ];then
 				retry=4
@@ -299,7 +302,7 @@ get_core_config(){
 		echo -e "\033[32m已成功获取配置文件！\033[0m"
 	fi
 }
-modify_yaml(){
+modify_yaml(){ #修饰clash配置文件
 ##########需要变更的配置###########
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
@@ -319,9 +322,9 @@ modify_yaml(){
 		[ "$redir_mod" != "纯净模式" ] && find_process='find-process-mode: "off"'
 	}
 	#dns配置
-	[ -z "$(cat $CRASHDIR/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
+	[ -z "$(cat ${CRASHDIR}/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
 		[ "$crashcore" = 'meta' ] && dns_default_meta='- https://223.5.5.5/dns-query'
-		cat > $TMPDIR/dns.yaml <<EOF
+		cat > ${TMPDIR}/dns.yaml <<EOF
 dns:
   enable: true
   listen: 0.0.0.0:$dns_port
@@ -336,26 +339,26 @@ dns:
   fake-ip-filter:
 EOF
 		if [ "$dns_mod" = "fake-ip" ];then
-			cat $CRASHDIR/configs/fake_ip_filter $CRASHDIR/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >> $TMPDIR/dns.yaml
+			cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >> ${TMPDIR}/dns.yaml
 		else
-			echo "    - '+.*'" >> $TMPDIR/dns.yaml
+			echo "    - '+.*'" >> ${TMPDIR}/dns.yaml #使用fake-ip模拟redir_host
 		fi
-		cat >> $TMPDIR/dns.yaml <<EOF
+		cat >> ${TMPDIR}/dns.yaml <<EOF
   nameserver: [$dns_nameserver]
   fallback: [$dns_fallback]
   fallback-filter:
     geoip: true
 EOF
-		[ -s $CRASHDIR/configs/fallback_filter.list ] && {
-			echo "    domain:" >> $TMPDIR/dns.yaml
-			cat $CRASHDIR/configs/fallback_filter.list | grep '\.' | sed "s/^/      - '/" | sed "s/$/'/" >> $TMPDIR/dns.yaml
+		[ -s ${CRASHDIR}/configs/fallback_filter.list ] && {
+			echo "    domain:" >> ${TMPDIR}/dns.yaml
+			cat ${CRASHDIR}/configs/fallback_filter.list | grep '\.' | sed "s/^/      - '/" | sed "s/$/'/" >> ${TMPDIR}/dns.yaml
 		}		
 }
 	#域名嗅探配置
 	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}}}"
 	[ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
 	#生成set.yaml
-	cat > $TMPDIR/set.yaml <<EOF
+	cat > ${TMPDIR}/set.yaml <<EOF
 mixed-port: $mix_port
 redir-port: $redir_port
 tproxy-port: $tproxy_port
@@ -373,9 +376,9 @@ $sniffer_set
 $find_process
 EOF
 	#读取本机hosts并生成配置文件
-	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -aE '^hosts:' $CRASHDIR/yamls/user.yaml 2>/dev/null)" ];then
+	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -aE '^hosts:' ${CRASHDIR}/yamls/user.yaml 2>/dev/null)" ];then
 		#NTP劫持
-		cat >> $TMPDIR/hosts.yaml <<EOF
+		cat >> ${TMPDIR}/hosts.yaml <<EOF
 hosts:
    'time.android.com': 203.107.6.88
    'time.facebook.com': 203.107.6.88  
@@ -388,143 +391,137 @@ EOF
 			[ -z "$(echo "$line" | grep -oE '^#')" ] && \
 			hosts_ip=$(echo $line | awk '{print $1}')  && \
 			hosts_domain=$(echo $line | awk '{print $2}') && \
-			[ -z "$(cat $TMPDIR/hosts.yaml | grep -oE "$hosts_domain")" ] && \
-			echo "   '$hosts_domain': $hosts_ip" >> $TMPDIR/hosts.yaml
+			[ -z "$(cat ${TMPDIR}/hosts.yaml | grep -oE "$hosts_domain")" ] && \
+			echo "   '$hosts_domain': $hosts_ip" >> ${TMPDIR}/hosts.yaml
 		done < $sys_hosts
 	fi	
 	#分割配置文件
 	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
-	for char in $core_config_char;do
-		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $core_config > $TMPDIR/${char}.yaml
+	for char in $yaml_char;do
+		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $core_config > ${TMPDIR}/${char}.yaml
 	done
 	#跳过本地tls证书验证
-	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' $TMPDIR/proxies.yaml || \
-		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' $TMPDIR/proxies.yaml
+	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' ${TMPDIR}/proxies.yaml || \
+		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' ${TMPDIR}/proxies.yaml
 	#插入自定义策略组
-	sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" $TMPDIR/proxy-groups.yaml
-	sed -i "/#自定义策略组/d" $TMPDIR/proxy-groups.yaml
-	[ -n "$(grep -Ev '^#' $CRASHDIR/yamls/proxy-groups.yaml 2>/dev/null)" ] && {
+	sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" ${TMPDIR}/proxy-groups.yaml
+	sed -i "/#自定义策略组/d" ${TMPDIR}/proxy-groups.yaml
+	[ -n "$(grep -Ev '^#' ${CRASHDIR}/yamls/proxy-groups.yaml 2>/dev/null)" ] && {
 		#获取空格数
-		space_name=$(grep -aE '^ *- name: ' $TMPDIR/proxy-groups.yaml | head -n 1 | grep -oE '^ *') 
-		space_proxy=$(grep -A 1 'proxies:$' $TMPDIR/proxy-groups.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') 
+		space_name=$(grep -aE '^ *- name: ' ${TMPDIR}/proxy-groups.yaml | head -n 1 | grep -oE '^ *') 
+		space_proxy=$(grep -A 1 'proxies:$' ${TMPDIR}/proxy-groups.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') 
 		#合并自定义策略组到proxy-groups.yaml
-		cat $CRASHDIR/yamls/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > $TMPDIR/proxy-groups_add.yaml 
-		cat $TMPDIR/proxy-groups.yaml  >> $TMPDIR/proxy-groups_add.yaml
-		mv -f $TMPDIR/proxy-groups_add.yaml $TMPDIR/proxy-groups.yaml
+		cat ${CRASHDIR}/yamls/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" > ${TMPDIR}/proxy-groups_add.yaml 
+		cat ${TMPDIR}/proxy-groups.yaml  >> ${TMPDIR}/proxy-groups_add.yaml
+		mv -f ${TMPDIR}/proxy-groups_add.yaml ${TMPDIR}/proxy-groups.yaml
 		oldIFS="$IFS"
-		grep "\- name: " $CRASHDIR/yamls/proxy-groups.yaml | sed "/^#/d" | while read line;do #将自定义策略组插入现有的proxy-group
+		grep "\- name: " ${CRASHDIR}/yamls/proxy-groups.yaml | sed "/^#/d" | while read line;do #将自定义策略组插入现有的proxy-group
 				new_group=$(echo $line | grep -Eo '^ *- name:.*#' | cut -d'#' -f1 | sed 's/.*name: //g')
 				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
 				IFS="#"
 				for name in $proxy_groups; do
-					line_a=$(grep -n "\- name: $name" $TMPDIR/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+					line_a=$(grep -n "\- name: $name" ${TMPDIR}/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
 					[ -n "$line_a" ] && {
-						line_b=$(grep -A 8 "\- name: $name" $TMPDIR/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+						line_b=$(grep -A 8 "\- name: $name" ${TMPDIR}/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
 						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
-						space=$(sed -n "$((line_c + 1))p" $TMPDIR/proxy-groups.yaml | grep -oE '^ *') #获取空格数
-						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${new_group} #自定义策略组" $TMPDIR/proxy-groups.yaml
+						space=$(sed -n "$((line_c + 1))p" ${TMPDIR}/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${new_group} #自定义策略组" ${TMPDIR}/proxy-groups.yaml
 					}
 				done
 				IFS="$oldIFS"
 		done
 	}	
 	#插入自定义代理
-	sed -i "/#自定义代理/d" $TMPDIR/proxies.yaml
-	sed -i "/#自定义代理/d" $TMPDIR/proxy-groups.yaml
-	[ -n "$(grep -Ev '^#' $CRASHDIR/yamls/proxies.yaml 2>/dev/null)" ] && {
-		space_proxy=$(cat $TMPDIR/proxies.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
-		cat $CRASHDIR/yamls/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> $TMPDIR/proxies.yaml #插入节点
+	sed -i "/#自定义代理/d" ${TMPDIR}/proxies.yaml
+	sed -i "/#自定义代理/d" ${TMPDIR}/proxy-groups.yaml
+	[ -n "$(grep -Ev '^#' ${CRASHDIR}/yamls/proxies.yaml 2>/dev/null)" ] && {
+		space_proxy=$(cat ${TMPDIR}/proxies.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *') #获取空格数
+		cat ${CRASHDIR}/yamls/proxies.yaml | sed "s/^ *- /${space_proxy}- /g" | sed "/^#/d" | sed "/^ *$/d" | sed 's/#.*/ #自定义代理/g' >> ${TMPDIR}/proxies.yaml #插入节点
 		oldIFS="$IFS"
-		cat $CRASHDIR/yamls/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
+		cat ${CRASHDIR}/yamls/proxies.yaml | sed "/^#/d" | while read line;do #将节点插入proxy-group
 				proxy_name=$(echo $line | grep -Eo 'name: .+, ' | cut -d',' -f1 | sed 's/name: //g')
 				proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//" )
 				IFS="#"
 				for name in $proxy_groups; do
-					line_a=$(grep -n "\- name: $name" $TMPDIR/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+					line_a=$(grep -n "\- name: $name" ${TMPDIR}/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
 					[ -n "$line_a" ] && {
-						line_b=$(grep -A 8 "\- name: $name" $TMPDIR/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+						line_b=$(grep -A 8 "\- name: $name" ${TMPDIR}/proxy-groups.yaml | grep -n "proxies:$" | head -n 1 | awk -F: '{print $1}') #获取proxies行号
 						line_c=$((line_a + line_b - 1)) #计算需要插入的行号
-						space=$(sed -n "$((line_c + 1))p" $TMPDIR/proxy-groups.yaml | grep -oE '^ *') #获取空格数
-						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${proxy_name} #自定义代理" $TMPDIR/proxy-groups.yaml
+						space=$(sed -n "$((line_c + 1))p" ${TMPDIR}/proxy-groups.yaml | grep -oE '^ *') #获取空格数
+						[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${proxy_name} #自定义代理" ${TMPDIR}/proxy-groups.yaml
 					}
 				done
 				IFS="$oldIFS"
 		done
 	}
 	#节点绕过功能支持
-	sed -i "/#节点绕过/d" $TMPDIR/rules.yaml
+	sed -i "/#节点绕过/d" ${TMPDIR}/rules.yaml
 	[ "$proxies_bypass" = "已启用" ] && {
-		cat $TMPDIR/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT,no-resolve #节点绕过|g' >> $TMPDIR/proxies_bypass
-		cat $TMPDIR/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> $TMPDIR/proxies_bypass
-		cat $TMPDIR/rules.yaml >> $TMPDIR/proxies_bypass 
-		mv -f $TMPDIR/proxies_bypass $TMPDIR/rules.yaml
+		cat ${TMPDIR}/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '!a[$0]++' | sed 's/^/\ -\ IP-CIDR,/g' | sed 's|$|/32,DIRECT,no-resolve #节点绕过|g' >> ${TMPDIR}/proxies_bypass
+		cat ${TMPDIR}/proxies.yaml | sed '/^proxy-/,$d' | sed '/^rule-/,$d' | grep -v '^\s*#' | grep -vE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -oE '[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?'| awk '!a[$0]++' | sed 's/^/\ -\ DOMAIN,/g' | sed 's/$/,DIRECT #节点绕过/g' >> ${TMPDIR}/proxies_bypass
+		cat ${TMPDIR}/rules.yaml >> ${TMPDIR}/proxies_bypass 
+		mv -f ${TMPDIR}/proxies_bypass ${TMPDIR}/rules.yaml
 	}
 	#插入自定义规则
-	sed -i "/#自定义规则/d" $TMPDIR/rules.yaml
-	[ -f $CRASHDIR/yamls/rules.yaml ] && {
-		cat $CRASHDIR/yamls/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > $TMPDIR/rules.add
-		cat $TMPDIR/rules.yaml >> $TMPDIR/rules.add
-		mv -f $TMPDIR/rules.add $TMPDIR/rules.yaml
+	sed -i "/#自定义规则/d" ${TMPDIR}/rules.yaml
+	[ -f ${CRASHDIR}/yamls/rules.yaml ] && {
+		cat ${CRASHDIR}/yamls/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > ${TMPDIR}/rules.add
+		cat ${TMPDIR}/rules.yaml >> ${TMPDIR}/rules.add
+		mv -f ${TMPDIR}/rules.add ${TMPDIR}/rules.yaml
 	}
 	#对齐rules中的空格
-	sed -i 's/^ *-/ -/g' $TMPDIR/rules.yaml
+	sed -i 's/^ *-/ -/g' ${TMPDIR}/rules.yaml
 	#合并文件
-	[ -s $CRASHDIR/yamls/user.yaml ] && {
-		yaml_user=$CRASHDIR/yamls/user.yaml
+	[ -s ${CRASHDIR}/yamls/user.yaml ] && {
+		yaml_user=${CRASHDIR}/yamls/user.yaml
 		#set和user去重,且优先使用user.yaml
-		cp -f $TMPDIR/set.yaml $TMPDIR/set_bak.yaml
+		cp -f ${TMPDIR}/set.yaml ${TMPDIR}/set_bak.yaml
 		for char in mode allow-lan log-level tun experimental interface-name dns store-selected;do
-			[ -n "$(grep -E "^$char" $core_config_user)" ] && sed -i "/^$char/d" $TMPDIR/set.yaml
+			[ -n "$(grep -E "^$char" $yaml_user)" ] && sed -i "/^$char/d" ${TMPDIR}/set.yaml
 		done
 	}
-	[ -s $TMPDIR/dns.yaml ] && yaml_dns=$TMPDIR/dns.yaml
-	[ -s $TMPDIR/hosts.yaml ] && yaml_hosts=$TMPDIR/hosts.yaml
-	[ -s $CRASHDIR/yamls/others.yaml ] && yaml_others=$CRASHDIR/yamls/others.yaml
+	[ -s ${TMPDIR}/dns.yaml ] && yaml_dns=${TMPDIR}/dns.yaml
+	[ -s ${TMPDIR}/hosts.yaml ] && yaml_hosts=${TMPDIR}/hosts.yaml
+	[ -s ${CRASHDIR}/yamls/others.yaml ] && yaml_others=${CRASHDIR}/yamls/others.yaml
 	yaml_add=
-	for char in $core_config_char;do #将额外配置文件合并
-		[ -s $TMPDIR/${char}.yaml ] && {
-			sed -i "1i\\${char}:" $TMPDIR/${char}.yaml
-			yaml_add="$core_config_add $TMPDIR/${char}.yaml"
+	for char in $yaml_char;do #将额外配置文件合并
+		[ -s ${TMPDIR}/${char}.yaml ] && {
+			sed -i "1i\\${char}:" ${TMPDIR}/${char}.yaml
+			yaml_add="$yaml_add ${TMPDIR}/${char}.yaml"
 		}
 	done	
 	#合并完整配置文件
-	cut -c 1- $TMPDIR/set.yaml $core_config_dns $core_config_hosts $core_config_user $core_config_others $core_config_add > $TMPDIR/config.yaml
+	cut -c 1- ${TMPDIR}/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add > ${TMPDIR}/config.yaml
 	#测试自定义配置文件
-	$bindir/clash -t -d $bindir -f $TMPDIR/config.yaml >/dev/null
+	${BINDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml >/dev/null
 	if [ "$?" != 0 ];then
-		logger "$($bindir/clash -t -d $bindir -f $TMPDIR/config.yaml | grep -Eo 'error.*=.*')" 31
+		logger "$(${BINDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
-		logger "错误详情请参考 $TMPDIR/error.yaml 文件！" 33
-		mv -f $TMPDIR/config.yaml $TMPDIR/error.yaml &>/dev/null
-		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  $TMPDIR/proxy-groups.yaml
-		mv -f $TMPDIR/set_bak.yaml $TMPDIR/set.yaml &>/dev/null
+		logger "错误详情请参考 ${TMPDIR}/error.yaml 文件！" 33
+		mv -f ${TMPDIR}/config.yaml ${TMPDIR}/error.yaml &>/dev/null
+		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  ${TMPDIR}/proxy-groups.yaml
+		mv -f ${TMPDIR}/set_bak.yaml ${TMPDIR}/set.yaml &>/dev/null
 		#合并基础配置文件
-		cut -c 1- $TMPDIR/set.yaml $core_config_dns $core_config_add > $TMPDIR/config.yaml
-		sed -i "/#自定义/d" $TMPDIR/config.yaml 
+		cut -c 1- ${TMPDIR}/set.yaml $yaml_dns $yaml_add > ${TMPDIR}/config.yaml
+		sed -i "/#自定义/d" ${TMPDIR}/config.yaml 
 	fi
 	#建立软连接
-	[ "$TMPDIR" = "$bindir" ] || ln -sf $TMPDIR/config.yaml $bindir/config.yaml
+	[ "${TMPDIR}" = "${BINDIR}" ] || ln -sf ${TMPDIR}/config.yaml ${BINDIR}/config.yaml
 	#清理缓存
-	for char in $core_config_char set set_bak dns hosts;do
-		rm -f $TMPDIR/${char}.yaml
+	for char in $yaml_char set set_bak dns hosts;do
+		rm -f ${TMPDIR}/${char}.yaml
 	done
 }
-modify_json(){
+modify_json(){ #修饰singbox配置文件
 	#生成log.json
-	cat > $TMPDIR/log.json <<EOF
+	cat > ${TMPDIR}/log.json <<EOF
 {
-	"log": {
-		"disabled": false,
-		"level": "info",
-		"timestamp": true
-	},
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
 EOF
 	#生成dns.json
-	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
-	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
-	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
-	[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip || proxy_dns=dns_proxy
-	
 	if [ "$hosts_opt" != "未启用" ];then #本机hosts
 		reverse_mapping=true
 		sys_hosts=/etc/hosts
@@ -540,315 +537,349 @@ EOF
 	else
 		reverse_mapping=false
 	fi
-	[ -z "$(cat $CRASHDIR/jsons/user.json 2>/dev/null | grep '^dns:')" ] && { 
-		cat > $TMPDIR/dns.json <<EOF
-	"dns": { 
-		"servers": [{
-			"tag": "dns_proxy",
-			"address": "$dns_fallback",
-			"strategy": "$strategy",
-			"address_resolver": "dns_resolver"
-		}, {
-			"tag": "dns_direct",
-			"address": "$dns_nameserver",
-			"strategy": "$strategy",
-			"address_resolver": "dns_resolver",
-			"detour": "DIRECT"
-		}, {
-			"tag": "dns_fakeip",
-			"address": "fakeip"
-		}, {
-			"tag": "dns_resolver",
-			"address": "https://223.5.5.5/dns-query, 223.5.5.5",
-			"detour": "DIRECT"
-		}, {
-			"tag": "block",
-			"address": "rcode://success"
-		}],
-		"rules": [{
-			"outbound": ["any"],
-			"server": "dns_resolver"
-		}, {
-			"geosite": ["geolocation-!cn"],
-			"server": "$proxy_dns"
-		}],
-		"final": "dns_direct",
-		"independent_cache": true,
-		"reverse_mapping": true,
-		"fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15" }
-	},
+	[ -z "$(cat ${CRASHDIR}/jsons/user.json 2>/dev/null | grep '^dns:')" ] && { 
+		[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5' || dns_nameserver=$(echo $dns_nameserver | awk -F ',' '{print $1}')
+		[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1' || dns_fallback=$(echo $dns_fallback | awk -F ',' '{print $1}')
+		[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
+		[ "$dns_mod" = "redir_host" ] && proxy_dns=dns_proxy && direct_dns=dns_direct
+		[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip && direct_dns=dns_fakeip
+		[ "$dns_mod" = "mix" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
+		cat > ${TMPDIR}/dns.json <<EOF
+  "dns": { 
+    "servers": [{
+      "tag": "dns_proxy",
+      "address": "$dns_fallback",
+      "strategy": "$strategy",
+      "address_resolver": "dns_resolver"
+    }, {
+      "tag": "dns_direct",
+      "address": "$dns_nameserver",
+      "strategy": "$strategy",
+      "address_resolver": "dns_resolver",
+      "detour": "DIRECT"
+    }, {
+      "tag": "dns_fakeip",
+      "address": "fakeip"
+    }, {
+      "tag": "dns_resolver",
+      "address": "223.5.5.5",
+      "detour": "DIRECT"
+    }, {
+      "tag": "block",
+      "address": "rcode://success"
+    }],
+    "rules": [{
+      "outbound": ["any"],
+	  "query_type": [
+          "A",
+          "AAAA"
+        ],
+      "server": "dns_resolver"
+    }, {
+      "geosite": ["geolocation-!cn"],
+	  "query_type": [
+          "A",
+          "AAAA"
+        ],
+      "server": "$proxy_dns"
+    }],
+    "final": "$direct_dns",
+    "independent_cache": true,
+    "reverse_mapping": true,
+    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15" }
+  },
 EOF
 	}
 	#生成ntp.json
-	cat > $TMPDIR/ntp.json <<EOF
-	"ntp": {
-		"enabled": true,
-		"server": "time.apple.com",
-		"server_port": 123,
-		"interval": "30m"
-	},
+	cat > ${TMPDIR}/ntp.json <<EOF
+  "ntp": {
+    "enabled": false,
+    "server": "time.apple.com",
+    "server_port": 123,
+    "interval": "30m0s",
+    "detour": "DIRECT"
+  },
 EOF
 	#生成inbounds.json
-	username=$(echo $authentication | awk -F ':' '{print $1}') #混合端口账号密码
-	password=$(echo $authentication | awk -F ':' '{print $2}')
-	[ "$sniffer" = "已启用" ] && sniffer=ture || sniffer=false #域名嗅探配置
-	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
-		type_in=tun
-		tag_in=tun-in
-	else
-		type_in=direct
-		tag_in=direct-in
-	fi
+	[ -n "$authentication" ] && {
+		username=$(echo $authentication | awk -F ':' '{print $1}') #混合端口账号密码
+		password=$(echo $authentication | awk -F ':' '{print $2}')
+		userpass=', "users": [{ "username": "'$username'", "password": "'$password'" }]'
+	}
+	[ "$sniffer" = "已启用" ] && sniffer=true || sniffer=false #域名嗅探配置
 		
-	cat > $TMPDIR/inbounds.json <<EOF
-	"inbounds": [
-	{
-		"type": "mixed",
-		"tag": "mixed-in",
-		"listen": "0.0.0.0",
-		"listen_port": $mix_port,
-		"users": [{ "username": "$username", "password": "$password" }],
-	}, {
-		"type": "redirect",
-		"tag": "redirect-in",
-		"listen": "::",
-		"listen_port": $redir_port,
-		"sniff": $sniffer
-	}, {
-		"type": "tproxy",
-		"tag": "tproxy-in",
-		"listen": "::",
-		"listen_port": $tproxy_port,
-		"sniff": $sniffer
-	}, {
-		"type": "tun",
-		"tag": "tun-in",
-		"interface_name": "utun",
-		"inet4_address": "172.19.0.1/30",
-		"auto_route": false,
-		"stack": "system",
-		"sniff": $sniffer
-	}
-	],
+	cat > ${TMPDIR}/inbounds.json <<EOF
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "0.0.0.0",
+      "listen_port": $mix_port,
+      "sniff": false$userpass
+    }, {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "::",
+      "listen_port": $dns_port,
+      "sniff": true,
+      "sniff_override_destination": false
+    }, {
+      "type": "redirect",
+      "tag": "redirect-in",
+      "listen": "::",
+      "listen_port": $redir_port,
+      "sniff": $sniffer,
+      "sniff_override_destination": $sniffer
+    }, {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": $tproxy_port,
+      "sniff": $sniffer,
+      "sniff_override_destination": $sniffer
 EOF
+	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
+		cat >> ${TMPDIR}/inbounds.json <<EOF
+    }, {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "utun",
+      "inet4_address": "172.19.0.1/30",
+      "auto_route": false,
+      "stack": "system",
+      "sniff": $sniffer,
+      "sniff_override_destination": $sniffer
+    }
+  ],
+EOF
+	else
+		cat >> ${TMPDIR}/inbounds.json <<EOF
+    }
+  ],	
+EOF
+	fi
 	#生成experimental.json
-	cat > $TMPDIR/experimental.json <<EOF
-	"experimental": {
-		"clash_api": {
-			"external_controller": "0.0.0.0:$db_port",
-			"external_ui": "ui",
-			"secret": "$secret",
-			"default_mode": "Rule"
-		}
-	}
+	cat > ${TMPDIR}/experimental.json <<EOF
+  "experimental": {
+    "clash_api": {
+      "external_controller": "0.0.0.0:$db_port",
+      "external_ui": "ui",
+      "secret": "$secret",
+      "default_mode": "Rule"
+    }
+  }
 }
 EOF
 	#分割配置文件获得outbounds.json及route.json
-	cat $core_config | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' > $TMPDIR/outbounds.json
-	cat $core_config | sed -n '/"route":/,/"experimental":/{/"experimental":/d; p}' > $TMPDIR/route.json
+	cat $core_config | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' > ${TMPDIR}/outbounds.json
+	cat $core_config | sed -n '/"route":/,/"experimental":/{/"experimental":/d; p}' > ${TMPDIR}/route.json
+	#清理route.json中的process_name规则
+	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/route.json
+	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/route.json
 	#跳过本地tls证书验证
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ];then
-		sed -i 's/"insecure": false/"insecure": true/' $TMPDIR/outbounds.json
+		sed -i 's/"insecure": false/"insecure": true/' ${TMPDIR}/outbounds.json
 	else
-		sed -i 's/"insecure":  true/"insecure":  false/' $TMPDIR/outbounds.json
+		sed -i 's/"insecure":  true/"insecure":  false/' ${TMPDIR}/outbounds.json
 	fi
 	#合并文件
 	json_all=
 	for char in log dns ntp inbounds outbounds route experimental;do
-		[ -s $TMPDIR/$char.json ] && json_add=$TMPDIR/$char.json
-		[ -s $CRASHDIR/jsons/$char.json ] && json_add=$CRASHDIR/jsons/$char.json #如果有自定义配置文件则使用
+		[ -s ${TMPDIR}/$char.json ] && json_add=${TMPDIR}/$char.json
+		[ -s ${CRASHDIR}/jsons/$char.json ] && json_add=${CRASHDIR}/jsons/$char.json #如果有自定义配置文件则使用
 		json_all="$json_all $json_add"
 	done
-	cut -c 1- $json_all > $TMPDIR/all.json
+	cut -c 1- $json_all > ${TMPDIR}/config.json
 	#测试自定义配置文件
-	$bindir/singbox check -D $bindir -c $TMPDIR/config.json >/dev/null
+	${BINDIR}/CrashCore check -D ${BINDIR} -c ${TMPDIR}/config.json >/dev/null
 	if [ "$?" != 0 ];then
-		logger "$($bindir/singbox check -D $bindir -c $TMPDIR/config.json | grep -Eo 'error.*=.*')" 31
+		logger "$(${BINDIR}/CrashCore check -D ${BINDIR} -c ${TMPDIR}/config.json | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
-		logger "错误详情请参考 $TMPDIR/error.json 文件！" 33
-		mv -f $TMPDIR/config.json $TMPDIR/error.json &>/dev/null
+		logger "错误详情请参考 ${TMPDIR}/error.json 文件！" 33
+		mv -f ${TMPDIR}/config.json ${TMPDIR}/error.json &>/dev/null
 		#合并基础配置文件
+		json_all=''
 		for char in log dns ntp inbounds outbounds route experimental;do
-			[ -s $TMPDIR/$char.json ] && json_add=$TMPDIR/$char.json
+			[ -s ${TMPDIR}/$char.json ] && json_add=${TMPDIR}/$char.json
 			json_all="$json_all $json_add"
 		done
-		cut -c 1- $json_all > $TMPDIR/config.json
+		cut -c 1- $json_all > ${TMPDIR}/config.json
 	fi
 	#清理缓存
 	for char in all log dns ntp inbounds outbounds route experimental;do
-		rm -f $TMPDIR/${char}.json
+		rm -f ${TMPDIR}/${char}.json
 	done
 }
 
 #设置路由规则
-cn_ip_route(){	
-	[ ! -f $bindir/cn_ip.txt ] && {
-		if [ -f $CRASHDIR/cn_ip.txt ];then
-			mv $CRASHDIR/cn_ip.txt $bindir/cn_ip.txt
+cn_ip_route(){	#CN-IP绕过
+	[ ! -f ${BINDIR}/cn_ip.txt ] && {
+		if [ -f ${CRASHDIR}/cn_ip.txt ];then
+			mv ${CRASHDIR}/cn_ip.txt ${BINDIR}/cn_ip.txt
 		else
 			logger "未找到cn_ip列表，正在下载！" 33
-			$0 webget $bindir/cn_ip.txt "$update_url/bin/geodata/china_ip_list.txt"
-			[ "$?" = "1" ] && rm -rf $bindir/cn_ip.txt && logger "列表下载失败！" 31 
+			$0 webget ${BINDIR}/cn_ip.txt "$update_url/bin/geodata/china_ip_list.txt"
+			[ "$?" = "1" ] && rm -rf ${BINDIR}/cn_ip.txt && logger "列表下载失败！" 31 
 		fi
 	}
-	[ -f $bindir/cn_ip.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
+	[ -f ${BINDIR}/cn_ip.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			# see https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-cidr.txt
-			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > $TMPDIR/cn_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' $bindir/cn_ip.txt >> $TMPDIR/cn_$USER.ipset
+			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > ${TMPDIR}/cn_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' ${BINDIR}/cn_ip.txt >> ${TMPDIR}/cn_$USER.ipset
 			ipset -! flush cn_ip 2>/dev/null
-			ipset -! restore < $TMPDIR/cn_$USER.ipset 
+			ipset -! restore < ${TMPDIR}/cn_$USER.ipset 
 			rm -rf cn_$USER.ipset
 	}
 }
-cn_ipv6_route(){
-	[ ! -f $bindir/cn_ipv6.txt ] && {
-		if [ -f $CRASHDIR/cn_ipv6.txt ];then
-			mv $CRASHDIR/cn_ipv6.txt $bindir/cn_ipv6.txt
+cn_ipv6_route(){ #CN-IPV6绕过
+	[ ! -f ${BINDIR}/cn_ipv6.txt ] && {
+		if [ -f ${CRASHDIR}/cn_ipv6.txt ];then
+			mv ${CRASHDIR}/cn_ipv6.txt ${BINDIR}/cn_ipv6.txt
 		else
 			logger "未找到cn_ipv6列表，正在下载！" 33
-			$0 webget $bindir/cn_ipv6.txt "$update_url/bin/geodata/china_ipv6_list.txt"
-			[ "$?" = "1" ] && rm -rf $bindir/cn_ipv6.txt && logger "列表下载失败！" 31 
+			$0 webget ${BINDIR}/cn_ipv6.txt "$update_url/bin/geodata/china_ipv6_list.txt"
+			[ "$?" = "1" ] && rm -rf ${BINDIR}/cn_ipv6.txt && logger "列表下载失败！" 31 
 		fi
 	}
-	[ -f $bindir/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
+	[ -f ${BINDIR}/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			#ipv6
 			#see https://ispip.clang.cn/all_cn_ipv6.txt
-			echo "create cn_ip6 hash:net family inet6 hashsize 2048 maxelem 2048" > $TMPDIR/cn6_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' $bindir/cn_ipv6.txt >> $TMPDIR/cn6_$USER.ipset
+			echo "create cn_ip6 hash:net family inet6 hashsize 2048 maxelem 2048" > ${TMPDIR}/cn6_$USER.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' ${BINDIR}/cn_ipv6.txt >> ${TMPDIR}/cn6_$USER.ipset
 			ipset -! flush cn_ip6 2>/dev/null
-			ipset -! restore < $TMPDIR/cn6_$USER.ipset 
+			ipset -! restore < ${TMPDIR}/cn6_$USER.ipset 
 			rm -rf cn6_$USER.ipset
 	}
 }
-start_redir(){
+start_redir(){ #iptables-redir
 	#获取局域网host地址
 	getlanip
 	#流量过滤
-	iptables -t nat -N clash
+	iptables -t nat -N shellcrash
 	for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
-		iptables -t nat -A clash -d $ip -j RETURN
+		iptables -t nat -A shellcrash -d $ip -j RETURN
 	done
 	#绕过CN_IP
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
-	iptables -t nat -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	iptables -t nat -A shellcrash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	#局域网设备过滤
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
-		for mac in $(cat $CRASHDIR/configs/mac); do #mac白名单
-			iptables -t nat -A clash -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+			iptables -t nat -A shellcrash -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 		done
 	else
-		for mac in $(cat $CRASHDIR/configs/mac); do #mac黑名单
-			iptables -t nat -A clash -m mac --mac-source $mac -j RETURN
+		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
+			iptables -t nat -A shellcrash -m mac --mac-source $mac -j RETURN
 		done
 		#仅代理本机局域网网段流量
 		for ip in $host_ipv4;do
-			iptables -t nat -A clash -p tcp -s $ip -j REDIRECT --to-ports $redir_port
+			iptables -t nat -A shellcrash -p tcp -s $ip -j REDIRECT --to-ports $redir_port
 		done
 	fi
-	#将PREROUTING链指向clash链
-	iptables -t nat -A PREROUTING -p tcp $ports -j clash
-	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t nat -A PREROUTING -p tcp -d 198.18.0.0/16 -j clash
+	#将PREROUTING链指向shellcrash链
+	iptables -t nat -A PREROUTING -p tcp $ports -j shellcrash
+	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t nat -A PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash
 	#设置ipv6转发
 	if [ "$ipv6_redir" = "已开启" -a -n "$(lsmod | grep 'ip6table_nat')" ];then
-		ip6tables -t nat -N clashv6
+		ip6tables -t nat -N shellcrashv6
 		for ip in $reserve_ipv6 $host_ipv6;do #跳过目标保留地址及目标本机网段
-			ip6tables -t nat -A clashv6 -d $ip -j RETURN
+			ip6tables -t nat -A shellcrashv6 -d $ip -j RETURN
 		done
 		#绕过CN_IPV6
 		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
-		ip6tables -t nat -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+		ip6tables -t nat -A shellcrashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		#局域网设备过滤
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
-			for mac in $(cat $CRASHDIR/configs/mac); do #mac白名单
-				ip6tables -t nat -A clashv6 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+			for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+				ip6tables -t nat -A shellcrashv6 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $redir_port
 			done
 		else
-			for mac in $(cat $CRASHDIR/configs/mac); do #mac黑名单
-				ip6tables -t nat -A clashv6 -m mac --mac-source $mac -j RETURN
+			for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
+				ip6tables -t nat -A shellcrashv6 -m mac --mac-source $mac -j RETURN
 			done
 			#仅代理本机局域网网段流量
 			for ip in $host_ipv6;do
-				ip6tables -t nat -A clashv6 -p tcp -s $ip -j REDIRECT --to-ports $redir_port
+				ip6tables -t nat -A shellcrashv6 -p tcp -s $ip -j REDIRECT --to-ports $redir_port
 			done
 		fi
-		ip6tables -t nat -A PREROUTING -p tcp $ports -j clashv6
+		ip6tables -t nat -A PREROUTING -p tcp $ports -j shellcrashv6
 	fi
 	return 0
 }
-start_ipt_dns(){
+start_ipt_dns(){ #iptables-dns
 	#屏蔽OpenWrt内置53端口转发
 	[ "$(uci get dhcp.@dnsmasq[0].dns_redirect 2>/dev/null)" = 1 ] && {
 		uci del dhcp.@dnsmasq[0].dns_redirect
 		uci commit dhcp.@dnsmasq[0]
 	}
 	#设置dns转发
-	iptables -t nat -N clash_dns
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
-		for mac in $(cat $CRASHDIR/configs/mac); do #mac白名单
-			iptables -t nat -A clash_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
+	iptables -t nat -N shellcrash_dns
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+			iptables -t nat -A shellcrash_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 		done
 	else
-		for mac in $(cat $CRASHDIR/configs/mac); do #mac黑名单
-			iptables -t nat -A clash_dns -m mac --mac-source $mac -j RETURN
+		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
+			iptables -t nat -A shellcrash_dns -m mac --mac-source $mac -j RETURN
 		done	
-		iptables -t nat -A clash_dns -p tcp -j REDIRECT --to $dns_port
-		iptables -t nat -A clash_dns -p udp -j REDIRECT --to $dns_port
+		iptables -t nat -A shellcrash_dns -p tcp -j REDIRECT --to $dns_port
+		iptables -t nat -A shellcrash_dns -p udp -j REDIRECT --to $dns_port
 	fi
-	iptables -t nat -I PREROUTING -p tcp --dport 53 -j clash_dns
-	iptables -t nat -I PREROUTING -p udp --dport 53 -j clash_dns
+	iptables -t nat -I PREROUTING -p tcp --dport 53 -j shellcrash_dns
+	iptables -t nat -I PREROUTING -p udp --dport 53 -j shellcrash_dns
 	#ipv6DNS
 	if [ -n "$(lsmod | grep 'ip6table_nat')" -a -n "$(lsmod | grep 'xt_nat')" ];then
-		ip6tables -t nat -N clashv6_dns > /dev/null 2>&1
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
-			for mac in $(cat $CRASHDIR/configs/mac); do #mac白名单
-				ip6tables -t nat -A clashv6_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
+		ip6tables -t nat -N shellcrashv6_dns > /dev/null 2>&1
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+			for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+				ip6tables -t nat -A shellcrashv6_dns -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 			done
 		else
-			for mac in $(cat $CRASHDIR/configs/mac); do #mac黑名单
-				ip6tables -t nat -A clashv6_dns -m mac --mac-source $mac -j RETURN
+			for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
+				ip6tables -t nat -A shellcrashv6_dns -m mac --mac-source $mac -j RETURN
 			done	
-			ip6tables -t nat -A clashv6_dns -p tcp -j REDIRECT --to $dns_port
-			ip6tables -t nat -A clashv6_dns -p udp -j REDIRECT --to $dns_port
+			ip6tables -t nat -A shellcrashv6_dns -p tcp -j REDIRECT --to $dns_port
+			ip6tables -t nat -A shellcrashv6_dns -p udp -j REDIRECT --to $dns_port
 		fi
-		ip6tables -t nat -I PREROUTING -p tcp --dport 53 -j clashv6_dns
-		ip6tables -t nat -I PREROUTING -p udp --dport 53 -j clashv6_dns
+		ip6tables -t nat -I PREROUTING -p tcp --dport 53 -j shellcrashv6_dns
+		ip6tables -t nat -I PREROUTING -p udp --dport 53 -j shellcrashv6_dns
 	else
 		ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT 2>/dev/null
 	fi
 	return 0
 
 }
-start_tproxy(){
+start_tproxy(){ #iptables-tproxy
 	#获取局域网host地址
 	getlanip
 	modprobe xt_TPROXY &>/dev/null
 	ip rule add fwmark $fwmark table 100
 	ip route add local default dev lo table 100
-	iptables -t mangle -N clash
-	iptables -t mangle -A clash -p udp --dport 53 -j RETURN
+	iptables -t mangle -N shellcrash
+	iptables -t mangle -A shellcrash -p udp --dport 53 -j RETURN
 	for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
-		iptables -t mangle -A clash -d $ip -j RETURN
+		iptables -t mangle -A shellcrash -d $ip -j RETURN
 	done
 	#绕过CN_IP
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
-	iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	iptables -t mangle -A shellcrash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	#tcp&udp分别进代理链
 	tproxy_set(){
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
-		for mac in $(cat $CRASHDIR/configs/mac); do #mac白名单
-			iptables -t mangle -A clash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
+	if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+			iptables -t mangle -A shellcrash -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 		done
 	else
-		for mac in $(cat $CRASHDIR/configs/mac); do #mac黑名单
-			iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
+		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
+			iptables -t mangle -A shellcrash -m mac --mac-source $mac -j RETURN
 		done
 		#仅代理本机局域网网段流量
 		for ip in $host_ipv4;do
-			iptables -t mangle -A clash -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
+			iptables -t mangle -A shellcrash -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 		done			
 	fi
-	iptables -t mangle -A PREROUTING -p $1 $ports -j clash
-	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t mangle -A PREROUTING -p $1 -d 198.18.0.0/16 -j clash
+	iptables -t mangle -A PREROUTING -p $1 $ports -j shellcrash
+	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t mangle -A PREROUTING -p $1 -d 198.18.0.0/16 -j shellcrash
 	}
 	[ "$1" = "all" ] && tproxy_set tcp
 	tproxy_set udp
@@ -862,32 +893,32 @@ start_tproxy(){
 	[ "$ipv6_redir" = "已开启" ] && {
 		ip -6 rule add fwmark $fwmark table 101
 		ip -6 route add local ::/0 dev lo table 101
-		ip6tables -t mangle -N clashv6
-		ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
+		ip6tables -t mangle -N shellcrashv6
+		ip6tables -t mangle -A shellcrashv6 -p udp --dport 53 -j RETURN
 		for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
-			ip6tables -t mangle -A clashv6 -d $ip -j RETURN
+			ip6tables -t mangle -A shellcrashv6 -d $ip -j RETURN
 		done
 		#绕过CN_IPV6
 		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
-		ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+		ip6tables -t mangle -A shellcrashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		#tcp&udp分别进代理链
 		tproxy_set6(){
-			if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
+			if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
 				#mac白名单
-				for mac in $(cat $CRASHDIR/configs/mac); do
-					ip6tables -t mangle -A clashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
+				for mac in $(cat ${CRASHDIR}/configs/mac); do
+					ip6tables -t mangle -A shellcrashv6 -p $1 -m mac --mac-source $mac -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 				done
 			else
 				#mac黑名单
-				for mac in $(cat $CRASHDIR/configs/mac); do
-					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
+				for mac in $(cat ${CRASHDIR}/configs/mac); do
+					ip6tables -t mangle -A shellcrashv6 -m mac --mac-source $mac -j RETURN
 				done
 				#仅代理本机局域网网段流量
 				for ip in $host_ipv6;do
-					ip6tables -t mangle -A clashv6 -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
+					ip6tables -t mangle -A shellcrashv6 -p $1 -s $ip -j TPROXY --on-port $tproxy_port --tproxy-mark $fwmark
 				done
 			fi	
-			ip6tables -t mangle -A PREROUTING -p $1 $ports -j clashv6		
+			ip6tables -t mangle -A PREROUTING -p $1 $ports -j shellcrashv6		
 		}
 		[ "$1" = "all" ] && tproxy_set6 tcp
 		tproxy_set6 udp
@@ -899,43 +930,43 @@ start_tproxy(){
 		}	
 	}
 }
-start_output(){
+start_output(){ #iptables本机代理
 	#获取局域网host地址
 	getlanip
 	#流量过滤
-	iptables -t nat -N clash_out
-	iptables -t nat -A clash_out -m owner --gid-owner 7890 -j RETURN
+	iptables -t nat -N shellcrash_out
+	iptables -t nat -A shellcrash_out -m owner --gid-owner 7890 -j RETURN
 	for ip in $local_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
-		iptables -t nat -A clash_out -d $ip -j RETURN
+		iptables -t nat -A shellcrash_out -d $ip -j RETURN
 	done
 	#绕过CN_IP
 	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
-	iptables -t nat -A clash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 
+	iptables -t nat -A shellcrash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 
 	#仅允许本机流量
 	for ip in 127.0.0.0/8 $local_ipv4;do 
-		iptables -t nat -A clash_out -p tcp -s $ip -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A shellcrash_out -p tcp -s $ip -j REDIRECT --to-ports $redir_port
 	done
-	iptables -t nat -A OUTPUT -p tcp $ports -j clash_out
+	iptables -t nat -A OUTPUT -p tcp $ports -j shellcrash_out
 	#设置dns转发
 	[ "$dns_no" != "已禁用" ] && {
-	iptables -t nat -N clash_dns_out
-	iptables -t nat -A clash_dns_out -m owner --gid-owner 453 -j RETURN #绕过本机dnsmasq
-	iptables -t nat -A clash_dns_out -m owner --gid-owner 7890 -j RETURN
-	iptables -t nat -A clash_dns_out -p udp -s 127.0.0.0/8 -j REDIRECT --to $dns_port
-	iptables -t nat -A OUTPUT -p udp --dport 53 -j clash_dns_out
+	iptables -t nat -N shellcrash_dns_out
+	iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 453 -j RETURN #绕过本机dnsmasq
+	iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 7890 -j RETURN
+	iptables -t nat -A shellcrash_dns_out -p udp -s 127.0.0.0/8 -j REDIRECT --to $dns_port
+	iptables -t nat -A OUTPUT -p udp --dport 53 -j shellcrash_dns_out
 	}
 	#Docker转发
 	ckcmd docker && {
-		iptables -t nat -N clash_docker
+		iptables -t nat -N shellcrash_docker
 		for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
-			iptables -t nat -A clash_docker -d $ip -j RETURN
+			iptables -t nat -A shellcrash_docker -d $ip -j RETURN
 		done
-		iptables -t nat -A clash_docker -p tcp -j REDIRECT --to-ports $redir_port
-		iptables -t nat -A PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker
+		iptables -t nat -A shellcrash_docker -p tcp -j REDIRECT --to-ports $redir_port
+		iptables -t nat -A PREROUTING -p tcp -s 172.16.0.0/12 -j shellcrash_docker
 		[ "$dns_no" != "已禁用" ] && iptables -t nat -A PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port
 	}
 }
-start_tun(){
+start_tun(){ #iptables-tun
 	modprobe tun &>/dev/null
 	#允许流量
 	iptables -I FORWARD -o utun -j ACCEPT
@@ -960,65 +991,65 @@ start_tun(){
 		ip rule add fwmark $fwmark table 100
 		#获取局域网host地址
 		getlanip
-		iptables -t mangle -N clash
-		iptables -t mangle -A clash -p udp --dport 53 -j RETURN
+		iptables -t mangle -N shellcrash
+		iptables -t mangle -A shellcrash -p udp --dport 53 -j RETURN
 		for ip in $host_ipv4 $reserve_ipv4;do #跳过目标保留地址及目标本机网段
-			iptables -t mangle -A clash -d $ip -j RETURN
+			iptables -t mangle -A shellcrash -d $ip -j RETURN
 		done
 		#防止回环
-		iptables -t mangle -A clash -s 198.18.0.0/16 -j RETURN
+		iptables -t mangle -A shellcrash -s 198.18.0.0/16 -j RETURN
 		#绕过CN_IP
 		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
-		iptables -t mangle -A clash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+		iptables -t mangle -A shellcrash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 		#局域网设备过滤
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
-			for mac in $(cat $CRASHDIR/configs/mac); do #mac白名单
-				iptables -t mangle -A clash -m mac --mac-source $mac -j MARK --set-mark $fwmark
+		if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+			for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+				iptables -t mangle -A shellcrash -m mac --mac-source $mac -j MARK --set-mark $fwmark
 			done
 		else
-			for mac in $(cat $CRASHDIR/configs/mac); do #mac黑名单
-				iptables -t mangle -A clash -m mac --mac-source $mac -j RETURN
+			for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
+				iptables -t mangle -A shellcrash -m mac --mac-source $mac -j RETURN
 			done
 			#仅代理本机局域网网段流量
 			for ip in $host_ipv4;do
-				iptables -t mangle -A clash -s $ip -j MARK --set-mark $fwmark
+				iptables -t mangle -A shellcrash -s $ip -j MARK --set-mark $fwmark
 			done
 		fi
-		iptables -t mangle -A PREROUTING -p udp $ports -j clash
-		[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j clash
+		iptables -t mangle -A PREROUTING -p udp $ports -j shellcrash
+		[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j shellcrash
 		
 		#设置ipv6转发
 		[ "$ipv6_redir" = "已开启" -a "$crashcore" = "meta" ] && {
 			ip -6 route add default dev utun table 101
 			ip -6 rule add fwmark $fwmark table 101
-			ip6tables -t mangle -N clashv6
-			ip6tables -t mangle -A clashv6 -p udp --dport 53 -j RETURN
+			ip6tables -t mangle -N shellcrashv6
+			ip6tables -t mangle -A shellcrashv6 -p udp --dport 53 -j RETURN
 			for ip in $host_ipv6 $reserve_ipv6;do #跳过目标保留地址及目标本机网段
-				ip6tables -t mangle -A clashv6 -d $ip -j RETURN
+				ip6tables -t mangle -A shellcrashv6 -d $ip -j RETURN
 			done
 			#绕过CN_IPV6
 			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
-			ip6tables -t mangle -A clashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+			ip6tables -t mangle -A shellcrashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 			#局域网设备过滤
-			if [ "$macfilter_type" = "白名单" -a -n "$(cat $CRASHDIR/configs/mac)" ];then
-				for mac in $(cat $CRASHDIR/configs/mac); do #mac白名单
-					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j MARK --set-mark $fwmark
+			if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+				for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+					ip6tables -t mangle -A shellcrashv6 -m mac --mac-source $mac -j MARK --set-mark $fwmark
 				done
 			else
-				for mac in $(cat $CRASHDIR/configs/mac); do #mac黑名单
-					ip6tables -t mangle -A clashv6 -m mac --mac-source $mac -j RETURN
+				for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
+					ip6tables -t mangle -A shellcrashv6 -m mac --mac-source $mac -j RETURN
 				done
 				#仅代理本机局域网网段流量
 				for ip in $host_ipv6;do
-					ip6tables -t mangle -A clashv6 -s $ip -j MARK --set-mark $fwmark
+					ip6tables -t mangle -A shellcrashv6 -s $ip -j MARK --set-mark $fwmark
 				done					
 			fi	
-			ip6tables -t mangle -A PREROUTING -p udp $ports -j clashv6		
-			[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j clashv6
+			ip6tables -t mangle -A PREROUTING -p udp $ports -j shellcrashv6		
+			[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j shellcrashv6
 		}
 	} &
 }
-start_nft(){
+start_nft(){ #nftables-allinone
 	#获取局域网host地址
 	getlanip
 	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
@@ -1035,8 +1066,8 @@ start_nft(){
 	}
 	[ -n "$(echo $redir_mod|grep Nft)" ] && {
 		#过滤局域网设备
-		[ -n "$(cat $CRASHDIR/configs/mac)" ] && {
-			MAC=$(awk '{printf "%s, ",$1}' $CRASHDIR/configs/mac)
+		[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
+			MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
 			[ "$macfilter_type" = "黑名单" ] && \
 				nft add rule inet shellcrash prerouting ether saddr {$MAC} return || \
 				nft add rule inet shellcrash prerouting ether saddr != {$MAC} return
@@ -1046,8 +1077,8 @@ start_nft(){
 		#仅代理本机局域网网段流量
 		nft add rule inet shellcrash prerouting ip saddr != {$HOST_IP} return
 		#绕过CN-IP
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f $bindir/cn_ip.txt ] && {
-			CN_IP=$(awk '{printf "%s, ",$1}' $bindir/cn_ip.txt)
+		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f ${BINDIR}/cn_ip.txt ] && {
+			CN_IP=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ip.txt)
 			[ -n "$CN_IP" ] && nft add rule inet shellcrash prerouting ip daddr {$CN_IP} return
 		}
 		#过滤常用端口
@@ -1063,8 +1094,8 @@ start_nft(){
 			#仅代理本机局域网网段流量
 			nft add rule inet shellcrash prerouting ip6 saddr != {$HOST_IP6} return
 			#绕过CN_IPV6
-			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f $bindir/cn_ipv6.txt ] && {
-				CN_IP6=$(awk '{printf "%s, ",$1}' $bindir/cn_ipv6.txt)
+			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f ${BINDIR}/cn_ipv6.txt ] && {
+				CN_IP6=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ipv6.txt)
 				[ -n "$CN_IP6" ] && nft add rule inet shellcrash prerouting ip6 daddr {$CN_IP6} return
 			}
 		else
@@ -1104,11 +1135,11 @@ start_nft(){
 		}
 	}
 }
-start_nft_dns(){
+start_nft_dns(){ #nftables-dns
 	nft add chain inet shellcrash dns { type nat hook prerouting priority -100 \; }
 	#过滤局域网设备
-	[ -n "$(cat $CRASHDIR/configs/mac)" ] && {
-		MAC=$(awk '{printf "%s, ",$1}' $CRASHDIR/configs/mac)
+	[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
+		MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
 		[ "$macfilter_type" = "黑名单" ] && \
 			nft add rule inet shellcrash dns ether saddr {$MAC} return || \
 			nft add rule inet shellcrash dns ether saddr != {$MAC} return
@@ -1116,7 +1147,7 @@ start_nft_dns(){
 	nft add rule inet shellcrash dns udp dport 53 redirect to ${dns_port}
 	nft add rule inet shellcrash dns tcp dport 53 redirect to ${dns_port}
 }
-start_wan(){
+start_wan(){ #iptables公网访问防火墙
 	#获取局域网host地址
 	getlanip
 	if [ "$public_support" = "已开启" ];then
@@ -1143,21 +1174,22 @@ start_wan(){
 	fi
 	iptables -I INPUT -p tcp -d 127.0.0.1 -j ACCEPT #本机请求全放行
 }
-stop_firewall(){
+stop_firewall(){ #还原防火墙配置
+	getconfig
 	#获取局域网host地址
 	getlanip
     #重置iptables相关规则
 	ckcmd iptables && {
 		#redir
-		iptables -t nat -D PREROUTING -p tcp $ports -j clash 2> /dev/null
-		iptables -t nat -D PREROUTING -p tcp -d 198.18.0.0/16 -j clash 2> /dev/null
-		iptables -t nat -F clash 2> /dev/null
-		iptables -t nat -X clash 2> /dev/null
+		iptables -t nat -D PREROUTING -p tcp $ports -j shellcrash 2> /dev/null
+		iptables -t nat -D PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash 2> /dev/null
+		iptables -t nat -F shellcrash 2> /dev/null
+		iptables -t nat -X shellcrash 2> /dev/null
 		#dns
-		iptables -t nat -D PREROUTING -p tcp --dport 53 -j clash_dns 2> /dev/null
-		iptables -t nat -D PREROUTING -p udp --dport 53 -j clash_dns 2> /dev/null
-		iptables -t nat -F clash_dns 2> /dev/null
-		iptables -t nat -X clash_dns 2> /dev/null
+		iptables -t nat -D PREROUTING -p tcp --dport 53 -j shellcrash_dns 2> /dev/null
+		iptables -t nat -D PREROUTING -p udp --dport 53 -j shellcrash_dns 2> /dev/null
+		iptables -t nat -F shellcrash_dns 2> /dev/null
+		iptables -t nat -X shellcrash_dns 2> /dev/null
 		#tun
 		iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 		iptables -D FORWARD -s 198.18.0.0/16 -o utun -j RETURN 2> /dev/null
@@ -1166,24 +1198,24 @@ stop_firewall(){
 		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 		#本机代理
-		iptables -t nat -D OUTPUT -p tcp $ports -j clash_out 2> /dev/null
-		iptables -t nat -F clash_out 2> /dev/null
-		iptables -t nat -X clash_out 2> /dev/null	
-		iptables -t nat -D OUTPUT -p udp --dport 53 -j clash_dns_out 2> /dev/null
-		iptables -t nat -F clash_dns_out 2> /dev/null
-		iptables -t nat -X clash_dns_out 2> /dev/null
+		iptables -t nat -D OUTPUT -p tcp $ports -j shellcrash_out 2> /dev/null
+		iptables -t nat -F shellcrash_out 2> /dev/null
+		iptables -t nat -X shellcrash_out 2> /dev/null	
+		iptables -t nat -D OUTPUT -p udp --dport 53 -j shellcrash_dns_out 2> /dev/null
+		iptables -t nat -F shellcrash_dns_out 2> /dev/null
+		iptables -t nat -X shellcrash_dns_out 2> /dev/null
 		#docker
-		iptables -t nat -F clash_docker 2> /dev/null
-		iptables -t nat -X clash_docker 2> /dev/null
-		iptables -t nat -D PREROUTING -p tcp -s 172.16.0.0/12 -j clash_docker 2> /dev/null
+		iptables -t nat -F shellcrash_docker 2> /dev/null
+		iptables -t nat -X shellcrash_docker 2> /dev/null
+		iptables -t nat -D PREROUTING -p tcp -s 172.16.0.0/12 -j shellcrash_docker 2> /dev/null
 		iptables -t nat -D PREROUTING -p udp --dport 53 -s 172.16.0.0/12 -j REDIRECT --to $dns_port 2> /dev/null
 		#TPROXY&tun
-		iptables -t mangle -D PREROUTING -p tcp $ports -j clash 2> /dev/null
-		iptables -t mangle -D PREROUTING -p udp $ports -j clash 2> /dev/null
-		iptables -t mangle -D PREROUTING -p tcp -d 198.18.0.0/16 -j clash 2> /dev/null
-		iptables -t mangle -D PREROUTING -p udp -d 198.18.0.0/16 -j clash 2> /dev/null
-		iptables -t mangle -F clash 2> /dev/null
-		iptables -t mangle -X clash 2> /dev/null
+		iptables -t mangle -D PREROUTING -p tcp $ports -j shellcrash 2> /dev/null
+		iptables -t mangle -D PREROUTING -p udp $ports -j shellcrash 2> /dev/null
+		iptables -t mangle -D PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash 2> /dev/null
+		iptables -t mangle -D PREROUTING -p udp -d 198.18.0.0/16 -j shellcrash 2> /dev/null
+		iptables -t mangle -F shellcrash 2> /dev/null
+		iptables -t mangle -X shellcrash 2> /dev/null
 		#公网访问
 		for ip in $host_ipv4 $local_ipv4 $reserve_ipv4;do
 			iptables -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2> /dev/null
@@ -1198,15 +1230,15 @@ stop_firewall(){
 	#重置ipv6规则
 	ckcmd ip6tables && {
 		#redir
-		ip6tables -t nat -D PREROUTING -p tcp $ports -j clashv6 2> /dev/null
+		ip6tables -t nat -D PREROUTING -p tcp $ports -j shellcrashv6 2> /dev/null
 		ip6tables -D INPUT -p udp --dport 53 -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT 2> /dev/null
-		ip6tables -t nat -F clashv6 2> /dev/null
-		ip6tables -t nat -X clashv6 2> /dev/null
+		ip6tables -t nat -F shellcrashv6 2> /dev/null
+		ip6tables -t nat -X shellcrashv6 2> /dev/null
 		#dns
-		ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j clashv6_dns 2>/dev/null
-		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j clashv6_dns 2>/dev/null
-		ip6tables -t nat -F clashv6_dns 2> /dev/null
-		ip6tables -t nat -X clashv6_dns 2> /dev/null
+		ip6tables -t nat -D PREROUTING -p tcp --dport 53 -j shellcrashv6_dns 2>/dev/null
+		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j shellcrashv6_dns 2>/dev/null
+		ip6tables -t nat -F shellcrashv6_dns 2> /dev/null
+		ip6tables -t nat -X shellcrashv6_dns 2> /dev/null
 		#tun
 		ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 		ip6tables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
@@ -1220,10 +1252,10 @@ stop_firewall(){
 		ip6tables -D INPUT -p tcp --dport $db_port -j REJECT 2> /dev/null	
 		ip6tables -D INPUT -p tcp --dport $db_port -j ACCEPT 2> /dev/null
 		#tproxy&tun
-		ip6tables -t mangle -D PREROUTING -p tcp $ports -j clashv6 2> /dev/null
-		ip6tables -t mangle -D PREROUTING -p udp $ports -j clashv6 2> /dev/null
-		ip6tables -t mangle -F clashv6 2> /dev/null
-		ip6tables -t mangle -X clashv6 2> /dev/null
+		ip6tables -t mangle -D PREROUTING -p tcp $ports -j shellcrashv6 2> /dev/null
+		ip6tables -t mangle -D PREROUTING -p udp $ports -j shellcrashv6 2> /dev/null
+		ip6tables -t mangle -F shellcrashv6 2> /dev/null
+		ip6tables -t mangle -X shellcrashv6 2> /dev/null
 		ip6tables -D INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 	}
 	#清理ipset规则
@@ -1249,26 +1281,27 @@ stop_firewall(){
 	#还原防火墙文件
 	[ -s /etc/init.d/firewall.bak ] && mv -f /etc/init.d/firewall.bak /etc/init.d/firewall
 }
-#面板配置保存相关
-web_save(){
+#启动相关
+web_save(){ #最小化保存面板节点选择
+	getconfig
 	#使用get_save获取面板节点设置
-	get_save http://127.0.0.1:${db_port}/proxies | awk -F ':\\{"' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '(^all|^alive)".*"Selector"' > $TMPDIR/clash_web_check_$USER
+	get_save http://127.0.0.1:${db_port}/proxies | awk -F ':\\{"' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '(^all|^alive)".*"Selector"' > ${TMPDIR}/shellcrash_web_check_$USER
 	while read line ;do
 		def=$(echo $line | awk -F "[[,]" '{print $2}')
 		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g' | sed 's/"type":.*//g' |  sed 's/,//g')
-		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> $TMPDIR/clash_web_save_$USER
-	done < $TMPDIR/clash_web_check_$USER
-	rm -rf $TMPDIR/clash_web_check_$USER
+		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> ${TMPDIR}/shellcrash_web_save_$USER
+	done < ${TMPDIR}/shellcrash_web_check_$USER
+	rm -rf ${TMPDIR}/shellcrash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
-	if [ -s $TMPDIR/clash_web_save_$USER ];then
-		compare $TMPDIR/clash_web_save_$USER $CRASHDIR/configs/web_save
-		[ "$?" = 0 ] && rm -rf $TMPDIR/clash_web_save_$USER || mv -f $TMPDIR/clash_web_save_$USER $CRASHDIR/configs/web_save
+	if [ -s ${TMPDIR}/shellcrash_web_save_$USER ];then
+		compare ${TMPDIR}/shellcrash_web_save_$USER ${CRASHDIR}/configs/web_save
+		[ "$?" = 0 ] && rm -rf ${TMPDIR}/shellcrash_web_save_$USER || mv -f ${TMPDIR}/shellcrash_web_save_$USER ${CRASHDIR}/configs/web_save
 	else
-		echo > $CRASHDIR/configs/web_save
+		echo > ${CRASHDIR}/configs/web_save
 	fi
 }
-web_restore(){
-
+web_restore(){ #还原面板节点
+	getconfig
 	#设置循环检测clash面板端口
 	i=1
 	while [ -z "$test" -a "$i" -lt 20 ];do
@@ -1281,18 +1314,17 @@ web_restore(){
 		i=$((i+1))
 	done
 	#发送数据
-	num=$(cat $CRASHDIR/configs/web_save | wc -l)
+	num=$(cat ${CRASHDIR}/configs/web_save | wc -l)
 	i=1
 	while [ "$i" -le "$num" ];do
-		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' $CRASHDIR/configs/web_save | sed 's/ /%20/g')
-		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' $CRASHDIR/configs/web_save)
+		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' ${CRASHDIR}/configs/web_save | sed 's/ /%20/g')
+		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' ${CRASHDIR}/configs/web_save)
 		put_save http://127.0.0.1:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
 		i=$((i+1))
 	done
 }
-#启动相关
-makehtml(){
-	cat > $bindir/ui/index.html <<EOF
+makehtml(){ #生成面板跳转文件
+	cat > ${BINDIR}/ui/index.html <<EOF
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1314,12 +1346,12 @@ makehtml(){
 </html
 EOF
 }
-catpac(){
+catpac(){ #生成pac文件
 	#获取本机host地址
 	[ -n "$host" ] && host_pac=$host
 	[ -z "$host_pac" ] && host_pac=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host_pac" ] && host_pac=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
-	cat > $TMPDIR/clash_pac <<EOF
+	cat > ${TMPDIR}/shellcrash_pac <<EOF
 function FindProxyForURL(url, host) {
 	if (
 		isInNet(host, "0.0.0.0", "255.0.0.0")||
@@ -1336,15 +1368,46 @@ function FindProxyForURL(url, host) {
 		return "PROXY $host_pac:$mix_port; DIRECT; SOCKS5 $host_pac:$mix_port"
 }
 EOF
-	compare $TMPDIR/clash_pac $bindir/ui/pac
-	[ "$?" = 0 ] && rm -rf $TMPDIR/clash_pac || mv -f $TMPDIR/clash_pac $bindir/ui/pac
+	compare ${TMPDIR}/shellcrash_pac ${BINDIR}/ui/pac
+	[ "$?" = 0 ] && rm -rf ${TMPDIR}/shellcrash_pac || mv -f ${TMPDIR}/shellcrash_pac ${BINDIR}/ui/pac
 }
-clash_check(){
+core_check(){
+	#检查及下载内核文件
+	if [ ! -f ${BINDIR}/CrashCore ];then
+		if [ -f ${CRASHDIR}/CrashCore ];then
+			mv ${CRASHDIR}/CrashCore ${BINDIR}/CrashCore
+		elif [ -f ${CRASHDIR}/clash ];then
+			mv ${CRASHDIR}/clash ${BINDIR}/CrashCore
+		else
+			logger "未找到【$crashcore】核心，正在下载！" 33
+			[ -z "$cpucore" ] && source ${CRASHDIR}/getdate.sh && getcpucore
+			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
+			$0 webget ${BINDIR}/core.new "$update_url/bin/$crashcore/clash-linux-$cpucore"
+			#校验内核
+			chmod +x ${BINDIR}/core.new 2>/dev/null
+			if [ "$crashcore" = singbox ];then
+				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
+			else
+				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+			fi
+			if [ -z "$core_v" ];then
+				rm -rf ${TMPDIR}/core.new
+				logger "核心下载失败，请重新运行或更换安装源！" 31
+				exit 1
+			else
+				mv -f ${TMPDIR}/core.new ${BINDIR}/CrashCore
+				setconfig crashcore $crashcore
+				setconfig core_v $core_v
+			fi
+		fi
+	fi
+}
+clash_check(){ #clash启动前检查
 	#检测vless/hysteria协议
 	if [ "$crashcore" != "meta" ] && [ -n "$(cat $core_config | grep -oE 'type: vless|type: hysteria')" ];then
 		echo -----------------------------------------------
 		logger "检测到vless/hysteria协议！将改为使用meta核心启动！" 33
-		rm -rf $bindir/clash
+		rm -rf ${BINDIR}/CrashCore
 		crashcore=meta
 		echo -----------------------------------------------
 	fi
@@ -1355,65 +1418,67 @@ clash_check(){
 		[ "$redir_mod" = "Tun模式" ] && {
 			echo -----------------------------------------------
 			logger "检测到高级功能！将改为使用ClashPre核心启动！" 33
-			rm -rf $bindir/clash
+			rm -rf ${BINDIR}/CrashCore
 			crashcore=clashpre
 			echo -----------------------------------------------
 		}
 	fi
+	core_check
 	#预下载GeoIP数据库
-	if [ ! -f $bindir/Country.mmdb ];then
-		if [ -f $CRASHDIR/Country.mmdb ];then
-			mv $CRASHDIR/Country.mmdb $bindir/Country.mmdb
+	if [ ! -f ${BINDIR}/Country.mmdb ];then
+		if [ -f ${CRASHDIR}/Country.mmdb ];then
+			mv ${CRASHDIR}/Country.mmdb ${BINDIR}/Country.mmdb
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			$0 webget $bindir/Country.mmdb $update_url/bin/geodata/cn_mini.mmdb
-			[ "$?" = "1" ] && rm -rf $bindir/Country.mmdb && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
+			$0 webget ${BINDIR}/Country.mmdb $update_url/bin/geodata/cn_mini.mmdb
+			[ "$?" = "1" ] && rm -rf ${BINDIR}/Country.mmdb && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
 		fi
 	fi
 	#预下载GeoSite数据库
-	if [ -n "$(cat $core_config|grep -Ei 'geosite')" ] && [ ! -f $bindir/GeoSite.dat ];then
-		if [ -f $CRASHDIR/GeoSite.dat ];then
-			mv -f $CRASHDIR/GeoSite.dat $bindir/GeoSite.dat
+	if [ -n "$(cat $core_config|grep -Ei 'geosite')" ] && [ ! -f ${BINDIR}/GeoSite.dat ];then
+		if [ -f ${CRASHDIR}/GeoSite.dat ];then
+			mv -f ${CRASHDIR}/GeoSite.dat ${BINDIR}/GeoSite.dat
 		else
 			logger "未找到GeoSite数据库，正在下载！" 33
-			$0 webget $bindir/GeoSite.dat $update_url/bin/geodata/geosite.dat
-			[ "$?" = "1" ] && rm -rf $bindir/GeoSite.dat && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
+			$0 webget ${BINDIR}/GeoSite.dat $update_url/bin/geodata/geosite.dat
+			[ "$?" = "1" ] && rm -rf ${BINDIR}/GeoSite.dat && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 		fi
 	fi
 }
-singbox_check(){
+singbox_check(){ #singbox启动前检查
+	core_check
 	#预下载GeoIP数据库
-	if [ ! -f $bindir/geoip.db ];then
-		if [ -f $CRASHDIR/geoip.db ];then
-			mv $CRASHDIR/geoip.db $bindir/geoip.db
+	if [ ! -f ${BINDIR}/geoip.db ];then
+		if [ -f ${CRASHDIR}/geoip.db ];then
+			mv ${CRASHDIR}/geoip.db ${BINDIR}/geoip.db
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			$0 webget $bindir/geoip.db $update_url/bin/geodata/geoip_cn.db
-			[ "$?" = "1" ] && rm -rf $bindir/geoip.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
+			$0 webget ${BINDIR}/geoip.db $update_url/bin/geodata/geoip_cn.db
+			[ "$?" = "1" ] && rm -rf ${BINDIR}/geoip.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
 		fi
 	fi
 	#预下载GeoSite数据库
-	if [ -n "$(cat $core_config|grep -Ei '"geosite":')" ] && [ ! -f $bindir/geosite.db ];then
-		if [ -f $CRASHDIR/geosite.db ];then
-			mv -f $CRASHDIR/geosite.db$bindir/geosite.db
+	if [ -n "$(cat $core_config|grep -Ei '"geosite":')" ] && [ ! -f ${BINDIR}/geosite.db ];then
+		if [ -f ${CRASHDIR}/geosite.db ];then
+			mv -f ${CRASHDIR}/geosite.db ${BINDIR}/geosite.db
 		else
 			logger "未找到GeoSite数据库，正在下载！" 33
-			$0 webget $bindir/geosite.db $update_url/bin/geodata/geosite_cn.db
-			[ "$?" = "1" ] && rm -rf $bindir/geosite.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
+			$0 webget ${BINDIR}/geosite.db $update_url/bin/geodata/geosite_cn.db
+			[ "$?" = "1" ] && rm -rf ${BINDIR}/geosite.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
 		fi
 	fi
 }
-bfstart(){
+bfstart(){ #启动前
 	#读取ShellCrash配置
 	getconfig
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master
-	[ ! -d $bindir/ui ] && mkdir -p $bindir/ui
+	[ ! -d ${BINDIR}/ui ] && mkdir -p ${BINDIR}/ui
 	[ -z "$crashcore" ] && crashcore=clash
 	#检查内核配置文件
 	if [ ! -f $core_config ];then
@@ -1426,51 +1491,21 @@ bfstart(){
 			exit 1
 		fi
 	fi
-
 	#检查dashboard文件
-	if [ -f $CRASHDIR/ui/index.html -a ! -f $bindir/ui/index.html ];then
-		cp -rf $CRASHDIR/ui $bindir
+	if [ -f ${CRASHDIR}/ui/index.html -a ! -f ${BINDIR}/ui/index.html ];then
+		cp -rf ${CRASHDIR}/ui ${BINDIR}
 	fi
-	[ ! -s $bindir/ui/index.html ] && makehtml #如没有面板则创建跳转界面
-	#生成pac文件
-	catpac
+	[ ! -s ${BINDIR}/ui/index.html ] && makehtml #如没有面板则创建跳转界面
+	catpac	#生成pac文件
 	#内核及内核配置文件检查
+	[ ! -x ${BINDIR}/CrashCore ] && chmod +x ${BINDIR}/CrashCore 	#检测可执行权限
 	if [ "$crashcore" = singbox ];then
 		singbox_check
-		[ "$disoverride" != "1" ] && modify_json || ln -sf $core_config $bindir/config.json
+		[ "$disoverride" != "1" ] && modify_json || ln -sf $core_config ${TMPDIR}/config.json
 	else
 		clash_check
-		[ "$disoverride" != "1" ] && modify_yaml || ln -sf $core_config $bindir/config.yaml
+		[ "$disoverride" != "1" ] && modify_yaml || ln -sf $core_config ${TMPDIR}/config.yaml
 	fi
-	#检查及下载内核文件
-	if [ ! -f $bindir/CrashCore ];then
-		if [ -f $CRASHDIR/CrashCore ];then
-			mv $CRASHDIR/CrashCore $bindir/CrashCore
-		elif [ -f $CRASHDIR/clash ];then
-			mv $CRASHDIR/clash $bindir/CrashCore
-		else
-			logger "未找到【$crashcore】核心，正在下载！" 33
-			[ -z "$cpucore" ] && source $CRASHDIR/getdate.sh && getcpucore
-			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
-			$0 webget $bindir/core.new "$update_url/bin/$crashcore/clash-linux-$cpucore"
-			#校验内核
-			chmod +x $bindir/core.new 2>/dev/null
-			if [ "$crashcore" = singbox ];then
-				core_v=$($TMPDIR/core.new version 2>/dev/null | grep version | awk '{print $3}')
-			else
-				core_v=$($TMPDIR/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
-			fi
-			if [ -z "$core_v" ];then
-				rm -rf $bindir/clash
-				logger "核心下载失败，请重新运行或更换安装源！" 31
-				exit 1
-			else
-				setconfig crashcore $crashcore
-				setconfig core_v $core_v
-			fi
-		fi
-	fi
-	[ ! -x $bindir/clash ] && chmod +x $bindir/clash 	#检测可执行权限
 	#本机代理准备
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		#添加shellcrash用户
@@ -1488,9 +1523,9 @@ bfstart(){
 		if [ "$start_old" != "已开启" ];then
 			[ -w /etc/systemd/system/shellcrash.service ] && servdir=/etc/systemd/system/shellcrash.service
 			[ -w /usr/lib/systemd/system/shellcrash.service ] && servdir=/usr/lib/systemd/system/shellcrash.service
-			if [ -w /etc/init.d/clash ]; then
-				[ -z "$(grep 'procd_set_param user shellcrash' /etc/init.d/clash)" ] && \
-    			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellcrash' /etc/init.d/clash
+			if [ -w /etc/init.d/shellcrash ]; then
+				[ -z "$(grep 'procd_set_param user shellcrash' /etc/init.d/shellcrash)" ] && \
+    			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellcrash' /etc/init.d/shellcrash
 			elif [ -w "$servdir" ]; then
 				setconfig User shellcrash $servdir
 				systemctl daemon-reload >/dev/null
@@ -1498,15 +1533,16 @@ bfstart(){
 		fi
 	fi
 	#执行条件任务
-	[ -s $CRASHDIR/task/bfstart ] && source $CRASHDIR/task/bfstart
+	[ -s ${CRASHDIR}/task/bfstart ] && source ${CRASHDIR}/task/bfstart
+	return 0
 }
-afstart(){
+afstart(){ #启动后
 
 	#读取配置文件
 	getconfig
 	#延迟启动
-	[ ! -f $TMPDIR/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
-		logger "clash将延迟$start_delay秒启动" 31 pushoff
+	[ ! -f ${TMPDIR}/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+		logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
 		sleep $start_delay
 	}
 	#设置DNS转发
@@ -1548,65 +1584,97 @@ afstart(){
 	}
 	ckcmd iptables && start_wan #本地防火墙
 	mark_time #标记启动时间
-	[ -s $CRASHDIR/task/cron ] && croncmd $CRASHDIR/task/cron #加载定时任务
-	[ -s $CRASHDIR/configs/web_save ] && web_restore & #后台还原面板配置
+	[ -s ${CRASHDIR}/configs/web_save ] && web_restore &>/dev/null & #后台还原面板配置
 	{ sleep 5;logger Clash服务已启动！;} & #推送日志
-	#执行条件任务
-	[ -s $CRASHDIR/task/afstart ] && { source $CRASHDIR/task/afstart ;} &
-	[ -s $CRASHDIR/task/running ] && {
+	#加载定身任务
+	[ -s ${CRASHDIR}/task/cron ] && croncmd ${CRASHDIR}/task/cron
+	[ -s ${CRASHDIR}/task/running ] && {
 		cronset '运行时每'
 		while read line ;do
 			cronset '2fjdi124dd12s' "$line"
-		done < $CRASHDIR/task/running
+		done < ${CRASHDIR}/task/running
 	}
-	[ -s $CRASHDIR/task/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
+	#加载条件任务
+	[ -s ${CRASHDIR}/task/afstart ] && { source ${CRASHDIR}/task/afstart ;} &
+	[ -s ${CRASHDIR}/task/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
 		#注入防火墙
 		line=$(grep -En "fw3 restart" /etc/init.d/firewall | cut -d ":" -f 1)
-		sed -i.bak "${line}a\\source $CRASHDIR/task/affirewall" /etc/init.d/firewall
+		sed -i.bak "${line}a\\source ${CRASHDIR}/task/affirewall" /etc/init.d/firewall
 		line=$(grep -En "fw3 .* start" /etc/init.d/firewall | cut -d ":" -f 1)
-		sed -i "${line}a\\source $CRASHDIR/task/affirewall" /etc/init.d/firewall
-	}
+		sed -i "${line}a\\source ${CRASHDIR}/task/affirewall" /etc/init.d/firewall
+	} &
+	return 0
 }
-start_old(){
-	source $CRASHDIR/configs/service.env
-	bfstart
+start_error(){ #启动报错
+	ckcmd journalctl && journalctl -xeu shellcrash > $TMPDIR/core_test.log
+	error=$(cat $TMPDIR/core_test.log | grep -Eo 'error.*=.*|.*ERROR.*|.*FATAL.*')
+	logger "服务启动失败！请查看报错信息！详细信息请查看$TMPDIR/core_test.log" 33
+	logger "$error" 31
+	exit 1
+}
+start_old(){ #保守模式
 	#使用传统后台执行二进制文件的方式执行
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		if ckcmd su;then
-			su shellcrash -c "$COMMAND" 2>&1 &
+			su shellcrash -c "$COMMAND" >/dev/null &
 		else
 			logger "当前设备缺少su命令，保守模式下无法兼容本机代理增强模式，已停止启动！" 31
 			exit 1
 		fi
 	else
 		ckcmd nohup && nohup=nohup #华硕调用nohup启动
-		$nohup "$COMMAND" 2>&1 &
+		$nohup $COMMAND &>/dev/null &
 	fi
+
 	afstart
-	$0 daemon
+	cronset '保守模式守护进程' "*/1 * * * * test -z \"\$(pidof CrashCore)\" && ${CRASHDIR}/start.sh restart #ShellCrash保守模式守护进程"
+}
+#杂项
+update_config(){ #更新订阅并重启
+		getconfig
+		get_core_config && \
+		$0 restart
+}
+hotupdate(){ #热更新订阅
+		getconfig
+		get_core_config
+		modify_$format && \
+		put_save http://127.0.0.1:${db_port}/configs "{\"path\":\"${CRASHDIR}/config.$format\"}"
+}
+set_proxy(){ #设置环境变量
+	getconfig
+	if  [ "$local_type" = "环境变量" ];then
+		[ -w ~/.bashrc ] && profile=~/.bashrc
+		[ -w /etc/profile ] && profile=/etc/profile
+		echo 'export all_proxy=http://127.0.0.1:'"$mix_port" >> $profile
+		echo 'export ALL_PROXY=$all_proxy' >>  $profile
+	fi
+}
+unset_proxy(){	#卸载环境变量
+	[ -w ~/.bashrc ] && profile=~/.bashrc
+	[ -w /etc/profile ] && profile=/etc/profile
+	sed -i '/all_proxy/'d  $profile
+	sed -i '/ALL_PROXY/'d  $profile
 }
 
 case "$1" in
 
-bfstart)
-		bfstart
-	;;
-afstart)
-		afstart
-	;;
 start)		
 		[ -n "$(pidof CrashCore)" ] && $0 stop #禁止多实例
 		getconfig
 		stop_firewall #清理路由策略
 		#使用不同方式启动服务
 		if [ "$start_old" = "已开启" ];then
-			start_old
-		elif [ -f /etc/rc.common -a -n "$(pidof procd)" ];then
-			service shellcrash start
-		elif [ "$USER" = "root" -a -n "$(pidof systemd)" ];then
-			systemctl start shellcrash.service
+			bfstart && start_old
+		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
+			/etc/init.d/shellcrash start 
+		elif [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
+			FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
+			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
+			systemctl daemon-reload
+			systemctl start shellcrash.service || start_error
 		else
-			start_old
+			bfstart && start_old
 		fi
 	;;
 stop)	
@@ -1618,24 +1686,24 @@ stop)
 		cronset '运行时每'
 		cronset '流媒体预解析'
 		#多种方式结束进程
-		if [ -f /etc/rc.common ];then
-			service shellcrash stop >/dev/null 2>&1
-		elif [ "$USER" = "root" ];then
-			systemctl stop shellcrash.service >/dev/null 2>&1
+
+		if [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
+			systemctl stop shellcrash.service &>/dev/null
+		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
+			/etc/init.d/shellcrash stop &>/dev/null
+		else
+			stop_firewall #清理路由策略
+			unset_proxy #禁用本机代理
 		fi
-		PID=$(pidof CrashCore) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
-		stop_firewall #清理路由策略
-		$0 unset_proxy #禁用本机代理
+		PID=$(pidof CrashCore) && [ -n "$PID" ] &&  kill -9 $PID &>/dev/null
         ;;
 restart)
         $0 stop
         $0 start
         ;;
 init)
-		CRASHDIR=$(cd $(dirname $0);pwd)
 		profile=/etc/profile
-        if [ -d "/etc/storage/clash" ];then
-			CRASHDIR=/etc/storage/clash
+        if [ -d "/etc/storage/clash" -o -d "/etc/storage/ShellCrash" ];then
 			i=1
 			while [ ! -w /etc/profile -a "$i" -lt 10 ];do
 				sleep 5 && i=$((i+1))
@@ -1654,26 +1722,8 @@ init)
 		sed -i "/export CRASHDIR/d" $profile 
 		echo "alias crash=\"$CRASHDIR/menu.sh\"" >> $profile 
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile 
-		[ -f $CRASHDIR/.dis_startup ] && cronset "保守模式守护进程" || $0 start
+		[ -f ${CRASHDIR}/.dis_startup ] && cronset "保守模式守护进程" || $0 start
         ;;
-getyaml)	
-		getconfig
-		get_core_config && \
-		logger "任务:【更新订阅并重启服务】配置文件已更新！"
-		;;
-updateyaml)	
-		getconfig
-		get_core_config
-		modify_$format && \
-		put_save http://127.0.0.1:${db_port}/configs "{\"path\":\"${CRASHDIR}/config.$format\"}" && \
-		logger "任务:【热更新订阅】配置文件已更新！"
-		;;
-ntp)
-		{ ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null;exit 0 ;} &
-		;;
-logger)
-		logger $2 $3 $4
-	;;
 webget)
 		#设置临时代理 
 		if [ -n "$(pidof CrashCore)" ];then
@@ -1691,18 +1741,18 @@ webget)
 			[ "$4" = "echooff" ] && progress='-s' || progress='-#'
 			[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
-			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
-			[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$3")
+			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url" 2>/dev/null)
+			[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
 		else
 			if wget --version > /dev/null 2>&1;then
 				[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 				[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 				[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-				timeout='--timeout=3 -t 2'
+				timeout='--timeout=5 -t 2'
 			fi
 			[ "$4" = "echoon" ] && progress=''
 			[ "$4" = "echooff" ] && progress='-q'
-			wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$url"
+			wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$url" 2>/dev/null
 			if [ "$?" != "0" ];then
 				wget -Y off $agent $progress $redirect $certificate $timeout -O "$2" "$3"
 				[ "$?" = "0" ] && result="200"
@@ -1712,43 +1762,8 @@ webget)
 		fi
 		[ "$result" = "200" ] && exit 0 || exit 1
 		;;
-get_save)
-		get_save $2
-	;;
-web_save)
-		getconfig
-		web_save
-	;;
-web_restore)
-		getconfig
-		web_restore
-	;;
-daemon)
-		getconfig
-		cronset '保守模式守护进程' "*/1 * * * * test -z \"\$(pidof CrashCore)\" && $CRASHDIR/start.sh restart #ShellCrash保守模式守护进程"
-	;;
-cronset)
-		cronset $2 $3
-	;;
-set_proxy)
-		getconfig
-		if  [ "$local_type" = "环境变量" ];then
-			[ -w ~/.bashrc ] && profile=~/.bashrc
-			[ -w /etc/profile ] && profile=/etc/profile
-			echo 'export all_proxy=http://127.0.0.1:'"$mix_port" >> $profile
-			echo 'export ALL_PROXY=$all_proxy' >>  $profile
-		fi
-	;;
-unset_proxy)	
-		[ -w ~/.bashrc ] && profile=~/.bashrc
-		[ -w /etc/profile ] && profile=/etc/profile
-		sed -i '/all_proxy/'d  $profile
-		sed -i '/ALL_PROXY/'d  $profile
-	;;
 *)
 	$1 $2 $3 $4 $5 $6 $7
 	;;
 
 esac
-
-exit 0

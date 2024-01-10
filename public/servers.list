@@ -1,32 +1,32 @@
 # ID&类型 说明 地址 其他说明 (类型：100-稳定源;200-测试源;300-基础sub;400-meta_sub;500-规则地址)
 
-101 Jsdelivr-CDN源 https://fastly.jsdelivr.net/gh/juewuy/ShellClash 稳定版 
-102 Github源(须clash服务启用) https://raw.githubusercontent.com/juewuy/ShellClash 稳定版 
+101 Jsdelivr-CDN源 https://fastly.jsdelivr.net/gh/juewuy/ShellCrash 稳定版 
+102 Github源(须clash服务启用) https://raw.githubusercontent.com/juewuy/ShellCrash 稳定版 
 
-201 Jsdelivr-CDN源 https://fastly.jsdelivr.net/gh/juewuy/ShellClash@master 公测版 
+201 Jsdelivr-CDN源 https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master 公测版 
 202 ShellClash自建源 https://gh.jwsc.eu.org/master 公测版 
-203 ShellClash-cfworkers源 https://gh.shellclash.workers.dev/https://raw.githubusercontent.com/juewuy/ShellClash 公测版
-204 Github源(须clash服务启用) https://raw.githubusercontent.com/juewuy/ShellClash/master 公测版
+203 ShellClash-cfworkers源 https://gh.shellclash.workers.dev/https://raw.githubusercontent.com/juewuy/ShellCrash 公测版
+204 Github源(须clash服务启用) https://raw.githubusercontent.com/juewuy/ShellCrash/master 公测版
 205 (请加讨论组-https://t.me/ShellClash) http://t.jwsc.eu.org 内测版
 206 wwng2333自建CN源  https://mirrors.csgo.ovh/ShellClash 公测版
    
-301 墙洞提供 https://api.dler.io  
-302 SUB作者提供 https://sub.xeton.dev 
-303 猫熊提供 https://sub.maoxiongnet.com  
+301 墙洞提供,不支持vless|hy https://api.dler.io  
+302 SUB作者提供,不支持vless|hy https://sub.xeton.dev 
+303 品云提供,不支持vless|hy https://sub.id9.cc
  
-401 肥羊提供(有广告),支持vless|hy https://sub.d1.mk  
-402 品云提供,支持vless|hy https://v.id9.cc
-403 作者提供,支持vless|hy https://sub.jwsc.eu.org
+401 肥羊提供(有广告),支持vless|hy2 https://sub.d1.mk  
+402 肥羊提供(有广告),支持vless|hy2 https://api.v1.mk
+403 作者提供,支持vless|hy2 https://sub.jwsc.eu.org
 
 497 作者提供,未加密仅备用 http://sub2.jwsc.eu.org  
 498 本地服务器 http://127.0.0.1:25500  
    
-501 Acl4SSR全能优化版 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash.ini (推荐)
-502 Acl4SSR精简优化版 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Mini.ini (推荐)
-503 Acl4SSR全能优化+去广告增强 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Block.ini  
-504 Acl4SSR极简版 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Nano.ini (适合自建节点)
-505 Acl4SSR分流&游戏增强 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full.ini  
-506 Acl4SSR分流&游戏&去广告增强 https://github.com/juewuy/ShellClash/raw/master/rules/ShellClash_Full_Block.ini (低性能设备慎用)
+501 Acl4SSR全能优化版 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash.ini (推荐)
+502 Acl4SSR精简优化版 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Mini.ini (推荐)
+503 Acl4SSR全能优化+去广告增强 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Block.ini  
+504 Acl4SSR极简版 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Nano.ini (适合自建节点)
+505 Acl4SSR分流&游戏增强 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Full.ini  
+506 Acl4SSR分流&游戏&去广告增强 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Full_Block.ini (低性能设备慎用)
 507 洞主规则精简版 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini  
 508 洞主规则重度完整版 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini  
 509 Acl4SSR多国精简 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiCountry.ini 

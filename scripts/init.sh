@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.3e
+version=1.8.5d
 
 setdir(){
 	dir_avail(){
@@ -119,16 +119,16 @@ if [ ! -w $dir ];then
 else
 	echo -e "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir -h)"
 	read -p "确认安装？(1/0) > " res
-	[ "$res" = "1" ] && CRASHDIR=$dir/clash || setdir
+	[ "$res" = "1" ] && CRASHDIR=$dir/ShellCrash || setdir
 fi
 }
-setconfig(){
+setconfig(){ 
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=$CRASHDIR/configs/ShellCrash.cfg || configpath=$3
-	[ -n "$(grep -E "^${1}=" $configpath)" ] && sed -i "s#^${1}=\(.*\)#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
+	[ -z "$3" ] && configpath=${CRASHDIR}/configs/ShellCrash.cfg || configpath="${3}"
+	[ -n "$(grep "${1}=" "$configpath")" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 
-$CRASHDIR/start.sh stop 2>/dev/null #防止进程冲突
+${CRASHDIR}/start.sh stop 2>/dev/null #防止进程冲突
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
 	systype=Padavan #老毛子固件
@@ -144,30 +144,29 @@ $CRASHDIR/start.sh stop 2>/dev/null #防止进程冲突
 
 #检查环境变量
 [ -z "$CRASHDIR" -a -n "$clashdir" ] && CRASHDIR=$clashdir
-[ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && {
-	setdir
-}
+[ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && setdir
 #移动文件
-mkdir -p $CRASHDIR
-mv -f /tmp/SC_tmp/* $CRASHDIR 2>/dev/null
+mkdir -p ${CRASHDIR}
+mv -f /tmp/SC_tmp/* ${CRASHDIR} 2>/dev/null
 
 #初始化
-mkdir -p $CRASHDIR/configs
-[ -f "$CRASHDIR/configs/ShellCrash.cfg" ] || echo '#ShellCrash配置文件，不明勿动！' > $CRASHDIR/configs/ShellCrash.cfg
+mkdir -p ${CRASHDIR}/configs
+[ -f "${CRASHDIR}/configs/ShellCrash.cfg" ] || echo '#ShellCrash配置文件，不明勿动！' > ${CRASHDIR}/configs/ShellCrash.cfg
 #本地安装跳过新手引导
 #[ -z "$url" ] && setconfig userguide 1
 #判断系统类型写入不同的启动文件
-if [ -f /etc/rc.common ] && [ -n "$(pidof procd)" ];then
+if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 		#设为init.d方式启动
-		cp -f $CRASHDIR/crash.rc /etc/init.d/shellcrash
+		cp -f ${CRASHDIR}/shellcrash.procd /etc/init.d/shellcrash
 		chmod 755 /etc/init.d/shellcrash
 else
-	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
-	if [ -n "$sysdir" -a -z "$WSL_DISTRO_NAME" ];then #wsl环境不使用systemd
+	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
+	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
 		#设为systemd方式启动
-		mv -f $CRASHDIR/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
+		mv -f ${CRASHDIR}/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
 		sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
+		rm -rf $sysdir/clash.service #旧版文件清理
 		systemctl daemon-reload
 	else
 		#设为保守模式启动
@@ -176,9 +175,23 @@ else
 fi
 #修饰文件及版本号
 type bash &>/dev/null && shtype=bash || shtype=sh 
-sed -i "s|/bin/sh|/bin/$shtype|" $CRASHDIR/start.sh
-chmod 755 $CRASHDIR/start.sh
+for file in start.sh task.sh ;do
+	sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file}
+	chmod 755 ${CRASHDIR}/${file}
+done
 setconfig versionsh_l $version
+#生成用于执行systemd及procd服务的变量文件
+TMPDIR='/tmp/ShellCrash'
+BINDIR=${CRASHDIR}
+touch ${CRASHDIR}/configs/command.env
+setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
+setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env	
+if [ -x ${CRASHDIR}/CrashCore ] && ${CRASHDIR}/CrashCore version &>/dev/null ;then
+	COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
+else
+	COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
+fi
+setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
 #设置环境变量
@@ -212,7 +225,7 @@ fi
 	}
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ];then
-	chmod 755 $CRASHDIR/misnap_init.sh
+	chmod 755 ${CRASHDIR}/misnap_init.sh
 	uci delete firewall.ShellClash 2>/dev/null
 	uci delete firewall.ShellCrash 2>/dev/null
 	uci set firewall.ShellCrash=include
@@ -222,11 +235,11 @@ if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ];then
 	uci commit firewall
 	setconfig systype $systype
 else
-	rm -rf $CRASHDIR/misnap_init.sh
+	rm -rf ${CRASHDIR}/misnap_init.sh
 fi
 #华硕USB启动额外设置
 [ "$usb_status" = "1" ]	&& {
-	echo "$CRASHDIR/start.sh init #ShellCrash初始化脚本" > $CRASHDIR/asus_usb_mount.sh
+	echo "$CRASHDIR/start.sh init #ShellCrash初始化脚本" > ${CRASHDIR}/asus_usb_mount.sh
 	nvram set script_usbmount="$CRASHDIR/asus_usb_mount.sh"
 	nvram commit
 }
@@ -234,39 +247,43 @@ fi
 rm -rf /tmp/*rash*gz
 rm -rf /tmp/SC_tmp
 #转换&清理旧版本文件
-mkdir -p $CRASHDIR/yamls
-mkdir -p $CRASHDIR/tools
-mkdir -p $CRASHDIR/task
+mkdir -p ${CRASHDIR}/yamls
+mkdir -p ${CRASHDIR}/jsons
+mkdir -p ${CRASHDIR}/tools
+mkdir -p ${CRASHDIR}/task
 for file in config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml others.yaml ;do
-	mv -f $CRASHDIR/$file $CRASHDIR/yamls/$file 2>/dev/null
+	mv -f ${CRASHDIR}/$file ${CRASHDIR}/yamls/$file 2>/dev/null
 done
-	[ ! -L $CRASHDIR/config.yaml ] && mv -f $CRASHDIR/config.yaml $CRASHDIR/yamls/config.yaml 2>/dev/null
+	[ ! -L ${CRASHDIR}/config.yaml ] && mv -f ${CRASHDIR}/config.yaml ${CRASHDIR}/yamls/config.yaml 2>/dev/null
 for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallback_filter.list;do
-	mv -f $CRASHDIR/$file $CRASHDIR/configs/$file 2>/dev/null
+	mv -f ${CRASHDIR}/$file ${CRASHDIR}/configs/$file 2>/dev/null
 done
 	#配置文件改名
-	mv -f $CRASHDIR/mark $CRASHDIR/configs/ShellCrash.cfg 2>/dev/null
-	mv -f $CRASHDIR/configs/ShellClash.cfg $CRASHDIR/configs/ShellCrash.cfg 2>/dev/null
+	mv -f ${CRASHDIR}/mark ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
+	mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 	#内核改名
-	mv -f $CRASHDIR/clash $CRASHDIR/CrashCore 2>/dev/null
+	mv -f ${CRASHDIR}/clash ${CRASHDIR}/CrashCore 2>/dev/null
 for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh;do
-	mv -f $CRASHDIR/$file $CRASHDIR/tools/$file 2>/dev/null
+	mv -f ${CRASHDIR}/$file ${CRASHDIR}/tools/$file 2>/dev/null
 done
 for file in cron task.sh task.list;do
-	mv -f $CRASHDIR/$file $CRASHDIR/task/$file 2>/dev/null
+	mv -f ${CRASHDIR}/$file ${CRASHDIR}/task/$file 2>/dev/null
 done
-chmod 755 $CRASHDIR/task/task.sh
+chmod 755 ${CRASHDIR}/task/task.sh
 #旧版文件清理
-rm -rf $sysdir/shellcrash.service
+
+rm -rf /etc/init.d/clash
+rm -rf $CRASHDIR/clash.sh
 for file in log shellcrash.service mark? mark.bak;do
-	rm -rf $CRASHDIR/$file
+	rm -rf ${CRASHDIR}/$file
 done
 #旧版变量改名
 sed -i "s/clashcore/crashcore/g" $configpath
+sed -i "s/clash.meta/meta/g" $configpath
 sed -i "s/ShellClash/ShellCrash/g" $configpath
 #旧版任务清理
-$CRASHDIR/start.sh cronset "clash服务" 2>/dev/null
-$CRASHDIR/start.sh cronset "订阅链接" 2>/dev/null
-$CRASHDIR/start.sh cronset "ShellCrash初始化" 2>/dev/null
+${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
+${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
+${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
 sleep 1
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"

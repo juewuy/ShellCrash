@@ -2,14 +2,12 @@
 # Copyright (C) Juewuy
 
 #加载全局变量
-[ -d "/etc/storage/clash" ] && CRASHDIR=/etc/storage/clash
-[ -d "/jffs/clash" ] && CRASHDIR=/jffs/clash
-[ -z "$CRASHDIR" ] && CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
-[ -z "$CRASHDIR" ] && CRASHDIR=$(cat ~/.bashrc | grep CRASHDIR | awk -F "\"" '{print $2}')
-[ -z "$bindir" ] && bindir=$CRASHDIR
-CFG_PATH=$CRASHDIR/configs/ShellCrash.cfg
-TMPDIR=/tmp/ShellCrash && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
+CRASHDIR=$(cd $(dirname $0);pwd)
+[ -z "$BINDIR" ] && BINDIR=${CRASHDIR}
+CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
+TMPDIR=/tmp/ShellCrash && [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
 source $CFG_PATH &> /dev/null
+
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$CFG_PATH || configpath=$3
@@ -18,9 +16,9 @@ setconfig(){
 
 #任务命令
 check_update(){ #检查更新工具
-	$CRASHDIR/start.sh webget $TMPDIR/crashversion "$update_url/bin/version" echooff
-	[ "$?" = "0" ] && source $TMPDIR/crashversion 2>/dev/null	
-	rm -rf $TMPDIR/crashversion
+	${CRASHDIR}/start.sh webget ${TMPDIR}/crashversion "$update_url/bin/version" echooff
+	[ "$?" = "0" ] && source ${TMPDIR}/crashversion 2>/dev/null	
+	rm -rf ${TMPDIR}/crashversion
 }
 update_core(){ #自动更新内核
 	#检查版本
@@ -32,29 +30,29 @@ update_core(){ #自动更新内核
 	else
 		#更新内核
 		[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
-		$CRASHDIR/start.sh webget $TMPDIR/core.new "${update_url}/bin/${crashcore}/${core_new}-linux-${cpucore}"
+		${CRASHDIR}/start.sh webget ${TMPDIR}/core.new "${update_url}/bin/${crashcore}/${core_new}-linux-${cpucore}"
 		if [ "$?" != "0" ];then
 			logger "任务【自动更新内核】出错-下载失败！"
-			rm -rf $TMPDIR/core.new
+			rm -rf ${TMPDIR}/core.new
 			return 1
 		else
-			chmod +x $TMPDIR/core.new
-			$CRASHDIR/start.sh stop
+			chmod +x ${TMPDIR}/core.new
+			${CRASHDIR}/start.sh stop
 			if [ "$crashcore" = singbox ];then
-				core_v=$($TMPDIR/core.new version 2>/dev/null | grep version | awk '{print $3}')
+				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
 			else
-				core_v=$($TMPDIR/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
 			fi
 			if [ -z "$core_v" ];then
 				logger "任务【自动更新内核】出错-内核校验失败！"
-				rm -rf $TMPDIR/core.new
-				$CRASHDIR/start.sh start
+				rm -rf ${TMPDIR}/core.new
+				${CRASHDIR}/start.sh start
 				return 1
 			else
-				mv -f $TMPDIR/core.new $bindir/CrashCore
+				mv -f ${TMPDIR}/core.new ${BINDIR}/CrashCore
 				logger "任务【自动更新内核】下载完成，正在重启服务！"
 				setconfig core_v $core_v
-				$CRASHDIR/start.sh start
+				${CRASHDIR}/start.sh start
 				return 0
 			fi
 		fi
@@ -67,20 +65,20 @@ update_shellcrash(){ #自动更新脚本
 		logger "任务【自动更新脚本】中止-未检测到版本更新"
 		exit 1
 	else	
-		$CRASHDIR/start.sh webget $TMPDIR/clashfm.tar.gz "$update_url/bin/clashfm.tar.gz"
+		${CRASHDIR}/start.sh webget ${TMPDIR}/update.tar.gz "$update_url/bin/update.tar.gz"
 		if [ "$?" != "0" ];then
-			rm -rf $TMPDIR/clashfm.tar.gz
+			rm -rf ${TMPDIR}/update.tar.gz
 			logger "任务【自动更新内核】出错-下载失败！"
 			return 1
 		else
 			#解压
-			tar -zxvf "$TMPDIR/clashfm.tar.gz" -C $CRASHDIR/ || tar -zxvf "$TMPDIR/clashfm.tar.gz" --no-same-owner -C $CRASHDIR/
+			tar -zxvf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ || tar -zxvf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
 			if [ $? -ne 0 ];then
-				rm -rf $TMPDIR/clashfm.tar.gz
+				rm -rf ${TMPDIR}/update.tar.gz
 				logger "任务【自动更新内核】出错-解压失败！"
 				return 1
 			else
-				source $CRASHDIR/init.sh >/dev/null
+				source ${CRASHDIR}/init.sh >/dev/null
 				return 0
 			fi		
 		fi
@@ -97,13 +95,13 @@ update_mmdb(){ #自动更新数据库
 			logger "任务【自动更新数据库文件】跳过-未检测到$2版本更新"
 		else
 			#更新文件
-			$CRASHDIR/start.sh webget $TMPDIR/$1 "$update_url/bin/geodata/$2"
+			${CRASHDIR}/start.sh webget ${TMPDIR}/$1 "$update_url/bin/geodata/$2"
 			if [ "$?" != "0" ];then
 				logger "任务【自动更新数据库文件】更新【$2】下载失败！"
-				rm -rf $TMPDIR/$1
+				rm -rf ${TMPDIR}/$1
 				return 1
 			else
-				mv -f $TMPDIR/$1 $bindir/$1
+				mv -f ${TMPDIR}/$1 ${BINDIR}/$1
 				setconfig $geo_v $GeoIP_v
 				logger "任务【自动更新数据库文件】更新【$2】成功！"
 				return 0
@@ -119,8 +117,11 @@ update_mmdb(){ #自动更新数据库
 	[ -n "${geosite_cn_v}" ] && getgeo geosite.db geosite_cn.db
 }
 reset_firewall(){ #重设透明路由防火墙
-	$CRASHDIR/start.sh stop_firewall
-	$CRASHDIR/start.sh afstart
+	${CRASHDIR}/start.sh stop_firewall
+	${CRASHDIR}/start.sh afstart
+}
+ntp(){
+	ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null || exit 0  &
 }
 #任务工具
 
@@ -128,7 +129,7 @@ logger(){
 	[ "$task_push" = 1 ] && push= || push=off
 	[ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
 	[ "$3" = 'off' ] && push=off
-	$CRASHDIR/start.sh logger $1 0 $push
+	${CRASHDIR}/start.sh logger $1 0 $push
 }
 croncmd(){
 	if [ -n "$(crontab -h 2>&1 | grep '\-l')" ];then
@@ -145,14 +146,14 @@ croncmd(){
 }
 cronset(){
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
-	tmpcron=$TMPDIR/cron_$USER
+	tmpcron=${TMPDIR}/cron_$USER
 	croncmd -l > $tmpcron 
 	sed -i "/$1/d" $tmpcron
 	sed -i '/^$/d' $tmpcron
 	echo "$2" >> $tmpcron
 	croncmd $tmpcron
 	#华硕/Padavan固件存档在本地,其他则删除
-	[ "$CRASHDIR" = "/jffs/clash" -o "$CRASHDIR" = "/etc/storage/clash" ] && mv -f $tmpcron $CRASHDIR/task/cron || rm -f $tmpcron
+	[ -d /jffs -o -d /etc/storage/clash -o -d /etc/storage/ShellCrash ] && mv -f $tmpcron ${CRASHDIR}/task/cron || rm -f $tmpcron
 }
 set_cron(){
 	[ -z $week ] && week=*
@@ -164,14 +165,14 @@ set_cron(){
 	if [ "$res" = '1' ]; then
 		task_txt="$min $hour * * $week $CRASHDIR/task/task.sh $task_id $cron_time$task_name"
 		cronset "$cron_time$task_name" "$task_txt"
+		echo -e "任务【$cron_time$task_name】\033[32m已添加！\033[0m"
 	fi
 	unset week hour min
-	echo -e "任务【$cron_time$task_name】\033[32m添加成功！\033[0m"
 	sleep 1
 }
 set_service(){
 	# 参数1代表要任务类型,参数2代表任务ID,参数3代表任务描述,参数4代表running任务cron时间
-	task_file=$CRASHDIR/task/$1
+	task_file=${CRASHDIR}/task/$1
 	[ -s $task_file ] && sed -i "/$3/d" $task_file
 	 #运行时每分钟执行的任务特殊处理
 	if [ "$1" = "running" ];then
@@ -188,18 +189,18 @@ set_service(){
 task_user_add(){ #自定义命令添加
 	echo -----------------------------------------------
 	echo -e "\033[33m命令可包含空格，请确保命令可执行！\033[0m"
-	echo -e "也可以手动编辑\033[32m$CRASHDIR/task/task.user\033[0m添加"
+	echo -e "也可以手动编辑\033[32m${CRASHDIR}/task/task.user\033[0m添加"
 	read -p "请输入命令语句 > " script
 	if [ -n "$script" ];then
 		task_command=$script
 		echo -e "请检查输入：\033[32m$task_command\033[0m"
 		#获取本任务ID
-		task_max_id=$(awk -F'#' '{print $1}' $CRASHDIR/task/task.user  | sort -n | tail -n 1)
+		task_max_id=$(awk -F'#' '{print $1}' ${CRASHDIR}/task/task.user  | sort -n | tail -n 1)
 		[ -z "$task_max_id" ] && task_max_id=200
 		task_id=$((task_max_id + 1))
 		read -p "请输入任务备注 > " txt
 		[ -n "$txt" ] && task_name=$txt || task_name=自定义任务$task_id
-		echo "$task_id#$task_command#$task_name" >> $CRASHDIR/task/task.user
+		echo "$task_id#$task_command#$task_name" >> ${CRASHDIR}/task/task.user
 		echo -e "\033[32m自定义任务已添加！\033[0m" 
 		sleep 1
 	else
@@ -210,15 +211,15 @@ task_user_add(){ #自定义命令添加
 task_user_del(){ #自定义命令删除
 	echo -----------------------------------------------
 	echo -e "请输入对应ID移除对应自定义任务(不会影响内置任务)"
-	echo -e "也可以手动编辑\033[32m$CRASHDIR/task/task.user\033[0m"
+	echo -e "也可以手动编辑\033[32m${CRASHDIR}/task/task.user\033[0m"
 	echo -----------------------------------------------
-	cat $CRASHDIR/task/task.user 2>/dev/null | grep -Ev '^#' | awk -F '#' '{print $1" "$3}'
+	cat ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^#' | awk -F '#' '{print $1" "$3}'
 	echo -----------------------------------------------
 	echo 0 返回上级菜单
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	if [ -n "$num" ];then
-		sed -i "/^$num#/d" $CRASHDIR/task/task.user 2>/dev/null
+		sed -i "/^$num#/d" ${CRASHDIR}/task/task.user 2>/dev/null
 		[ "$num" != 0 ] && task_user_del
 	else
 		echo -e "\033[31m输入错误，请重新输入！\033[0m"
@@ -230,9 +231,9 @@ task_add(){ #任务添加
 	echo -e "\033[36m请选择需要添加的任务\033[0m"
 	echo -----------------------------------------------
 	#检测并创建自定义任务文件
-	[ -f $CRASHDIR/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' > $CRASHDIR/task/task.user
+	[ -f ${CRASHDIR}/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' > ${CRASHDIR}/task/task.user
 	#输出任务列表
-	cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | awk -F '#' '{print " "NR" "$3}'
+	cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | awk -F '#' '{print " "NR" "$3}'
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单" 
 	read -p "请输入对应数字 > " num
@@ -240,9 +241,9 @@ task_add(){ #任务添加
 	0)
 	;;
 	[1-9]|[1-9][0-9])
-		if [ "$num" -le "$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | wc -l)" ];then
-			task_id=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | sed -n "$num p" | awk -F '#' '{print $1}')
-			task_name=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | sed -n "$num p" | awk -F '#' '{print $3}')
+		if [ "$num" -le "$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | wc -l)" ];then
+			task_id=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | sed -n "$num p" | awk -F '#' '{print $1}')
+			task_name=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | sed -n "$num p" | awk -F '#' '{print $3}')
 			task_type
 		else
 			errornum
@@ -255,14 +256,14 @@ task_add(){ #任务添加
 }
 task_del(){ #任务删除
 	#删除定时任务
-	croncmd -l > $TMPDIR/cron && sed -i "/$1/d" $TMPDIR/cron && croncmd $TMPDIR/cron
-	rm -f $TMPDIR/cron
+	croncmd -l > ${TMPDIR}/cron && sed -i "/$1/d" ${TMPDIR}/cron && croncmd ${TMPDIR}/cron
+	rm -f ${TMPDIR}/cron
 	#删除条件任务
-	sed -i "/$1/d" $CRASHDIR/task/cron 2>/dev/null
-	sed -i "/$1/d" $CRASHDIR/task/bfstart 2>/dev/null
-	sed -i "/$1/d" $CRASHDIR/task/afstart 2>/dev/null
-	sed -i "/$1/d" $CRASHDIR/task/running 2>/dev/null
-	sed -i "/$1/d" $CRASHDIR/task/affirewall 2>/dev/null
+	sed -i "/$1/d" ${CRASHDIR}/task/cron 2>/dev/null
+	sed -i "/$1/d" ${CRASHDIR}/task/bfstart 2>/dev/null
+	sed -i "/$1/d" ${CRASHDIR}/task/afstart 2>/dev/null
+	sed -i "/$1/d" ${CRASHDIR}/task/running 2>/dev/null
+	sed -i "/$1/d" ${CRASHDIR}/task/affirewall 2>/dev/null
 }
 task_type(){ #任务条件选择菜单
 	echo -----------------------------------------------
@@ -355,24 +356,31 @@ task_type(){ #任务条件选择菜单
 task_manager(){ #任务管理列表
 	echo -----------------------------------------------
 	#抽取并生成临时列表
-	croncmd -l > $TMPDIR/task_cronlist
-	cat $TMPDIR/task_cronlist $CRASHDIR/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > $TMPDIR/task_list
-	cat $CRASHDIR/task/bfstart $CRASHDIR/task/afstart $CRASHDIR/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> $TMPDIR/task_list
-	rm -rf $TMPDIR/task_cronlist
+	croncmd -l > ${TMPDIR}/task_cronlist
+	cat ${TMPDIR}/task_cronlist ${CRASHDIR}/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > ${TMPDIR}/task_list
+	cat ${CRASHDIR}/task/bfstart ${CRASHDIR}/task/afstart ${CRASHDIR}/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> ${TMPDIR}/task_list
+	cat ${TMPDIR}/task_cronlist 2>/dev/null | sort -u | grep -oE " #.*" | grep -v "守护" | awk -F '#' '{print "0 旧版任务-"$2}' >> ${TMPDIR}/task_list
+	rm -rf ${TMPDIR}/task_cronlist
 	#判断为空则返回
-	if [ ! -s $TMPDIR/task_list ];then
+	if [ ! -s ${TMPDIR}/task_list ];then
 		echo -e "\033[31m当前没有可供管理的任务！\033[36m"
 		sleep 1
 	else
 		echo -e "\033[33m已添加的任务:\033[0m"
 		echo -----------------------------------------------
-		cat $TMPDIR/task_list | awk '{print " " NR " " $2}'
+		cat ${TMPDIR}/task_list | awk '{print " " NR " " $2}'
 		echo -----------------------------------------------
-		echo -e " d 清空任务列表" 
+		echo -e " a 清空旧版任务" 
+		echo -e " d 清空任务列表"
 		echo -e " 0 返回上级菜单" 
 		read -p "请输入对应数字 > " num
 		case "$num" in	
 		0)
+		;;	
+		a)
+			task_del "#"
+			echo -e "\033[31m旧版任务已清空！\033[36m"
+			sleep 1			
 		;;	
 		d)
 			task_del "task.sh"
@@ -381,48 +389,57 @@ task_manager(){ #任务管理列表
 		;;			
 		[1-9]|[1-9][0-9])
 			
-			task_txt=$(sed -n "$num p" $TMPDIR/task_list)
+			task_txt=$(sed -n "$num p" ${TMPDIR}/task_list)
 			task_id=$(echo $task_txt | awk '{print $1}')
-			task_des=$(echo $task_txt | awk '{print $2}')
-			task_name=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $3}')
-			echo -----------------------------------------------
-			echo -e "当前任务为：\033[36m $task_des\033[0m"	
-			echo -e " 1 \033[33m修改\033[0m当前任务"
-			echo -e " 2 \033[31m删除\033[0m当前任务"
-			echo -e " 3 \033[32m立即执行\033[0m一次"	
-			echo -e " 4 查看\033[33m执行记录\033[0m"
-			echo -----------------------------------------------
-			echo -e " 0 返回上级菜单" 
-			read -p "请选择需要执行的操作 > " num
-			case "$num" in
-			0)
-			;;
-			1)
-				task_type && task_del $task_des
-			;;	
-			2)
-				task_del $task_des
-			;;	
-			3)
-				task_command=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $2}')
-				eval $task_command && task_res='执行成功！' || task_res='执行失败！'
-				logger "任务【$task_des】$task_res" 33 off
-				sleep 1
-			;;	
-			4)
+			if [ "$task_id" = 0 ];then
+				read -p "旧版任务不支持管理，是否移除?(1/0) > " res
+				[ "$res" = 1 ] && {
+					cronname=$(echo $task_txt | awk -F '-' '{print $2}')
+					croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
+					sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
+					rm -f $TMPDIR/conf
+				}
+			else
+				task_des=$(echo $task_txt | awk '{print $2}')
+				task_name=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $3}')
 				echo -----------------------------------------------
-				if [ -n "$(cat $TMPDIR/ShellCrash.log | grep "$task_name")" ];then
-					cat $TMPDIR/ShellCrash.log | grep "$task_name"
-				else
-					echo -e "\033[31m未找到相关执行记录！\033[0m"
-				fi
-				sleep 1
-			;;
-			*)
-				errornum
-			;;
-			esac		
-			
+				echo -e "当前任务为：\033[36m $task_des\033[0m"	
+				echo -e " 1 \033[33m修改\033[0m当前任务"
+				echo -e " 2 \033[31m删除\033[0m当前任务"
+				echo -e " 3 \033[32m立即执行\033[0m一次"	
+				echo -e " 4 查看\033[33m执行记录\033[0m"
+				echo -----------------------------------------------
+				echo -e " 0 返回上级菜单" 
+				read -p "请选择需要执行的操作 > " num
+				case "$num" in
+				0)
+				;;
+				1)
+					task_type && task_del $task_des
+				;;	
+				2)
+					task_del $task_des
+				;;	
+				3)
+					task_command=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $2}')
+					eval $task_command && task_res='执行成功！' || task_res='执行失败！'
+					logger "任务【$task_des】$task_res" 33 off
+					sleep 1
+				;;	
+				4)
+					echo -----------------------------------------------
+					if [ -n "$(cat ${TMPDIR}/ShellCrash.log | grep "$task_name")" ];then
+						cat ${TMPDIR}/ShellCrash.log | grep "$task_name"
+					else
+						echo -e "\033[31m未找到相关执行记录！\033[0m"
+					fi
+					sleep 1
+				;;
+				*)
+					errornum
+				;;
+				esac		
+			fi
 			task_manager
 		;;
 		*)
@@ -443,7 +460,7 @@ task_recom(){ #任务推荐
 	[ "$res" = 1 ] && {
 		set_service running "106" "运行时每10分钟自动保存面板配置" "*/10 * * * *"
 		set_service afstart "107" "服务启动后自动同步ntp时间" 
-		cronset "在每周3的3点整更新订阅并重启服务" "0 3 * * 3 $CRASHDIR/task/task.sh 104 在每周3的3点整更新订阅并重启服务" && \
+		cronset "在每周3的3点整更新订阅并重启服务" "0 3 * * 3 ${CRASHDIR}/task/task.sh 104 在每周3的3点整更新订阅并重启服务" && \
 		echo -e "任务【在每周3的3点整更新订阅并重启服务】\033[32m添加成功！\033[0m"
 	}
 }
@@ -470,13 +487,13 @@ task_menu(){ #任务菜单
 	;;	
 	2)
 		task_manager
-		rm -rf $TMPDIR/task_list
+		rm -rf ${TMPDIR}/task_list
 		task_menu
 	;;	
 	3)
-		if [ -n "$(cat $TMPDIR/ShellCrash.log | grep '任务【')" ];then
+		if [ -n "$(cat ${TMPDIR}/ShellCrash.log | grep '任务【')" ];then
 			echo -----------------------------------------------
-			cat $TMPDIR/ShellCrash.log | grep '任务【'
+			cat ${TMPDIR}/ShellCrash.log | grep '任务【'
 		else
 			echo -e "\033[31m未找到任务相关执行日志！\033[0m"
 		fi
@@ -514,8 +531,8 @@ case "$1" in
 		task_menu
 	;;
 	[1-9][0-9][0-9])
-		task_command=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep "$1" | awk -F '#' '{print $2}')
-		task_name=$(cat $CRASHDIR/task/task.list $CRASHDIR/task/task.user 2>/dev/null | grep "$1" | awk -F '#' '{print $3}')
+		task_command=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$1" | awk -F '#' '{print $2}')
+		task_name=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$1" | awk -F '#' '{print $3}')
 		#logger "任务$task_name 开始执行"
 		eval $task_command && task_res=成功 || task_res=失败
 		logger "任务【$2】执行$task_res"

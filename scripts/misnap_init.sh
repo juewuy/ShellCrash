@@ -52,12 +52,12 @@ init(){
 	#初始化环境变量
 	sed -i "/alias crash/d" $profile
 	sed -i "/export CRASHDIR/d" $profile
-	echo "alias crash=\"$CRASHDIR/menu.sh\"" >>$profile
+	echo "alias crash=\"sh $CRASHDIR/menu.sh\"" >>$profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
 	#软固化功能
 	autoSSH
 	#设置init.d服务
-	cp -f $CRASHDIR/shellcrash.rc /etc/init.d/shellcrash
+	cp -f $CRASHDIR/shellcrash.procd /etc/init.d/shellcrash
 	chmod 755 /etc/init.d/shellcrash
 	#启动服务
 	if [ ! -f $CRASHDIR/.dis_startup ]; then

@@ -1,38 +1,35 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-CFG_PATH=$CRASHDIR/configs/ShellCrash.cfg
-YAMLSDIR=$CRASHDIR/yamls
-TMPDIR=/tmp/ShellCrash && [ ! -f $TMPDIR ] && mkdir -p $TMPDIR
+CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
+YAMLSDIR=${CRASHDIR}/yamls
+JSONSDIR=${CRASHDIR}/jsons
+#加载执行目录，失败则初始化
+source ${CRASHDIR}/configs/command.env &>/dev/null
+[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh &>/dev/null
+[ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
+
 #读取配置相关
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=$CFG_PATH || configpath=$3
-	[ -n "$(grep -E "^${1}=" $configpath)" ] && sed -i "s#^${1}=\(.*\)#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
+	[ -z "$3" ] && configpath=${CFG_PATH} || configpath="${3}"
+	[ -n "$(grep "${1}=" "$configpath")" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 ckcmd(){
 	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
 }
 ckstatus(){
-
-	#服务器缺省地址
-	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash
 	#检查/读取脚本配置文件
 	if [ -f $CFG_PATH ];then
-		#检查重复行并去除
-		[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH
-		#检查时间戳
-		touch $TMPDIR/crash_start_time
-		#使用source加载配置文件
-		source $CFG_PATH > /dev/null
+		[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH #检查重复行并去除
+		source $CFG_PATH &>/dev/null	
 	else
-		mkdir -p $CRASHDIR/configs
-		echo '#标识ShellCrash运行状态的文件，不明勿动！' > $CFG_PATH
+		source ${CRASHDIR}/init.sh &>/dev/null
 	fi
-	versionsh=$(cat $CRASHDIR/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
+	versionsh=$(cat ${CRASHDIR}/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
-	#设置默认核心资源目录
-	[ -z "$bindir" ] && bindir=$CRASHDIR
+	#服务器缺省地址
+	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash
 	#设置默认端口及变量
 	[ -z "$mix_port" ] && mix_port=7890
 	[ -z "$redir_port" ] && redir_port=7892
@@ -42,22 +39,22 @@ ckstatus(){
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	#检查mac地址记录
-	[ ! -f $CRASHDIR/configs/mac ] && touch $CRASHDIR/configs/mac
+	[ ! -f ${CRASHDIR}/configs/mac ] && touch ${CRASHDIR}/configs/mac
 	#获取本机host地址
 	[ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}';)
 	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'lan' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host='设备IP地址'
 	#dashboard目录位置
-	[ -f $CRASHDIR/ui/index.html ] && dbdir=$CRASHDIR/ui && hostdir=":$db_port/ui"
+	[ -f ${CRASHDIR}/ui/index.html ] && dbdir=${CRASHDIR}/ui && hostdir=":$db_port/ui"
 	[ -f /www/clash/index.html ] && dbdir=/www/clash && hostdir=/clash
 	#开机自启检测
 	if [ -f /etc/rc.common ];then
-		[ -n "$(find /etc/rc.d -name '*clash')" ] && autostart=enable || autostart=disable
-	elif [ -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
-		[ -n "$(systemctl is-enabled shellcrash.service 2>&1 | grep enable)" ] && autostart=enable || autostart=disable
+		[ -n "$(find /etc/rc.d -name '*shellcrash')" ] && autostart=enable || autostart=disable
+	elif ckcmd systemctl;then
+		[ "$(systemctl is-enabled shellcrash.service 2>&1)" = enabled ] && autostart=enable || autostart=disable
 	else
-		[ -f $CRASHDIR/.dis_startup ] && autostart=disable || autostart=enable
+		[ -f ${CRASHDIR}/.dis_startup ] && autostart=disable || autostart=enable
 	fi
 	#开机自启描述
 	if [ "$autostart" = "enable" ]; then
@@ -73,8 +70,8 @@ ckstatus(){
 		run="\033[32m正在运行（$redir_mod）\033[0m"
 		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
 		#获取运行时长
-		touch $TMPDIR/crash_start_time #用于延迟启动的校验
-		start_time=$(cat $TMPDIR/crash_start_time)
+		touch ${TMPDIR}/crash_start_time #用于延迟启动的校验
+		start_time=$(cat ${TMPDIR}/crash_start_time)
 		if [ -n "$start_time" ]; then 
 			time=$((`date +%s`-start_time))
 			day=$((time/86400))
@@ -86,10 +83,11 @@ ckstatus(){
 		#检测系统端口占用
 		checkport
 	fi
+	[ "$crashcore" = singbox ] && corename=Sing-Box || corename=Clash
 	#输出状态
 	echo -----------------------------------------------
 	echo -e "\033[30;46m欢迎使用ShellCrash！\033[0m		版本：$versionsh_l"
-	echo -e "Clash服务"$run"，"$auto""
+	echo -e "$corename服务"$run"，"$auto""
 	if [ -n "$PID" ];then
 		echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
 	fi
@@ -98,52 +96,49 @@ ckstatus(){
 	#检查新手引导
 	if [ -z "$userguide" ];then
 		setconfig userguide 1
-		source $CRASHDIR/getdate.sh && userguide
+		source ${CRASHDIR}/getdate.sh && userguide
 	fi
 	#检查执行权限
-	[ ! -x $CRASHDIR/start.sh ] && chmod +x $CRASHDIR/start.sh
+	[ ! -x ${CRASHDIR}/start.sh ] && chmod +x ${CRASHDIR}/start.sh
 	#检查/tmp内核文件
-	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -Ev  ".*[(gz)(zip)(7z)(tar)(xz)]$" | grep -iE '^clash$|^clash-linux*|^mihomo*|^clash.meta*'` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -Ev  ".*[(gz)(zip)(7z)(tar)(xz)]$" | grep -iE '^clash$|^clash-linux.*|^mihomo.*|^sing.*box|^clash.meta.*'` ; do 
 		file=/tmp/$file
 		chmod +x $file
-		tmp_version=$($file -v 2>/dev/null)
-		if [ -n "$tmp_version" ];then
-			echo -e "发现可用的内核文件： \033[36m$file\033[0m "
-			read -p "是否加载？(1/0) > " res
+		echo -e "发现可用的内核文件： \033[36m$file\033[0m "
+			read -p "是否加载(会停止当前服务)？(1/0) > " res
 			[ "$res" = 1 ] && {
-				source $CRASHDIR/getdate.sh && setcoretype && \
-				mv -f $file $CRASHDIR/CrashCore && \
-				echo -e "\033[32m内核加载完成！\033[0m " && \
-				setconfig crashcore $crashcore && \
-				switch_core
-				sleep 1
+				${CRASHDIR}/start.sh stop
+				$file -v &>/dev/null || $file version &>/dev/null
+				if [ "$?" = 0 ];then
+					source ${CRASHDIR}/getdate.sh && setcoretype && \
+					mv -f $file ${CRASHDIR}/CrashCore && \
+					echo -e "\033[32m内核加载完成！\033[0m " && \
+					setconfig crashcore $crashcore && \
+					switch_core
+					sleep 1
+				else
+					echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
+					rm -rf $file
+					echo -e "\033[33m内核文件已移除，请认真检查后重新上传！\033[0m"
+					sleep 2
+				fi
 			}
-		else
-			echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
-			rm -rf $file
-			echo -e "\033[33m内核文件已移除，请认真检查后重新上传！\033[0m"
-			sleep 2
-		fi
 		echo -----------------------------------------------
 	done
 	#检查/tmp配置文件
-	[ -x $bindir/clash ] && \
-	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '.yaml$|.yml$'` ; do 
+	[ -x ${BINDIR}/CrashCore ] && \
+	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '.yaml$|.yml$|.json$'` ; do 
 		file=/tmp/$file
-		$bindir/clash -t -d $bindir -f $file &>/dev/null && {
-		echo -e "发现可用的YAML配置文件： \033[36m$file\033[0m "
-		read -p "加载为yaml配置文件/或者移除该文件？(1/0) > " res
+		echo -e "发现内核配置文件： \033[36m$file\033[0m "
+		read -p "是否加载为$crashcore的配置文件？(1/0) > " res
 		[ "$res" = 1 ] && {
-			mv -f $file $CRASHDIR/yamls/config.yaml
+			if [ -n "$(echo $file | grep -iE '.json$')" ];then
+				mv -f $file ${CRASHDIR}/jsons/config.json
+			else
+				mv -f $file ${CRASHDIR}/yamls/config.yaml
+			fi
 			echo -e "\033[32m配置文件加载完成！\033[0m " 
 			sleep 1
-		}
-		[ "$res" = 0 ] && { 
-			rm -rf $file 
-			echo -e "\033[32m配置文件已移除！\033[0m " 
-			sleep 1
-		}
-		echo -----------------------------------------------
 		}
 	done
 	#检查禁用配置覆写
@@ -161,7 +156,8 @@ errornum(){
 	echo -e "\033[31m请输入正确的字母或数字！\033[0m"
 }
 startover(){
-	echo -e "\033[32m服务已启动！\033[0m"
+	[ "$crashcore" = singbox ] && corename=Singbox || corename=Clash
+	echo -e "\033[32m$corename服务已启动！\033[0m"
 	echo -e "请使用 \033[4;32mhttp://$host$hostdir\033[0m 管理内置规则"
 	if [ "$redir_mod" = "纯净模式" ];then
 		echo -----------------------------------------------
@@ -169,16 +165,28 @@ startover(){
 		echo -e "或者使用HTTP/SOCK5方式连接：IP{\033[36m$host\033[0m}端口{\033[36m$mix_port\033[0m}"
 	fi
 }
-clashstart(){
-	#检查yaml配置文件
-	echo -----------------------------------------------
-	if [ -s $CRASHDIR/yamls/config.yaml -o -n "$Url" -o -n "$Https" ];then
-		$CRASHDIR/start.sh start
-		sleep 1
-		[ -n "$(pidof CrashCore)" ] && startover
+start_core(){
+	if [ "$crashcore" = singbox ];then
+		core_config=${CRASHDIR}/jsons/config.json
 	else
-		echo -e "\033[31m没有找到配置文件，请先导入配置文件！\033[0m"
-		source $CRASHDIR/getdate.sh && clashlink
+		core_config=${CRASHDIR}/yamls/config.yaml
+	fi
+	echo -----------------------------------------------
+	if [ -s $core_config -o -n "$Url" -o -n "$Https" ];then
+		${CRASHDIR}/start.sh start
+		sleep 2
+		if [ -n "$(pidof CrashCore)" ];then
+			startover
+		else
+			${COMMAND} &>${TMPDIR}/core_test.log &
+			sleep 1 ; kill $! &>/dev/null
+			${CRASHDIR}/start.sh start_error
+			${CRASHDIR}/start.sh stop
+			exit 1
+		fi
+	else
+		echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"
+		source ${CRASHDIR}/getdate.sh && set_core_config
 	fi
 }
 checkrestart(){
@@ -186,7 +194,7 @@ checkrestart(){
 	echo -e "\033[32m检测到已变更的内容，请重启服务！\033[0m"
 	echo -----------------------------------------------
 	read -p "是否现在重启服务？(1/0) > " res
-	[ "$res" = 1 ] && clashstart
+	[ "$res" = 1 ] && start_core
 }
 #功能相关
 log_pusher(){ #日志菜单
@@ -209,9 +217,9 @@ log_pusher(){ #日志菜单
 	read -p "请输入对应数字 > " num	
 	case $num in
 	1)
-		if [ -s $TMPDIR/ShellCrash.log ];then
+		if [ -s ${TMPDIR}/ShellCrash.log ];then
 			echo -----------------------------------------------
-			cat $TMPDIR/ShellCrash.log
+			cat ${TMPDIR}/ShellCrash.log
 			exit 0
 		else
 			echo -e "\033[31m未找到相关日志！\033[0m"
@@ -251,7 +259,7 @@ log_pusher(){ #日志菜单
 					push_TG=$TOKEN
 					setconfig push_TG $TOKEN
 					setconfig chat_ID $chat_ID
-					$CRASHDIR/start.sh logger "已完成Telegram日志推送设置！" 32
+					${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32
 				else
 					echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
 				fi
@@ -279,7 +287,7 @@ log_pusher(){ #日志菜单
 			if [ -n "$url" ];then
 				push_Deer=$url
 				setconfig push_Deer $url
-				$CRASHDIR/start.sh logger "已完成PushDeer日志推送设置！" 32
+				${CRASHDIR}/start.sh logger "已完成PushDeer日志推送设置！" 32
 			else
 				echo -e "\033[31m输入错误，请重新输入！\033[0m"
 			fi
@@ -314,7 +322,7 @@ log_pusher(){ #日志菜单
 					bark_param=$param
 					setconfig bark_param \'$param\'
 				fi
-				$CRASHDIR/start.sh logger "已完成Bark日志推送设置！" 32
+				${CRASHDIR}/start.sh logger "已完成Bark日志推送设置！" 32
 			else
 				echo -e "\033[31m输入错误，请重新输入！\033[0m"
 			fi
@@ -350,7 +358,7 @@ log_pusher(){ #日志菜单
 					push_Po_key=$key
 					setconfig push_Po $Token
 					setconfig push_Po_key $key
-					$CRASHDIR/start.sh logger "已完成Passover日志推送设置！" 32
+					${CRASHDIR}/start.sh logger "已完成Passover日志推送设置！" 32
 				else
 					echo -e "\033[31m输入错误，请重新输入！\033[0m"
 				fi
@@ -377,7 +385,7 @@ log_pusher(){ #日志菜单
 	;;
 	9)	
 		echo -e "\033[33m运行日志及任务日志均已清空！\033[0m"
-		rm -rf $TMPDIR/ShellCrash.log
+		rm -rf ${TMPDIR}/ShellCrash.log
 		sleep 1
 		log_pusher		
 	;;
@@ -515,6 +523,7 @@ setdns(){
 	echo -e "FallbackDNS：\033[36m$dns_fallback\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m“|”\033[0m或者\033[30;47m“, ”\033[0m分隔输入"
 	echo -e "\033[33m必须拥有本地根证书文件才能使用dot/doh类型的加密dns\033[0m"
+	echo -e "\033[33m注意singbox内核只有首个dns会被加载！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
 	echo -e " 2 修改\033[36mFallback_DNS\033[0m"
@@ -522,7 +531,7 @@ setdns(){
 	echo -e " 4 一键配置\033[32m加密DNS\033[0m"
 	echo -e " 5 hosts优化：  	\033[36m$hosts_opt\033[0m	————调用本机hosts并劫持NTP服务"
 	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————不推荐使用"
-	echo -e " 7 禁用DNS劫持：	\033[36m$dns_no\033[0m	————取消劫持局域网53端口"
+	echo -e " 7 禁用DNS劫持：	\033[36m$dns_no\033[0m	————搭配第三方DNS使用"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -770,7 +779,7 @@ macfilter(){
 	add_mac(){
 		echo -----------------------------------------------
 		echo 已添加的mac地址：
-		cat $CRASHDIR/configs/mac
+		cat ${CRASHDIR}/configs/mac
 		echo -----------------------------------------------
 		echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
 		cat $dhcpdir | awk '{print " "NR" "$3,$2,$4}'
@@ -782,8 +791,8 @@ macfilter(){
 		if [ -z "$num" -o "$num" = 0 ]; then
 			i=
 		elif [ -n "$(echo $num | grep -aE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')" ];then
-			if [ -z "$(cat $CRASHDIR/configs/mac | grep -E "$num")" ];then
-				echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >> $CRASHDIR/configs/mac
+			if [ -z "$(cat ${CRASHDIR}/configs/mac | grep -E "$num")" ];then
+				echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >> ${CRASHDIR}/configs/mac
 			else
 				echo -----------------------------------------------
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
@@ -791,8 +800,8 @@ macfilter(){
 			add_mac
 		elif [ $num -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
 			macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
-			if [ -z "$(cat $CRASHDIR/configs/mac | grep -E "$macadd")" ];then
-				echo $macadd >> $CRASHDIR/configs/mac
+			if [ -z "$(cat ${CRASHDIR}/configs/mac | grep -E "$macadd")" ];then
+				echo $macadd >> ${CRASHDIR}/configs/mac
 			else
 				echo -----------------------------------------------
 				echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
@@ -806,12 +815,12 @@ macfilter(){
 	}
 	del_mac(){
 		echo -----------------------------------------------
-		if [ -z "$(cat $CRASHDIR/configs/mac)" ];then
+		if [ -z "$(cat ${CRASHDIR}/configs/mac)" ];then
 			echo -e "\033[31m列表中没有需要移除的设备！\033[0m"
 		else
 			echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[0m"
 			i=1
-			for mac in $(cat $CRASHDIR/configs/mac); do
+			for mac in $(cat ${CRASHDIR}/configs/mac); do
 				dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
 				dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
 				dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
@@ -823,8 +832,8 @@ macfilter(){
 			read -p "请输入需要移除的设备的对应序号 > " num
 			if [ -z "$num" ]||[ "$num" -le 0 ]; then
 				n=
-			elif [ $num -le $(cat $CRASHDIR/configs/mac | wc -l) ];then
-				sed -i "${num}d" $CRASHDIR/configs/mac
+			elif [ $num -le $(cat ${CRASHDIR}/configs/mac | wc -l) ];then
+				sed -i "${num}d" ${CRASHDIR}/configs/mac
 				echo -----------------------------------------------
 				echo -e "\033[32m对应设备已移除！\033[0m"
 				del_mac
@@ -853,11 +862,11 @@ macfilter(){
 	echo -e "\033[30;47m请在此添加或移除设备\033[0m"
 	echo -e "当前过滤方式为：\033[33m$macfilter_type模式\033[0m"
 	echo -e "仅列表内设备\033[36m$macfilter_scrip经过\033[0mClash内核"
-	if [ -n "$(cat $CRASHDIR/configs/mac)" ]; then
+	if [ -n "$(cat ${CRASHDIR}/configs/mac)" ]; then
 		echo -----------------------------------------------
 		echo -e "当前已过滤设备为：\033[36m"
 		echo -e "\033[33m   设备IP       设备mac地址       设备名称\033[0m"
-		for mac in $(cat $CRASHDIR/configs/mac); do
+		for mac in $(cat ${CRASHDIR}/configs/mac); do
 			dev_ip=$(cat $dhcpdir | grep $mac | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip='000.000.00.00'
 			dev_mac=$(cat $dhcpdir | grep $mac | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$mac
 			dev_name=$(cat $dhcpdir | grep $mac | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
@@ -888,7 +897,7 @@ macfilter(){
 		del_mac
 		macfilter
 	elif [ "$num" = 4 ]; then
-		:>$CRASHDIR/configs/mac
+		:>${CRASHDIR}/configs/mac
 		echo -----------------------------------------------
 		echo -e "\033[31m设备列表已清空！\033[0m"
 		macfilter
@@ -942,7 +951,7 @@ setboot(){
 	[ -z "$start_old" ] && start_old=未开启
 	[ -z "$start_delay" -o "$start_delay" = 0 ] && delay=未设置 || delay=${start_delay}秒
 	[ "$autostart" = "enable" ] && auto_set="\033[33m禁止" || auto_set="\033[32m允许"
-	[ "$bindir" = "$CRASHDIR" ] && mini_clash=未开启 || mini_clash=已开启
+	[ "${BINDIR}" = "${CRASHDIR}" ] && mini_clash=未开启 || mini_clash=已开启
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用启动设置菜单：\033[0m"
 	echo -----------------------------------------------
@@ -950,7 +959,7 @@ setboot(){
 	echo -e " 2 使用保守模式:	\033[36m$start_old\033[0m	————基于定时任务(每分钟检测)"
 	echo -e " 3 设置自启延时:	\033[36m$delay\033[0m	————用于解决自启后服务受限"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————用于闪存空间不足的设备"
-	[ "$bindir" != "$CRASHDIR" ] && echo -e " 5 设置小闪存目录:	\033[36m$bindir\033[0m"
+	[ "${BINDIR}" != "${CRASHDIR}" ] && echo -e " 5 设置小闪存目录:	\033[36m${BINDIR}\033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 \033[0m返回上级菜单\033[0m"
 	read -p "请输入对应数字 > " num
@@ -958,15 +967,15 @@ setboot(){
 	case "$num" in
 	1)	
 		if [ "$autostart" = "enable" ]; then
-			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *clash > /dev/null 2>&1 && cd - >/dev/null
+			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash > /dev/null 2>&1 && cd - >/dev/null
 			ckcmd systemctl && systemctl disable shellcrash.service > /dev/null 2>&1
-			touch $CRASHDIR/.dis_startup
+			touch ${CRASHDIR}/.dis_startup
 			autostart=disable
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
 		elif [ "$autostart" = "disable" ]; then
-			[ -f /etc/rc.common ] && /etc/init.d/clash enable
+			[ -f /etc/rc.common ] && /etc/init.d/shellcrash enable
 			ckcmd systemctl && systemctl enable shellcrash.service > /dev/null 2>&1
-			rm -rf $CRASHDIR/.dis_startup
+			rm -rf ${CRASHDIR}/.dis_startup
 			autostart=enable
 			echo -e "\033[32m已设置Clash开机启动！\033[0m"
 		fi
@@ -977,14 +986,14 @@ setboot(){
 			echo -e "\033[33m改为使用保守模式启动服务！！\033[0m"
 			start_old=已开启
 			setconfig start_old $start_old
-			$CRASHDIR/start.sh stop
+			${CRASHDIR}/start.sh stop
 		else
 			if [ -n "$(pidof procd)" -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
 				echo -e "\033[32m改为使用系统守护进程启动服务！！\033[0m"
-				$CRASHDIR/start.sh cronset "ShellCrash初始化"
+				${CRASHDIR}/start.sh cronset "ShellCrash初始化"
 				start_old=未开启
 				setconfig start_old $start_old
-				$CRASHDIR/start.sh stop
+				${CRASHDIR}/start.sh stop
 				
 			else
 				echo -e "\033[31m当前设备不支持以其他模式启动！！\033[0m"
@@ -1011,12 +1020,12 @@ setboot(){
 		setboot
 	;;
 	4)
-		dir_size=$(df $CRASHDIR |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep Ava |awk '{print $2}')
+		dir_size=$(df ${CRASHDIR} |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep Ava |awk '{print $2}')
 		if [ "$mini_clash" = "未开启" ]; then 
 			if [ "$dir_size" -gt 20480 ];then
 				echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
 			else
-				[ "$bindir" = "$CRASHDIR" ] && bindir="/tmp/clash_$USER"
+				[ "$BINDIR" = "$CRASHDIR" ] && BINDIR="$TMPDIR"
 				echo -e "\033[32m已经启用小闪存功能！\033[0m"
 				echo -e "如需更换目录，请使用【设置小闪存目录】功能\033[0m"
 			fi
@@ -1024,14 +1033,14 @@ setboot(){
 			if [ "$dir_size" -lt 8192 ];then
 				echo -e "\033[31m您的设备剩余空间不足8M，停用后可能无法正常运行！\033[0m"
 				read -p "确认停用此功能？(1/0) > " res
-				[ "$res" = 1 ] && bindir="$CRASHDIR" && echo -e "\033[33m已经停用小闪存功能！\033[0m"
+				[ "$res" = 1 ] && BINDIR="$CRASHDIR" && echo -e "\033[33m已经停用小闪存功能！\033[0m"
 			else
-				rm -rf /tmp/clash_$USER
-				bindir="$CRASHDIR"
+				rm -rf /tmp/ShellCrash
+				BINDIR="$CRASHDIR"
 				echo -e "\033[33m已经停用小闪存功能！\033[0m"
 			fi
 		fi
-		setconfig bindir $bindir
+		setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env
 		sleep 1	
 		setboot
 	;;
@@ -1044,14 +1053,14 @@ setboot(){
 		read -p "请输入相应数字 > " num
 		case "$num" in 
 		1)
-			bindir="/tmp/clash_$USER"	;;
+			BINDIR="$TMPDIR"	;;
 		2)
 			set_usb_dir(){
 				echo "请选择安装目录"
 				du -hL /mnt | awk '{print " "NR" "$2"  "$1}'
 				read -p "请输入相应数字 > " num
-				bindir=$(du -hL /mnt | awk '{print $2}' | sed -n "$num"p)
-				if [ -z "$bindir" ];then
+				BINDIR=$(du -hL /mnt | awk '{print $2}' | sed -n "$num"p)
+				if [ -z "$BINDIR" ];then
 					echo "\033[31m输入错误！请重新设置！\033[0m"
 					set_usb_dir
 				fi
@@ -1060,8 +1069,8 @@ setboot(){
 		;;
 		3)
 			input_dir(){
-				read -p "请输入自定义目录 > " bindir
-				if [ ! -d "$bindir" ];then
+				read -p "请输入自定义目录 > " BINDIR
+				if [ ! -d "$BINDIR" ];then
 					echo "\033[31m输入错误！请重新设置！\033[0m"
 					input_dir
 				fi
@@ -1072,7 +1081,7 @@ setboot(){
 			errornum
 		;;
 		esac
-		setconfig bindir $bindir
+		setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env
 		setboot
 	;;
 	*)			
@@ -1085,14 +1094,14 @@ metacfg(){
 	echo -----------------------------------------------
 	
 }
-clashcfg(){
+normal_set(){
 	set_redir_mod(){
 		set_redir_config(){
 			setconfig redir_mod $redir_mod
 			setconfig dns_mod $dns_mod 
 			if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && [ "$crashcore" = "clash" ];then
-				rm -rf $bindir/clash
-				rm -rf $CRASHDIR/clash
+				rm -rf ${BINDIR}/clash
+				rm -rf ${CRASHDIR}/clash
 				setconfig crashcore meta
 			fi
 			echo -----------------------------------------------	
@@ -1135,7 +1144,7 @@ clashcfg(){
 		elif [ "$num" = 3 ]; then
 			if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
 				read -p "当前设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
-				[ "$res" = '1' ] && $CRASHDIR/misnap_init.sh tproxyfix && redir_mod=Tproxy混合
+				[ "$res" = '1' ] && ${CRASHDIR}/misnap_init.sh tproxyfix && redir_mod=Tproxy混合
 			else
 				redir_mod=Tproxy混合
 			fi	
@@ -1148,7 +1157,7 @@ clashcfg(){
 		elif [ "$num" = 5 ]; then
 			if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
 				read -p "当前设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
-				[ "$res" = '1' ] && $CRASHDIR/misnap_init.sh tproxyfix && redir_mod=Tproxy模式
+				[ "$res" = '1' ] && ${CRASHDIR}/misnap_init.sh tproxyfix && redir_mod=Tproxy模式
 			else
 				redir_mod=Tproxy模式
 			fi	
@@ -1196,6 +1205,8 @@ clashcfg(){
 		echo -e "                   不支持绕过CN-IP功能"
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   需搭配加密DNS使用"
+		echo -e " 3 mix混合模式：	\033[32m内部realip外部fakeip\033[0m"
+		echo -e "                   限singbox内核+geosite.db!"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
@@ -1203,25 +1214,26 @@ clashcfg(){
 		elif [ "$num" = 0 ]; then
 			i=
 		elif [ "$num" = 1 ]; then
-			set_fake_ip(){
-				dns_mod=fake-ip
-				setconfig dns_mod $dns_mod 
-				echo -----------------------------------------------	
-				echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-				}
-			if [ "$redir_mod" = "Redir模式" ];then
-				echo -----------------------------------------------	
-				read -p "fake-ip与Redir模式兼容性较差，是否依然强制使用？(1/0) > "	res
-				[ "$res" = 1 ] && set_fake_ip
-			else
-				set_fake_ip
-			fi
+			dns_mod=fake-ip
+			setconfig dns_mod $dns_mod 
+			echo -----------------------------------------------	
+			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 
 		elif [ "$num" = 2 ]; then
 			dns_mod=redir_host
 			setconfig dns_mod $dns_mod 
 			echo -----------------------------------------------	
 			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+		elif [ "$num" = 3 ]; then
+			if [ "$crashcore" = singbox ];then
+				dns_mod=mix
+				setconfig dns_mod $dns_mod 
+				echo -----------------------------------------------	
+				echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+			else
+				echo -e "\033[31m仅限singbox内核使用！！！\033[0m"
+				sleep 1
+			fi
 		else
 			errornum
 		fi
@@ -1233,9 +1245,9 @@ clashcfg(){
 		echo -e "示例：*.b.com"
 		echo -e "示例：*.*.b.com\033[0m"
 		echo -----------------------------------------------
-		if [ -s $CRASHDIR/configs/fake_ip_filter ];then
+		if [ -s ${CRASHDIR}/configs/fake_ip_filter ];then
 			echo -e "\033[33m已添加Fake-ip过滤地址：\033[0m"
-			cat $CRASHDIR/configs/fake_ip_filter | awk '{print NR" "$1}'
+			cat ${CRASHDIR}/configs/fake_ip_filter | awk '{print NR" "$1}'
 		else
 			echo -e "\033[33m你还未添加Fake-ip过滤地址\033[0m" 
 		fi
@@ -1246,14 +1258,14 @@ clashcfg(){
 		0) ;;
 		'') ;;
 		[0-99])
-			sed -i "${input}d" $CRASHDIR/configs/fake_ip_filter	2>/dev/null
+			sed -i "${input}d" ${CRASHDIR}/configs/fake_ip_filter	2>/dev/null
 			echo -e "\033[32m移除成功！\033[0m"	
 			fake_ip_filter
 		;;
 		*)
 			echo -e "你输入的地址是：\033[32m$input\033[0m"	
 			read -p "确认添加？(1/0) > " res
-			[ "$res" = 1 ] && echo $input >> $CRASHDIR/configs/fake_ip_filter
+			[ "$res" = 1 ] && echo $input >> ${CRASHDIR}/configs/fake_ip_filter
 			fake_ip_filter
 		;;
 		esac
@@ -1266,7 +1278,7 @@ clashcfg(){
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$quic_rj" ] && quic_rj=未开启
-	[ -z "$(cat $CRASHDIR/configs/mac)" ] && mac_return=未开启 || mac_return=已启用
+	[ -z "$(cat ${CRASHDIR}/configs/mac)" ] && mac_return=未开启 || mac_return=已启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
@@ -1281,7 +1293,7 @@ clashcfg(){
 	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过ShellCrash内核"
 	echo -e " 7 屏蔽QUIC流量:	\033[36m$quic_rj\033[0m   ————优化视频性能"
 	[ "$disoverride" != "1" ] && {
-		[ "$dns_mod" = "fake-ip" ] && \
+		[ "$dns_mod" = "fake-ip" -a "$crashcore" != "singbox" ] && \
 		echo -e " 8 管理Fake-ip过滤列表" || \
 		echo -e " 8 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
 	}
@@ -1301,11 +1313,11 @@ clashcfg(){
 		else
 			set_redir_mod
 		fi
-		clashcfg
+		normal_set
 	  
 	elif [ "$num" = 2 ]; then
 		set_dns_mod
-		clashcfg
+		normal_set
 	
 	elif [ "$num" = 3 ]; then	
 		echo -----------------------------------------------
@@ -1317,7 +1329,7 @@ clashcfg(){
 			skip_cert=未开启
 		fi
 		setconfig skip_cert $skip_cert 
-		clashcfg
+		normal_set
 	
 	elif [ "$num" = 4 ]; then	
 		set_common_ports(){
@@ -1335,20 +1347,20 @@ clashcfg(){
 		echo -----------------------------------------------
 		if [ -n "$(pidof CrashCore)" ];then
 			read -p "切换时将停止服务，是否继续？(1/0) > " res
-			[ "$res" = 1 ] && $CRASHDIR/start.sh stop && set_common_ports
+			[ "$res" = 1 ] && ${CRASHDIR}/start.sh stop && set_common_ports
 		else
 			set_common_ports
 		fi
-		clashcfg  
+		normal_set  
 
 	elif [ "$num" = 5 ]; then	
-		checkcfg_mac=$(cat $CRASHDIR/configs/mac)
+		checkcfg_mac=$(cat ${CRASHDIR}/configs/mac)
 		macfilter
 		if [ -n "$PID" ];then
-			checkcfg_mac_new=$(cat $CRASHDIR/configs/mac)
+			checkcfg_mac_new=$(cat ${CRASHDIR}/configs/mac)
 			[ "$checkcfg_mac" != "$checkcfg_mac_new" ] && checkrestart
 		fi
-		clashcfg
+		normal_set
 		
 	elif [ "$num" = 6 ]; then	
 		if [ "$local_proxy" = "未开启" ]; then 
@@ -1361,7 +1373,7 @@ clashcfg(){
 			echo -e "\033[33m已经停用本机代理规则,请尽快重启服务！！\033[0m"
 		fi
 		sleep 1
-		clashcfg
+		normal_set
 		
 	elif [ "$num" = 7 ]; then	
 		echo -----------------------------------------------
@@ -1378,11 +1390,11 @@ clashcfg(){
 			echo -e "\033[33m当前模式默认不会代理UDP流量，无需设置！！\033[0m"
 		fi
 		sleep 1
-		clashcfg	
+		normal_set	
 		
 	elif [ "$num" = 8 ]; then
 		echo -----------------------------------------------
-		if [ "$dns_mod" = "fake-ip" ];then
+		if [ "$dns_mod" = "fake-ip" -a "$crashcore" != "singbox" ];then
 			fake_ip_filter
 		else
 			if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
@@ -1401,15 +1413,15 @@ clashcfg(){
 				sleep 1
 			fi
 		fi
-		clashcfg  	
+		normal_set  	
 		
 	elif [ "$num" = 9 ]; then	
-		clashstart
+		start_core
 	else
 		errornum
 	fi
 }
-clashadv(){
+advanced_set(){
 	#获取设置默认显示
 	[ -z "$proxies_bypass" ] && proxies_bypass=未启用
 	[ -z "$start_old" ] && start_old=未开启
@@ -1417,7 +1429,7 @@ clashadv(){
 	[ -z "$public_support" ] && public_support=未开启
 	[ -z "$sniffer" ] && sniffer=未启用
 	[ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && sniffer=已启用
-	[ "$bindir" = "/tmp/clash_$USER" ] && mini_clash=已开启 || mini_clash=未开启
+	[ "$BINDIR" = "/tmp/ShellCrash" ] && mini_clash=已开启 || mini_clash=未开启
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
@@ -1428,7 +1440,7 @@ clashadv(){
 	echo -e " 3 配置公网及局域网防火墙"
 	[ "$disoverride" != "1" ] && {
 		echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
-		echo -e " 5 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
+		[ "$crashcore" = singbox ] || echo -e " 5 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
 		echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	}
 	echo -----------------------------------------------
@@ -1439,21 +1451,21 @@ clashadv(){
 	case "$num" in
 	1)
 		setipv6
-		clashadv
+		advanced_set
 	;;	
 	2)
 		setmeta
-		clashadv	
+		advanced_set	
 	;;	
 	3)
 		setfirewall
-		clashadv	
+		advanced_set	
 	;;	
 	4)
 		echo -----------------------------------------------
 		if [ "$sniffer" = "未启用" ];then
 			if [ "$crashcore" = "clash" ];then
-				rm -rf $bindir/clash
+				rm -rf ${BINDIR}/clash
 				crashcore=meta
 				setconfig crashcore $crashcore
 				echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
@@ -1467,7 +1479,7 @@ clashadv(){
 		setconfig sniffer $sniffer
 		echo -e "\033[32m设置成功！\033[0m"
 		sleep 1		
-		clashadv
+		advanced_set
 	;;
 	5)
 		echo -----------------------------------------------
@@ -1481,11 +1493,11 @@ clashadv(){
 		setconfig proxies_bypass $proxies_bypass
 		echo -e "\033[32m设置成功！\033[0m"
 		sleep 1		
-		clashadv
+		advanced_set
 	;;
 	6)
 		setdns	
-		clashadv
+		advanced_set
 	;;
 	9)
 		echo -e " 1 备份脚本设置"
@@ -1512,6 +1524,7 @@ clashadv(){
 			fi
 		elif [ "$num" = 3 ]; then
 			mv -f $CFG_PATH $CFG_PATH.bak
+			source ${CRASHDIR}/init.sh >/dev/null
 			echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
 		fi
 		echo -e "\033[33m请重新启动脚本！\033[0m"
@@ -1527,8 +1540,8 @@ autoSSH(){
 	echo -e "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
 	read -p "请输入需要还原的SSH密码(不影响当前密码,回车可跳过) > " mi_autoSSH_pwd
 	mi_autoSSH=已配置
-	cp -f /etc/dropbear/dropbear_rsa_host_key $CRASHDIR/configs/dropbear_rsa_host_key 2>/dev/null
-	cp -f /etc/dropbear/authorized_keys $CRASHDIR/configs/authorized_keys 2>/dev/null
+	cp -f /etc/dropbear/dropbear_rsa_host_key ${CRASHDIR}/configs/dropbear_rsa_host_key 2>/dev/null
+	cp -f /etc/dropbear/authorized_keys ${CRASHDIR}/configs/authorized_keys 2>/dev/null
 	ckcmd nvram && {
 		nvram set ssh_en=1  
 		nvram set telnet_en=1  
@@ -1609,13 +1622,13 @@ tools(){
 	#获取设置默认显示
 	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
 	[ "$mi_autoSSH" = "已配置" ] && mi_autoSSH_type=32m已配置 || mi_autoSSH_type=31m未配置
-	[ -f $CRASHDIR/tools/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
+	[ -f ${CRASHDIR}/tools/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
 	echo -e "\033[33m本页工具可能无法兼容全部Linux设备，请酌情使用！\033[0m"
 	echo -e "磁盘占用/所在目录："
-	du -sh $CRASHDIR
+	du -sh ${CRASHDIR}
 	echo -----------------------------------------------
 	echo -e " 1 ShellCrash\033[33m测试菜单\033[0m"
 	echo -e " 2 ShellCrash\033[32m新手引导\033[0m"
@@ -1635,10 +1648,10 @@ tools(){
 		i=
 		
 	elif [ "$num" = 1 ]; then
-		source $CRASHDIR/getdate.sh && testcommand  
+		source ${CRASHDIR}/getdate.sh && testcommand  
 		
 	elif [ "$num" = 2 ]; then
-		source $CRASHDIR/getdate.sh && userguide
+		source ${CRASHDIR}/getdate.sh && userguide
 		
 	elif [ "$num" = 3 ]; then
 		log_pusher
@@ -1651,17 +1664,17 @@ tools(){
 		
 	elif [ "$num" = 7 ]; then
 		echo -----------------------------------------------
-		if [ ! -f $CRASHDIR/tools/ShellDDNS.sh ];then
+		if [ ! -f ${CRASHDIR}/tools/ShellDDNS.sh ];then
 			echo -e "正在获取在线脚本……"
-			$CRASHDIR/start.sh webget $TMPDIR/ShellDDNS.sh $update_url/tools/ShellDDNS.sh
+			${CRASHDIR}/start.sh webget ${TMPDIR}/ShellDDNS.sh $update_url/tools/ShellDDNS.sh
 			if [ "$?" = "0" ];then
-				mv -f $TMPDIR/ShellDDNS.sh $CRASHDIR/tools/ShellDDNS.sh
-				source $CRASHDIR/tools/ShellDDNS.sh
+				mv -f ${TMPDIR}/ShellDDNS.sh ${CRASHDIR}/tools/ShellDDNS.sh
+				source ${CRASHDIR}/tools/ShellDDNS.sh
 			else
 				echo -e "\033[31m文件下载失败！\033[0m"
 			fi
 		else
-			source $CRASHDIR/tools/ShellDDNS.sh
+			source ${CRASHDIR}/tools/ShellDDNS.sh
 		fi
 		sleep 1
 		tools  
@@ -1681,10 +1694,10 @@ tools(){
 		fi
 		tools		
 	elif [ "$num" = 8 ]; then
-		if [ -f $CRASHDIR/tools/tun.ko ];then
+		if [ -f ${CRASHDIR}/tools/tun.ko ];then
 			read -p "是否禁用此功能并移除相关补丁？(1/0) > " res
 			[ "$res" = 1 ] && {
-				rm -rf $CRASHDIR/tools/tun.ko
+				rm -rf ${CRASHDIR}/tools/tun.ko
 				echo -e "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
 			}
 		elif [ -z "$(modinfo tun)" ];then
@@ -1696,10 +1709,10 @@ tools(){
 				tunfixlink="${update_url}/bin/fix/tun.ko"
 				echo -----------------------------------------------
 				echo 正在连接服务器获取Tun模块补丁文件…………
-				$CRASHDIR/start.sh webget $TMPDIR/tun.ko $tunfixlink
+				${CRASHDIR}/start.sh webget ${TMPDIR}/tun.ko $tunfixlink
 				if [ "$?" = "0" ];then
-					mv -f $TMPDIR/tun.ko $CRASHDIR/tools/tun.ko && \
-					$CRASHDIR/misnap_init.sh tunfix && \
+					mv -f ${TMPDIR}/tun.ko ${CRASHDIR}/tools/tun.ko && \
+					${CRASHDIR}/misnap_init.sh tunfix && \
 					echo -e "\033[32m设置成功！请重启服务！\033[0m"
 				else
 					echo -e "\033[31m文件下载失败，请重试！\033[0m"
@@ -1715,7 +1728,7 @@ tools(){
 	fi
 }
 #主菜单
-clashsh(){
+main_menu(){
 	#############################
 	ckstatus
 	#############################
@@ -1739,57 +1752,58 @@ clashsh(){
 		exit;
 		
 	elif [ "$num" = 1 ]; then
-		clashstart
+		start_core
 		exit;
   
 	elif [ "$num" = 2 ]; then
 		checkcfg=$(cat $CFG_PATH)
-		clashcfg
+		normal_set
 		if [ -n "$PID" ];then
 			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
-		clashsh
+		main_menu
 
 	elif [ "$num" = 3 ]; then
-		$CRASHDIR/start.sh stop
+		${CRASHDIR}/start.sh stop
+		sleep 1
 		echo -----------------------------------------------
 		echo -e "\033[31mClash服务已停止！\033[0m"
-		clashsh
+		main_menu
 
 	elif [ "$num" = 4 ]; then
 		setboot
-		clashsh
+		main_menu
 
 	elif [ "$num" = 5 ]; then
-		source $CRASHDIR/task/task.sh && task_menu
-		clashsh
+		source ${CRASHDIR}/task/task.sh && task_menu
+		main_menu
     
 	elif [ "$num" = 6 ]; then
-		source $CRASHDIR/getdate.sh && clashlink
-		clashsh
+		source ${CRASHDIR}/getdate.sh && set_core_config
+		main_menu
 		
 	elif [ "$num" = 7 ]; then
 		checkcfg=$(cat $CFG_PATH)
-		clashadv
+		advanced_set
 		if [ -n "$PID" ];then
 			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
-		clashsh
+		main_menu
 
 	elif [ "$num" = 8 ]; then
 		tools
-		clashsh
+		main_menu
 
 	elif [ "$num" = 9 ]; then
 		checkcfg=$(cat $CFG_PATH)
-		source $CRASHDIR/getdate.sh && update
+		source ${CRASHDIR}/getdate.sh && update
 		if [ -n "$PID" ];then
 			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
-		clashsh
+		main_menu
 	
 	else
 		errornum
@@ -1800,13 +1814,13 @@ clashsh(){
 [ -z "$CRASHDIR" ] && {
 	echo 环境变量配置有误！正在初始化~~~
 	CRASHDIR=$(cd `dirname $0`; pwd)
-	source $CRASHDIR/init.sh
+	source ${CRASHDIR}/init.sh
 	sleep 1
 	echo 请重启SSH窗口以完成初始化！
 	exit
 }
 	
-[ -z "$1" ] && clashsh
+[ -z "$1" ] && main_menu
 
 case "$1" in
 	-h)
@@ -1829,34 +1843,34 @@ case "$1" in
 	;;
 	-t)
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
-		$shtype -x $CRASHDIR/menu.sh
+		$shtype -x ${CRASHDIR}/menu.sh
 	;;
 	-s)
-		$CRASHDIR/start.sh $2 $3 $4 $5 $6
+		${CRASHDIR}/start.sh $2 $3 $4 $5 $6
 	;;
 	-i)
-		source $CRASHDIR/init.sh
+		source ${CRASHDIR}/init.sh 
 	;;
 	-st)
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
-		$shtype -x $CRASHDIR/start.sh $2 $3 $4 $5 $6
+		$shtype -x ${CRASHDIR}/start.sh $2 $3 $4 $5 $6
 	;;
 	-u)
 		read -p "确认卸载ShellCrash？(警告：该操作不可逆！)[1/0] > " res
 		if [ "$res" = '1' ]; then
-			$CRASHDIR/start.sh stop
-			$CRASHDIR/start.sh cronset "clash服务" 2>/dev/null
-			$CRASHDIR/start.sh cronset "订阅链接" 2>/dev/null
-			$CRASHDIR/start.sh cronset "ShellCrash初始化" 2>/dev/null
+			${CRASHDIR}/start.sh stop
+			${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
+			${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
+			${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
 			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
-				mv -f $CRASHDIR/configs /tmp/clash_$USER
-				mv -f $CRASHDIR/yamls /tmp/clash_$USER
-				rm -rf $CRASHDIR/*
-				mv -f /tmp/clash_$USER/configs $CRASHDIR
-				mv -f /tmp/clash_$USER/yamls $CRASHDIR
+				mv -f ${CRASHDIR}/configs /tmp/ShellCrash
+				mv -f ${CRASHDIR}/yamls /tmp/ShellCrash
+				rm -rf ${CRASHDIR}/*
+				mv -f /tmp/ShellCrash/configs ${CRASHDIR}
+				mv -f /tmp/ShellCrash/yamls ${CRASHDIR}
 			else
-				rm -rf $CRASHDIR
+				rm -rf ${CRASHDIR}
 			fi
 			[ -w ~/.bashrc ] && profile=~/.bashrc
 			[ -w /etc/profile ] && profile=/etc/profile
@@ -1869,12 +1883,12 @@ case "$1" in
 			sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
 			sed -i '/ShellCrash初始化/'d /etc/storage/started_script.sh 2>/dev/null
 			sed -i '/ShellCrash初始化/'d /jffs/.asusrouter 2>/dev/null
-			rm -rf $bindir 
-			rm -rf /etc/init.d/clash
+			rm -rf ${BINDIR} 
+			rm -rf /etc/init.d/shellcrash
 			rm -rf /etc/systemd/system/shellcrash.service
 			rm -rf /usr/lib/systemd/system/shellcrash.service
 			rm -rf /www/clash
-			rm -rf /tmp/clash_$USER
+			rm -rf /tmp/ShellCrash
 			sed -Ei s/0:7890/7890:7890/g /etc/passwd
 			userdel -r shellcrash 2>/dev/null
 			nvram set script_usbmount="" 2>/dev/null

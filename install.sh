@@ -174,7 +174,7 @@ if [ ! -w $dir ];then
 else
 	$echo "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir -h)"
 	read -p "确认安装？(1/0) > " res
-	[ "$res" = "1" ] && CRASHDIR=$dir/clash || setdir
+	[ "$res" = "1" ] && CRASHDIR=$dir/ShellCrash || setdir
 fi
 }
 install(){
@@ -225,20 +225,20 @@ read -p "请输入相应数字 > " num
 if [ -z $num ];then
 	echo 安装已取消！ && exit 1;
 elif [ "$num" = "2" ];then
-	webget /tmp/clashrelease $url_cdn@master/bin/release_version echoon rediroff 2>/tmp/clashrelease
+	webget /tmp/release_version $url_cdn@master/bin/release_version echoon rediroff 2>/tmp/release_version
 	if [ "$result" = "200" ];then
-		release_new=$(cat /tmp/clashrelease | head -1)
+		release_new=$(cat /tmp/release_version | head -1)
 		url_dl="$url_cdn@$release_new"
 	else
 		$echo "\033[33m无法获取稳定版安装地址，将尝试安装公测版！\033[0m"
 	fi
 fi
 [ -z "$url_dl" ] && url_dl=$url
-webget /tmp/clashversion "$url_dl/bin/version" echooff
-[ "$result" = "200" ] && versionsh=$(cat /tmp/clashversion | grep "versionsh" | awk -F "=" '{print $2}')
+webget /tmp/test_version "$url_dl/bin/version" echooff
+[ "$result" = "200" ] && versionsh=$(cat /tmp/test_version | grep "versionsh" | awk -F "=" '{print $2}')
 [ -z "$release_new" ] && release_new=$versionsh
-rm -rf /tmp/clashversion
-rm -rf /tmp/clashrelease
+rm -rf /tmp/test_version
+rm -rf /tmp/release_version
 tarurl=$url_dl/bin/ShellCrash.tar.gz
 
 #输出
