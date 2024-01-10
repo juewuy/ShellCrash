@@ -49,6 +49,7 @@ jobs:
       with:
         tag_name: singbox_core
         name: singbox_core
+        body: "The alpha version of singbox core \n这是singbox的官方${{ github.event.inputs.version }}版本内核文件\nhttps://github.com/SagerNet/sing-box/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
         draft: false
         prerelease: true
         files: |
