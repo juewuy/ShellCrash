@@ -673,9 +673,10 @@ EOF
 	#分割配置文件获得outbounds.json及route.json
 	cat $core_config | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' > ${TMPDIR}/outbounds.json
 	cat $core_config | sed -n '/"route":/,/"experimental":/{/"experimental":/d; p}' > ${TMPDIR}/route.json
-	#清理route.json中的process_name规则
+	#清理route.json中的process_name规则以及"auto_detect_interface"
 	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/route.json
 	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/route.json
+	sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' ${TMPDIR}/route.json
 	#跳过本地tls证书验证
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ];then
 		sed -i 's/"insecure": false/"insecure": true/' ${TMPDIR}/outbounds.json
