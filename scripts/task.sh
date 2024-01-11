@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 #加载全局变量
-CRASHDIR=$(cd "$(dirname "$(dirname "$0")")"; pwd)
+[ -z "$CRASHDIR" ] && CRASHDIR=$(cd "$(dirname "$(dirname "$0")")"; pwd)
 [ -z "$BINDIR" ] && BINDIR=${CRASHDIR}
 CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 TMPDIR=/tmp/ShellCrash && [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
@@ -12,6 +12,9 @@ setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$CFG_PATH || configpath=$3
 	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
+}
+ckcmd(){ #检查命令是否存在
+	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
 }
 
 #任务命令
