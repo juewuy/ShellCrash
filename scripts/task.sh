@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 #加载全局变量
-CRASHDIR=$(cd $(dirname $0);pwd)
+CRASHDIR=$(cd "$(dirname "$(dirname "$0")")"; pwd)
 [ -z "$BINDIR" ] && BINDIR=${CRASHDIR}
 CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 TMPDIR=/tmp/ShellCrash && [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}

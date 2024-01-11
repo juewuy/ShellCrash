@@ -279,11 +279,12 @@ for file in log shellcrash.service mark? mark.bak;do
 done
 #旧版变量改名
 sed -i "s/clashcore/crashcore/g" $configpath
+sed -i "s/clash_v/core_v/g" $configpath
 sed -i "s/clash.meta/meta/g" $configpath
 sed -i "s/ShellClash/ShellCrash/g" $configpath
 #旧版任务清理
 ${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
 ${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
 ${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
-sleep 1
+
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"

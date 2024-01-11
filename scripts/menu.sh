@@ -108,12 +108,14 @@ ckstatus(){
 			read -p "是否加载(会停止当前服务)？(1/0) > " res
 			[ "$res" = 1 ] && {
 				${CRASHDIR}/start.sh stop
-				$file -v &>/dev/null || $file version &>/dev/null
-				if [ "$?" = 0 ];then
+				core_v=$($file -v &>/dev/null)
+				[ -z "$core_v" ] && $($file version &>/dev/null)
+				if [ -n "$core_v" ];then
 					source ${CRASHDIR}/getdate.sh && setcoretype && \
 					mv -f $file ${CRASHDIR}/CrashCore && \
 					echo -e "\033[32m内核加载完成！\033[0m " && \
 					setconfig crashcore $crashcore && \
+					setconfig core_v $core_v && \
 					switch_core
 					sleep 1
 				else
@@ -127,7 +129,7 @@ ckstatus(){
 	done
 	#检查/tmp配置文件
 	[ -x ${BINDIR}/CrashCore ] && \
-	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '.yaml$|.yml$|.json$'` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '.yaml$|.yml$|config.json$'` ; do 
 		file=/tmp/$file
 		echo -e "发现内核配置文件： \033[36m$file\033[0m "
 		read -p "是否加载为$crashcore的配置文件？(1/0) > " res

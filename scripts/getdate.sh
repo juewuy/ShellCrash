@@ -1552,7 +1552,7 @@ update(){
 	echo -----------------------------------------------
 	echo -ne "\033[32m正在检查更新！\033[0m\r"
 	checkupdate
-	[ -z "$core_v" ] && core_v=unknow
+	[ -z "$core_v" ] && core_v=$crashcore
 	core_v_new=$(eval echo \$${crashcore}_v)
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
