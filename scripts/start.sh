@@ -138,6 +138,20 @@ put_save(){ #推送面板选择
 		wget -q --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
 	fi
 }
+get_bin(){ #专用于项目内部文件的下载
+	source ${CRASHDIR}/configs/ShellCrash.cfg >/dev/null
+	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master
+	if [ -n "$url_id" ];then
+		if [ "$url_id" = 101 ];then
+			url="$(grep "$url_id" ${CRASHDIR}/configs/servers.list | awk '{print $3}')@$release_type/$2" #jsdelivr特殊处理
+		else
+			url="$(grep "$url_id" ${CRASHDIR}/configs/servers.list | awk '{print $3}')/$release_type/$2"
+		fi
+	else
+		url="$update_url/$2"
+	fi
+	$0 webget "$1" "$url" "$3" "$4" "$5" "$6"
+}
 mark_time(){ #时间戳
 	echo `date +%s` > ${TMPDIR}/crash_start_time
 }
@@ -586,14 +600,14 @@ EOF
     "final": "$direct_dns",
     "independent_cache": true,
     "reverse_mapping": true,
-    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15" }
+    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" }
   },
 EOF
 	}
 	#生成ntp.json
 	cat > ${TMPDIR}/ntp.json <<EOF
   "ntp": {
-    "enabled": false,
+    "enabled": true,
     "server": "time.apple.com",
     "server_port": 123,
     "interval": "30m0s",
@@ -719,7 +733,7 @@ cn_ip_route(){	#CN-IP绕过
 			mv ${CRASHDIR}/cn_ip.txt ${BINDIR}/cn_ip.txt
 		else
 			logger "未找到cn_ip列表，正在下载！" 33
-			$0 webget ${BINDIR}/cn_ip.txt "$update_url/bin/geodata/china_ip_list.txt"
+			get_bin ${BINDIR}/cn_ip.txt "bin/geodata/china_ip_list.txt"
 			[ "$?" = "1" ] && rm -rf ${BINDIR}/cn_ip.txt && logger "列表下载失败！" 31 
 		fi
 	}
@@ -738,7 +752,7 @@ cn_ipv6_route(){ #CN-IPV6绕过
 			mv ${CRASHDIR}/cn_ipv6.txt ${BINDIR}/cn_ipv6.txt
 		else
 			logger "未找到cn_ipv6列表，正在下载！" 33
-			$0 webget ${BINDIR}/cn_ipv6.txt "$update_url/bin/geodata/china_ipv6_list.txt"
+			get_bin ${BINDIR}/cn_ipv6.txt "bin/geodata/china_ipv6_list.txt"
 			[ "$?" = "1" ] && rm -rf ${BINDIR}/cn_ipv6.txt && logger "列表下载失败！" 31 
 		fi
 	}
@@ -1383,7 +1397,7 @@ core_check(){
 			logger "未找到【$crashcore】核心，正在下载！" 33
 			[ -z "$cpucore" ] && source ${CRASHDIR}/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
-			$0 webget ${BINDIR}/core.new "$update_url/bin/$crashcore/clash-linux-$cpucore"
+			get_bin ${BINDIR}/core.new "bin/$crashcore/clash-linux-$cpucore"
 			#校验内核
 			chmod +x ${BINDIR}/core.new 2>/dev/null
 			if [ "$crashcore" = singbox ];then
@@ -1431,7 +1445,7 @@ clash_check(){ #clash启动前检查
 			mv ${CRASHDIR}/Country.mmdb ${BINDIR}/Country.mmdb
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			$0 webget ${BINDIR}/Country.mmdb $update_url/bin/geodata/cn_mini.mmdb
+			get_bin ${BINDIR}/Country.mmdb bin/geodata/cn_mini.mmdb
 			[ "$?" = "1" ] && rm -rf ${BINDIR}/Country.mmdb && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
@@ -1443,7 +1457,7 @@ clash_check(){ #clash启动前检查
 			mv -f ${CRASHDIR}/GeoSite.dat ${BINDIR}/GeoSite.dat
 		else
 			logger "未找到GeoSite数据库，正在下载！" 33
-			$0 webget ${BINDIR}/GeoSite.dat $update_url/bin/geodata/geosite.dat
+			get_bin ${BINDIR}/GeoSite.dat bin/geodata/geosite.dat
 			[ "$?" = "1" ] && rm -rf ${BINDIR}/GeoSite.dat && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 		fi
 	fi
@@ -1456,7 +1470,7 @@ singbox_check(){ #singbox启动前检查
 			mv ${CRASHDIR}/geoip.db ${BINDIR}/geoip.db
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
-			$0 webget ${BINDIR}/geoip.db $update_url/bin/geodata/geoip_cn.db
+			get_bin ${BINDIR}/geoip.db bin/geodata/geoip_cn.db
 			[ "$?" = "1" ] && rm -rf ${BINDIR}/geoip.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
@@ -1468,7 +1482,7 @@ singbox_check(){ #singbox启动前检查
 			mv -f ${CRASHDIR}/geosite.db ${BINDIR}/geosite.db
 		else
 			logger "未找到GeoSite数据库，正在下载！" 33
-			$0 webget ${BINDIR}/geosite.db $update_url/bin/geodata/geosite_cn.db
+			get_bin ${BINDIR}/geosite.db bin/geodata/geosite_cn.db
 			[ "$?" = "1" ] && rm -rf ${BINDIR}/geosite.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 			Geo_v=$(date +"%Y%m%d")
 			setconfig Geo_v $Geo_v
@@ -1499,7 +1513,7 @@ bfstart(){ #启动前
 	[ ! -s ${BINDIR}/ui/index.html ] && makehtml #如没有面板则创建跳转界面
 	catpac	#生成pac文件
 	#内核及内核配置文件检查
-	[ ! -x ${BINDIR}/CrashCore ] && chmod +x ${BINDIR}/CrashCore 	#检测可执行权限
+	[ ! -x ${BINDIR}/CrashCore ] && chmod +x ${BINDIR}/CrashCore 2>/dev/null #检测可执行权限
 	if [ "$crashcore" = singbox ];then
 		singbox_check
 		[ "$disoverride" != "1" ] && modify_json || ln -sf $core_config ${TMPDIR}/config.json
@@ -1617,7 +1631,7 @@ start_old(){ #保守模式
 	#使用传统后台执行二进制文件的方式执行
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		if ckcmd su;then
-			su shellcrash -c "$COMMAND" >/dev/null &
+			su shellcrash -c "$COMMAND &>/dev/null" &
 		else
 			logger "当前设备缺少su命令，保守模式下无法兼容本机代理增强模式，已停止启动！" 31
 			exit 1
