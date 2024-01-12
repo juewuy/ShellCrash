@@ -101,13 +101,13 @@ jobs:
           archs=(amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat)
           new_name=(amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat)
           for((i=0;i<7;i++));do
-            mv -f ./tmp/linux-${archs[i]}/sing-box ./tmp/sing-box-linux-${new_name[i]}
+            mv -f ./tmp/linux-${archs[i]}/sing-box ./tmp/singbox-linux-${new_name[i]}
             chmod +x ./tmp/sing-box-linux-${new_name[i]}
             if [ "${archs[i]}" != "armv5" ];then
               if [[ ${archs[i]} = mips* ]];then
-                ./upx-3.93-amd64_linux/upx ./tmp/sing-box-linux-${new_name[i]}
+                ./upx-3.93-amd64_linux/upx ./tmp/singbox-linux-${new_name[i]}
               else
-                ./upx-3.96-amd64_linux/upx ./tmp/sing-box-linux-${new_name[i]}
+                ./upx-3.96-amd64_linux/upx ./tmp/singbox-linux-${new_name[i]}
               fi
             fi
           done
@@ -116,13 +116,13 @@ jobs:
         run: |
           mkdir -p ./bin/singbox
           rm -fr ./bin/singbox/*
-          mv -f ./tmp/sing-box-linux-* ./bin/singbox/
+          mv -f ./tmp/singbox-linux-* ./bin/singbox/
           rm -fr ./tmp
           sed -i "s/singbox_v=.*/singbox_v=$(./bin/singbox/singbox-linux-amd64 version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')/" bin/version
       - name: Commit and push
         run: |
           git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
-          git add . && git commit -m "更新sing-box内核至${download_version}" || exit 0
+          git add . && git commit -m "更新sing-box内核至${{ github.event.inputs.tag }}" || exit 0
           git push
       - name: Cleanup Workflow
         uses: Mattraks/delete-workflow-runs@main
