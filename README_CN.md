@@ -101,9 +101,26 @@ export url='https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q 
 export url='http://t.jwsc.eu.org' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
-~**DOCKER环境下安装：**<br>
+~**虚拟机/Docker环境安装：**<br>
 
-请参考 [ShellCrash_docker 一键脚本和镜像](https://github.com/echvoyager/shellCrash_docker)
+虚拟机或Docker环境推荐使用Alpine镜像安装<br>
+
+这里以Docker为例(其他虚拟机请自行查找安装Alpine镜像安装教程)<br>
+
+```shell
+#注意，以下命令请分步执行！
+#Docker一键启动Alpine镜像
+docker run -d --name ShellCrash alpine sleep infinity
+#进入容器内sh环境
+docker exec -it ShellCrash sh
+#安装必要依赖
+apk add curl 
+apk add nftables
+#执行安装命令
+export url='https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+```
+
+
 
 ### **本地安装：**<br>
 
