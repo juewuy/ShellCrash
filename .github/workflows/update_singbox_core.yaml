@@ -72,9 +72,6 @@ jobs:
       - name: Build
         id: build
         run: make
-      - name: Rename
-        run: |
-          mv -f sing-box sing-box-${{ matrix.name }}
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
         with:
