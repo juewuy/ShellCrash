@@ -98,7 +98,7 @@ jobs:
           path: ./tmp
       - name: Zip core by upx
         run: |      
-          archs=(amd64 armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat)
+          archs=(amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat)
           new_name=(amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat)
           for((i=0;i<7;i++));do
             mv -f ./tmp/linux-${archs[i]}/sing-box ./tmp/sing-box-linux-${new_name[i]}
