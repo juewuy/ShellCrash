@@ -78,7 +78,8 @@ jobs:
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
         with:
-          path: sing-box-${{ matrix.name }}
+          name: ${{ matrix.name }}
+          path: sing-box
   push_ShellCrash:
     needs: cross
     runs-on: ubuntu-latest
@@ -100,16 +101,16 @@ jobs:
           path: ./tmp
       - name: Zip core by upx
         run: |      
-          dir=/home/runner/work/sing-box/sing-box/tmp/artifact
           archs=(amd64 armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat)
           new_name=(amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat)
           for((i=0;i<7;i++));do
-            chmod +x $dir/sing-box-linux-${new_name[i]}
+            mv -f ./tmp/linux-${archs[i]}/sing-box ./tmp/sing-box-linux-${new_name[i]}
+            chmod +x ./tmp/sing-box-linux-${new_name[i]}
             if [ "${archs[i]}" != "armv5" ];then
               if [[ ${archs[i]} = mips* ]];then
-                ./upx-3.93-amd64_linux/upx $dir/sing-box-linux-${new_name[i]}
+                ./upx-3.93-amd64_linux/upx ./tmp/sing-box-linux-${new_name[i]}
               else
-                ./upx-3.96-amd64_linux/upx $dir/sing-box-linux-${new_name[i]}
+                ./upx-3.96-amd64_linux/upx ./tmp/sing-box-linux-${new_name[i]}
               fi
             fi
           done
