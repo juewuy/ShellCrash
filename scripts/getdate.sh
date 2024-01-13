@@ -1607,7 +1607,7 @@ update(){
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
 	echo -e "当前目录(\033[32m${CRASHDIR}\033[0m)剩余空间：\033[36m$(dir_avail ${CRASHDIR} -h)\033[0m" 
-	[ "$(dir_avail ${CRASHDIR})" -le 5120 ] && {
+	[ "$(dir_avail ${CRASHDIR})" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
 		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m" 
 		sleep 1
 	}
@@ -1844,7 +1844,7 @@ testcommand(){
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
 	echo -----------------------------------------------
-	echo " 1 查看内核运行时的报错信息"
+	echo " 1 查看内核运行报错信息(会停止内核进程)"
 	echo " 2 查看系统DNS端口(:53)占用 "
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看ShellCrash相关路由规则"
@@ -1860,15 +1860,16 @@ testcommand(){
 		main_menu
 	elif [ "$num" = 1 ]; then
 		echo -----------------------------------------------
-		ckcmd journalctl && error=$(journalctl -u shellcrash | grep -Eo 'error.*=.*|.*ERROR.*|.*FATAL.*')
-		[ -z "$error" ] && error=$(cat $TMPDIR/core_test.log | grep -Eo 'error.*=.*|.*ERROR.*|.*FATAL.*')
-		if [ -n "$error" ];then
-			echo $error
-			exit;
+		$CRASHDIR/start.sh stop
+		if [ "$crashcore" = singbox ] ;then
+			$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json &
+			{ sleep 2 ; kill $! &>/dev/null & }
+			wait
 		else
-			echo -e "\033[31m未找到因内核运行错误所产生的日志文件！\033[0m"
-			sleep 1
+			$BINDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
 		fi
+		echo -----------------------------------------------
+		exit;
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
 		netstat -ntulp |grep 53

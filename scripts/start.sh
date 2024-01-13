@@ -556,7 +556,7 @@ EOF
 		[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1' || dns_fallback=$(echo $dns_fallback | awk -F ',' '{print $1}')
 		[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
 		[ "$dns_mod" = "redir_host" ] && proxy_dns=dns_proxy && direct_dns=dns_direct
-		[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip && direct_dns=dns_fakeip
+		[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
 		[ "$dns_mod" = "mix" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
 		cat > ${TMPDIR}/dns.json <<EOF
   "dns": { 
@@ -584,20 +584,17 @@ EOF
     }],
     "rules": [{
       "outbound": ["any"],
-	  "query_type": [
-          "A",
-          "AAAA"
-        ],
       "server": "dns_resolver"
     }, {
+      "geosite": ["geolocation-cn"],
+	  "query_type": [ "A", "AAAA" ],
+      "server": "$direct_dns"
+	}, {
       "geosite": ["geolocation-!cn"],
-	  "query_type": [
-          "A",
-          "AAAA"
-        ],
+	  "query_type": [ "A", "AAAA" ],
       "server": "$proxy_dns"
     }],
-    "final": "$direct_dns",
+    "final": "dns_direct",
     "independent_cache": true,
     "reverse_mapping": true,
     "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" }
@@ -608,7 +605,7 @@ EOF
 	cat > ${TMPDIR}/ntp.json <<EOF
   "ntp": {
     "enabled": true,
-    "server": "time.apple.com",
+    "server": "203.107.6.88",
     "server_port": 123,
     "interval": "30m0s",
     "detour": "DIRECT"
@@ -685,12 +682,19 @@ EOF
 }
 EOF
 	#分割配置文件获得outbounds.json及route.json
+	[ "$(wc -l < $core_config)" -le 5 ] && {
+		${BINDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
+		mv -f ${TMPDIR}/format.json $core_config
+	}
 	cat $core_config | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' > ${TMPDIR}/outbounds.json
 	cat $core_config | sed -n '/"route":/,/"experimental":/{/"experimental":/d; p}' > ${TMPDIR}/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
 	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/route.json
 	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/route.json
 	sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' ${TMPDIR}/route.json
+	#修饰route.json结尾
+	sed -i '/^  }$/s/  }/  },/' ${TMPDIR}/route.json
+	sed -i '/^}$/d' ${TMPDIR}/route.json
 	#跳过本地tls证书验证
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ];then
 		sed -i 's/"insecure": false/"insecure": true/' ${TMPDIR}/outbounds.json
@@ -703,6 +707,7 @@ EOF
 		[ -s ${TMPDIR}/$char.json ] && json_add=${TMPDIR}/$char.json
 		[ -s ${CRASHDIR}/jsons/$char.json ] && json_add=${CRASHDIR}/jsons/$char.json #如果有自定义配置文件则使用
 		json_all="$json_all $json_add"
+		json_add=''
 	done
 	cut -c 1- $json_all > ${TMPDIR}/config.json
 	#测试自定义配置文件

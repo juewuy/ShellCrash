@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.6
+version=1.8.6b
 
 setdir(){
 	dir_avail(){
@@ -127,8 +127,6 @@ setconfig(){
 	[ -z "$3" ] && configpath=${CRASHDIR}/configs/ShellCrash.cfg || configpath="${3}"
 	[ -n "$(grep "${1}=" "$configpath")" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
-
-${CRASHDIR}/start.sh stop 2>/dev/null #防止进程冲突
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
 	systype=Padavan #老毛子固件
@@ -202,6 +200,8 @@ setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 if [ -n "$profile" ];then
 	sed -i '/alias crash=*/'d $profile
 	echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> $profile #设置快捷命令环境变量
+	sed -i '/alias clash=*/'d $profile
+	echo "alias clash=\"$shtype $CRASHDIR/menu.sh\"" >> $profile #设置快捷命令环境变量
 	sed -i '/export CRASHDIR=*/'d $profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile #设置路径环境变量
 	source $profile &>/dev/null || echo 运行错误！请使用bash而不是dash运行安装命令！！！
@@ -273,6 +273,8 @@ chmod 755 ${CRASHDIR}/task/task.sh
 #旧版文件清理
 
 rm -rf /etc/init.d/clash
+rm -rf $CRASHDIR/clashservice
+rm -rf $CRASHDIR/shellcrash.rc
 rm -rf $CRASHDIR/clash.sh
 for file in log shellcrash.service mark? mark.bak;do
 	rm -rf ${CRASHDIR}/$file
@@ -282,9 +284,5 @@ sed -i "s/clashcore/crashcore/g" $configpath
 sed -i "s/clash_v/core_v/g" $configpath
 sed -i "s/clash.meta/meta/g" $configpath
 sed -i "s/ShellClash/ShellCrash/g" $configpath
-#旧版任务清理
-${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
-${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
-${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
 
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"
