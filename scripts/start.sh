@@ -586,7 +586,7 @@ EOF
       "outbound": ["any"],
       "server": "dns_resolver"
     }, {
-      "geosite": ["geolocation-cn"],
+      "geosite": ["cn"],
 	  "query_type": [ "A", "AAAA" ],
       "server": "$direct_dns"
 	}, {
@@ -1305,11 +1305,14 @@ stop_firewall(){ #还原防火墙配置
 web_save(){ #最小化保存面板节点选择
 	getconfig
 	#使用get_save获取面板节点设置
-	get_save http://127.0.0.1:${db_port}/proxies | awk -F ':\\{"' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '(^all|^alive)".*"Selector"' > ${TMPDIR}/shellcrash_web_check_$USER
+	get_save http://127.0.0.1:${db_port}/proxies | awk -F ':\\{"' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector"' | grep -aoE '"name":.*"now":".*",' > ${TMPDIR}/shellcrash_web_check_$USER
 	while read line ;do
-		def=$(echo $line | awk -F "[[,]" '{print $2}')
-		now=$(echo $line | grep -oE '"now".*",' | sed 's/"now"://g' | sed 's/"type":.*//g' |  sed 's/,//g')
-		[ "$def" != "$now" ] && echo $line | grep -oE '"name".*"now".*",' | sed 's/"name"://g' | sed 's/"now"://g' | sed 's/"type":.*//g' | sed 's/"//g' >> ${TMPDIR}/shellcrash_web_save_$USER
+		def=$(echo $line | grep -oE '"all".*",' | awk -F "[:\"]" '{print $5}' )
+		now=$(echo $line | grep -oE '"now".*",' | awk -F "[:\"]" '{print $5}' )
+		[ "$def" != "$now" ] && {
+			name=$(echo $line | grep -oE '"name".*",' | awk -F "[:\"]" '{print $5}' )
+			echo "${name},${now}" >> ${TMPDIR}/shellcrash_web_save_$USER
+		}
 	done < ${TMPDIR}/shellcrash_web_check_$USER
 	rm -rf ${TMPDIR}/shellcrash_web_check_$USER
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存

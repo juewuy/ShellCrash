@@ -124,7 +124,7 @@ reset_firewall(){ #重设透明路由防火墙
 	${CRASHDIR}/start.sh afstart
 }
 ntp(){
-	ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null || exit 0  &
+	[ "$crashcore" != singbox ] && ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null || exit 0  &
 }
 #任务工具
 

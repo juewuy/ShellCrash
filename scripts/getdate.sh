@@ -1665,7 +1665,7 @@ update(){
 		update		
 		
 	elif [ "$num" = 9 ]; then
-		$0 -u
+		crash -u
 		exit
 		
 	elif [ "$num" = 99 ]; then		
@@ -1863,7 +1863,7 @@ testcommand(){
 		$CRASHDIR/start.sh stop
 		if [ "$crashcore" = singbox ] ;then
 			$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json &
-			{ sleep 2 ; kill $! &>/dev/null & }
+			{ sleep 4 ; kill $! &>/dev/null & }
 			wait
 		else
 			$BINDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
