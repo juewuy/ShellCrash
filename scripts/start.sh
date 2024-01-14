@@ -1555,6 +1555,8 @@ bfstart(){ #启动前
 			fi
 		fi
 	fi
+	#清理debug日志
+	rm -rf ${TMPDIR}/debug.log
 	#执行条件任务
 	[ -s ${CRASHDIR}/task/bfstart ] && source ${CRASHDIR}/task/bfstart
 	return 0
@@ -1724,6 +1726,22 @@ restart)
         $0 stop
         $0 start
         ;;
+debug)		
+		[ -n "$(pidof CrashCore)" ] && $0 stop >/dev/null #禁止多实例
+		getconfig 
+		stop_firewall >/dev/null #清理路由策略
+		bfstart
+		[ -n "$2" ] && {
+			if [ "$crashcore" = singbox ];then
+				sed -i "s/\"level\": \"info\"/\"level\": \"$2\"/"  ${TMPDIR}/config.json
+			else
+				sed -i "s/log-level: info/log-level: $2/" ${TMPDIR}/config.yaml
+			fi
+		}
+		$COMMAND &>${TMPDIR}/debug.log &
+		afstart
+		logger "已运行debug模式!如需停止，请正常重启一次服务！" 33 
+	;;
 init)
 		profile=/etc/profile
         if [ -d "/etc/storage/clash" -o -d "/etc/storage/ShellCrash" ];then
@@ -1764,7 +1782,7 @@ webget)
 			[ "$4" = "echooff" ] && progress='-s' || progress='-#'
 			[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
-			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url" 2>/dev/null)
+			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url" )
 			[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
 		else
 			if wget --version > /dev/null 2>&1;then
@@ -1775,7 +1793,7 @@ webget)
 			fi
 			[ "$4" = "echoon" ] && progress=''
 			[ "$4" = "echooff" ] && progress='-q'
-			wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$url" 2>/dev/null
+			wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$url" 
 			if [ "$?" != "0" ];then
 				wget -Y off $agent $progress $redirect $certificate $timeout -O "$2" "$3"
 				[ "$?" = "0" ] && result="200"

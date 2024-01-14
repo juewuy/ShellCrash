@@ -787,7 +787,7 @@ gettar(){
 getsh(){
 	echo -----------------------------------------------
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
-	echo -e "最新脚本版本为：\033[32m $release_new \033[0m"
+	echo -e "最新脚本版本为：\033[32m $version_new \033[0m"
 	echo -e "注意更新时会停止服务！"
 	echo -----------------------------------------------
 	read -p "是否更新脚本？[1/0] > " res
@@ -1665,7 +1665,7 @@ update(){
 		update		
 		
 	elif [ "$num" = 9 ]; then
-		crash -u
+		uninstall
 		exit
 		
 	elif [ "$num" = 99 ]; then		
@@ -1758,12 +1758,6 @@ userguide(){
 		read -p "是否开启？(1/0) > " res
 		[ "$res" = 1 ] && setconfig BINDIR /tmp/ShellCrash ${CRASHDIR}/configs/command.env
 	fi
-	#下载本地面板
-	# echo -----------------------------------------------
-	# echo -e "\033[33m安装本地Dashboard面板，可以更快捷的管理clash内置规则！\033[0m"
-	# echo -----------------------------------------------
-	# read -p "需要安装本地Dashboard面板吗？(1/0) > " res
-	# [ "$res" = 1 ] && checkupdate && setdb
 	#检测及下载根证书
 	if [ -d /etc/ssl/certs -a ! -f '/etc/ssl/certs/ca-certificates.crt' ];then
 		echo -----------------------------------------------
@@ -1823,12 +1817,14 @@ userguide(){
 		[ "$res" = 1 ] && autoSSH
 	fi
 	#提示导入订阅或者配置文件
-	echo -----------------------------------------------
-	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
-	echo -e "\033[0m你必须拥有一份yaml格式的配置文件才能运行服务！\033[0m"
-	echo -----------------------------------------------
-	read -p "现在开始导入？(1/0) > " res
-	[ "$res" = 1 ] && inuserguide=1 && set_core_config && inuserguide=""
+	[ ! -s $CRASHDIR/yamls/config.yaml -a ! -s $CRASHDIR/jsons/config.json ] && {
+		echo -----------------------------------------------
+		echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
+		echo -e "\033[0m你必须拥有一份yaml格式的配置文件才能运行服务！\033[0m"
+		echo -----------------------------------------------
+		read -p "现在开始导入？(1/0) > " res
+		[ "$res" = 1 ] && inuserguide=1 && set_core_config && inuserguide=""
+	}
 	#回到主界面
 	echo -----------------------------------------------
 	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
@@ -1838,13 +1834,66 @@ userguide(){
 	main_menu
 }
 #测试菜单
+debug(){
+	[ "$crashcore" = singbox ] && config_tmp=$TMPDIR/config.json || config_tmp=$TMPDIR/config.yaml
+	echo -----------------------------------------------
+	echo -e "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m"
+	echo -e "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m"
+	echo -e "如长时间运行后台监测，日志等级推荐error！防止文件过大！"
+	echo -e "你也可以通过：\033[33mcrash -s debug 'warning'\033[0m 命令使用其他日志等级"
+	echo -----------------------------------------------
+	echo -e " 1 仅测试\033[32m$config_tmp\033[0m配置文件可用性"
+	echo -e " 2 前台运行\033[32m$config_tmp\033[0m配置文件,不配置防火墙劫持(\033[33m使用Ctrl+C手动停止\033[0m)"
+	echo -e " 3 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[31merror\033[0m"
+	echo -e " 4 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[32minfo\033[0m"
+	echo -e " 5 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[33mdebug\033[0m"
+	echo -----------------------------------------------
+	echo " 0 返回上级目录！"
+	read -p "请输入对应数字 > " num	
+	case "$num" in
+	0) ;;
+	1)
+		$CRASHDIR/start.sh stop
+		if [ "$crashcore" = singbox ] ;then
+			$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json &
+			{ sleep 4 ; kill $! &>/dev/null & }
+			wait
+		else
+			$BINDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
+		fi
+		echo -----------------------------------------------
+		exit
+	;;
+	2)
+		$CRASHDIR/start.sh stop
+		$COMMAND
+		echo -----------------------------------------------
+		exit
+	;;
+	3)
+		$CRASHDIR/start.sh debug error
+		main_menu
+	;;
+	4)
+		$CRASHDIR/start.sh debug info
+		main_menu
+	;;
+	5)
+		$CRASHDIR/start.sh debug debug
+		main_menu
+	;;
+	*)
+		errornum
+	;;	
+	esac
+}
 testcommand(){
 	[ "$crashcore" = singbox ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
 	echo -----------------------------------------------
-	echo " 1 查看内核运行报错信息(会停止内核进程)"
+	echo " 1 Debug模式运行内核"
 	echo " 2 查看系统DNS端口(:53)占用 "
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看ShellCrash相关路由规则"
@@ -1859,17 +1908,8 @@ testcommand(){
 	elif [ "$num" = 0 ]; then
 		main_menu
 	elif [ "$num" = 1 ]; then
-		echo -----------------------------------------------
-		$CRASHDIR/start.sh stop
-		if [ "$crashcore" = singbox ] ;then
-			$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json &
-			{ sleep 4 ; kill $! &>/dev/null & }
-			wait
-		else
-			$BINDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
-		fi
-		echo -----------------------------------------------
-		exit;
+		debug
+		testcommand
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
 		netstat -ntulp |grep 53

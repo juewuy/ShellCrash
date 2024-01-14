@@ -84,6 +84,7 @@ ckstatus(){
 		checkport
 	fi
 	[ "$crashcore" = singbox ] && corename=Sing-Box || corename=Clash
+	[ -f ${TMPDIR}/debug.log -a -n "$PID" ] && auto="\033[33m并处于debug状态！\033[0m"
 	#输出状态
 	echo -----------------------------------------------
 	echo -e "\033[30;46m欢迎使用ShellCrash！\033[0m		版本：$versionsh_l"
@@ -1109,7 +1110,7 @@ normal_set(){ #基础设置
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
-		[ -n "$(lsmod | grep '^tun')" ] || ip tuntap &>/dev/null && sup_tun=1
+		[ -n "$(ls /dev/net/tun)" ] || ip tuntap &>/dev/null && sup_tun=1
 		ckcmd nft && sup_nft=1
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $crashcore \033[0m"
@@ -1555,6 +1556,56 @@ autoSSH(){
 	setconfig mi_autoSSH_pwd $mi_autoSSH_pwd
 	sleep 1
 }
+uninstall(){
+	read -p "确认卸载ShellCrash？(警告：该操作不可逆！)[1/0] > " res
+	if [ "$res" = '1' ]; then
+		${CRASHDIR}/start.sh stop 2>/dev/null
+		${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
+		${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
+		${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
+		read -p "是否保留脚本配置及订阅文件？[1/0] > " res
+		if [ "$res" = '1' ]; then
+			mv -f ${CRASHDIR}/configs /tmp/ShellCrash
+			mv -f ${CRASHDIR}/yamls /tmp/ShellCrash
+			mv -f ${CRASHDIR}/jsons /tmp/ShellCrash
+			rm -rf ${CRASHDIR}/*
+			mv -f /tmp/ShellCrash/configs ${CRASHDIR}
+			mv -f /tmp/ShellCrash/yamls ${CRASHDIR}
+			mv -f /tmp/ShellCrash/jsons ${CRASHDIR}
+		else
+			rm -rf ${CRASHDIR}
+		fi
+		[ -w ~/.bashrc ] && profile=~/.bashrc
+		[ -w /etc/profile ] && profile=/etc/profile
+		sed -i '/alias clash=*/'d $profile
+		sed -i '/alias crash=*/'d $profile
+		sed -i '/export CRASHDIR=*/'d $profile
+		sed -i '/export crashdir=*/'d $profile
+		sed -i '/all_proxy/'d $profile
+		sed -i '/ALL_PROXY/'d $profile
+		sed -i "/启用外网访问SSH服务/d" /etc/firewall.user 2>/dev/null
+		sed -i '/ShellCrash初始化/'d /etc/storage/started_script.sh 2>/dev/null
+		sed -i '/ShellCrash初始化/'d /jffs/.asusrouter 2>/dev/null
+		[ "$BINDIR" != "$CRASHDIR" ] && rm -rf ${BINDIR}
+		rm -rf /etc/init.d/shellcrash
+		rm -rf /etc/systemd/system/shellcrash.service
+		rm -rf /usr/lib/systemd/system/shellcrash.service
+		rm -rf /www/clash
+		rm -rf /tmp/ShellCrash
+		sed -Ei s/0:7890/7890:7890/g /etc/passwd
+		userdel -r shellcrash 2>/dev/null
+		nvram set script_usbmount="" 2>/dev/null
+		nvram commit 2>/dev/null
+		uci delete firewall.ShellCrash 2>/dev/null
+		uci commit firewall 2>/dev/null
+		echo -----------------------------------------------
+		echo -e "\033[36m已卸载ShellCrash相关文件！有缘再会！\033[0m"
+		echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
+		echo -----------------------------------------------
+		exit
+	fi
+	echo -e "\033[31m操作已取消！\033[0m"
+}
 tools(){
 	ssh_tools(){
 		stop_iptables(){
@@ -1833,7 +1884,7 @@ case "$1" in
 		echo "	-i 初始化脚本"
 		echo -----------------------------------------
 		echo "	crash -s start	启动服务"
-		echo "	crash -s stop		停止服务"
+		echo "	crash -s stop	停止服务"
 		echo "	安装目录/start.sh init		开机初始化"
 		echo -----------------------------------------
 		echo "在线求助：t.me/ShellClash"
@@ -1856,53 +1907,7 @@ case "$1" in
 		$shtype -x ${CRASHDIR}/start.sh $2 $3 $4 $5 $6
 	;;
 	-u)
-		read -p "确认卸载ShellCrash？(警告：该操作不可逆！)[1/0] > " res
-		if [ "$res" = '1' ]; then
-			${CRASHDIR}/start.sh stop
-			${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
-			${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
-			${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
-			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
-			if [ "$res" = '1' ]; then
-				mv -f ${CRASHDIR}/configs /tmp/ShellCrash
-				mv -f ${CRASHDIR}/yamls /tmp/ShellCrash
-				rm -rf ${CRASHDIR}/*
-				mv -f /tmp/ShellCrash/configs ${CRASHDIR}
-				mv -f /tmp/ShellCrash/yamls ${CRASHDIR}
-			else
-				rm -rf ${CRASHDIR}
-			fi
-			[ -w ~/.bashrc ] && profile=~/.bashrc
-			[ -w /etc/profile ] && profile=/etc/profile
-			sed -i '/alias clash=*/'d $profile
-			sed -i '/alias crash=*/'d $profile
-			sed -i '/export CRASHDIR=*/'d $profile
-			sed -i '/export crashdir=*/'d $profile
-			sed -i '/all_proxy/'d $profile
-			sed -i '/ALL_PROXY/'d $profile
-			sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
-			sed -i '/ShellCrash初始化/'d /etc/storage/started_script.sh 2>/dev/null
-			sed -i '/ShellCrash初始化/'d /jffs/.asusrouter 2>/dev/null
-			rm -rf ${BINDIR} 
-			rm -rf /etc/init.d/shellcrash
-			rm -rf /etc/systemd/system/shellcrash.service
-			rm -rf /usr/lib/systemd/system/shellcrash.service
-			rm -rf /www/clash
-			rm -rf /tmp/ShellCrash
-			sed -Ei s/0:7890/7890:7890/g /etc/passwd
-			userdel -r shellcrash 2>/dev/null
-			nvram set script_usbmount="" 2>/dev/null
-			nvram commit 2>/dev/null
-			uci delete firewall.ShellClash 2>/dev/null
-			uci delete firewall.ShellCrash 2>/dev/null
-			uci commit firewall 2>/dev/null
-			echo -----------------------------------------------
-			echo -e "\033[36m已卸载ShellCrash相关文件！有缘再会！\033[0m"
-			echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
-			echo -----------------------------------------------
-			exit
-		fi
-		echo -e "\033[31m操作已取消！\033[0m"
+		uninstall
 	;;
 	*)
 		$0 -h

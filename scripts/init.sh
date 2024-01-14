@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.6c
+version=1.8.7
 
 setdir(){
 	dir_avail(){
@@ -150,8 +150,6 @@ mv -f /tmp/SC_tmp/* ${CRASHDIR} 2>/dev/null
 #初始化
 mkdir -p ${CRASHDIR}/configs
 [ -f "${CRASHDIR}/configs/ShellCrash.cfg" ] || echo '#ShellCrash配置文件，不明勿动！' > ${CRASHDIR}/configs/ShellCrash.cfg
-#本地安装跳过新手引导
-#[ -z "$url" ] && setconfig userguide 1
 #判断系统类型写入不同的启动文件
 if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 		#设为init.d方式启动
@@ -172,7 +170,7 @@ else
 	fi
 fi
 #修饰文件及版本号
-type bash &>/dev/null && shtype=bash || shtype=sh 
+command -v bash &>/dev/null && shtype=bash || shtype=sh 
 for file in start.sh task.sh ;do
 	sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file}
 	chmod 755 ${CRASHDIR}/${file}
@@ -184,7 +182,7 @@ BINDIR=${CRASHDIR}
 touch ${CRASHDIR}/configs/command.env
 setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
 setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env	
-if [ -x ${CRASHDIR}/CrashCore ] && ${CRASHDIR}/CrashCore version &>/dev/null ;then
+if [ -x ${CRASHDIR}/CrashCore ] && [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
 	COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
 else
 	COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
@@ -271,7 +269,6 @@ for file in cron task.sh task.list;do
 done
 chmod 755 ${CRASHDIR}/task/task.sh
 #旧版文件清理
-
 rm -rf /etc/init.d/clash
 rm -rf $CRASHDIR/clashservice
 rm -rf $CRASHDIR/shellcrash.rc
