@@ -1,61 +1,136 @@
-name: Update Sing-Box Core 
-on: 
+name: Build Sing-Box Core for ShellCrash
+
+on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'version of singbox, such as 1.7.8'
+      tag:
+        description: 'tag of sing-box, such as v1.7.8'
         required: true
         type: string
-env:
-  download_version: ${{ github.event.inputs.version }}
-  download_project: SagerNet/sing-box
 jobs:
-  Update:
+  cross:
+    strategy:
+      matrix:
+        include:
+          # linux
+          - name: linux-amd64
+            goos: linux
+            goarch: amd64
+            goamd64: v1
+          - name: linux-386
+            goos: linux
+            goarch: 386
+          - name: linux-arm64
+            goos: linux
+            goarch: arm64
+          - name: linux-armv5
+            goos: linux
+            goarch: arm
+            goarm: 5
+          - name: linux-armv7
+            goos: linux
+            goarch: arm
+            goarm: 7
+          - name: linux-mips-softfloat
+            goos: linux
+            goarch: mips
+            gomips: softfloat
+          - name: linux-mipsel-softfloat
+            goos: linux
+            goarch: mipsle
+            gomips: softfloat
+          - name: linux-mipsel-hardfloat
+            goos: linux
+            goarch: mipsle
+            gomips: hardfloat   
+
+      fail-fast: false
+    runs-on: ubuntu-latest
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      GOAMD64: ${{ matrix.goamd64 }}
+      GOARM: ${{ matrix.goarm }}
+      GOMIPS: ${{ matrix.gomips }}
+      CGO_ENABLED: 0
+      TAGS: with_quic,with_wireguard,with_ech,with_utls,with_reality_server,with_acme,with_clash_api
+    steps:
+      - name: Checkout sing-box
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        with:
+          repository: SagerNet/sing-box
+          ref: ${{ github.event.inputs.tag }}
+          fetch-depth: 0
+      - name: Get latest go version
+        id: version
+        run: |
+          echo go_version=$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | grep -oE '"version": "[0-9]{1}.[0-9]{1,}(.[0-9]{1,})?"' | head -1 | cut -d':' -f2 | sed 's/ //g; s/"//g') >> $GITHUB_OUTPUT
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.version.outputs.go_version }}
+      - name: Build
+        id: build
+        run: make
+      - name: Upload file to workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: sing-box
+  push_ShellCrash:
+    needs: cross
     runs-on: ubuntu-latest
     steps:
-    - name: Clone Repository
-      uses: actions/checkout@main
-    - name: Init Dependencies
-      run: |
-        wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
-        wget https://github.com/upx/upx/releases/download/v3.93/upx-3.93-amd64_linux.tar.xz
-        tar xf upx-3.96-amd64_linux.tar.xz
-        tar xf upx-3.93-amd64_linux.tar.xz
-    - name: Download Core
-      run: |
-        #download_version=$(curl -s -L -o /dev/null -w '%{url_effective}' https://github.com/${download_project}/releases/latest | grep -oE "[^/]+$" | awk -F 'v' '{print $2}')
-        echo "download_version=${download_version}" >> ${GITHUB_ENV}
-        archs=(386 amd64 armv7 arm64)
-        new_name=(386 amd64 armv7 armv8)
-        mkdir tmp
-        for((i=0;i<4;i++));do
-          wget "https://github.com/${download_project}/releases/download/v${download_version}/sing-box-${download_version}-linux-${archs[i]}.tar.gz" -O ./tmp/core.tar.gz
-          tar -zxvf ./tmp/core.tar.gz -C './tmp'
-          mv -f ./tmp/sing-box-${download_version}-linux-${archs[i]}/sing-box ./tmp/singbox-linux-${new_name[i]}
-          chmod +x ./tmp/singbox-linux-${new_name[i]}
-          if [ "${archs[i]}" != "armv5" ];then
-            if [[ ${archs[i]} = mips* ]];then
-              ./upx-3.93-amd64_linux/upx ./tmp/singbox-linux-${new_name[i]}
-            else
-              ./upx-3.96-amd64_linux/upx ./tmp/singbox-linux-${new_name[i]}
+      - name: Checkout ShellCrash
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        with:
+          repository: juewuy/ShellCrash
+          ref: dev
+      - name: Get upx
+        run: |
+          wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+          wget https://github.com/upx/upx/releases/download/v3.93/upx-3.93-amd64_linux.tar.xz
+          tar xf upx-3.96-amd64_linux.tar.xz
+          tar xf upx-3.93-amd64_linux.tar.xz
+      - name: Download file from workspace
+        uses: actions/download-artifact@v4
+        with:
+          path: ./tmp
+      - name: Zip core by upx
+        run: |      
+          archs=(amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat)
+          new_name=(amd64 armv5 armv7 armv8 mips-softfloat mipsle-hardfloat mipsle-softfloat)
+          for((i=0;i<7;i++));do
+            mv -f ./tmp/linux-${archs[i]}/sing-box ./tmp/singbox-linux-${new_name[i]}
+            chmod +x ./tmp/singbox-linux-${new_name[i]}
+            if [ "${archs[i]}" != "armv5" ];then
+              if [[ ${archs[i]} = mips* ]];then
+                ./upx-3.93-amd64_linux/upx ./tmp/singbox-linux-${new_name[i]}
+              else
+                ./upx-3.96-amd64_linux/upx ./tmp/singbox-linux-${new_name[i]}
+              fi
             fi
-          fi
-        done
-        rm -rf ./tmp/LICENSE
-        rm -rf core.tar.gz
-        rm -fr upx*
-    - name: Create Release and Upload Release Asset
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: singbox_core
-        name: singbox_core
-        body: "The alpha version of singbox core \nÕâÊÇsingboxµÄ¹Ù·½${{ github.event.inputs.version }}°æ±¾ÄÚºËÎÄ¼þ\nhttps://github.com/SagerNet/sing-box/releases \nZip by upx\nÊ¹ÓÃÁËupx½øÐÐÑ¹Ëõ\nOnly support for ShellCrash\n½öÏÞÓÚShellCrashÏîÄ¿Ê¹ÓÃ"
-        draft: false
-        prerelease: true
-        files: |
-          ./tmp/* 
-    - name: Cleanup Workflow
-      uses: Mattraks/delete-workflow-runs@main
-      with:
-        retain_days: 1
-        keep_minimum_runs: 2      
+          done
+          rm -fr upx*  
+      - name: Update
+        run: |
+          mkdir -p ./bin/singbox
+          rm -fr ./bin/singbox/*
+          mv -f ./tmp/singbox-linux-* ./bin/singbox/
+          rm -fr ./tmp
+          sed -i "s/singbox_v=.*/singbox_v=$(./bin/singbox/singbox-linux-amd64 version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')/" bin/version
+      - name: Commit and push
+        run: |
+          git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
+          git add . && git commit -m "æ›´æ–°sing-boxå†…æ ¸è‡³${{ github.event.inputs.tag }}" || exit 0
+          git push
+      - name: Cleanup Workflow
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          retain_days: 1
+          keep_minimum_runs: 2    
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sing-box-${{ matrix.name }}
+          path: sing-box*

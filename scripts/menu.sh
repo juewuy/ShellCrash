@@ -1622,7 +1622,7 @@ tools(){
 			fi
 			}
 	#获取设置默认显示
-	[ -n "$(cat /etc/crontabs/root 2>&1| grep otapredownload)" ] && mi_update=禁用 || mi_update=启用
+	grep -qE "^\s*[^#].*otapredownload" /etc/crontabs/root >/dev/null 2>&1 && mi_update=禁用 || mi_update=启用
 	[ "$mi_autoSSH" = "已配置" ] && mi_autoSSH_type=32m已配置 || mi_autoSSH_type=31m未配置
 	[ -f ${CRASHDIR}/tools/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
 	#
@@ -1682,7 +1682,16 @@ tools(){
 		tools  
 		
 	elif [ -x /usr/sbin/otapredownload ] && [ "$num" = 5 ]; then	
-		[ "$mi_update" = "禁用" ] && sed -i "/otapredownload/d" /etc/crontabs/root || echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root	
+		if [ "$mi_update" = "禁用" ]; then 
+			grep -q "otapredownload" /etc/crontabs/root && \
+			sed -i "/^[^\#]*otapredownload/ s/^/#/" /etc/crontabs/root || \
+			echo "#15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root
+		else
+			grep -q "otapredownload" /etc/crontabs/root && \
+			sed -i "/^\s*#.*otapredownload/ s/^\s*#//" /etc/crontabs/root || \
+			echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >> /etc/crontabs/root
+		fi
+
 		echo -----------------------------------------------
 		echo -e "已\033[33m$mi_update\033[0m小米路由器的自动更新，如未生效，请在官方APP中同步设置！"
 		sleep 1
