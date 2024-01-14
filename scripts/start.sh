@@ -1410,9 +1410,12 @@ core_check(){
 			chmod +x ${BINDIR}/core.new 2>/dev/null
 			if [ "$crashcore" = singbox ];then
 				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
+				COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
 			else
 				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+				COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 			fi
+			setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 			if [ -z "$core_v" ];then
 				rm -rf ${TMPDIR}/core.new
 				logger "核心下载失败，请重新运行或更换安装源！" 31
