@@ -213,16 +213,6 @@ check_clash_config(){ #检查clash配置文件
 		done < ${TMPDIR}/clash_proxies_$USER
 		rm -rf ${TMPDIR}/clash_proxies_$USER
 	}
-	#使用核心内置test功能检测
-	if [ -x ${BINDIR}/CrashCore ];then
-		${BINDIR}/CrashCore -t -d ${BINDIR} -f $core_config_new >/dev/null
-		if [ "$?" != "0" ];then
-			logger "配置文件加载失败！请查看报错信息！" 31
-			${BINDIR}/CrashCore -t -d ${BINDIR} -f $core_config_new
-			echo "$($BINDIR/CrashCore -t -d $BINDIR -f $core_config_new)" >> ${TMPDIR}/ShellCrash.log
-			exit 1
-		fi
-	fi
 }
 check_singbox_config(){ #检查singbox配置文件
 	#使用核心内置format功能检测并格式化

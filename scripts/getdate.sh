@@ -1756,7 +1756,10 @@ userguide(){
 		echo -e "\033[0m每次开机后首次运行服务时都会自动的重新下载相关文件\033[0m"
 		echo -----------------------------------------------
 		read -p "是否开启？(1/0) > " res
-		[ "$res" = 1 ] && setconfig BINDIR /tmp/ShellCrash ${CRASHDIR}/configs/command.env
+		[ "$res" = 1 ] && {
+			BINDIR=/tmp/ShellCrash
+			setconfig BINDIR /tmp/ShellCrash ${CRASHDIR}/configs/command.env
+		}
 	fi
 	#检测及下载根证书
 	if [ -d /etc/ssl/certs -a ! -f '/etc/ssl/certs/ca-certificates.crt' ];then
