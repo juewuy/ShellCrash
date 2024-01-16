@@ -9,6 +9,7 @@ dir_avail(){
 	df -h &>/dev/null && h=$2
 	df $h $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep -E 'Ava|可用' |awk '{print $2}'
 	}
+
 #导入订阅、配置文件相关
 setrules(){ #自定义clash规则
 	set_rule_type(){
@@ -761,7 +762,7 @@ set_core_config(){ #配置文件功能
 }
 #下载更新相关
 gettar(){
-	${CRASHDIR}/start.sh webget ${TMPDIR}/clashfm.tar.gz $tarurl
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/update.tar.gz bin/clashfm.tar.gz
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -771,7 +772,7 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p ${CRASHDIR} > /dev/null
-		tar -zxvf "${TMPDIR}/clashfm.tar.gz" -C ${CRASHDIR}/ || tar -zxvf "${TMPDIR}/clashfm.tar.gz" --no-same-owner -C ${CRASHDIR}/
+		tar -zxvf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ 2>/dev/null || tar -zxvf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
 		if [ $? -ne 0 ];then
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
@@ -780,18 +781,17 @@ gettar(){
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi		
 	fi
-	rm -rf ${TMPDIR}/clashfm.tar.gz
+	rm -rf ${TMPDIR}/update.tar.gz
 	exit
 }
 getsh(){
 	echo -----------------------------------------------
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
-	echo -e "最新脚本版本为：\033[32m $release_new \033[0m"
+	echo -e "最新脚本版本为：\033[32m $version_new \033[0m"
 	echo -e "注意更新时会停止服务！"
 	echo -----------------------------------------------
 	read -p "是否更新脚本？[1/0] > " res
 	if [ "$res" = '1' ]; then
-		tarurl=$update_url/bin/clashfm.tar.gz
 		#下载更新
 		gettar
 		#提示
@@ -884,12 +884,14 @@ getcore(){
 	[ -z "$crashcore" ] && crashcore=clashpre
 	[ -z "$cpucore" ] && getcpucore
 	[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
-	#生成链接
-	[ -z "$custcorelink" ] && corelink="${update_url}/bin/${crashcore}/${core_new}-linux-${cpucore}" || corelink="$custcorelink"
 	#获取在线内核文件
 	echo -----------------------------------------------
 	echo 正在在线获取$crashcore核心文件……
-	${CRASHDIR}/start.sh webget ${TMPDIR}/core.new $corelink
+	if [ -z "$custcorelink" ];then
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core.new bin/${crashcore}/${core_new}-linux-${cpucore}
+	else
+		${CRASHDIR}/start.sh webget ${TMPDIR}/core.new "$custcorelink"
+	fi
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
 		rm -rf ${TMPDIR}/core.new
@@ -931,7 +933,7 @@ setcustcore(){
 		echo -e "\033[33m请选择需要使用的核心！\033[0m"
 		echo -e "1 \033[32m 测试版ClashPre内核 \033[0m"
 		echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
-		echo -e "3 \033[32m Sing-Box官方内核  \033[0m"
+		#echo -e "3 \033[32m Sing-Box官方内核  \033[0m"
 		echo -e "4 \033[33m 自定义内核链接 \033[0m"
 		read -p "请输入对应数字 > " num	
 		case "$num" in
@@ -984,11 +986,15 @@ setcore(){
 	echo
 	echo -e "3 \033[43;30mClash.Meta\033[0m：	\033[32m多功能，支持最全面\033[0m"
 	echo -e " (Meta稳定内核)  \033[33m内存占用较高\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://docs.metacubex.one\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo
-	echo -e "4 \033[32m自定义内核\033[0m：	\033[33m仅限专业用户使用\033[0m"
+	echo -e "4 \033[43;30mSing-Box\033[0m：	\033[32m支持全面占用低\033[0m"
+	echo -e " (sing-box内核)  \033[33m另一个选择\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo
-	echo "5 手动指定处理器架构"
+	echo -e "5 \033[32m自定义内核\033[0m：	\033[33m仅限专业用户使用\033[0m"
+	echo
+	echo "6 手动指定处理器架构"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
@@ -1009,9 +1015,14 @@ setcore(){
 		getcore
 	;;
 	4)
-		setcustcore
+		crashcore=singbox
+		custcorelink=''
+		getcore
 	;;
 	5)
+		setcustcore
+	;;
+	6)
 		setcpucore
 		setcore
 	;;
@@ -1023,10 +1034,9 @@ setcore(){
 
 getgeo(){
 	#生成链接
-	[ -z "$custgeolink" ] && geolink="$update_url/bin/geodata/$geotype" || geolink="$custgeolink"
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	${CRASHDIR}/start.sh webget ${TMPDIR}/$geoname $geolink
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/$geoname bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -1118,7 +1128,7 @@ setcustgeo(){
 		echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (Clash及SingBox)"
-		echo -e " 2 \033[36;4mhttps://github.com/DustinWin/clash-geosite\033[0m (Clash及SingBox)"
+		#echo -e " 2 \033[36;4mhttps://github.com/DustinWin/clash-geosite\033[0m (Clash及SingBox)"
 		echo -e " 3 \033[36;4mhttps://github.com/lyc8503/sing-box-rules\033[0m (仅限SingBox)"
 		echo -e " 4 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
 		echo -----------------------------------------------
@@ -1277,10 +1287,10 @@ esac
 }
 
 getdb(){
-	dblink="${update_url}/bin/dashboard/${db_type}.tar.gz"
+	dblink="${update_url}/"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	${CRASHDIR}/start.sh webget ${TMPDIR}/clashdb.tar.gz $dblink
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -1402,10 +1412,9 @@ setdb(){
 }
 
 getcrt(){
-	crtlink="${update_url}/bin/fix/ca-certificates.crt"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
-	${CRASHDIR}/start.sh webget ${TMPDIR}/ca-certificates.crt $crtlink
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/ca-certificates.crt bin/fix/ca-certificates.crt
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -1414,12 +1423,11 @@ getcrt(){
 		echo -----------------------------------------------
 		mkdir -p $openssldir
 		mv -f ${TMPDIR}/ca-certificates.crt $crtdir
-		${CRASHDIR}/start.sh webget ${TMPDIR}/ssl_test https://baidu.com echooff rediron skipceroff
+		${CRASHDIR}/start.sh webget /dev/null https://baidu.com echooff rediron skipceroff
 		if [ "$?" = "1" ];then
 			export CURL_CA_BUNDLE=$crtdir
 			echo "export CURL_CA_BUNDLE=$crtdir" >> /etc/profile
 		fi
-		rm -rf ${TMPDIR}/ssl_test
 		echo -e "\033[32m证书安装成功！\033[0m"
 		sleep 1
 	fi
@@ -1454,68 +1462,123 @@ setcrt(){
 }
 #安装源
 setserver(){
+	[ -z "$release_type" ] && release_name=未指定
+	[ -n "$release_type" ] && release_name=${release_type}'(回退)'
+	[ "$release_type" = stable ] && release_name=稳定版
+	[ "$release_type" = master ] && release_name=公测版
+	[ "$release_type" = dev ] && release_name=开发版
+	[ -n "$url_id" ] && url_name=$(grep "$url_id" ${CRASHDIR}/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name=$update_url
 	saveserver(){
 		#写入配置文件
 		setconfig update_url \'$update_url\'
-		setconfig release_url \'$release_url\'
+		setconfig url_id $url_id
+		setconfig release_type $release_type
 		echo -----------------------------------------------
 		echo -e "\033[32m源地址更新成功！\033[0m"
-		release_new=""
 	}
 	echo -----------------------------------------------
 	echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
-	echo -e "当前源地址：\033[4;32m$update_url\033[0m"
+	echo -e "当前版本：\033[4;33m$release_name\033[0m 当前源：\033[4;32m$url_name\033[0m"
 	echo -----------------------------------------------
-	grep -aE '^1|^2' ${CRASHDIR}/configs/servers.list | awk '{print " "NR" "$4" "$2}'
+	grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | awk '{print " "NR" "$2}'
 	echo -----------------------------------------------
-	echo -e " a 自定义源地址(用于本地源或自建源)"
-	echo -e " b \033[31m版本回退\033[0m"
+	echo -e " a 切换至\033[32m稳定版\033[0m"
+	echo -e " b 切换至\033[36m公测版\033[0m"
+	echo -e " c 切换至\033[33m开发版\033[0m"
+	echo -----------------------------------------------
+	echo -e " d 自定义源地址(用于本地源或自建源)"
+	echo -e " e \033[31m版本回退\033[0m"
 	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
+	echo -----------------------------------------------
+	read -p "请输入对应字母或数字 > " num
 	case $num in
 	0)
 	;;
 	[1-99])
-		release_type=$(grep -aE '^1|^2' ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $4}')
-		if [ "release_type" = "稳定版" ];then
-			release_url=$(grep -aE '^1' ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+		url_id_new=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
+		if [ -z "$url_id_new" ];then
+			errornum
+			sleep 1
+			setserver
+		elif [ "$url_id_new" -ge 200 ];then
+			update_url=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+			url_id=''
+			saveserver
 		else
-			update_url=$(grep -aE '^1|^2' ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
-			unset release_url
+			url_id=$url_id_new
+			update_url=''
+			saveserver
 		fi
-		saveserver
+		unset url_id_new
 	;;
 	a)
+		release_type=stable
+		setconfig release_type $release_type
+		setserver
+	;;
+	b)
+		release_type=master
+		setconfig release_type $release_type
+		setserver
+	;;
+	c)
+		echo -----------------------------------------------
+		echo -e "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
+		echo -e "\033[36m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
+		echo -e "请务必加入我们的讨论组：\033[32;4mhttps://t.me/ShellClash\033[0m"
+		read -p "是否依然切换到开发版？(1/0) > " res
+		if [ "$res" = 1 ];then
+			release_type=dev
+			setconfig release_type $release_type
+		fi
+		setserver
+	;;
+	d)
 		echo -----------------------------------------------
 		read -p "请输入个人源路径 > " update_url
 		if [ -z "$update_url" ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
 		else
+			url_id=''
+			release_type=''
 			saveserver
-			unset release_url
 		fi
 	;;
-	b)
+	e)
 		echo -----------------------------------------------
-		echo -e "\033[33m如无法连接，请务必先启用服务！！！\033[0m"
-		${CRASHDIR}/start.sh webget ${TMPDIR}/release_new https://raw.githubusercontent.com/juewuy/ShellCrash/master/bin/release_version echooff rediroff 2>${TMPDIR}/release_new
-		echo -e "\033[31m请选择想要回退至的release版本：\033[0m"
-		cat ${TMPDIR}/release_new | awk '{print " "NR" "$1}'
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		if [ -z "$num" -o "$num" = 0 ]; then
-			setserver
-		elif [ $num -le $(cat ${TMPDIR}/release_new 2>/dev/null | awk 'END{print NR}') ]; then
-			release_version=$(cat ${TMPDIR}/release_new | awk '{print $1}' | sed -n "$num"p)
-			update_url="https://raw.githubusercontent.com/juewuy/ShellCrash/$release_version"
-			saveserver
-			unset release_url
+		if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
+			echo -ne "\033[32m正在获取版本信息！\033[0m\r"	
+			${CRASHDIR}/start.sh get_bin ${TMPDIR}/release_version bin/release_version
+			if [ "$?" = "0" ];then
+				echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
+				cat ${TMPDIR}/release_version | awk '{print " "NR" "$1}'
+				echo -e " 0 返回上级菜单"
+				read -p "请输入对应数字 > " num
+				if [ -z "$num" -o "$num" = 0 ]; then
+					setserver
+				elif [ $num -le $(cat ${TMPDIR}/release_version 2>/dev/null | awk 'END{print NR}') ]; then
+					release_type=$(cat ${TMPDIR}/release_version | awk '{print $1}' | sed -n "$num"p)
+					update_url=''
+					saveserver
+				else
+					echo -----------------------------------------------
+					errornum
+					sleep 1
+					setserver
+				fi
+			else
+				echo -----------------------------------------------
+				echo -e "\033[31m版本回退信息获取失败，请尝试更换其他安装源！\033[0m"
+				sleep 1
+				setserver		
+			fi
+			rm -rf ${TMPDIR}/release_version
 		else
-			echo -----------------------------------------------
-			echo -e "\033[31m输入有误，请重新输入！\033[0m"
+			echo -e "\033[31m当前源不支持版本回退，请尝试更换其他安装源！\033[0m"
+			sleep 1
+			setserver
 		fi
-		rm -rf ${TMPDIR}/release_new
 	;;
 	*)
 		errornum
@@ -1524,29 +1587,16 @@ setserver(){
 }
 #检查更新
 checkupdate(){
-if [ -z "$release_new" ];then
-	if [ -n "$release_url" ];then
-		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && check_url=$release_url@master || check_url=$release_url/master
-		${CRASHDIR}/start.sh webget ${TMPDIR}/version_new $check_url/bin/release_version echoon rediroff 2>${TMPDIR}/version_new
-		release_new=$(cat ${TMPDIR}/version_new | head -1)
-		[ -n "$(echo $release_url|grep 'jsdelivr')" ] && update_url=$release_url@$release_new || update_url=$release_url/$release_new
-		setconfig update_url \'$update_url\'
-		release_type=正式版
-	else
-		release_type=测试版
-	fi	
-	${CRASHDIR}/start.sh webget ${TMPDIR}/version_new $update_url/bin/version echooff 
-	[ "$?" = "0" ] && release_new=$(cat ${TMPDIR}/version_new | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
-	if [ -n "$release_new" ];then
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/version_new bin/version echooff 
+	[ "$?" = "0" ] && version_new=$(cat ${TMPDIR}/version_new | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
+	if [ -n "$version_new" ];then
 		source ${TMPDIR}/version_new 2>/dev/null
 	else
-		echo -e "\033[31m检查更新失败！请切换其他安装源！\033[0m"
-		echo -e "\033[36m如全部安装源都无法使用，请先运行服务后再使用更新功能！\033[0m"
-		sleep 1
+		echo -e "\033[31m检查更新失败！请尝试切换其他安装源！\033[0m"
 		setserver
+		checkupdate
 	fi
 	rm -rf ${TMPDIR}/version_new
-fi
 }
 update(){
 	echo -----------------------------------------------
@@ -1557,13 +1607,13 @@ update(){
 	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
 	echo -----------------------------------------------
 	echo -e "当前目录(\033[32m${CRASHDIR}\033[0m)剩余空间：\033[36m$(dir_avail ${CRASHDIR} -h)\033[0m" 
-	[ "$(dir_avail ${CRASHDIR})" -le 5120 ] && {
+	[ "$(dir_avail ${CRASHDIR})" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
 		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m" 
 		sleep 1
 	}
 	echo -----------------------------------------------
-	echo -e " 1 更新\033[36m管理脚本  	\033[33m$versionsh_l\033[0m > \033[32m$versionsh$release_type\033[0m"
-	echo -e " 2 切换\033[33m内核文件 	\033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
+	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new\033[0m"
+	echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
 	echo -e " 3 更新\033[32m数据库文件\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
 	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
@@ -1615,7 +1665,7 @@ update(){
 		update		
 		
 	elif [ "$num" = 9 ]; then
-		$0 -u
+		uninstall
 		exit
 		
 	elif [ "$num" = 99 ]; then		
@@ -1706,14 +1756,11 @@ userguide(){
 		echo -e "\033[0m每次开机后首次运行服务时都会自动的重新下载相关文件\033[0m"
 		echo -----------------------------------------------
 		read -p "是否开启？(1/0) > " res
-		[ "$res" = 1 ] && setconfig BINDIR /tmp/ShellCrash ${CRASHDIR}/configs/command.env
+		[ "$res" = 1 ] && {
+			BINDIR=/tmp/ShellCrash
+			setconfig BINDIR /tmp/ShellCrash ${CRASHDIR}/configs/command.env
+		}
 	fi
-	#下载本地面板
-	# echo -----------------------------------------------
-	# echo -e "\033[33m安装本地Dashboard面板，可以更快捷的管理clash内置规则！\033[0m"
-	# echo -----------------------------------------------
-	# read -p "需要安装本地Dashboard面板吗？(1/0) > " res
-	# [ "$res" = 1 ] && checkupdate && setdb
 	#检测及下载根证书
 	if [ -d /etc/ssl/certs -a ! -f '/etc/ssl/certs/ca-certificates.crt' ];then
 		echo -----------------------------------------------
@@ -1723,14 +1770,13 @@ userguide(){
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#设置加密DNS
-	${CRASHDIR}/start.sh webget ${TMPDIR}/ssl_test https://doh.pub echooff rediron
+	${CRASHDIR}/start.sh webget /dev/null https://baidu.com echooff rediron
 	if [ "$?" = "0" ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
 		setconfig dns_nameserver \'"$dns_nameserver"\'
 		setconfig dns_fallback \'"$dns_fallback"\' 
 	fi
-	rm -rf ${TMPDIR}/ssl_test
 	#开启公网访问
 	sethost(){
 		read -p "请输入你的公网IP地址 > " host
@@ -1774,12 +1820,14 @@ userguide(){
 		[ "$res" = 1 ] && autoSSH
 	fi
 	#提示导入订阅或者配置文件
-	echo -----------------------------------------------
-	echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
-	echo -e "\033[0m你必须拥有一份yaml格式的配置文件才能运行服务！\033[0m"
-	echo -----------------------------------------------
-	read -p "现在开始导入？(1/0) > " res
-	[ "$res" = 1 ] && inuserguide=1 && set_core_config && inuserguide=""
+	[ ! -s $CRASHDIR/yamls/config.yaml -a ! -s $CRASHDIR/jsons/config.json ] && {
+		echo -----------------------------------------------
+		echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
+		echo -e "\033[0m你必须拥有一份yaml格式的配置文件才能运行服务！\033[0m"
+		echo -----------------------------------------------
+		read -p "现在开始导入？(1/0) > " res
+		[ "$res" = 1 ] && inuserguide=1 && set_core_config && inuserguide=""
+	}
 	#回到主界面
 	echo -----------------------------------------------
 	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
@@ -1789,13 +1837,66 @@ userguide(){
 	main_menu
 }
 #测试菜单
+debug(){
+	[ "$crashcore" = singbox ] && config_tmp=$TMPDIR/config.json || config_tmp=$TMPDIR/config.yaml
+	echo -----------------------------------------------
+	echo -e "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m"
+	echo -e "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m"
+	echo -e "如长时间运行后台监测，日志等级推荐error！防止文件过大！"
+	echo -e "你也可以通过：\033[33mcrash -s debug 'warning'\033[0m 命令使用其他日志等级"
+	echo -----------------------------------------------
+	echo -e " 1 仅测试\033[32m$config_tmp\033[0m配置文件可用性"
+	echo -e " 2 前台运行\033[32m$config_tmp\033[0m配置文件,不配置防火墙劫持(\033[33m使用Ctrl+C手动停止\033[0m)"
+	echo -e " 3 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[31merror\033[0m"
+	echo -e " 4 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[32minfo\033[0m"
+	echo -e " 5 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[33mdebug\033[0m"
+	echo -----------------------------------------------
+	echo " 0 返回上级目录！"
+	read -p "请输入对应数字 > " num	
+	case "$num" in
+	0) ;;
+	1)
+		$CRASHDIR/start.sh stop
+		if [ "$crashcore" = singbox ] ;then
+			$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json &
+			{ sleep 4 ; kill $! &>/dev/null & }
+			wait
+		else
+			$BINDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
+		fi
+		echo -----------------------------------------------
+		exit
+	;;
+	2)
+		$CRASHDIR/start.sh stop
+		$COMMAND
+		echo -----------------------------------------------
+		exit
+	;;
+	3)
+		$CRASHDIR/start.sh debug error
+		main_menu
+	;;
+	4)
+		$CRASHDIR/start.sh debug info
+		main_menu
+	;;
+	5)
+		$CRASHDIR/start.sh debug debug
+		main_menu
+	;;
+	*)
+		errornum
+	;;	
+	esac
+}
 testcommand(){
 	[ "$crashcore" = singbox ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
 	echo -----------------------------------------------
-	echo " 1 查看内核运行时的报错信息"
+	echo " 1 Debug模式运行内核"
 	echo " 2 查看系统DNS端口(:53)占用 "
 	echo " 3 测试ssl加密(aes-128-gcm)跑分"
 	echo " 4 查看ShellCrash相关路由规则"
@@ -1810,16 +1911,8 @@ testcommand(){
 	elif [ "$num" = 0 ]; then
 		main_menu
 	elif [ "$num" = 1 ]; then
-		echo -----------------------------------------------
-		ckcmd journalctl && error=$(journalctl -u shellcrash | grep -Eo 'error.*=.*|.*ERROR.*|.*FATAL.*')
-		[ -z "$error" ] && error=$(cat $TMPDIR/core_test.log | grep -Eo 'error.*=.*|.*ERROR.*|.*FATAL.*')
-		if [ -n "$error" ];then
-			echo $error
-			exit;
-		else
-			echo -e "\033[31m未找到因内核运行错误所产生的日志文件！\033[0m"
-			sleep 1
-		fi
+		debug
+		testcommand
 	elif [ "$num" = 2 ]; then
 		echo -----------------------------------------------
 		netstat -ntulp |grep 53

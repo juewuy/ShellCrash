@@ -1,7 +1,7 @@
 name: Update Premium latest Core 
 on: 
-  schedule:
-    - cron: 0 20 * * 6
+  #schedule:
+    #- cron: 0 20 * * 6
   workflow_dispatch:
 
 env:

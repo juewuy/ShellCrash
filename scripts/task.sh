@@ -19,7 +19,7 @@ ckcmd(){ #检查命令是否存在
 
 #任务命令
 check_update(){ #检查更新工具
-	${CRASHDIR}/start.sh webget ${TMPDIR}/crashversion "$update_url/bin/version" echooff
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/crashversion "bin/version" echooff
 	[ "$?" = "0" ] && source ${TMPDIR}/crashversion 2>/dev/null	
 	rm -rf ${TMPDIR}/crashversion
 }
@@ -33,7 +33,7 @@ update_core(){ #自动更新内核
 	else
 		#更新内核
 		[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
-		${CRASHDIR}/start.sh webget ${TMPDIR}/core.new "${update_url}/bin/${crashcore}/${core_new}-linux-${cpucore}"
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core.new "bin/${crashcore}/${core_new}-linux-${cpucore}"
 		if [ "$?" != "0" ];then
 			logger "任务【自动更新内核】出错-下载失败！"
 			rm -rf ${TMPDIR}/core.new
@@ -68,7 +68,7 @@ update_shellcrash(){ #自动更新脚本
 		logger "任务【自动更新脚本】中止-未检测到版本更新"
 		exit 1
 	else	
-		${CRASHDIR}/start.sh webget ${TMPDIR}/update.tar.gz "$update_url/bin/update.tar.gz"
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/update.tar.gz "bin/update.tar.gz"
 		if [ "$?" != "0" ];then
 			rm -rf ${TMPDIR}/update.tar.gz
 			logger "任务【自动更新内核】出错-下载失败！"
@@ -98,7 +98,7 @@ update_mmdb(){ #自动更新数据库
 			logger "任务【自动更新数据库文件】跳过-未检测到$2版本更新"
 		else
 			#更新文件
-			${CRASHDIR}/start.sh webget ${TMPDIR}/$1 "$update_url/bin/geodata/$2"
+			${CRASHDIR}/start.sh get_bin ${TMPDIR}/$1 "bin/geodata/$2"
 			if [ "$?" != "0" ];then
 				logger "任务【自动更新数据库文件】更新【$2】下载失败！"
 				rm -rf ${TMPDIR}/$1
@@ -124,7 +124,7 @@ reset_firewall(){ #重设透明路由防火墙
 	${CRASHDIR}/start.sh afstart
 }
 ntp(){
-	ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null || exit 0  &
+	[ "$crashcore" != singbox ] && ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null || exit 0  &
 }
 #任务工具
 

@@ -51,8 +51,10 @@ init(){
 	done
 	#初始化环境变量
 	sed -i "/alias crash/d" $profile
+	sed -i "/alias clash/d" $profile
 	sed -i "/export CRASHDIR/d" $profile
 	echo "alias crash=\"sh $CRASHDIR/menu.sh\"" >>$profile
+	echo "alias clash=\"sh $CRASHDIR/menu.sh\"" >>$profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
 	#软固化功能
 	autoSSH
