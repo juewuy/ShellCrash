@@ -1128,7 +1128,7 @@ setcustgeo(){
 		echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
 		echo -----------------------------------------------
 		echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (Clash及SingBox)"
-		echo -e " 2 \033[36;4mhttps://github.com/DustinWin/clash-geosite\033[0m (Clash及SingBox)"
+		#echo -e " 2 \033[36;4mhttps://github.com/DustinWin/clash-geosite\033[0m (Clash及SingBox)"
 		echo -e " 3 \033[36;4mhttps://github.com/lyc8503/sing-box-rules\033[0m (仅限SingBox)"
 		echo -e " 4 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
 		echo -----------------------------------------------
