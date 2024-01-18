@@ -49,7 +49,7 @@ error_down(){
 }
 #安装及初始化
 gettar(){
-	webget /tmp/ShellCrash.tar.gz "$tar_url"
+	webget /tmp/ShellCrash.tar.gz "$url/bin/ShellCrash.tar.gz"
 	if [ "$result" != "200" ];then
 		$echo "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -203,14 +203,11 @@ setversion(){
 	case "$num" in
 	2)
 		url=$(echo $url | sed 's/master/stable/')
-		tar_url=$url/bin/ShellClash.tar.gz
 	;;
 	3)
 		url=$(echo $url | sed 's/master/dev/')
-		tar_url=$url/bin/ShellCrash.tar.gz
 	;;
 	*)
-		tar_url=$url/bin/ShellCrash.tar.gz
 	;;
 	esac
 }
