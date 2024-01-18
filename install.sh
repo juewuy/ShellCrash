@@ -1,12 +1,14 @@
 #! /bin/bash
 # Copyright (C) Juewuy
 
+[ -z "$url" ] && url="https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master"
 type bash &>/dev/null && shtype=bash || shtype=sh 
 echo='echo -e' 
 [ -n "$(echo -e|grep e)" ] && {
 	echo "\033[31m不支持dash环境安装！请先输入bash命令后再运行安装命令！\033[0m"
 	exit
 }
+
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
 echo "**                ShellCrash                 **"
@@ -47,7 +49,7 @@ error_down(){
 }
 #安装及初始化
 gettar(){
-	webget /tmp/ShellCrash.tar.gz $tarurl
+	webget /tmp/ShellCrash.tar.gz "$tar_url"
 	if [ "$result" != "200" ];then
 		$echo "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -190,7 +192,28 @@ echo -----------------------------------------------
 $echo "\033[33m输入\033[30;47m crash \033[0;33m命令即可管理！！！\033[0m"
 echo -----------------------------------------------
 }
-
+setversion(){
+	echo -----------------------------------------------
+	$echo "\033[33m请选择想要安装的版本：\033[0m"	
+	$echo " 1 \033[32m公测版(推荐)\033[0m"
+	$echo " 2 \033[36m稳定版\033[0m"
+	$echo " 3 \033[31m开发版\033[0m"
+	echo -----------------------------------------------
+	read -p "请输入相应数字 > " num
+	case "$num" in
+	2)
+		url=$(echo $url | sed 's/master/stable/')
+		tar_url=$url/bin/ShellClash.tar.gz
+	;;
+	3)
+		url=$(echo $url | sed 's/master/dev/')
+		tar_url=$url/bin/ShellCrash.tar.gz
+	;;
+	*)
+		tar_url=$url/bin/ShellCrash.tar.gz
+	;;
+	esac
+}
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
 	systype=Padavan #老毛子固件
@@ -213,36 +236,16 @@ if [ "$USER" != "root" -a -z "$systype" ];then
 	[ "$res" != "1" ] && exit 1
 fi
 
-#检查更新
-url_cdn="https://fastly.jsdelivr.net/gh/juewuy/ShellCrash"
-[ -z "$url" ] && url=$url_cdn
-echo -----------------------------------------------
-$echo "\033[33m请选择想要安装的版本：\033[0m"	
-$echo " 1 \033[32mShellCrash公测版\033[0m"
-$echo " 2 \033[36mShellCrash稳定版\033[0m"
-echo -----------------------------------------------
-read -p "请输入相应数字 > " num
-if [ -z $num ];then
-	echo 安装已取消！ && exit 1;
-elif [ "$num" = "2" ];then
-	webget /tmp/release_version $url_cdn@master/bin/release_version echoon rediroff 2>/tmp/release_version
-	if [ "$result" = "200" ];then
-		release_new=$(cat /tmp/release_version | head -1)
-		url_dl="$url_cdn@$release_new"
-	else
-		$echo "\033[33m无法获取稳定版安装地址，将尝试安装公测版！\033[0m"
-	fi
+if [ -n "$(echo $url | grep master)" ];then
+	setversion
 fi
-[ -z "$url_dl" ] && url_dl=$url
-webget /tmp/test_version "$url_dl/bin/version" echooff
-[ "$result" = "200" ] && versionsh=$(cat /tmp/test_version | grep "versionsh" | awk -F "=" '{print $2}')
-[ -z "$release_new" ] && release_new=$versionsh
-rm -rf /tmp/test_version
-rm -rf /tmp/release_version
-tarurl=$url_dl/bin/ShellCrash.tar.gz
+#获取版本信息
+webget /tmp/version "$url/bin/version" echooff
+[ "$result" = "200" ] && versionsh=$(cat /tmp/version | grep "versionsh" | awk -F "=" '{print $2}')
+rm -rf /tmp/version
 
 #输出
-$echo "最新版本：\033[32m$release_new\033[0m"
+$echo "最新版本：\033[32m$versionsh\033[0m"
 echo -----------------------------------------------
 $echo "\033[44m如遇问题请加TG群反馈：\033[42;30m t.me/ShellClash \033[0m"
 $echo "\033[37m支持各种基于openwrt的路由器设备"
