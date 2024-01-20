@@ -1592,7 +1592,7 @@ uninstall(){
 		rm -rf /usr/lib/systemd/system/shellcrash.service
 		rm -rf /www/clash
 		rm -rf /tmp/ShellCrash
-		sed -Ei s/0:7890/7890:7890/g /etc/passwd
+		sed -i '/0:7890/d' /etc/passwd
 		userdel -r shellcrash 2>/dev/null
 		nvram set script_usbmount="" 2>/dev/null
 		nvram commit 2>/dev/null

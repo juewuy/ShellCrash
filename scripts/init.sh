@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.7d
+version=1.8.7e
 
 setdir(){
 	dir_avail(){
@@ -177,17 +177,19 @@ for file in start.sh task.sh ;do
 done
 setconfig versionsh_l $version
 #生成用于执行systemd及procd服务的变量文件
-TMPDIR='/tmp/ShellCrash'
-BINDIR=${CRASHDIR}
-touch ${CRASHDIR}/configs/command.env
-setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
-setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env	
-if [ -x ${CRASHDIR}/CrashCore ] && [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
-	COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
-else
-	COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
-fi
-setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
+[ ! -f ${CRASHDIR}/configs/command.env ] && {
+	TMPDIR='/tmp/ShellCrash'
+	BINDIR=${CRASHDIR}
+	touch ${CRASHDIR}/configs/command.env
+	setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
+	setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env	
+	if [ -x ${CRASHDIR}/CrashCore ] && [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
+	else
+		COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
+	fi
+	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
+}
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
 #设置环境变量
@@ -271,6 +273,7 @@ chmod 755 ${CRASHDIR}/task/task.sh
 #旧版文件清理
 rm -rf /etc/init.d/clash
 rm -rf $CRASHDIR/clashservice
+rm -rf $CRASHDIR/core.new
 rm -rf $CRASHDIR/shellcrash.rc
 rm -rf $CRASHDIR/clash.sh
 for file in log shellcrash.service mark? mark.bak;do

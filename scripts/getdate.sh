@@ -921,48 +921,38 @@ getcore(){
 }
 setcustcore(){
 	[ -z "$cpucore" ] && getcpucore
-	echo -----------------------------------------------
-	echo -e "\033[36m自定义内核均未经过适配，可能存在部分功能不兼容的问题！\033[0m"
-	echo -e "\033[36m如你不熟悉相关内核的运行机制，请使用脚本已经适配过的内核！\033[0m"
-	echo -e "\033[36m自定义内核不兼容小闪存模式，且下载可能依赖服务！\033[0m"
-	echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
-	echo -----------------------------------------------
-	sleep 1
-	read -p "我确认遇到问题可以自行解决[1/0] > " res
-	[ "$res" = '1' ] && {
-		echo -e "\033[33m请选择需要使用的核心！\033[0m"
-		echo -e "1 \033[32m 测试版ClashPre内核 \033[0m"
-		echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
-		#echo -e "3 \033[32m Sing-Box官方内核  \033[0m"
-		echo -e "4 \033[33m 自定义内核链接 \033[0m"
-		read -p "请输入对应数字 > " num	
-		case "$num" in
-		1)
-			crashcore=clashpre
-			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.premium.latest/clash-linux-$cpucore
-			getcore			
-		;;
-		2)
-			crashcore=meta
-			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.meta.alpha/clash-linux-$cpucore
-			getcore			
-		;;
-		3)
-			crashcore=singbox
-			custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core/singbox-linux-$cpucore
-			getcore			
-		;;
-		4)
-			read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
-			[ -n "$link" ] && custcorelink="$link"
-			crashcore=unknow
-			getcore
-		;;
-		*)
-			errornum
-		;;
-		esac
-	}
+	echo -e "\033[33m请选择需要使用的核心！\033[0m"
+	echo -e "1 \033[32m 测试版ClashPre内核 \033[0m"
+	echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
+	#echo -e "3 \033[32m Sing-Box官方内核  \033[0m"
+	echo -e "4 \033[33m 自定义内核链接 \033[0m"
+	read -p "请输入对应数字 > " num	
+	case "$num" in
+	1)
+		crashcore=clashpre
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.premium.latest/clash-linux-$cpucore
+		getcore			
+	;;
+	2)
+		crashcore=meta
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.meta.alpha/clash-linux-$cpucore
+		getcore			
+	;;
+	3)
+		crashcore=singbox
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core/singbox-linux-$cpucore
+		getcore			
+	;;
+	4)
+		read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
+		[ -n "$link" ] && custcorelink="$link"
+		crashcore=unknow
+		getcore
+	;;
+	*)
+		errornum
+	;;
+	esac
 }
 setcore(){
 	#获取核心及版本信息
@@ -1020,7 +1010,15 @@ setcore(){
 		getcore
 	;;
 	5)
-		setcustcore
+		echo -----------------------------------------------
+		echo -e "\033[36m自定义内核均未经过适配，可能存在部分功能不兼容的问题！\033[0m"
+		echo -e "\033[36m如你不熟悉相关内核的运行机制，请使用脚本已经适配过的内核！\033[0m"
+		echo -e "\033[36m自定义内核不兼容小闪存模式，且下载可能依赖服务！\033[0m"
+		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+		echo -----------------------------------------------
+		sleep 1
+		read -p "我确认遇到问题可以自行解决[1/0] > " res
+		[ "$res" = '1' ] && setcustcore
 	;;
 	6)
 		setcpucore
@@ -1072,9 +1070,11 @@ setcustgeo(){
 		sleep 1
 	}
 	checkcustgeo(){
+		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
 		[ ! -s ${TMPDIR}/geo.list ] && { 
 			echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
-			${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/$project/releases/latest
+			${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
+			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
 			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|geosite.*\.db"$|geoip.*\.db"$' | sed 's/"//' > ${TMPDIR}/geo.list
 			rm -rf ${TMPDIR}/github_api
 		}
@@ -1095,9 +1095,7 @@ setcustgeo(){
 					[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
 					[ -n "$(echo $geotype | grep -oiE 'geosite.*db')" ] && geoname=geosite.db
 					[ -n "$(echo $geotype | grep -oiE 'geoip.*db')" ] && geoname=geoip.db
-					[ -n "$(pidof CrashCore)" ] && \
-						custgeolink=https://raw.githubusercontent.com/${project}/release/$geotype || \
-						custgeolink=https://fastly.jsdelivr.net/gh/${project}@release/$geotype
+					custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
 					getcustgeo
 					checkcustgeo
 				else
@@ -1115,60 +1113,63 @@ setcustgeo(){
 	}
 	rm -rf ${TMPDIR}/geo.list
 	echo -----------------------------------------------
-	echo -e "\033[36m自定义数据库需要调用第三方地址，请尽量在服务启动后更新！\033[0m"
-	echo -e "\033[36m自定义数据库不兼容小闪存模式，也不支持自动更新！\033[0m"
-	echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+	echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位作者！\033[0m"
+	echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
+	echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
+	echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
 	echo -----------------------------------------------
-	read -p "我确认遇到问题可以自行解决[1/0] > " res
-	[ "$res" = '1' ] && {
-		echo -----------------------------------------------
-		echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位作者！\033[0m"
-		echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
-		echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
-		echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
-		echo -----------------------------------------------
-		echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (Clash及SingBox)"
-		#echo -e " 2 \033[36;4mhttps://github.com/DustinWin/clash-geosite\033[0m (Clash及SingBox)"
-		echo -e " 3 \033[36;4mhttps://github.com/lyc8503/sing-box-rules\033[0m (仅限SingBox)"
-		echo -e " 4 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
-		echo -----------------------------------------------
-		echo -e " 9 \033[33m自定义数据库链接 \033[0m"
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num	
-		case "$num" in
-		0)
-		;;
-		1)
-			project=MetaCubeX/meta-rules-dat
-			checkcustgeo
-			setcustgeo
-		;;
-		2)
-			project=DustinWin/clash-geosite
-			checkcustgeo
-			setcustgeo
-		;;
-		3)
-			project=lyc8503/sing-box-rules
-			checkcustgeo	
-			setcustgeo
-		;;
-		4)
-			project=Loyalsoldier/geoip
-			checkcustgeo	
-			setcustgeo
-		;;
-		9)
-			read -p "请输入自定义数据库的链接地址 > " link
-			[ -n "$link" ] && custgeolink="$link"
-			getgeo
-			setcustgeo
-		;;
-		*)
-			errornum
-		;;
-		esac
-	}
+	echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (Clash及SingBox)"
+	echo -e " 2 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Clash)"
+	echo -e " 3 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限SingBox)"
+	echo -e " 4 \033[36;4mhttps://github.com/lyc8503/sing-box-rules\033[0m (仅限SingBox)"
+	echo -e " 5 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
+	echo -----------------------------------------------
+	echo -e " 9 \033[33m自定义数据库链接 \033[0m"
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num	
+	case "$num" in
+	0)
+	;;
+	1)
+		project=MetaCubeX/meta-rules-dat
+		api_tag=latest
+		checkcustgeo
+		setcustgeo
+	;;
+	2)
+		project=DustinWin/ruleset_geodata
+		api_tag=clash
+		checkcustgeo
+		setcustgeo
+	;;
+	3)
+		project=DustinWin/ruleset_geodata
+		api_tag=sing-box
+		checkcustgeo
+		setcustgeo
+	;;
+	4)
+		project=lyc8503/sing-box-rules
+		api_tag=latest
+		checkcustgeo	
+		setcustgeo
+	;;
+	5)
+		project=Loyalsoldier/geoip
+		api_tag=latest
+		checkcustgeo	
+		setcustgeo
+	;;
+	9)
+		read -p "请输入自定义数据库的链接地址 > " link
+		[ -n "$link" ] && custgeolink="$link"
+		getgeo
+		setcustgeo
+	;;
+	*)
+		errornum
+	;;
+	esac
 }
 setgeo(){
 	source $CFG_PATH > /dev/null
@@ -1186,6 +1187,7 @@ setgeo(){
 	echo -e " 5 Meta完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
 	echo -e " 6 SingBox精简版GeoIP_cn数据库(约0.3mb)	\033[33m$geoip_cn_v\033[0m"
 	echo -e " 7 SingBox精简版GeoSite数据库(约0.8mb)	\033[33m$geosite_cn_v\033[0m"
+	echo -----------------------------------------------
 	echo -e " 9 \033[32m自定义数据库\033[0m：	\033[33m仅限专业用户使用\033[0m"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -1278,7 +1280,13 @@ setgeo(){
 		setgeo
 	;;
 	9)
-		setcustgeo
+		echo -----------------------------------------------
+		echo -e "\033[36m自定义数据库需要调用第三方地址，请尽量在服务启动后更新！\033[0m"
+		echo -e "\033[36m自定义数据库不兼容小闪存模式，也不支持自动更新！\033[0m"
+		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+		echo -----------------------------------------------
+		read -p "我确认遇到问题可以自行解决[1/0] > " res
+		[ "$res" = '1' ] && setcustgeo
 	;;	
 	*)
 		errornum
@@ -1482,9 +1490,9 @@ setserver(){
 	echo -----------------------------------------------
 	grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | awk '{print " "NR" "$2}'
 	echo -----------------------------------------------
-	echo -e " a 切换至\033[32m稳定版\033[0m"
-	echo -e " b 切换至\033[36m公测版\033[0m"
-	echo -e " c 切换至\033[33m开发版\033[0m"
+	echo -e " a 切换至\033[32m稳定版-stable\033[0m"
+	echo -e " b 切换至\033[36m公测版-master\033[0m"
+	echo -e " c 切换至\033[33m开发版-dev\033[0m"
 	echo -----------------------------------------------
 	echo -e " d 自定义源地址(用于本地源或自建源)"
 	echo -e " e \033[31m版本回退\033[0m"
@@ -1612,7 +1620,7 @@ update(){
 		sleep 1
 	}
 	echo -----------------------------------------------
-	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new\033[0m"
+	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
 	echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
 	echo -e " 3 更新\033[32m数据库文件\033[0m"
 	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"

@@ -34,8 +34,12 @@ getconfig(){ #获取脚本配置
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	#内核配置文件
 	if [ "$crashcore" = singbox ];then
+		target=singbox
+		format=json
 		core_config=${CRASHDIR}/jsons/config.json
 	else
+		target=clash
+		format=yaml
 		core_config=${CRASHDIR}/yamls/config.yaml
 	fi
 }
@@ -142,7 +146,8 @@ get_bin(){ #专用于项目内部文件的下载
 	source ${CRASHDIR}/configs/ShellCrash.cfg >/dev/null
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master
 	if [ -n "$url_id" ];then
-		if [ "$url_id" = 101 ];then
+		[ -z "$release_type" ] && release_type=master
+		if [ "$url_id" = 101 -o "$url_id" = 104 ];then
 			url="$(grep "$url_id" ${CRASHDIR}/configs/servers.list | awk '{print $3}')@$release_type/$2" #jsdelivr特殊处理
 		else
 			url="$(grep "$url_id" ${CRASHDIR}/configs/servers.list | awk '{print $3}')/$release_type/$2"
@@ -239,13 +244,6 @@ get_core_config(){ #下载内核配置文件
 	Config=$(grep -aE '^5' ${CRASHDIR}/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
-		if [ "$crashcore" = singbox ];then
-			target=singbox
-			format=json
-		else
-			target=clash
-			format=yaml
-		fi
 		#Urlencord转码处理保留字符
 		Url=$(echo $Url | sed 's/;/\%3B/g; s|/|\%2F|g; s/?/\%3F/g; s/:/\%3A/g; s/@/\%4O/g; s/=/\%3D/g; s/&/\%26/g')
 		Https="${Server}/sub?target=${target}&insert=true&new_name=true&scv=true&udp=true&exclude=${exclude}&include=${include}&url=${Url}&config=${Config}"
@@ -1318,7 +1316,7 @@ web_restore(){ #还原面板节点
 	#设置循环检测clash面板端口
 	i=1
 	while [ -z "$test" -a "$i" -lt 20 ];do
-		sleep 1
+		sleep 2
 		if curl --version > /dev/null 2>&1;then
 			test=$(curl -s http://127.0.0.1:${db_port})
 		else
@@ -1395,9 +1393,9 @@ core_check(){
 			logger "未找到【$crashcore】核心，正在下载！" 33
 			[ -z "$cpucore" ] && source ${CRASHDIR}/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
-			get_bin ${BINDIR}/core.new "bin/$crashcore/clash-linux-$cpucore"
+			get_bin ${TMPDIR}/core.new "bin/$crashcore/${target}-linux-$cpucore"
 			#校验内核
-			chmod +x ${BINDIR}/core.new 2>/dev/null
+			chmod +x ${TMPDIR}/core.new 2>/dev/null
 			if [ "$crashcore" = singbox ];then
 				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
 				COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
@@ -1429,13 +1427,13 @@ clash_check(){ #clash启动前检查
 	fi
 	#检测是否存在高级版规则或者tun模式
 	if [ "$crashcore" = "clash" ];then
-		[ -n "$(cat $core_config | grep -aE '^script:|proxy-providers|rule-providers|rule-set')" ] || \
+		[ -n "$(cat $core_config | grep -aiE '^script:|proxy-providers|rule-providers|rule-set')" ] || \
 		[ "$redir_mod" = "混合模式" ] || \
 		[ "$redir_mod" = "Tun模式" ] && {
 			echo -----------------------------------------------
-			logger "检测到高级功能！将改为使用ClashPre核心启动！" 33
+			logger "检测到高级功能！将改为使用meta核心启动！" 33
 			rm -rf ${BINDIR}/CrashCore
-			crashcore=clashpre
+			crashcore=meta
 			echo -----------------------------------------------
 		}
 	fi
@@ -1464,6 +1462,12 @@ clash_check(){ #clash启动前检查
 	fi
 }
 singbox_check(){ #singbox启动前检查
+	#检测SSR节点
+	if [ -n "$(cat $core_config | grep -oE '"type": "ssr"')" ];then
+		echo -----------------------------------------------
+		logger "singbox以移除对SSR相关协议的支持，请使用clash系内核！" 33
+		exit 1
+	fi
 	core_check
 	#预下载GeoIP数据库
 	if [ ! -f ${BINDIR}/geoip.db ];then
@@ -1526,14 +1530,8 @@ bfstart(){ #启动前
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		#添加shellcrash用户
 		if [ -z "$(id shellcrash 2>/dev/null | grep 'root')" ];then
-			if ckcmd userdel useradd groupmod; then
-				userdel shellcrash 2>/dev/null
-				useradd shellcrash -u 7890
-				groupmod shellcrash -g 7890
-				sed -Ei s/7890:7890/0:7890/g /etc/passwd
-			else
-				grep -qw shellcrash /etc/passwd || echo "shellcrash:x:0:7890:::" >> /etc/passwd
-			fi
+			sed -i '/0:7890/d' /etc/passwd
+			grep -qw shellcrash /etc/passwd || echo "shellcrash:x:0:7890:::" >> /etc/passwd
 		fi
 		#修改启动文件
 		if [ "$start_old" != "已开启" ];then
@@ -1766,7 +1764,7 @@ webget)
 			getconfig
 			[ -n "$authentication" ] && auth="$authentication@"
 			export all_proxy="http://${auth}127.0.0.1:$mix_port"
-			url=$(echo $3 | sed 's#https://fastly.jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
+			url=$(echo $3 | sed 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
 		else
 			url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@#')
 		fi
