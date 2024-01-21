@@ -1,4 +1,4 @@
-name: Build Sing-Box Core for ShellCrash
+name: Test Sing-Box Core for ShellCrash
 
 on:
   workflow_dispatch:
@@ -111,12 +111,14 @@ jobs:
             fi
           done
           rm -fr upx*  
+          rm -fr ./tmp/core.tar.gz
+          echo ${{ github.event.inputs.tag2 }} > ./tmp/version
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           tag_name: singbox_core
           name: singbox_core
-          body: "The alpha version of singbox core \n这是${{ github.event.inputs.tag1 }}的${{ github.event.inputs.tag2 }}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
+          body: "The ${{ github.event.inputs.tag2 }} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${{ github.event.inputs.tag2 }}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
           draft: false
           prerelease: true
           files: |
