@@ -924,7 +924,7 @@ setcustcore(){
 	echo -e "\033[33m请选择需要使用的核心！\033[0m"
 	echo -e "1 \033[32m 测试版ClashPre内核 \033[0m"
 	echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
-	#echo -e "3 \033[32m Sing-Box官方内核  \033[0m"
+	echo -e "3 \033[32m Sing-Box测试内核  \033[0m"
 	echo -e "4 \033[33m 自定义内核链接 \033[0m"
 	read -p "请输入对应数字 > " num	
 	case "$num" in
