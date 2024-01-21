@@ -1207,7 +1207,7 @@ normal_set(){ #基础设置
 		echo -e "                   不支持绕过CN-IP功能"
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   需搭配加密DNS使用"
-		echo -e " 3 mix混合模式：	\033[32m内部realip外部fakeip\033[0m"
+		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
 		echo -e "                   限singbox内核+geosite.db!"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num

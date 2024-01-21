@@ -136,10 +136,11 @@ get_save(){ #获取面板信息
 	fi
 }
 put_save(){ #推送面板选择
+	[ -z "$3" ] && request_type=GET || request_type=$3
 	if curl --version > /dev/null 2>&1;then
-		curl -sS -X PUT -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
+		curl -sS -X ${request_type} -H "Authorization: Bearer ${secret}" -H "Content-Type:application/json" "$1" -d "$2" >/dev/null
 	elif wget --version > /dev/null 2>&1;then
-		wget -q --method=PUT --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
+		wget -q --method=${request_type} --header="Authorization: Bearer ${secret}" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
 	fi
 }
 get_bin(){ #专用于项目内部文件的下载
@@ -585,7 +586,7 @@ EOF
     "final": "dns_direct",
     "independent_cache": true,
     "reverse_mapping": true,
-    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" }
+    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/18" }
   },
 EOF
 	}
@@ -643,7 +644,7 @@ EOF
       "type": "tun",
       "tag": "tun-in",
       "interface_name": "utun",
-      "inet4_address": "172.19.0.1/30",
+      "inet4_address": "198.18.0.0/16",
       "auto_route": false,
       "stack": "system",
       "sniff": $sniffer,
@@ -786,7 +787,7 @@ start_redir(){ #iptables-redir
 	fi
 	#将PREROUTING链指向shellcrash链
 	iptables -t nat -A PREROUTING -p tcp $ports -j shellcrash
-	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t nat -A PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash
+	[ "$dns_mod" != "redir_host" -a "$common_ports" = "已开启" ] && iptables -t nat -A PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash
 	#设置ipv6转发
 	if [ "$ipv6_redir" = "已开启" -a -n "$(lsmod | grep 'ip6table_nat')" ];then
 		ip6tables -t nat -N shellcrashv6
@@ -887,7 +888,7 @@ start_tproxy(){ #iptables-tproxy
 		done			
 	fi
 	iptables -t mangle -A PREROUTING -p $1 $ports -j shellcrash
-	[ "$dns_mod" = "fake-ip" -a "$common_ports" = "已开启" ] && iptables -t mangle -A PREROUTING -p $1 -d 198.18.0.0/16 -j shellcrash
+	[ "$dns_mod" != "redir_host" -a "$common_ports" = "已开启" ] && iptables -t mangle -A PREROUTING -p $1 -d 198.18.0.0/16 -j shellcrash
 	}
 	[ "$1" = "all" ] && tproxy_set tcp
 	tproxy_set udp
@@ -1293,25 +1294,29 @@ stop_firewall(){ #还原防火墙配置
 web_save(){ #最小化保存面板节点选择
 	getconfig
 	#使用get_save获取面板节点设置
-	get_save http://127.0.0.1:${db_port}/proxies | awk -F ':\\{"' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector"' | grep -aoE '"name":.*"now":".*",' > ${TMPDIR}/shellcrash_web_check_$USER
+	get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector"' | grep -aoE '"name":.*"now":".*",' > ${TMPDIR}/web_proxies
 	while read line ;do
 		def=$(echo $line | grep -oE '"all".*",' | awk -F "[:\"]" '{print $5}' )
 		now=$(echo $line | grep -oE '"now".*",' | awk -F "[:\"]" '{print $5}' )
 		[ "$def" != "$now" ] && {
 			name=$(echo $line | grep -oE '"name".*",' | awk -F "[:\"]" '{print $5}' )
-			echo "${name},${now}" >> ${TMPDIR}/shellcrash_web_save_$USER
+			echo "${name},${now}" >> ${TMPDIR}/web_save
 		}
-	done < ${TMPDIR}/shellcrash_web_check_$USER
-	rm -rf ${TMPDIR}/shellcrash_web_check_$USER
+	done < ${TMPDIR}/web_proxies
+	rm -rf ${TMPDIR}/web_proxies
+	#获取面板设置
+	[ "$crashcore" != singbox ] && get_save http://127.0.0.1:${db_port}/configs > ${TMPDIR}/web_configs
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
-	if [ -s ${TMPDIR}/shellcrash_web_save_$USER ];then
-		compare ${TMPDIR}/shellcrash_web_save_$USER ${CRASHDIR}/configs/web_save
-		[ "$?" = 0 ] && rm -rf ${TMPDIR}/shellcrash_web_save_$USER || mv -f ${TMPDIR}/shellcrash_web_save_$USER ${CRASHDIR}/configs/web_save
-	else
-		echo > ${CRASHDIR}/configs/web_save
-	fi
+	for file in web_save web_configs ;do
+		if [ -s ${TMPDIR}/${file} ];then
+			compare ${TMPDIR}/${file} ${CRASHDIR}/configs/${file}
+			[ "$?" = 0 ] && rm -rf ${TMPDIR}/${file} || mv -f ${TMPDIR}/${file} ${CRASHDIR}/configs/${file}
+		else
+			echo > ${CRASHDIR}/configs/${file}
+		fi
+	done
 }
-web_restore(){ #还原面板节点
+web_restore(){ #还原面板选择
 	getconfig
 	#设置循环检测clash面板端口
 	i=1
@@ -1324,15 +1329,19 @@ web_restore(){ #还原面板节点
 		fi
 		i=$((i+1))
 	done
-	#发送数据
-	num=$(cat ${CRASHDIR}/configs/web_save | wc -l)
-	i=1
-	while [ "$i" -le "$num" ];do
-		group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' ${CRASHDIR}/configs/web_save | sed 's/ /%20/g')
-		now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' ${CRASHDIR}/configs/web_save)
-		put_save http://127.0.0.1:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
-		i=$((i+1))
-	done
+	#发送节点选择数据
+	[ -s ${CRASHDIR}/configs/web_save ] && {
+		num=$(cat ${CRASHDIR}/configs/web_save | wc -l)
+		i=1
+		while [ "$i" -le "$num" ];do
+			group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' ${CRASHDIR}/configs/web_save | sed 's/ /%20/g')
+			now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' ${CRASHDIR}/configs/web_save)
+			put_save http://127.0.0.1:${db_port}/proxies/${group_name} "{\"name\":\"${now_name}\"}"
+			i=$((i+1))
+		done
+	}
+	#还原面板设置
+	[ "$crashcore" != singbox ] && [ -s ${CRASHDIR}/configs/web_configs ] && put_save http://127.0.0.1:${db_port}/configs "$(cat ${CRASHDIR}/configs/web_configs)" PATCH
 }
 makehtml(){ #生成面板跳转文件
 	cat > ${BINDIR}/ui/index.html <<EOF
@@ -1463,7 +1472,7 @@ clash_check(){ #clash启动前检查
 }
 singbox_check(){ #singbox启动前检查
 	#检测SSR节点
-	if [ -n "$(cat $core_config | grep -oE '"type": "ssr"')" ];then
+	if [ -n "$(cat $core_config | grep -oE '"shadowsocksr"')" ];then
 		echo -----------------------------------------------
 		logger "singbox以移除对SSR相关协议的支持，请使用clash系内核！" 33
 		exit 1
@@ -1600,9 +1609,9 @@ afstart(){ #启动后
 	}
 	ckcmd iptables && start_wan #本地防火墙
 	mark_time #标记启动时间
-	[ -s ${CRASHDIR}/configs/web_save ] && web_restore &>/dev/null & #后台还原面板配置
+	[ -s ${CRASHDIR}/configs/web_save -o -s ${CRASHDIR}/configs/web_configs ] && web_restore &>/dev/null & #后台还原面板配置
 	{ sleep 5;logger Clash服务已启动！;} & #推送日志
-	#加载定身任务
+	#加载定时任务
 	[ -s ${CRASHDIR}/task/cron ] && croncmd ${CRASHDIR}/task/cron
 	[ -s ${CRASHDIR}/task/running ] && {
 		cronset '运行时每'

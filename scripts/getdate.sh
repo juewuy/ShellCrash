@@ -1726,8 +1726,8 @@ userguide(){
 				setconfig ipv6_dns 已开启
 			}
 			#设置开机启动
-			[ -f /etc/rc.common ] && /etc/init.d/CrashCore enable
-			ckcmd systemctl && systemctl enable shellcrash.service > /dev/null 2>&1
+			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
+			ckcmd systemctl && [ "$(cat /proc/1/comm)" = "systemd" ] && systemctl enable shellcrash.service > /dev/null 2>&1
 			rm -rf ${CRASHDIR}/.dis_startup
 			autostart=enable
 			#检测IP转发
