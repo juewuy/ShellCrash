@@ -42,7 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
         with:
-          fetch-depth: 0
+          repository: ${{ github.event.inputs.tag1 }}
+          ref: ${{ github.event.inputs.tag2 }}
+          fetch-depth: 1
 
       - name: setup go
         uses: actions/setup-go@v4.1.0
@@ -119,7 +121,7 @@ jobs:
         with:
           repository: ${{ github.event.inputs.tag1 }}
           ref: ${{ github.event.inputs.tag2 }}
-          fetch-depth: 0
+          fetch-depth: 1
           
       - name: Setup Go
         uses: actions/setup-go@v5
