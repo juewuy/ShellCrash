@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       tag3:
-        description: 'a new prerelease name or not'
+        description: 'a new prerelease name or not, if value=0, then only upload-artifact'
         required: false
         type: string
       tag4:
@@ -140,10 +140,13 @@ jobs:
           path: sing-box
           
   push_prerelease:
-    needs: cross
+    needs: 
+      - cross
+      - sing-box
     runs-on: ubuntu-latest
     env: 
-      VERSION: ${{needs.sing-box.outputs.version}}
+      RELEASE: ${{ github.event.inputs.tag3 }}
+      VERSION: ${{ steps.sing-box.outputs.version }}
     steps:
       - name: Get upx
         run: |
@@ -174,9 +177,10 @@ jobs:
           done
           rm -fr upx*  
           rm -fr ./tmp/core.tar.gz
-          echo ${VERSION} > /tmp/version
+          echo ${VERSION} > ./tmp/version
 
       - name: Create Release and Upload Release Asset
+        if: ${{ env.RELEASE != '0' }}
         uses: softprops/action-gh-release@v1
         with:
           tag_name: singbox_core${{ github.event.inputs.tag3 }}
@@ -187,6 +191,15 @@ jobs:
           files: |
             ./tmp/* 
             
+      - name: upload artifact
+        if: ${{ env.RELEASE == '0' }}
+        uses: actions/upload-artifact@v4.1.0
+        with:
+          name: sing-box-${{env.VERSION}}-${{matrix.jobs.output}}
+          path: |
+            ./tmp/sing-box*
+          compression-level: 9   
+          
       - name: Cleanup Workflow
         uses: Mattraks/delete-workflow-runs@main
         with:
