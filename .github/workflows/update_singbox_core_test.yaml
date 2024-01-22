@@ -44,7 +44,7 @@ jobs:
         with:
           repository: ${{ github.event.inputs.tag1 }}
           ref: ${{ github.event.inputs.tag2 }}
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: setup go
         uses: actions/setup-go@v4.1.0
@@ -57,6 +57,7 @@ jobs:
           git remote add sekai https://github.com/SagerNet/sing-box.git
           git fetch --tags sekai
           version=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
+          [ -z "$version" ] &&  version=${{ github.event.inputs.tag2 }}
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
             if [ "$REPO" = 'SagerNet/sing-box' ];then
