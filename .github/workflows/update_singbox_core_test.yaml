@@ -8,8 +8,12 @@ on:
         required: true
         type: string
       tag2:
-        description: 'tag of sing-box, such as v1.7.8'
+        description: 'tag or branches of sing-box, such as v1.7.8 or dev-next'
         required: true
+        type: string
+      tag3:
+        description: 'a new prerelease name or not，such as _PuerNya'
+        required: false
         type: string
 jobs:
   cross:
@@ -116,8 +120,8 @@ jobs:
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: singbox_core
-          name: singbox_core
+          tag_name: singbox_core${{ github.event.inputs.tag3 }}
+          name: singbox_core${{ github.event.inputs.tag3 }}
           body: "The ${{ github.event.inputs.tag2 }} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${{ github.event.inputs.tag2 }}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
           draft: false
           prerelease: true
