@@ -60,7 +60,7 @@ jobs:
           [ -z "$version" ] &&  version=${{ github.event.inputs.tag2 }}
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
-            if [ "$REPO" = 'SagerNet/sing-box' ];then
+            if [ "$REPO" = 'PuerNya/sing-box' ];then
                 echo tags=with_quic,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_clash_api >> $GITHUB_OUTPUT
             else
                 echo tags=with_quic,with_ech,with_utls,with_reality_server,with_clash_api >> $GITHUB_OUTPUT
@@ -142,6 +142,8 @@ jobs:
   push_prerelease:
     needs: cross
     runs-on: ubuntu-latest
+    env: 
+      version: ${{steps.sing-box.outputs.version}}
     steps:
       - name: Get upx
         run: |
@@ -172,13 +174,14 @@ jobs:
           done
           rm -fr upx*  
           rm -fr ./tmp/core.tar.gz
+          echo ${version} > /tmp/version
 
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           tag_name: singbox_core${{ github.event.inputs.tag3 }}
           name: singbox_core${{ github.event.inputs.tag3 }}
-          body: "The ${{steps.sing-box.outputs.version}} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${{steps.sing-box.outputs.version}}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
+          body: "The ${version} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${version}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
           draft: false
           prerelease: true
           files: |
