@@ -3,6 +3,7 @@
 
 error_down(){
 	echo -e  "\033[33m请尝试切换至其他安装源后重新下载！\033[0m" 
+	echo -e  "或者参考 \033[32;4mhttps://juewuy.github.io/bdaz\033[0m 进行本地安装！" 
 	sleep 1
 }
 dir_avail(){
@@ -922,10 +923,11 @@ getcore(){
 setcustcore(){
 	[ -z "$cpucore" ] && getcpucore
 	echo -e "\033[33m请选择需要使用的核心！\033[0m"
-	echo -e "1 \033[32m 测试版ClashPre内核 \033[0m"
-	echo -e "2 \033[32m 最新Meta.Alpha内核  \033[0m"
-	echo -e "3 \033[32m Sing-Box测试内核  \033[0m"
-	echo -e "4 \033[33m 自定义内核链接 \033[0m"
+	echo -e "1 \033[32m Premium-2023.08.17内核(已停止维护) \033[0m"
+	echo -e "2 \033[32m 最新Meta.Alpha内核(每日更新)  \033[0m"
+	echo -e "3 \033[32m singbox-1.8.2内核(支持rule-set)  \033[0m"
+	echo -e "4 \033[32m singbox_PuerNya内核(支持SSR、providers、rule-set)  \033[0m"
+	echo -e "9 \033[33m 自定义内核链接 \033[0m"
 	read -p "请输入对应数字 > " num	
 	case "$num" in
 	1)
@@ -944,6 +946,11 @@ setcustcore(){
 		getcore			
 	;;
 	4)
+		crashcore=singbox
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/singbox-linux-$cpucore
+		getcore			
+	;;
+	9)
 		read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
 		[ -n "$link" ] && custcorelink="$link"
 		crashcore=unknow
@@ -1521,12 +1528,12 @@ setserver(){
 	;;
 	a)
 		release_type=stable
-		setconfig release_type $release_type
+		[ -z "$url_id" ] && url_id=101
 		setserver
 	;;
 	b)
 		release_type=master
-		setconfig release_type $release_type
+		[ -z "$url_id" ] && url_id=101
 		setserver
 	;;
 	c)
@@ -1537,7 +1544,7 @@ setserver(){
 		read -p "是否依然切换到开发版？(1/0) > " res
 		if [ "$res" = 1 ];then
 			release_type=dev
-			setconfig release_type $release_type
+			[ -z "$url_id" ] && url_id=101
 		fi
 		setserver
 	;;
@@ -1632,6 +1639,7 @@ update(){
 	echo -e " 9 \033[31m卸载ShellCrash\033[0m"
 	echo -----------------------------------------------
 	echo -e "99 \033[36m鸣谢！\033[0m"
+	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单" 
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num

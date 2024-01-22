@@ -181,7 +181,7 @@ start_core(){
 			startover
 		else
 			${COMMAND} &>${TMPDIR}/core_test.log &
-			sleep 1 ; kill $! &>/dev/null
+			sleep 2 ; kill $! &>/dev/null
 			${CRASHDIR}/start.sh start_error
 			${CRASHDIR}/start.sh stop
 			exit 1

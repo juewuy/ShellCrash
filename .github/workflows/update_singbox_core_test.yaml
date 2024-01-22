@@ -185,7 +185,7 @@ jobs:
         with:
           tag_name: singbox_core${{ github.event.inputs.tag3 }}
           name: singbox_core${{ github.event.inputs.tag3 }}
-          body: "The ${VERSION} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${VERSION}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
+          body: "The ${{env.VERSION}} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${{env.VERSION}}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
           draft: false
           prerelease: true
           files: |
