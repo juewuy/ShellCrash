@@ -143,7 +143,7 @@ jobs:
     needs: cross
     runs-on: ubuntu-latest
     env: 
-      version: ${{steps.sing-box.outputs.version}}
+      VERSION: ${{needs.sing-box.outputs.version}}
     steps:
       - name: Get upx
         run: |
@@ -174,14 +174,14 @@ jobs:
           done
           rm -fr upx*  
           rm -fr ./tmp/core.tar.gz
-          echo ${version} > /tmp/version
+          echo ${VERSION} > /tmp/version
 
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           tag_name: singbox_core${{ github.event.inputs.tag3 }}
           name: singbox_core${{ github.event.inputs.tag3 }}
-          body: "The ${version} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${version}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
+          body: "The ${VERSION} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${VERSION}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nZip by upx\n使用了upx进行压缩\nOnly support for ShellCrash\n仅限于ShellCrash项目使用"
           draft: false
           prerelease: true
           files: |
