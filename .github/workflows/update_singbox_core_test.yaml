@@ -146,7 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       RELEASE: ${{ github.event.inputs.tag3 }}
-      VERSION: ${{ steps.sing-box.outputs.version }}
+      VERSION: ${{needs.sing-box.outputs.version}}
     steps:
       - name: Get upx
         run: |
