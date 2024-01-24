@@ -163,12 +163,13 @@ mark_time(){ #时间戳
 }
 getlanip(){ #获取局域网host地址
 	i=1
-	while [ "$i" -le "10" ];do
+	while [ "$i" -le "20" ];do
 		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' ) #ipv4局域网网段
 		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -f  ${TMPDIR}/ShellCrash.log ] && break
+		[ -n "$host_ipv4" -a "$ipv6_redir" != "已开启" ] && break
 		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
-		sleep 2 && i=$((i+1))
+		sleep 1 && i=$((i+1))
 	done
 	#添加自定义ipv4局域网网段
 	host_ipv4="$host_ipv4$cust_host_ipv4"
@@ -1548,8 +1549,6 @@ bfstart(){ #启动前
 				echo "shellcrash:x:0:7890:::" >> /etc/passwd
 			fi
 		fi
-		#修改procd启动文件
-		[ "$start_old" != "已开启" -a -w /etc/init.d/shellcrash ] && sed -i 's/procd_set_param user root/procd_set_param user shellcrash/' /etc/init.d/shellcrash
 	fi
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
