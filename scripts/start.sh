@@ -246,7 +246,7 @@ get_core_config(){ #下载内核配置文件
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
 		#Urlencord转码处理保留字符
-		Url=$(echo $Url | sed 's/;/\%3B/g; s|/|\%2F|g; s/?/\%3F/g; s/:/\%3A/g; s/@/\%4O/g; s/=/\%3D/g; s/&/\%26/g')
+		Url=$(echo $Url | sed 's/;/\%3B/g; s|/|\%2F|g; s/?/\%3F/g; s/:/\%3A/g; s/@/\%40/g; s/=/\%3D/g; s/&/\%26/g')
 		Https="${Server}/sub?target=${target}&insert=true&new_name=true&scv=true&udp=true&exclude=${exclude}&include=${include}&url=${Url}&config=${Config}"
 		url_type=true
 	fi
@@ -628,14 +628,14 @@ EOF
       "tag": "redirect-in",
       "listen": "::",
       "listen_port": $redir_port,
-      "sniff": $sniffer,
+      "sniff": true,
       "sniff_override_destination": $sniffer
     }, {
       "type": "tproxy",
       "tag": "tproxy-in",
       "listen": "::",
       "listen_port": $tproxy_port,
-      "sniff": $sniffer,
+      "sniff": true,
       "sniff_override_destination": $sniffer
 EOF
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
@@ -647,7 +647,7 @@ EOF
       "inet4_address": "198.18.0.0/16",
       "auto_route": false,
       "stack": "system",
-      "sniff": $sniffer,
+      "sniff": true,
       "sniff_override_destination": $sniffer
     }
   ],
@@ -1028,7 +1028,7 @@ start_tun(){ #iptables-tun
 		[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j shellcrash
 		
 		#设置ipv6转发
-		[ "$ipv6_redir" = "已开启" -a "$crashcore" = "meta" ] && {
+		[ "$ipv6_redir" = "已开启" ] && [ "$crashcore" = "singbox" -o "$crashcore" = "meta" ] && {
 			ip -6 route add default dev utun table 101
 			ip -6 rule add fwmark $fwmark table 101
 			ip6tables -t mangle -N shellcrashv6
@@ -1538,21 +1538,18 @@ bfstart(){ #启动前
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		#添加shellcrash用户
 		if [ -z "$(id shellcrash 2>/dev/null | grep 'root')" ];then
-			sed -i '/0:7890/d' /etc/passwd
-			grep -qw shellcrash /etc/passwd || echo "shellcrash:x:0:7890:::" >> /etc/passwd
-		fi
-		#修改启动文件
-		if [ "$start_old" != "已开启" ];then
-			[ -w /etc/systemd/system/shellcrash.service ] && servdir=/etc/systemd/system/shellcrash.service
-			[ -w /usr/lib/systemd/system/shellcrash.service ] && servdir=/usr/lib/systemd/system/shellcrash.service
-			if [ -w /etc/init.d/shellcrash ]; then
-				[ -z "$(grep 'procd_set_param user shellcrash' /etc/init.d/shellcrash)" ] && \
-    			sed -i '/procd_close_instance/i\\t\tprocd_set_param user shellcrash' /etc/init.d/shellcrash
-			elif [ -w "$servdir" ]; then
-				setconfig User shellcrash $servdir
-				systemctl daemon-reload >/dev/null
+			if ckcmd userdel useradd groupmod; then
+				userdel shellcrash 2>/dev/null
+				useradd shellcrash -u 7890
+				groupmod shellcrash -g 7890
+				sed -Ei s/7890:7890/0:7890/g /etc/passwd
+			else
+				sed -i '/0:7890/d' /etc/passwd
+				echo "shellcrash:x:0:7890:::" >> /etc/passwd
 			fi
 		fi
+		#修改procd启动文件
+		[ "$start_old" != "已开启" -a -w /etc/init.d/shellcrash ] && sed -i 's/procd_set_param user root/procd_set_param user shellcrash/' /etc/init.d/shellcrash
 	fi
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
@@ -1603,8 +1600,8 @@ afstart(){ #启动后
 	#设置本机代理
 	[ "$local_proxy" = "已开启" ] && {
 		[ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
-		[ "$local_type" = "iptables增强模式" ] && start_output
-		[ "$local_type" = "nftables增强模式" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
+		[ "$local_type" = "iptables增强模式" ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && start_output
+		[ "$local_type" = "nftables增强模式" ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
 	}
 	ckcmd iptables && start_wan #本地防火墙
 	mark_time #标记启动时间

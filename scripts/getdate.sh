@@ -661,12 +661,12 @@ set_core_config(){ #配置文件功能
 	echo -----------------------------------------------
 	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 在线\033[32m生成内核配置文件\033[0m"
+	echo -e " 1 在线\033[32m生成$crashcore配置文件\033[0m"
 	echo -e " 2 导入\033[33m外部配置文件链接\033[0m"
 	echo -e " 3 \033[36m管理\033[0m配置文件"
 	echo -e " 4 \033[33m更新\033[0m配置文件"
 	echo -e " 5 设置\033[36m自动更新\033[0m"
-	echo -e " 6 配置文件\033[32m覆写\033[0m"
+	echo -e " 6 \033[32m自定义\033[0m配置文件"
 	echo -----------------------------------------------
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
@@ -871,15 +871,15 @@ switch_core(){
 			 setconfig geosite_cn_v
 		}
 		read -p "是否保留$core_old相关配置文件？(1/0) > " res
-		[ "$res" = '0' ] && [ "$core_old" = "clash" ] && rm -rf ${CRASHDIR}/yamls
-		[ "$res" = '0' ] && [ "$core_old" = "singbox" ] && rm -rf ${CRASHDIR}/jsons			
+		[ "$res" = '0' ] && [ "$core_old" = "clash" ] && rm -rf ${CRASHDIR}/yamls/*
+		[ "$res" = '0' ] && [ "$core_old" = "singbox" ] && rm -rf ${CRASHDIR}/jsons/*	
 	}
 	if [ "$crashcore" = singbox ];then
 		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
 	else
 		COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 	fi
-	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
+	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 }
 getcore(){
 	[ -z "$crashcore" ] && crashcore=clashpre

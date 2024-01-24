@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.8c
+version=1.8.8d
 
 setdir(){
 	dir_avail(){
@@ -159,15 +159,24 @@ else
 	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
-		#设为systemd方式启动
+		#创建shellcrash用户并赋予root权限
+		if type userdel useradd groupmod; then
+			userdel shellcrash 2>/dev/null
+			useradd shellcrash -u 7890 2>/dev/null
+			groupmod shellcrash -g 7890
+			sed -Ei s/7890:7890/0:7890/g /etc/passwd
+		else
+			sed -i '/0:7890/d' /etc/passwd
+			echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >> /etc/passwd
+		fi
+		#配置systemd
 		mv -f ${CRASHDIR}/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
 		sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
 		rm -rf $sysdir/clash.service #旧版文件清理
 		systemctl daemon-reload
-	else
-		#设为保守模式启动
-		setconfig start_old 已开启
 	fi
+	#设为保守模式启动
+	setconfig start_old 已开启
 fi
 #修饰文件及版本号
 command -v bash &>/dev/null && shtype=bash || shtype=sh 
@@ -272,11 +281,8 @@ done
 chmod 755 ${CRASHDIR}/task/task.sh
 #旧版文件清理
 rm -rf /etc/init.d/clash
-rm -rf $CRASHDIR/clashservice
-rm -rf $CRASHDIR/core.new
-rm -rf $CRASHDIR/shellcrash.rc
-rm -rf $CRASHDIR/clash.sh
-for file in log shellcrash.service mark? mark.bak;do
+[ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
+for file in clash.sh shellcrash.rc core.new clashservice log shellcrash.service mark? mark.bak;do
 	rm -rf ${CRASHDIR}/$file
 done
 #旧版变量改名

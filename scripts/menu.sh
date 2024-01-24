@@ -1371,7 +1371,7 @@ normal_set(){ #基础设置
 			local_proxy=未开启
 			setconfig local_proxy $local_proxy
 			setconfig local_type
-			sed -i '/user shellcrash/d' /etc/init.d/clash 2>/dev/null
+			[ -w /etc/init.d/shellcrash ] && sed -i 's/procd_set_param user shellcrash/procd_set_param user root/' /etc/init.d/shellcrash
 			echo -e "\033[33m已经停用本机代理规则,请尽快重启服务！！\033[0m"
 		fi
 		sleep 1
