@@ -215,8 +215,10 @@ if [ -n "$profile" ];then
 	echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile #设置路径环境变量
 	source $profile &>/dev/null || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
-	[ -n "$(cat /etc/shells|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
-		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
+	[ -n "$(cat /etc/shells 2>/dev/null|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
+		sed -i '/alias crash=*/'d ~/.zshrc
+  		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
+		sed -i '/export CRASHDIR=*/'d ~/.zshrc
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc &>/dev/null
 	}
