@@ -217,7 +217,10 @@ if [ -n "$profile" ];then
 	#适配zsh环境变量
 	[ -n "$(cat /etc/shells 2>/dev/null|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
 		sed -i '/alias crash=*/'d ~/.zshrc
-  		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
+		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
+  		# 兼容 clash 命令
+		sed -i '/alias clash=*/'d ~/.zshrc
+		echo "alias clash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
 		sed -i '/export CRASHDIR=*/'d ~/.zshrc
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc &>/dev/null
