@@ -193,7 +193,7 @@ setconfig versionsh_l $version
 	setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
 	setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env	
 	if [ -x ${CRASHDIR}/CrashCore ] && [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
-		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
+		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 	else
 		COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 	fi

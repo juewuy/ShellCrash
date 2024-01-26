@@ -12,7 +12,7 @@ dir_avail(){
 	}
 
 #导入订阅、配置文件相关
-setrules(){ #自定义clash规则
+setrules(){ #自定义规则
 	set_rule_type(){
 		echo -----------------------------------------------	
 		echo -e "\033[33m请选择规则类型\033[0m"
@@ -88,16 +88,18 @@ setrules(){ #自定义clash规则
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
 	echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/rules.yaml\033[0m"
+	echo -e "\033[33msingbox和clash共用此处规则，可无缝切换！\033[0m"
+	echo -e "\033[36m大量规则请尽量使用rule-set功能添加，此处过量添加可能导致启动卡顿！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 新增自定义规则"
 	echo -e " 2 移除自定义规则"
 	echo -e " 3 清空规则列表"
-	echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
+	[ "$crashcore" = singbox ] || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
 	1)
-		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
+		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN"
 		rule_group="DIRECT#REJECT$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
 		set_rule_type
 		setrules
@@ -369,12 +371,8 @@ set_singbox_adv(){ #自定义singbox配置文件
 		echo -e "\033[31m自定义的内容不会追加，而是完整替换原配置文件相应模块，请谨慎使用！\033[0m"
 		echo -e "singbox官方文档：\033[36mhttps://sing-box.sagernet.org/zh/\033[0m"
 		echo -----------------------------------------------
-		echo -e "\033[33m本工具使用cat命令合并，所以请完整遵循json格式！\033[0m"
-		echo -e "\033[33m每个模块结尾需要有逗号连接下一个模块！！！\033[0m"
-		echo -----------------------------------------------
 		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
-		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
-		echo -e "Linux本机可\n使用\033[33mvim\033[0m进行编辑(路由设备可能不显示中文请勿使用)！\033[0m"
+		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"\
 }
 override(){ #配置文件覆写
 	[ -z "$rule_link" ] && rule_link=1
@@ -383,8 +381,8 @@ override(){ #配置文件覆写
 	echo -e "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
+	echo -e " 2 管理\033[36m自定义规则\033[0m"
 	[ "$crashcore" = singbox ] || {
-		echo -e " 2 管理\033[36m自定义规则\033[0m"
 		echo -e " 3 管理\033[33m自定义节点\033[0m"
 		echo -e " 4 管理\033[36m自定义策略组\033[0m"
 	}
@@ -875,7 +873,7 @@ switch_core(){
 		[ "$res" = '0' ] && [ "$core_old" = "singbox" ] && rm -rf ${CRASHDIR}/jsons/*	
 	}
 	if [ "$crashcore" = singbox ];then
-		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
+		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 	else
 		COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 	fi
@@ -1874,7 +1872,7 @@ debug(){
 	1)
 		$CRASHDIR/start.sh stop
 		if [ "$crashcore" = singbox ] ;then
-			$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json &
+			$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons &
 			{ sleep 4 ; kill $! &>/dev/null & }
 			wait
 		else

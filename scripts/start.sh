@@ -468,7 +468,7 @@ EOF
 	}
 	#插入自定义规则
 	sed -i "/#自定义规则/d" ${TMPDIR}/rules.yaml
-	[ -f ${CRASHDIR}/yamls/rules.yaml ] && {
+	[ -s ${CRASHDIR}/yamls/rules.yaml ] && {
 		cat ${CRASHDIR}/yamls/rules.yaml | sed "/^#/d" | sed '$a\' | sed 's/$/ #自定义规则/g' > ${TMPDIR}/rules.add
 		cat ${TMPDIR}/rules.yaml >> ${TMPDIR}/rules.add
 		mv -f ${TMPDIR}/rules.add ${TMPDIR}/rules.yaml
@@ -517,13 +517,11 @@ EOF
 	done
 }
 modify_json(){ #修饰singbox配置文件
+	#准备目录
+	[ -d ${TMPDIR}/jsons ] && rm -rf ${TMPDIR}/jsons/* || mkdir -p ${TMPDIR}/jsons
 	#生成log.json
-	cat > ${TMPDIR}/log.json <<EOF
-{
-  "log": {
-    "level": "info",
-    "timestamp": true
-  },
+	cat > ${TMPDIR}/jsons/log.json <<EOF
+{ "log": { "level": "info", "timestamp": true } }
 EOF
 	#生成dns.json
 	if [ "$hosts_opt" != "未启用" ];then #本机hosts
@@ -541,14 +539,15 @@ EOF
 	else
 		reverse_mapping=false
 	fi
-	[ -z "$(cat ${CRASHDIR}/jsons/user.json 2>/dev/null | grep '^dns:')" ] && { 
+	[ -z "$(cat ${CRASHDIR}/jsons/dns.json 2>/dev/null | grep '"dns":')" ] && { 
 		[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5' || dns_nameserver=$(echo $dns_nameserver | awk -F ',' '{print $1}')
 		[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1' || dns_fallback=$(echo $dns_fallback | awk -F ',' '{print $1}')
 		[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
 		[ "$dns_mod" = "redir_host" ] && proxy_dns=dns_proxy && direct_dns=dns_direct
 		[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
 		[ "$dns_mod" = "mix" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
-		cat > ${TMPDIR}/dns.json <<EOF
+		cat > ${TMPDIR}/jsons/dns.json <<EOF
+{
   "dns": { 
     "servers": [{
       "tag": "dns_proxy",
@@ -587,19 +586,22 @@ EOF
     "final": "dns_direct",
     "independent_cache": true,
     "reverse_mapping": true,
-    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/18" }
-  },
+    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/16" }
+  }
+}
 EOF
 	}
 	#生成ntp.json
-	cat > ${TMPDIR}/ntp.json <<EOF
+	cat > ${TMPDIR}/jsons/ntp.json <<EOF
+{
   "ntp": {
     "enabled": true,
     "server": "203.107.6.88",
     "server_port": 123,
     "interval": "30m0s",
     "detour": "DIRECT"
-  },
+  }
+}
 EOF
 	#生成inbounds.json
 	[ -n "$authentication" ] && {
@@ -609,7 +611,8 @@ EOF
 	}
 	[ "$sniffer" = "已启用" ] && sniffer=true || sniffer=false #域名嗅探配置
 		
-	cat > ${TMPDIR}/inbounds.json <<EOF
+	cat > ${TMPDIR}/jsons/inbounds.json <<EOF
+{
   "inbounds": [
     {
       "type": "mixed",
@@ -621,9 +624,7 @@ EOF
       "type": "direct",
       "tag": "dns-in",
       "listen": "::",
-      "listen_port": $dns_port,
-      "sniff": true,
-      "sniff_override_destination": false
+      "listen_port": $dns_port
     }, {
       "type": "redirect",
       "tag": "redirect-in",
@@ -638,10 +639,15 @@ EOF
       "listen_port": $tproxy_port,
       "sniff": true,
       "sniff_override_destination": $sniffer
+    }
+  ]
+}
 EOF
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
-		cat >> ${TMPDIR}/inbounds.json <<EOF
-    }, {
+		cat >> ${TMPDIR}/jsons/tun.json <<EOF
+{
+  "inbounds": [
+    {
       "type": "tun",
       "tag": "tun-in",
       "interface_name": "utun",
@@ -651,16 +657,13 @@ EOF
       "sniff": true,
       "sniff_override_destination": $sniffer
     }
-  ],
-EOF
-	else
-		cat >> ${TMPDIR}/inbounds.json <<EOF
-    }
-  ],	
+  ]
+}
 EOF
 	fi
 	#生成experimental.json
-	cat > ${TMPDIR}/experimental.json <<EOF
+	cat > ${TMPDIR}/jsons/experimental.json <<EOF
+{
   "experimental": {
     "clash_api": {
       "external_controller": "0.0.0.0:$db_port",
@@ -671,54 +674,75 @@ EOF
   }
 }
 EOF
-	#分割配置文件获得outbounds.json及route.json
-	[ "$(wc -l < $core_config)" -le 5 ] && {
-		${BINDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
-		mv -f ${TMPDIR}/format.json $core_config
+	#生成add_route.json
+	cat > ${TMPDIR}/jsons/add_route.json <<EOF
+{
+  "route": {
+    "rules": [ 
+	{ "inbound": "dns-in", "outbound": "dns-out" }
+	]
+  }
+}
+EOF
+	#生成自定义规则文件
+	[ -s ${CRASHDIR}/yamls/rules.yaml ] && {
+		cat ${CRASHDIR}/yamls/rules.yaml \
+			| sed '/^#/d' \
+			| sed 's/- DOMAIN-SUFFIX,/{ "domain_suffix": [ "/g' \
+			| sed 's/- DOMAIN-KEYWORD,/{ "domain_keyword": [ "/g' \
+			| sed 's/- IP-CIDR,/{ "ip_cidr": [ "/g' \
+			| sed 's/- SRC-IP-CIDR,/{ "source_ip_cidr": [ "/g' \
+			| sed 's/- DST-PORT,/{ "port": [ "/g' \
+			| sed 's/- SRC-PORT,/{ "source_port": [ "/g' \
+			| sed 's/- GEOIP,/{ "geoip": [ "/g' \
+			| sed 's/- GEOSITE,/{ "geosite": [ "/g' \
+			| sed 's/- IP-CIDR6,/{ "ip_cidr": [ "/g' \
+			| sed 's/- DOMAIN,/{ "domain": [ "/g' \
+			| sed 's/,/" ], "outbound": "/g' \
+			| sed 's/$/" },/g' \
+			| sed '1i\{ "route": { "rules": [ ' \
+			| sed '$s/,$/ ] } }/' > ${TMPDIR}/jsons/cust_add_rules.json
 	}
-	cat $core_config | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' > ${TMPDIR}/outbounds.json
-	cat $core_config | sed -n '/"route":/,/"experimental":/{/"experimental":/d; p}' > ${TMPDIR}/route.json
+	#提取配置文件以获得outbounds.json及route.json
+	${BINDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
+	echo '{' > ${TMPDIR}/jsons/outbounds.json
+	echo '{' > ${TMPDIR}/jsons/route.json
+	cat ${TMPDIR}/format.json | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' >> ${TMPDIR}/jsons/outbounds.json
+	cat ${TMPDIR}/format.json | sed -n '/"route":/,/"experimental":/{/"experimental":/d; p}' >> ${TMPDIR}/jsons/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
-	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/route.json
-	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/route.json
-	sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' ${TMPDIR}/route.json
-	#修饰route.json结尾
-	sed -i '/^  }$/s/  }/  },/' ${TMPDIR}/route.json
-	sed -i '/^}$/d' ${TMPDIR}/route.json
+	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/jsons/route.json
+	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/jsons/route.json
+	sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' ${TMPDIR}/jsons/route.json
 	#跳过本地tls证书验证
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ];then
-		sed -i 's/"insecure": false/"insecure": true/' ${TMPDIR}/outbounds.json
+		sed -i 's/"insecure": false/"insecure": true/' ${TMPDIR}/jsons/outbounds.json
 	else
-		sed -i 's/"insecure":  true/"insecure":  false/' ${TMPDIR}/outbounds.json
+		sed -i 's/"insecure":  true/"insecure":  false/' ${TMPDIR}/jsons/outbounds.json
 	fi
-	#合并文件
-	json_all=
+	#修饰outbounds&route.json结尾
+	sed -i 's/^  ],$/  ] }/' ${TMPDIR}/jsons/outbounds.json
+	sed -i 's/^  },$/  } }/' ${TMPDIR}/jsons/route.json
+	#加载自定义配置文件
+	mkdir -p ${TMPDIR}/jsons_base
 	for char in log dns ntp inbounds outbounds route experimental;do
-		[ -s ${TMPDIR}/$char.json ] && json_add=${TMPDIR}/$char.json
-		[ -s ${CRASHDIR}/jsons/$char.json ] && json_add=${CRASHDIR}/jsons/$char.json #如果有自定义配置文件则使用
-		json_all="$json_all $json_add"
-		json_add=''
+		[ -s ${CRASHDIR}/jsons/${char}.json ] && {
+			ln -s ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
+			mv -f ${TMPDIR}/jsons/${char}.json ${TMPDIR}/jsons_base #如果重复则临时备份
+		}
 	done
-	cut -c 1- $json_all > ${TMPDIR}/config.json
 	#测试自定义配置文件
-	${BINDIR}/CrashCore check -D ${BINDIR} -c ${TMPDIR}/config.json >/dev/null
-	if [ "$?" != 0 ];then
-		logger "$(${BINDIR}/CrashCore check -D ${BINDIR} -c ${TMPDIR}/config.json | grep -Eo 'error.*=.*')" 31
-		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
-		logger "错误详情请参考 ${TMPDIR}/error.json 文件！" 33
-		mv -f ${TMPDIR}/config.json ${TMPDIR}/error.json &>/dev/null
-		#合并基础配置文件
-		json_all=''
-		for char in log dns ntp inbounds outbounds route experimental;do
-			[ -s ${TMPDIR}/$char.json ] && json_add=${TMPDIR}/$char.json
-			json_all="$json_all $json_add"
-		done
-		cut -c 1- $json_all > ${TMPDIR}/config.json
+	error=$(${BINDIR}/CrashCore check -D ${BINDIR} -C ${TMPDIR}/jsons 2>&1 | grep -Eo 'cust.*\.json' | sed 's/cust_//g' )
+	if [ -n "$error" ];then
+		[ "$error" = 'rules.json' ] && error=${CRASHDIR}/yamls/rules.yaml || error=${CRASHDIR}/jsons/$error
+		logger "自定义配置文件校验失败，请检查 $error 文件！" 31
+		logger "尝试使用基础配置文件启动~" 33
+		#清理自定义配置文件并还原基础配置
+		rm -rf ${TMPDIR}/jsons/cust_*
+		mv -f ${TMPDIR}/jsons_base/* ${TMPDIR}/jsons
 	fi
 	#清理缓存
-	for char in all log dns ntp inbounds outbounds route experimental;do
-		rm -f ${TMPDIR}/${char}.json
-	done
+	rm -rf ${TMPDIR}/*.json
+	rm -rf ${TMPDIR}/jsons_base
 }
 
 #设置路由规则
@@ -1411,7 +1435,7 @@ core_check(){
 			chmod +x ${TMPDIR}/core.new 2>/dev/null
 			if [ "$crashcore" = singbox ];then
 				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
-				COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
+				COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 			else
 				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 				COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
