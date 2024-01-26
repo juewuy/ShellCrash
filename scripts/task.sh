@@ -198,7 +198,7 @@ task_user_add(){ #自定义命令添加
 		task_command=$script
 		echo -e "请检查输入：\033[32m$task_command\033[0m"
 		#获取本任务ID
-		task_max_id=$(awk -F'#' '{print $1}' ${CRASHDIR}/task/task.user  | sort -n | tail -n 1)
+		task_max_id=$(awk -F '#' '{print $1}' ${CRASHDIR}/task/task.user 2>/dev/null | sort -n | tail -n 1)
 		[ -z "$task_max_id" ] && task_max_id=200
 		task_id=$((task_max_id + 1))
 		read -p "请输入任务备注 > " txt
@@ -233,8 +233,6 @@ task_add(){ #任务添加
 	echo -----------------------------------------------
 	echo -e "\033[36m请选择需要添加的任务\033[0m"
 	echo -----------------------------------------------
-	#检测并创建自定义任务文件
-	[ -f ${CRASHDIR}/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' > ${CRASHDIR}/task/task.user
 	#输出任务列表
 	cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | awk -F '#' '{print " "NR" "$3}'
 	echo -----------------------------------------------
@@ -468,6 +466,8 @@ task_recom(){ #任务推荐
 	}
 }
 task_menu(){ #任务菜单
+	#检测并创建自定义任务文件
+	[ -f ${CRASHDIR}/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' > ${CRASHDIR}/task/task.user
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用自动任务功能：\033[0m"
 	echo -----------------------------------------------

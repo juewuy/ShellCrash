@@ -1512,6 +1512,8 @@ bfstart(){ #启动前
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master
 	[ ! -d ${BINDIR}/ui ] && mkdir -p ${BINDIR}/ui
 	[ -z "$crashcore" ] && crashcore=clash
+	#执行条件任务
+	[ -s ${CRASHDIR}/task/bfstart ] && source ${CRASHDIR}/task/bfstart
 	#检查内核配置文件
 	if [ ! -f $core_config ];then
 		if [ -n "$Url" -o -n "$Https" ];then
@@ -1555,8 +1557,6 @@ bfstart(){ #启动前
 	fi
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
-	#执行条件任务
-	[ -s ${CRASHDIR}/task/bfstart ] && source ${CRASHDIR}/task/bfstart
 	return 0
 }
 afstart(){ #启动后
@@ -1649,7 +1649,7 @@ start_old(){ #保守模式
 		$nohup $COMMAND &>/dev/null &
 	fi
 	afstart
-	cronset '保守模式守护进程' "* * * * * test -z \"\$(pidof CrashCore)\" && ${CRASHDIR}/start.sh start #ShellCrash保守模式守护进程"
+	cronset '保守模式守护进程' "* * * * * test -z \"\$(pidof CrashCore)\" && ${CRASHDIR}/start.sh daemon #ShellCrash保守模式守护进程"
 }
 #杂项
 update_config(){ #更新订阅并重启
@@ -1721,6 +1721,10 @@ stop)
         ;;
 restart)
         $0 stop
+        $0 start
+        ;;
+daemon)
+        [ ! -f $TMPDIR/crash_start_time ] && sleep 20
         $0 start
         ;;
 debug)		

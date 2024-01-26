@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.8f
+version=1.8.8g
 
 setdir(){
 	dir_avail(){
@@ -160,13 +160,13 @@ else
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
 		#创建shellcrash用户并赋予root权限
+		sed -i '/0:7890/d' /etc/passwd
 		if type userdel useradd groupmod; then
 			userdel shellcrash 2>/dev/null
 			useradd shellcrash -u 7890 2>/dev/null
-			groupmod shellcrash -g 7890
+			groupmod shellcrash -g 7890 2>/dev/null
 			sed -Ei s/7890:7890/0:7890/g /etc/passwd
 		else
-			sed -i '/0:7890/d' /etc/passwd
 			echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >> /etc/passwd
 		fi
 		#配置systemd
