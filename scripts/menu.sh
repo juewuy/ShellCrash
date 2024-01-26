@@ -1466,7 +1466,7 @@ advanced_set(){ #进阶设置
 		echo -----------------------------------------------
 		if [ "$sniffer" = "未启用" ];then
 			if [ "$crashcore" = "clash" ];then
-				rm -rf ${BINDIR}/clash
+				rm -rf ${BINDIR}/CrashCore
 				crashcore=meta
 				setconfig crashcore $crashcore
 				echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
@@ -1562,6 +1562,7 @@ uninstall(){
 		${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
 		${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
 		${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
+		${CRASHDIR}/start.sh cronset "task.sh" 2>/dev/null
 		read -p "是否保留脚本配置及订阅文件？[1/0] > " res
 		if [ "$res" = '1' ]; then
 			mv -f ${CRASHDIR}/configs /tmp/ShellCrash

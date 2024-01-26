@@ -1324,9 +1324,9 @@ web_restore(){ #还原面板选择
 	while [ -z "$test" -a "$i" -lt 20 ];do
 		sleep 2
 		if curl --version > /dev/null 2>&1;then
-			test=$(curl -s http://127.0.0.1:${db_port})
+			test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
 		else
-			test=$(wget -q -O - http://127.0.0.1:${db_port})
+			test=$(wget -q -O - http://127.0.0.1:${db_port}/configs | grep -o port)
 		fi
 		i=$((i+1))
 	done
@@ -1342,7 +1342,10 @@ web_restore(){ #还原面板选择
 		done
 	}
 	#还原面板设置
-	[ "$crashcore" != singbox ] && [ -s ${CRASHDIR}/configs/web_configs ] && put_save http://127.0.0.1:${db_port}/configs "$(cat ${CRASHDIR}/configs/web_configs)" PATCH
+	[ "$crashcore" != singbox ] && [ -s ${CRASHDIR}/configs/web_configs ] {
+		sleep 5
+		put_save http://127.0.0.1:${db_port}/configs "$(cat ${CRASHDIR}/configs/web_configs)" PATCH
+	}
 }
 makehtml(){ #生成面板跳转文件
 	cat > ${BINDIR}/ui/index.html <<EOF
@@ -1410,7 +1413,7 @@ core_check(){
 				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
 				COMMAND='"$BINDIR/CrashCore run -D $BINDIR -c $TMPDIR/config.json"'
 			else
-				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | grep linux | sed 's/ linux.*//;s/.* //')
+				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 				COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 			fi
 			if [ -z "$core_v" ];then
@@ -1645,9 +1648,8 @@ start_old(){ #保守模式
 		ckcmd nohup && nohup=nohup #华硕调用nohup启动
 		$nohup $COMMAND &>/dev/null &
 	fi
-
 	afstart
-	cronset '保守模式守护进程' "*/1 * * * * test -z \"\$(pidof CrashCore)\" && ${CRASHDIR}/start.sh restart #ShellCrash保守模式守护进程"
+	cronset '保守模式守护进程' "* * * * * test -z \"\$(pidof CrashCore)\" && ${CRASHDIR}/start.sh start #ShellCrash保守模式守护进程"
 }
 #杂项
 update_config(){ #更新订阅并重启

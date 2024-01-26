@@ -904,7 +904,7 @@ getcore(){
 		if [ "$crashcore" = singbox ];then
 			core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
 		else
-			core_v=$(${TMPDIR}/core.new -v 2>/dev/null | grep linux | sed 's/ linux.*//;s/.* //')
+			core_v=$(${TMPDIR}/core.new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 		fi
 		if [ -z "$core_v" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
