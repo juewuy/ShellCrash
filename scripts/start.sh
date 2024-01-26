@@ -1342,7 +1342,7 @@ web_restore(){ #还原面板选择
 		done
 	}
 	#还原面板设置
-	[ "$crashcore" != singbox ] && [ -s ${CRASHDIR}/configs/web_configs ] {
+	[ "$crashcore" != singbox ] && [ -s ${CRASHDIR}/configs/web_configs ] && {
 		sleep 5
 		put_save http://127.0.0.1:${db_port}/configs "$(cat ${CRASHDIR}/configs/web_configs)" PATCH
 	}
