@@ -211,7 +211,7 @@ check_clash_config(){ #检查clash配置文件
 		echo -----------------------------------------------
 		exit 1
 	fi
-	#检测并去除无效节点组
+	#检测并去除无效策略组
 	[ -n "$url_type" ] && ckcmd xargs && {
 		cat $core_config_new | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' > ${TMPDIR}/clash_proxies_$USER
 		while read line ;do
@@ -222,19 +222,31 @@ check_clash_config(){ #检查clash配置文件
 	}
 }
 check_singbox_config(){ #检查singbox配置文件
-	#使用核心内置format功能检测并格式化
-	if [ -x ${BINDIR}/CrashCore ];then
-		echo -e "\033[36m已获取配置文件，正在调用内核检查文件可用性！\033[0m"
-		${BINDIR}/CrashCore format -c $core_config_new > ${TMPDIR}/format.json
-		if [ "$?" != "0" ];then
-			logger "配置文件加载失败！请查看报错信息！" 31
-			${BINDIR}/CrashCore check -c $core_config_new
-			echo "$($BINDIR/CrashCore check -c $core_config_new)" >> ${TMPDIR}/ShellCrash.log
-			exit 1
-		else
-			mv -f ${TMPDIR}/format.json $core_config_new
-		fi
+	#检测节点或providers
+	if [ -z "$(cat $core_config_new | grep -Eo '"server":|"outbound_providers":' )" ];then
+		echo -----------------------------------------------
+		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
+		exit 1
 	fi
+	#检测SSR节点
+	if [ -n "$(cat $core_config | grep -oE '"shadowsocksr"')" ];then
+		echo -----------------------------------------------
+		logger "singbox主干已移除对SSR相关协议的支持，请使用clash系内核或者PuerNya分支！" 33
+	fi
+	#检测并去除无效策略组
+	[ -n "$url_type" ] && {
+		#获得无效策略组名称
+		grep -oE '\{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\]' $core_config_new | sed -n 's/.*"tag":"\([^"]*\)".*/\1/p' > ${TMPDIR}/singbox_tags
+		#删除策略组
+		sed -i 's/{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\]}//g; s/{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\],"url":"[^"]*","interval":"[^"]*","tolerance":[^}]*}//g' $core_config_new
+		#删除全部包含策略组名称的规则
+		while read line ;do
+			sed -i "s/\"$line\"//g" $core_config_new
+		done < ${TMPDIR}/singbox_tags
+		rm -rf ${TMPDIR}/singbox_tags
+		#删除多余逗号
+		sed -i 's/,\+/,/g; s/\[,/\[/g; s/,]/]/g' $core_config_new
+	} 
 }
 get_core_config(){ #下载内核配置文件
 	getconfig
@@ -724,10 +736,15 @@ EOF
 	sed -i 's/^  },$/  } }/' ${TMPDIR}/jsons/route.json
 	#加载自定义配置文件
 	mkdir -p ${TMPDIR}/jsons_base
-	for char in log dns ntp inbounds outbounds route experimental;do
+	for char in log dns ntp experimental;do
 		[ -s ${CRASHDIR}/jsons/${char}.json ] && {
 			ln -s ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
 			mv -f ${TMPDIR}/jsons/${char}.json ${TMPDIR}/jsons_base #如果重复则临时备份
+		}
+	done
+	for char in inbounds outbounds outbound_providers route;do
+		[ -s ${CRASHDIR}/jsons/${char}.json ] && {
+			ln -s ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
 		}
 	done
 	#测试自定义配置文件
@@ -794,7 +811,7 @@ start_redir(){ #iptables-redir
 		iptables -t nat -A shellcrash -d $ip -j RETURN
 	done
 	#绕过CN_IP
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && \
 	iptables -t nat -A shellcrash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	#局域网设备过滤
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
@@ -820,7 +837,7 @@ start_redir(){ #iptables-redir
 			ip6tables -t nat -A shellcrashv6 -d $ip -j RETURN
 		done
 		#绕过CN_IPV6
-		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && \
 		ip6tables -t nat -A shellcrashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		#局域网设备过滤
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
@@ -895,7 +912,7 @@ start_tproxy(){ #iptables-tproxy
 		iptables -t mangle -A shellcrash -d $ip -j RETURN
 	done
 	#绕过CN_IP
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && \
 	iptables -t mangle -A shellcrash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	#tcp&udp分别进代理链
 	tproxy_set(){
@@ -920,7 +937,7 @@ start_tproxy(){ #iptables-tproxy
 	
 	#屏蔽QUIC
 	[ "$quic_rj" = 已启用 ] && {
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	}
 	#设置ipv6转发
@@ -933,7 +950,7 @@ start_tproxy(){ #iptables-tproxy
 			ip6tables -t mangle -A shellcrashv6 -d $ip -j RETURN
 		done
 		#绕过CN_IPV6
-		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && \
 		ip6tables -t mangle -A shellcrashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 		#tcp&udp分别进代理链
 		tproxy_set6(){
@@ -959,7 +976,7 @@ start_tproxy(){ #iptables-tproxy
 		
 		#屏蔽QUIC
 		[ "$quic_rj" = 已启用 ] && {
-			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
+			[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 			ip6tables -I INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
 		}	
 	}
@@ -974,7 +991,7 @@ start_output(){ #iptables本机代理
 		iptables -t nat -A shellcrash_out -d $ip -j RETURN
 	done
 	#绕过CN_IP
-	[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && \
 	iptables -t nat -A shellcrash_out -m set --match-set cn_ip dst -j RETURN >/dev/null 2>&1 
 	#仅允许本机流量
 	for ip in 127.0.0.0/8 $local_ipv4;do 
@@ -1008,7 +1025,7 @@ start_tun(){ #iptables-tun
 	ip6tables -I FORWARD -o utun -j ACCEPT > /dev/null 2>&1
 	#屏蔽QUIC
 	if [ "$quic_rj" = 已启用 ];then
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && {
+		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && {
 			set_cn_ip='-m set ! --match-set cn_ip dst'
 			set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		}
@@ -1033,7 +1050,7 @@ start_tun(){ #iptables-tun
 		#防止回环
 		iptables -t mangle -A shellcrash -s 198.18.0.0/16 -j RETURN
 		#绕过CN_IP
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && \
+		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && \
 		iptables -t mangle -A shellcrash -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 		#局域网设备过滤
 		if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
@@ -1062,7 +1079,7 @@ start_tun(){ #iptables-tun
 				ip6tables -t mangle -A shellcrashv6 -d $ip -j RETURN
 			done
 			#绕过CN_IPV6
-			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && \
+			[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && \
 			ip6tables -t mangle -A shellcrashv6 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 			#局域网设备过滤
 			if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
@@ -1228,7 +1245,7 @@ stop_firewall(){ #还原防火墙配置
 		iptables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 		iptables -D FORWARD -s 198.18.0.0/16 -o utun -j RETURN 2> /dev/null
 		#屏蔽QUIC
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT 2> /dev/null
 		#本机代理
@@ -1277,7 +1294,7 @@ stop_firewall(){ #还原防火墙配置
 		ip6tables -D FORWARD -o utun -j ACCEPT 2> /dev/null
 		ip6tables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
 		#屏蔽QUIC
-		[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
+		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2> /dev/null
 		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2> /dev/null
 		#公网访问
@@ -1499,11 +1516,6 @@ clash_check(){ #clash启动前检查
 	fi
 }
 singbox_check(){ #singbox启动前检查
-	#检测SSR节点
-	if [ -n "$(cat $core_config | grep -oE '"shadowsocksr"')" ];then
-		echo -----------------------------------------------
-		logger "singbox以移除对SSR相关协议的支持，请使用clash系内核或者PuerNya分支！" 33
-	fi
 	core_check
 	#预下载GeoIP数据库
 	if [ ! -f ${BINDIR}/geoip.db ];then
@@ -1594,8 +1606,8 @@ afstart(){ #启动后
 	}
 	#设置DNS转发
 	start_dns(){
-		[ "$dns_mod" = "redir_host" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
-		[ "$ipv6_redir" = "已开启" ] && [ "$dns_mod" = "redir_host" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
+		[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
+		[ "$ipv6_redir" = "已开启" ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
 		if [ "$dns_no" != "已禁用" ];then
 			if [ "$dns_redir" != "已开启" ];then
 				[ -n "$(echo $redir_mod|grep Nft)" ] && start_nft_dns || start_ipt_dns

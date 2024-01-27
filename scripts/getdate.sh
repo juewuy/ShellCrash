@@ -366,13 +366,13 @@ EOF
 set_singbox_adv(){ #自定义singbox配置文件
 		echo -----------------------------------------------
 		echo -e "singbox配置文件中，支持自定义的模块有：\033[0m"
-		echo -e "\033[32mdns.json inbounds.json outbounds.json route.json\033[0m"
+		echo -e "\033[32mlog dns ntp inbounds outbounds outbound_providers route experimental\033[0m"
 		echo -e "将相应json文件放入\033[32m$JSONSDIR\033[0m目录后即可在启动时加载"
-		echo -e "\033[31m自定义的内容不会追加，而是完整替换原配置文件相应模块，请谨慎使用！\033[0m"
+		echo -e "\033[31m注意：自定义的log dns ntp experimental将完整替换内置设定而非增量合并！\033[0m"
 		echo -e "singbox官方文档：\033[36mhttps://sing-box.sagernet.org/zh/\033[0m"
 		echo -----------------------------------------------
 		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
-		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"\
+		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
 }
 override(){ #配置文件覆写
 	[ -z "$rule_link" ] && rule_link=1
@@ -868,9 +868,6 @@ switch_core(){
 			 setconfig geoip_cn_v
 			 setconfig geosite_cn_v
 		}
-		read -p "是否保留$core_old相关配置文件？(1/0) > " res
-		[ "$res" = '0' ] && [ "$core_old" = "clash" ] && rm -rf ${CRASHDIR}/yamls/*
-		[ "$res" = '0' ] && [ "$core_old" = "singbox" ] && rm -rf ${CRASHDIR}/jsons/*	
 	}
 	if [ "$crashcore" = singbox ];then
 		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
@@ -1385,31 +1382,40 @@ setdb(){
 	echo -----------------------------------------------
 	echo -e "请选择面板\033[33m安装类型：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 安装\033[32m官方面板\033[0m(约500kb)"
-	echo -e " 2 安装\033[32mMeta面板\033[0m(约800kb)"
-	echo -e " 3 安装\033[32mYacd面板\033[0m(约1.1mb)"
-	echo -e " 4 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
-	echo -e " 5 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
-	echo -e " 6 卸载\033[33m本地面板\033[0m"
+	echo -e " 1 安装\033[32mYacd面板\033[0m(约1.1mb)"
+	echo -e " 2 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
+	echo -e " 3 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
+	[ "$crashcore" != singbox ] && {
+		echo -e " 4 安装\033[32m基础面板\033[0m(约500kb)"
+		echo -e " 5 安装\033[32mMeta基础面板\033[0m(约800kb)"
+	}
+	echo -e " 9 卸载\033[33m本地面板\033[0m"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 
-	if [ "$num" = '1' ]; then
-		db_type=clashdb
-		dbdir
-	elif [ "$num" = '2' ]; then
-		db_type=meta_db
-		dbdir
-	elif [ "$num" = '3' ]; then
+	case "$num" in
+	0) ;;
+	1)
 		db_type=yacd
 		dbdir
-	elif [ "$num" = '4' ]; then
+	;;
+	2)
 		db_type=meta_yacd
 		dbdir
-	elif [ "$num" = '5' ]; then
+	;;
+	3)
 		db_type=meta_xd
 		dbdir
-	elif [ "$num" = '6' ]; then
+	;;
+	4)
+		db_type=clashdb
+		dbdir
+	;;
+	5)
+		db_type=meta_db
+		dbdir
+	;;
+	9)
 		read -p "确认卸载本地面板？(1/0) > " res
 		if [ "$res" = 1 ];then
 			rm -rf /www/clash
@@ -1419,9 +1425,11 @@ setdb(){
 			echo -e "\033[31m面板已经卸载！\033[0m"
 			sleep 1
 		fi
-	else
+	;;
+	*)
 		errornum
-	fi
+	;;
+	esac
 }
 
 getcrt(){
@@ -1722,8 +1730,10 @@ userguide(){
 		elif [ "$num" = 1 ];then
 			#设置运行模式
 			redir_mod="Redir模式"
-			ckcmd nft && redir_mod="Nft基础"
-			modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
+			ckcmd nft && {
+				redir_mod="Nft基础"
+				modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
+			}
 			setconfig redir_mod "$redir_mod"
 			#自动识别IPV6
 			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {

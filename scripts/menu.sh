@@ -49,7 +49,7 @@ ckstatus(){
 	[ -f ${CRASHDIR}/ui/index.html ] && dbdir=${CRASHDIR}/ui && hostdir=":$db_port/ui"
 	[ -f /www/clash/index.html ] && dbdir=/www/clash && hostdir=/clash
 	#开机自启检测
-	if [ -f /etc/rc.common ];then
+	if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 		[ -n "$(find /etc/rc.d -name '*shellcrash')" ] && autostart=enable || autostart=disable
 	elif ckcmd systemctl;then
 		[ "$(systemctl is-enabled shellcrash.service 2>&1)" = enabled ] && autostart=enable || autostart=disable
@@ -910,7 +910,7 @@ macfilter(){ #局域网设备过滤
 }
 localproxy(){ #本机代理
 	[ -w /etc/systemd/system/shellcrash.service -o -w /usr/lib/systemd/system/shellcrash.service -o -x /bin/su ] && local_enh=1
-	[ -f /etc/rc.common -a -w /etc/passwd ] && local_enh=1
+	[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && [ -w /etc/passwd ] && local_enh=1
 	echo -----------------------------------------------
 	[ -n "$local_enh" ] && {
 		ckcmd iptables && [ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
@@ -975,7 +975,7 @@ setboot(){ #启动相关设置
 			autostart=disable
 			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
 		elif [ "$autostart" = "disable" ]; then
-			[ -f /etc/rc.common ] && /etc/init.d/shellcrash enable
+			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
 			ckcmd systemctl && systemctl enable shellcrash.service > /dev/null 2>&1
 			rm -rf ${CRASHDIR}/.dis_startup
 			autostart=enable
