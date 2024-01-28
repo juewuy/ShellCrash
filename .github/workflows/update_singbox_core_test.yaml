@@ -156,11 +156,10 @@ jobs:
       - name: Zip core by tar
         run: |      
           for arch in amd64 ;do #armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat
-            mv -f ./tmp/linux-${archs}/sing-box ./tmp/singbox-linux-${archs}
-            chmod +x ./tmp/singbox-linux-${archs}
-            tar -zcvf ./tmp/singbox-linux-${archs}.tar.gz ./tmp/singbox-linux-${archs}
+            mv -f ./tmp/linux-${arch}/sing-box ./tmp/CrashCore
+            chmod +x ./tmp/CrashCore
+            tar -zcvf ./tmp/singbox-linux-${arch}.tar.gz ./tmp/CrashCore
           done
-          rm -fr ./tmp/core.tar.gz
 
       - name: Create Release and Upload Release Asset
         if: ${{ env.RELEASE != '0' }}
