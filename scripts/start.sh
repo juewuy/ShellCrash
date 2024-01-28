@@ -741,7 +741,7 @@ EOF
 			mv -f ${TMPDIR}/jsons/${char}.json ${TMPDIR}/jsons_base #如果重复则临时备份
 		}
 	done
-	for char in inbounds outbounds outbound_providers route;do
+	for char in inbounds outbounds outbound_providers route rule-set;do
 		[ -s ${CRASHDIR}/jsons/${char}.json ] && {
 			ln -s ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
 		}
@@ -1127,7 +1127,7 @@ start_nft(){ #nftables-allinone
 		#仅代理本机局域网网段流量
 		nft add rule inet shellcrash prerouting ip saddr != {$HOST_IP} return
 		#绕过CN-IP
-		[ "$dns_mod" = "redir_host" -a "$cn_ip_route" = "已开启" -a -f ${BINDIR}/cn_ip.txt ] && {
+		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f ${BINDIR}/cn_ip.txt ] && {
 			CN_IP=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ip.txt)
 			[ -n "$CN_IP" ] && nft add rule inet shellcrash prerouting ip daddr {$CN_IP} return
 		}
@@ -1144,7 +1144,7 @@ start_nft(){ #nftables-allinone
 			#仅代理本机局域网网段流量
 			nft add rule inet shellcrash prerouting ip6 saddr != {$HOST_IP6} return
 			#绕过CN_IPV6
-			[ "$dns_mod" = "redir_host" -a "$cn_ipv6_route" = "已开启" -a -f ${BINDIR}/cn_ipv6.txt ] && {
+			[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" -a -f ${BINDIR}/cn_ipv6.txt ] && {
 				CN_IP6=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ipv6.txt)
 				[ -n "$CN_IP6" ] && nft add rule inet shellcrash prerouting ip6 daddr {$CN_IP6} return
 			}
