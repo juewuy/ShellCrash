@@ -158,7 +158,7 @@ jobs:
           for arch in amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
             mv -f ./tmp/linux-${arch}/sing-box ./tmp/CrashCore
             chmod +x ./tmp/CrashCore
-            tar -zcvf ./tmp/singbox-linux-${arch}.tar.gz -C ./tmp CrashCore
+            tar --no-same-owner -zcvf ./tmp/singbox-linux-${arch}.tar.gz -C ./tmp CrashCore
           done
 
       - name: Create Release and Upload Release Asset
@@ -172,7 +172,6 @@ jobs:
           prerelease: true
           files: |
             ./tmp/singbox* 
-            ./tmp/version
             
       - name: upload artifact
         if: ${{ env.RELEASE == '0' }}
