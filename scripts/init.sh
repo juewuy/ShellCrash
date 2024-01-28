@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.9
+version=1.8.9b
 
 setdir(){
 	dir_avail(){
@@ -159,16 +159,9 @@ else
 	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
-		#创建shellcrash用户并赋予root权限
-		if type userdel useradd groupmod; then
-			userdel shellcrash 2>/dev/null
-			useradd shellcrash -u 7890 2>/dev/null
-			groupmod shellcrash -g 7890 2>/dev/null
-			sed -Ei s/7890:7890/0:7890/g /etc/passwd
-		else
-			sed -i '/0:7890/d' /etc/passwd
-			echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >> /etc/passwd
-		fi
+		#创建shellcrash用户
+		sed -i '/0:7890/d' /etc/passwd
+		echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >> /etc/passwd
 		#配置systemd
 		mv -f ${CRASHDIR}/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
 		sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
@@ -192,13 +185,13 @@ setconfig versionsh_l $version
 	touch ${CRASHDIR}/configs/command.env
 	setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
 	setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env	
-	if [ -x ${CRASHDIR}/CrashCore ] && [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
-		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
-	else
-		COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
-	fi
-	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 }
+if [ -x ${CRASHDIR}/CrashCore ] && [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+	COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
+else
+	COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
+fi
+setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
 #设置环境变量

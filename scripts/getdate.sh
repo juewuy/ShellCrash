@@ -87,9 +87,9 @@ setrules(){ #自定义规则
 	}
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
-	echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/rules.yaml\033[0m"
+	echo -e "如需批量操作，请手动编辑：\033[36m $YAMLSDIR/rules.yaml\033[0m"
 	echo -e "\033[33msingbox和clash共用此处规则，可无缝切换！\033[0m"
-	echo -e "\033[36m大量规则请尽量使用rule-set功能添加，此处过量添加可能导致启动卡顿！\033[0m"
+	echo -e "大量规则请尽量使用rule-set功能添加，\033[31m此处过量添加可能导致启动卡顿！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 新增自定义规则"
 	echo -e " 2 移除自定义规则"
@@ -366,13 +366,10 @@ EOF
 set_singbox_adv(){ #自定义singbox配置文件
 		echo -----------------------------------------------
 		echo -e "singbox配置文件中，支持自定义的模块有：\033[0m"
-		echo -e "\033[32mlog dns ntp inbounds outbounds outbound_providers route experimental\033[0m"
-		echo -e "将相应json文件放入\033[32m$JSONSDIR\033[0m目录后即可在启动时加载"
-		echo -e "\033[31m注意：自定义的log dns ntp experimental将完整替换内置设定而非增量合并！\033[0m"
-		echo -e "singbox官方文档：\033[36mhttps://sing-box.sagernet.org/zh/\033[0m"
+		echo -e "\033[36mlog dns ntp inbounds outbounds outbound_providers route experimental\033[0m"
+		echo -e "将相应json文件放入\033[33m$JSONSDIR\033[0m目录后即可在启动时加载"
 		echo -----------------------------------------------
-		echo -e "Windows下请\n使用\033[33mWinSCP软件\033[0m进行编辑！\033[0m"
-		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
+		echo -e "使用前请务必参考配置教程:\033[32;4m https://juewuy.github.io/nWTjEpkSK \033[0m"
 }
 override(){ #配置文件覆写
 	[ -z "$rule_link" ] && rule_link=1
@@ -393,7 +390,6 @@ override(){ #配置文件覆写
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	1)
-		source $CFG_PATH
 		if [ -n "$(pidof CrashCore)" ];then
 			echo -----------------------------------------------
 			echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
@@ -427,7 +423,7 @@ override(){ #配置文件覆写
 	9)
 		echo -----------------------------------------------
 		echo -e "\033[33m此功能可能会导致严重问题！启用后脚本中大部分功能都将禁用！！！\033[0m"
-		echo -e "如果你不是非常了解Clash的运行机制，切勿开启！\033[0m"
+		echo -e "如果你不是非常了解$crashcore的运行机制，切勿开启！\033[0m"
 		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
 		echo -----------------------------------------------
 		sleep 2

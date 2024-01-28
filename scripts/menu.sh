@@ -522,14 +522,14 @@ setdns(){ #DNS设置
 	[ -z "$dns_no" ] && dns_no=未禁用
 	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
-	echo -e "FallbackDNS：\033[36m$dns_fallback\033[0m"
+	echo -e "PROXY-DNS：\033[36m$dns_fallback\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m“|”\033[0m或者\033[30;47m“, ”\033[0m分隔输入"
 	echo -e "\033[33m必须拥有本地根证书文件才能使用dot/doh类型的加密dns\033[0m"
 	echo -e "\033[33m注意singbox内核只有首个dns会被加载！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
-	echo -e " 2 修改\033[36mFallback_DNS\033[0m"
-	echo -e " 3 \033[33m重置\033[0mDNS配置"
+	echo -e " 2 修改\033[36mPROXY-DNS\033[0m"
+	echo -e " 3 \033[33m重置\033[0m默认DNS配置"
 	echo -e " 4 一键配置\033[32m加密DNS\033[0m"
 	echo -e " 5 hosts优化：  	\033[36m$hosts_opt\033[0m	————调用本机hosts并劫持NTP服务"
 	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————不推荐使用"
@@ -1441,7 +1441,7 @@ advanced_set(){ #进阶设置
 	echo -e " 3 配置公网及局域网防火墙"
 	[ "$disoverride" != "1" ] && {
 		echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
-		[ "$crashcore" = singbox ] || echo -e " 5 启用节点绕过:	\033[36m$proxies_bypass\033[0m	————用于防止多设备多重流量"
+		echo -e " 5 自定义\033[32m端口及秘钥\033[0m"
 		echo -e " 6 配置内置DNS服务	\033[36m$dns_no\033[0m"
 	}
 	echo -----------------------------------------------
@@ -1483,17 +1483,17 @@ advanced_set(){ #进阶设置
 		advanced_set
 	;;
 	5)
-		echo -----------------------------------------------
-		if [ "$proxies_bypass" = "未启用" ];then
-			proxies_bypass=已启用
-			echo -e "\033[33m仅当ShellCrash与子网络同类应用使用相同节点配置时方可生效！\033[0m"
-			sleep 1
+		if [ -n "$(pidof CrashCore)" ];then
+			echo -----------------------------------------------
+			echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
+			read -p "是否停止服务？(1/0) > " res
+			if [ "$res" = "1" ];then
+				${CRASHDIR}/start.sh stop
+				setport
+			fi
 		else
-			proxies_bypass=未启用
-		fi
-		setconfig proxies_bypass $proxies_bypass
-		echo -e "\033[32m设置成功！\033[0m"
-		sleep 1		
+			setport
+		fi	
 		advanced_set
 	;;
 	6)

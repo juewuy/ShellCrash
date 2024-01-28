@@ -529,8 +529,6 @@ EOF
 	done
 }
 modify_json(){ #修饰singbox配置文件
-	#准备目录
-	[ -d ${TMPDIR}/jsons ] && rm -rf ${TMPDIR}/jsons/* || mkdir -p ${TMPDIR}/jsons
 	#生成log.json
 	cat > ${TMPDIR}/jsons/log.json <<EOF
 { "log": { "level": "info", "timestamp": true } }
@@ -699,7 +697,8 @@ EOF
 	#生成自定义规则文件
 	[ -s ${CRASHDIR}/yamls/rules.yaml ] && {
 		cat ${CRASHDIR}/yamls/rules.yaml \
-			| sed '/^#/d' \
+			| sed '/#.*/d' \
+			| grep -oE '\-.*,.*,.*' \
 			| sed 's/- DOMAIN-SUFFIX,/{ "domain_suffix": [ "/g' \
 			| sed 's/- DOMAIN-KEYWORD,/{ "domain_keyword": [ "/g' \
 			| sed 's/- IP-CIDR,/{ "ip_cidr": [ "/g' \
@@ -750,12 +749,12 @@ EOF
 	#测试自定义配置文件
 	error=$(${BINDIR}/CrashCore check -D ${BINDIR} -C ${TMPDIR}/jsons 2>&1 | grep -Eo 'cust.*\.json' | sed 's/cust_//g' )
 	if [ -n "$error" ];then
-		[ "$error" = 'rules.json' ] && error=${CRASHDIR}/yamls/rules.yaml || error=${CRASHDIR}/jsons/$error
-		logger "自定义配置文件校验失败，请检查 $error 文件！" 31
+		[ "$error" = 'add_rules.json' ] && error_file=${CRASHDIR}/yamls/rules.yaml自定义规则 || error_file=${CRASHDIR}/jsons/$error
+		logger "自定义配置文件校验失败，请检查 ${error_file}文件！" 31
 		logger "尝试使用基础配置文件启动~" 33
 		#清理自定义配置文件并还原基础配置
 		rm -rf ${TMPDIR}/jsons/cust_*
-		mv -f ${TMPDIR}/jsons_base/* ${TMPDIR}/jsons
+		mv -f ${TMPDIR}/jsons_base/* ${TMPDIR}/jsons 2>/dev/null
 	fi
 	#清理缓存
 	rm -rf ${TMPDIR}/*.json
@@ -1570,27 +1569,19 @@ bfstart(){ #启动前
 	#内核及内核配置文件检查
 	[ ! -x ${BINDIR}/CrashCore ] && chmod +x ${BINDIR}/CrashCore 2>/dev/null #检测可执行权限
 	if [ "$crashcore" = singbox ];then
-		singbox_check
-		[ "$disoverride" != "1" ] && modify_json || ln -sf $core_config ${TMPDIR}/config.json
+		singbox_check	
+		[ -d ${TMPDIR}/jsons ] && rm -rf ${TMPDIR}/jsons/* || mkdir -p ${TMPDIR}/jsons #准备目录
+		[ "$disoverride" != "1" ] && modify_json || ln -sf $core_config ${TMPDIR}/jsons/config.json
 	else
 		clash_check
 		[ "$disoverride" != "1" ] && modify_yaml || ln -sf $core_config ${TMPDIR}/config.yaml
 	fi
-	#本机代理准备
-	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
-		#添加shellcrash用户
-		if [ -z "$(id shellcrash 2>/dev/null | grep 'root')" ];then
-			if ckcmd userdel useradd groupmod; then
-				userdel shellcrash 2>/dev/null
-				useradd shellcrash -u 7890
-				groupmod shellcrash -g 7890
-				sed -Ei s/7890:7890/0:7890/g /etc/passwd
-			else
-				sed -i '/0:7890/d' /etc/passwd
-				echo "shellcrash:x:0:7890:::" >> /etc/passwd
-			fi
-		fi
-	fi
+	#添加shellcrash用户
+	[ -n "$(echo $local_type | grep '增强模式')" -o "$(cat /proc/1/comm)" = "systemd" ] && \
+	[ -z "$(id shellcrash 2>/dev/null | grep 'root')" ] && {
+		sed -i '/0:7890/d' /etc/passwd
+		echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >> /etc/passwd
+	}
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
 	return 0
