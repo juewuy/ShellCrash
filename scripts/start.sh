@@ -509,9 +509,9 @@ EOF
 	#合并完整配置文件
 	cut -c 1- ${TMPDIR}/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add > ${TMPDIR}/config.yaml
 	#测试自定义配置文件
-	${BINDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml >/dev/null
+	${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml >/dev/null
 	if [ "$?" != 0 ];then
-		logger "$(${BINDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml | grep -Eo 'error.*=.*')" 31
+		logger "$(${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
 		logger "错误详情请参考 ${TMPDIR}/error.yaml 文件！" 33
 		mv -f ${TMPDIR}/config.yaml ${TMPDIR}/error.yaml &>/dev/null
@@ -715,7 +715,7 @@ EOF
 			| sed '$s/,$/ ] } }/' > ${TMPDIR}/jsons/cust_add_rules.json
 	}
 	#提取配置文件以获得outbounds.json及route.json
-	${BINDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
+	${TMPDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
 	echo '{' > ${TMPDIR}/jsons/outbounds.json
 	echo '{' > ${TMPDIR}/jsons/route.json
 	cat ${TMPDIR}/format.json | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' >> ${TMPDIR}/jsons/outbounds.json
@@ -747,7 +747,7 @@ EOF
 		}
 	done
 	#测试自定义配置文件
-	error=$(${BINDIR}/CrashCore check -D ${BINDIR} -C ${TMPDIR}/jsons 2>&1 | grep -Eo 'cust.*\.json' | sed 's/cust_//g' )
+	error=$(${TMPDIR}/CrashCore check -D ${BINDIR} -C ${TMPDIR}/jsons 2>&1 | grep -Eo 'cust.*\.json' | sed 's/cust_//g' )
 	if [ -n "$error" ];then
 		[ "$error" = 'add_rules.json' ] && error_file=${CRASHDIR}/yamls/rules.yaml自定义规则 || error_file=${CRASHDIR}/jsons/$error
 		logger "自定义配置文件校验失败，请检查 ${error_file}文件！" 31
@@ -1480,7 +1480,9 @@ clash_check(){ #clash启动前检查
 	if [ "$crashcore" != "meta" ] && [ -n "$(cat $core_config | grep -oE 'type: vless|type: hysteria')" ];then
 		echo -----------------------------------------------
 		logger "检测到vless/hysteria协议！将改为使用meta核心启动！" 33
-		rm -rf ${BINDIR}/CrashCore
+		rm -rf ${TMPDIR}/CrashCore
+		rm -rf ${CRASHDIR}/CrashCore
+		rm -rf ${CRASHDIR}/core.tar.gz
 		crashcore=meta
 		echo -----------------------------------------------
 	fi
@@ -1491,7 +1493,9 @@ clash_check(){ #clash启动前检查
 		[ "$redir_mod" = "Tun模式" ] && {
 			echo -----------------------------------------------
 			logger "检测到高级功能！将改为使用meta核心启动！" 33
-			rm -rf ${BINDIR}/CrashCore
+			rm -rf ${TMPDIR}/CrashCore
+			rm -rf ${CRASHDIR}/CrashCore
+			rm -rf ${CRASHDIR}/core.tar.gz
 			crashcore=meta
 			echo -----------------------------------------------
 		}

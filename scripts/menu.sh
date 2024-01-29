@@ -114,7 +114,7 @@ ckstatus(){
 				if [ -n "$core_v" ];then
 					source ${CRASHDIR}/getdate.sh && setcoretype && \
 					mv -f $file ${TMPDIR}/CrashCore && \
-					tar --no-same-owner -zcvf ${BINDIR}/core.tar.gz ${TMPDIR}/CrashCore && \
+					tar -zcvf ${BINDIR}/core.tar.gz -C ${TMPDIR} CrashCore && \
 					echo -e "\033[32m内核加载完成！\033[0m " && \
 					setconfig crashcore $crashcore && \
 					setconfig core_v $core_v && \
@@ -1466,7 +1466,9 @@ advanced_set(){ #进阶设置
 		echo -----------------------------------------------
 		if [ "$sniffer" = "未启用" ];then
 			if [ "$crashcore" = "clash" ];then
-				rm -rf ${BINDIR}/CrashCore
+				rm -rf ${TMPDIR}/CrashCore
+				rm -rf ${CRASHDIR}/CrashCore
+				rm -rf ${CRASHDIR}/core.tar.gz
 				crashcore=meta
 				setconfig crashcore $crashcore
 				echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"

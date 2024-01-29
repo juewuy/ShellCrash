@@ -270,6 +270,8 @@ done
 	mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 	#内核改名
 	mv -f ${CRASHDIR}/clash ${CRASHDIR}/CrashCore 2>/dev/null
+	#内核压缩
+	[ -f  ${CRASHDIR}/CrashCore ] && tar -zcvf ${CRASHDIR}/core.tar.gz -C ${CRASHDIR} CrashCore
 for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh;do
 	mv -f ${CRASHDIR}/$file ${CRASHDIR}/tools/$file 2>/dev/null
 done

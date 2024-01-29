@@ -800,7 +800,7 @@ getsh(){
 getcpucore(){
 	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
-	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && [ ! -d /jffs/CrashCore ] && cpucore="armv7"
+	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && [ ! -d /jffs ] && cpucore="armv7"
 	[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="arm64"
 	[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
 	[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
@@ -891,7 +891,6 @@ getcore(){
 	else
 		[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
 		[ -f ${TMPDIR}/core.tar.gz ] && {
-			echo -e "\033[31m正在解压……\033[0m"
 			mkdir -p ${TMPDIR}/core_new
 			tar -zxvf "${TMPDIR}/core.tar.gz" -C ${TMPDIR}/core_new/ &>/dev/null || tar -zxvf "${TMPDIR}/core.tar.gz" --no-same-owner -C ${TMPDIR}/core_new/
 			for file in "$(ls -1 ${TMPDIR}/core_new | grep -iE 'CrashCore|sing-box|clash|mihomo|meta')" ;do
@@ -964,7 +963,7 @@ setcustcore(){
 setcore(){
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow" 
-	[ ! -f ${CRASHDIR}/CrashCore ] && crashcore="未安装核心"
+	[ ! -f ${CRASHDIR}/core.tar.gz ] && crashcore="未安装核心"
 	[ "$crashcore" = singbox ] && core_old=singbox || core_old=clash
 	###
 	echo -----------------------------------------------
@@ -1888,11 +1887,11 @@ debug(){
 	1)
 		$CRASHDIR/start.sh stop
 		if [ "$crashcore" = singbox ] ;then
-			$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons &
+			$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons &
 			{ sleep 4 ; kill $! &>/dev/null & }
 			wait
 		else
-			$BINDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
+			$TMPDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
 		fi
 		echo -----------------------------------------------
 		exit
