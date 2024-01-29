@@ -51,11 +51,6 @@ jobs:
         with:
           go-version: ${{needs.go.outputs.version}}
 
-      - name: get meta version
-        id: meta
-        run: |
-          echo version=${{ github.event.inputs.tag2 }} >> $GITHUB_OUTPUT
-			
   cross:
     strategy:
       matrix:
@@ -103,7 +98,6 @@ jobs:
       GOMIPS: ${{ matrix.gomips }}
       CGO_ENABLED: 0
       TAGS: ${{needs.meta.outputs.tags}}
-      VERSION: ${{needs.meta.outputs.version}}
     steps:
       - name: Checkout meta
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
@@ -119,7 +113,7 @@ jobs:
           
       - name: build core
         id: build
-        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${VERSION}' -s -w -buildid=" --tags="${TAGS}" 
+        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${{ github.event.inputs.tag2 }}' -s -w -buildid=" --tags="${TAGS}" 
         
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
