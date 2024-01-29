@@ -56,7 +56,6 @@ jobs:
         run: |
           version=${{ github.event.inputs.tag2 }}
           echo version=$version >> $GITHUB_OUTPUT
-		  [ -n "$TAGS" ] && echo tags="--tags=${TAGS}" >> $GITHUB_OUTPUT
 			
   cross:
     strategy:
@@ -121,7 +120,7 @@ jobs:
           
       - name: build core
         id: build
-        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${VERSION}' -s -w -buildid=" "${TAGS}" 
+        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${VERSION}' -s -w -buildid=" --tags="${TAGS}" 
         
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
