@@ -51,7 +51,7 @@ jobs:
         with:
           go-version: ${{needs.go.outputs.version}}
           
-- name: get meta version
+      - name: get meta version
         id: meta
         run: |
           version=${{ github.event.inputs.tag2 }}
