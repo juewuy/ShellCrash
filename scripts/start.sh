@@ -737,13 +737,13 @@ EOF
 	mkdir -p ${TMPDIR}/jsons_base
 	for char in log dns ntp experimental;do
 		[ -s ${CRASHDIR}/jsons/${char}.json ] && {
-			ln -s ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
+			ln -sf ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
 			mv -f ${TMPDIR}/jsons/${char}.json ${TMPDIR}/jsons_base #如果重复则临时备份
 		}
 	done
-	for char in inbounds outbounds outbound_providers route rule-set;do
+	for char in others inbounds outbounds outbound_providers route rule-set;do
 		[ -s ${CRASHDIR}/jsons/${char}.json ] && {
-			ln -s ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
+			ln -sf ${CRASHDIR}/jsons/${char}.json ${TMPDIR}/jsons/cust_${char}.json
 		}
 	done
 	#测试自定义配置文件
@@ -1437,37 +1437,43 @@ EOF
 }
 core_check(){
 	#检查及下载内核文件
-	if [ ! -f ${BINDIR}/CrashCore ];then
+	if [ ! -f ${TMPDIR}/CrashCore ];then
 		if [ -f ${CRASHDIR}/CrashCore ];then
-			mv ${CRASHDIR}/CrashCore ${BINDIR}/CrashCore
-		elif [ -f ${CRASHDIR}/clash ];then
-			mv ${CRASHDIR}/clash ${BINDIR}/CrashCore
+			ln -sf ${CRASHDIR}/CrashCore ${TMPDIR}/CrashCore
+		elif [ -f ${CRASHDIR}/core.tar.gz ];then
+			tar -zxvf "${CRASHDIR}/core.tar.gz" -C ${TMPDIR}/ &>/dev/null || tar -zxvf "${CRASHDIR}/core.tar.gz" --no-same-owner -C ${TMPDIR}/
 		else
 			logger "未找到【$crashcore】核心，正在下载！" 33
 			[ -z "$cpucore" ] && source ${CRASHDIR}/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
-			get_bin ${TMPDIR}/core.new "bin/$crashcore/${target}-linux-$cpucore"
+			get_bin ${TMPDIR}/core.tar.gz "bin/$crashcore/${target}-linux-${cpucore}.tar.gz"
 			#校验内核
-			chmod +x ${TMPDIR}/core.new 2>/dev/null
+			mkdir -p ${TMPDIR}/core_new
+			tar -zxvf "${TMPDIR}/core.tar.gz" -C ${TMPDIR}/core_new/ &>/dev/null || tar -zxvf "${TMPDIR}/core.tar.gz" --no-same-owner -C ${TMPDIR}/core_new/
+			for file in "$(ls -1 ${TMPDIR}/core_new | grep -iE 'CrashCore|sing-box|clash|mihomo|meta')" ;do
+					mv -f ${TMPDIR}/core_new/$file ${TMPDIR}/CrashCore
+			done
+			rm -rf ${TMPDIR}/core_new
 			if [ "$crashcore" = singbox ];then
-				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
-				COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
+				core_v=$(${TMPDIR}/CrashCore version 2>/dev/null | grep version | awk '{print $3}')
+				COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 			else
-				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
-				COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
+				core_v=$(${TMPDIR}/CrashCore -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
+				COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 			fi
 			if [ -z "$core_v" ];then
-				rm -rf ${TMPDIR}/core.new
+				rm -rf ${TMPDIR}/CrashCore
 				logger "核心下载失败，请重新运行或更换安装源！" 31
 				exit 1
 			else
-				mv -f ${TMPDIR}/core.new ${BINDIR}/CrashCore
+				mv -f ${TMPDIR}/core.tar.gz ${BINDIR}/core.tar.gz
 				setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 				setconfig crashcore $crashcore
 				setconfig core_v $core_v
 			fi
 		fi
 	fi
+	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #自动授权
 }
 clash_check(){ #clash启动前检查
 	#检测vless/hysteria协议
@@ -1567,7 +1573,6 @@ bfstart(){ #启动前
 	[ ! -s ${BINDIR}/ui/index.html ] && makehtml #如没有面板则创建跳转界面
 	catpac	#生成pac文件
 	#内核及内核配置文件检查
-	[ ! -x ${BINDIR}/CrashCore ] && chmod +x ${BINDIR}/CrashCore 2>/dev/null #检测可执行权限
 	if [ "$crashcore" = singbox ];then
 		singbox_check	
 		[ -d ${TMPDIR}/jsons ] && rm -rf ${TMPDIR}/jsons/* || mkdir -p ${TMPDIR}/jsons #准备目录

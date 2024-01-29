@@ -801,7 +801,7 @@ getcpucore(){
 	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
 	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && [ ! -d /jffs/CrashCore ] && cpucore="armv7"
-	[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="armv8"
+	[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="arm64"
 	[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
 	[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
 	if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
@@ -811,7 +811,7 @@ getcpucore(){
 	[ -n "$cpucore" ] && setconfig cpucore $cpucore
 }
 setcpucore(){
-	cpucore_list="armv5 armv7 armv8 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
+	cpucore_list="armv5 armv7 arm64 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
 	echo -----------------------------------------------
 	echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
 	echo -e "当前可供在线下载的处理器架构为："
@@ -866,9 +866,9 @@ switch_core(){
 		}
 	}
 	if [ "$crashcore" = singbox ];then
-		COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
+		COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 	else
-		COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
+		COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 	fi
 	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 }
@@ -879,32 +879,41 @@ getcore(){
 	#获取在线内核文件
 	echo -----------------------------------------------
 	echo 正在在线获取$crashcore核心文件……
-	if [ -z "$custcorelink" ];then
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core.new bin/${crashcore}/${core_new}-linux-${cpucore}
+	if [ -n "$custcorelink" ];then
+		${CRASHDIR}/start.sh webget ${TMPDIR}/core.tar.gz "$custcorelink"
 	else
-		${CRASHDIR}/start.sh webget ${TMPDIR}/core.new "$custcorelink"
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core.tar.gz bin/${crashcore}/${core_new}-linux-${cpucore}.tar.gz
 	fi
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
-		rm -rf ${TMPDIR}/core.new
+		rm -rf ${TMPDIR}/core.tar.gz
 		[ -z "$custcorelink" ] && error_down
 	else
-		chmod +x ${TMPDIR}/core.new 
-		${CRASHDIR}/start.sh stop
+		[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
+		[ -f ${TMPDIR}/core.tar.gz ] && {
+			echo -e "\033[31m正在解压……\033[0m"
+			mkdir -p ${TMPDIR}/core_new
+			tar -zxvf "${TMPDIR}/core.tar.gz" -C ${TMPDIR}/core_new/ &>/dev/null || tar -zxvf "${TMPDIR}/core.tar.gz" --no-same-owner -C ${TMPDIR}/core_new/
+			for file in "$(ls -1 ${TMPDIR}/core_new | grep -iE 'CrashCore|sing-box|clash|mihomo|meta')" ;do
+					mv -f ${TMPDIR}/core_new/$file ${TMPDIR}/CrashCore
+			done
+			rm -rf ${TMPDIR}/core_new
+		}
+		chmod +x ${TMPDIR}/CrashCore
 		[ "$crashcore" = unknow ] && setcoretype
 		if [ "$crashcore" = singbox ];then
-			core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
+			core_v=$(${TMPDIR}/CrashCore version 2>/dev/null | grep version | awk '{print $3}')
 		else
-			core_v=$(${TMPDIR}/core.new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
+			core_v=$(${TMPDIR}/CrashCore -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 		fi
 		if [ -z "$core_v" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
-			rm -rf ${TMPDIR}/core.new
+			rm -rf ${TMPDIR}/CrashCore
+			rm -rf ${TMPDIR}/core.tar.gz
 			setcpucore
 		else
 			echo -e "\033[32m$crashcore核心下载成功！\033[0m"
-			mv -f ${TMPDIR}/core.new ${BINDIR}/CrashCore
-			chmod +x ${BINDIR}/CrashCore
+			mv -f ${TMPDIR}/core.tar.gz ${BINDIR}/core.tar.gz 2>/dev/null
 			setconfig crashcore $crashcore
 			setconfig core_v $core_v
 			switch_core
@@ -916,29 +925,29 @@ setcustcore(){
 	echo -e "\033[33m请选择需要使用的核心！\033[0m"
 	echo -e "1 \033[32m Premium-2023.08.17内核(已停止维护) \033[0m"
 	echo -e "2 \033[32m 最新Meta.Alpha内核(每日更新)  \033[0m"
-	echo -e "3 \033[32m singbox-1.8.2内核(支持rule-set)  \033[0m"
-	echo -e "4 \033[32m singbox_PuerNya内核(支持SSR、providers、rule-set)  \033[0m"
+	echo -e "3 \033[32m singbox-1.7.8内核(不支持rule-set,部分旧设备可用)  \033[0m"
+	#echo -e "4 \033[32m singbox_PuerNya内核(支持SSR、providers、rule-set)  \033[0m"
 	echo -e "9 \033[33m 自定义内核链接 \033[0m"
 	read -p "请输入对应数字 > " num	
 	case "$num" in
 	1)
 		crashcore=clashpre
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.premium.latest/clash-linux-$cpucore
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.premium.latest/clash-linux-${cpucore}.tar.gz
 		getcore			
 	;;
 	2)
 		crashcore=meta
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.meta.alpha/clash-linux-$cpucore
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.meta.alpha/clash-linux-${cpucore}.tar.gz
 		getcore			
 	;;
 	3)
 		crashcore=singbox
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core/singbox-linux-$cpucore
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core/singbox-linux-${cpucore}.tar.gz
 		getcore			
 	;;
 	4)
-		crashcore=singbox
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/singbox-linux-$cpucore
+		crashcore=singboxp
+		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/singbox-linux-${cpucore}.tar.gz
 		getcore			
 	;;
 	9)
@@ -963,21 +972,22 @@ setcore(){
 	echo -e "当前内核：\033[42;30m $crashcore \033[47;30m$core_v\033[0m"
 	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
+	echo -e "\033[36m如需本地上传，请将二进制文件上传至 /tmp 目录后重新运行crash命令\033[0m"
 	echo -----------------------------------------------
 	echo -e "1 \033[43;30m  Clash  \033[0m：	\033[32m占用低\033[0m"
 	echo -e " (开源基础内核)  \033[33m不支持Tun、Rule-set等\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo
-	echo -e "2 \033[43;30m Clashpre \033[0m：	\033[32m支持Tun、Rule-set\033[0m"
-	echo -e " (官方高级内核)  \033[33m不支持vless、hy协议\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
+	echo -e "2 \033[43;30m SingBox \033[0m：	\033[32m支持全面占用低\033[0m"
+	echo -e " (sing-box主干)  \033[33m不支持providers\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo
-	echo -e "3 \033[43;30mClash.Meta\033[0m：	\033[32m多功能，支持最全面\033[0m"
-	echo -e " (Meta稳定内核)  \033[33m内存占用较高\033[0m"
+	echo -e "3 \033[43;30m  Mihomo \033[0m：	\033[32m多功能，支持全面\033[0m"
+	echo -e " (Meta/Mihomo)  \033[33m内存占用较高\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo
-	echo -e "4 \033[43;30mSing-Box\033[0m：	\033[32m支持全面占用低\033[0m"
-	echo -e " (sing-box内核)  \033[33m另一个选择\033[0m"
+	echo -e "4 \033[43;30m SingBoxP\033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
+	echo -e " (sing-box分支)  \033[33mPuerNya分支版本\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo
 	echo -e "5 \033[32m自定义内核\033[0m：	\033[33m仅限专业用户使用\033[0m"
@@ -993,7 +1003,7 @@ setcore(){
 		getcore
 	;;
 	2)
-		crashcore=clashpre
+		crashcore=singbox
 		custcorelink=''
 		getcore
 	;;
@@ -1003,7 +1013,7 @@ setcore(){
 		getcore
 	;;
 	4)
-		crashcore=singbox
+		crashcore=singboxp
 		custcorelink=''
 		getcore
 	;;
@@ -1018,7 +1028,7 @@ setcore(){
 		read -p "我确认遇到问题可以自行解决[1/0] > " res
 		[ "$res" = '1' ] && setcustcore
 	;;
-	6)
+	9)
 		setcpucore
 		setcore
 	;;

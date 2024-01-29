@@ -113,7 +113,8 @@ ckstatus(){
 				[ -z "$core_v" ] && core_v=$($file version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')
 				if [ -n "$core_v" ];then
 					source ${CRASHDIR}/getdate.sh && setcoretype && \
-					mv -f $file ${CRASHDIR}/CrashCore && \
+					mv -f $file ${TMPDIR}/CrashCore && \
+					tar --no-same-owner -zcvf ${BINDIR}/core.tar.gz ${TMPDIR}/CrashCore && \
 					echo -e "\033[32m内核加载完成！\033[0m " && \
 					setconfig crashcore $crashcore && \
 					setconfig core_v $core_v && \
@@ -129,7 +130,6 @@ ckstatus(){
 		echo -----------------------------------------------
 	done
 	#检查/tmp配置文件
-	[ -x ${BINDIR}/CrashCore ] && \
 	for file in `ls -F /tmp | grep -v [/\$] | grep -v '\ ' | grep -iE '.yaml$|.yml$|config.json$'` ; do 
 		file=/tmp/$file
 		echo -e "发现内核配置文件： \033[36m$file\033[0m "
