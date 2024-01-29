@@ -98,6 +98,7 @@ jobs:
       GOMIPS: ${{ matrix.gomips }}
       CGO_ENABLED: 0
       TAGS: ${{needs.meta.outputs.tags}}
+      VERSION: ${{ github.event.inputs.tag2 }}
     steps:
       - name: Checkout meta
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
@@ -113,7 +114,7 @@ jobs:
           
       - name: build core
         id: build
-        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${{ github.event.inputs.tag2 }}' -s -w -buildid=" --tags="${TAGS}" 
+        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${VERSION}' -s -w -buildid=" --tags="${TAGS}" 
         
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
@@ -128,7 +129,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       RELEASE: ${{ github.event.inputs.tag3 }}
-      VERSION: ${{needs.meta.outputs.version}}
+      VERSION: ${{ github.event.inputs.tag2 }}
     steps:
       - name: Download file from workspace
         uses: actions/download-artifact@v4
