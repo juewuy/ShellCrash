@@ -50,6 +50,17 @@ jobs:
         uses: actions/setup-go@v4.1.0
         with:
           go-version: ${{needs.go.outputs.version}}
+          
+- name: get meta version
+        id: meta
+        run: |
+          version=${{ github.event.inputs.tag2 }}
+          echo version=$version >> $GITHUB_OUTPUT
+          if [ -z "$TAGS" ];then
+            echo tags='' >> $GITHUB_OUTPUT
+          else
+            echo tags=$TAGS >> $GITHUB_OUTPUT
+          fi      
 
   cross:
     strategy:
@@ -98,7 +109,7 @@ jobs:
       GOMIPS: ${{ matrix.gomips }}
       CGO_ENABLED: 0
       TAGS: ${{needs.meta.outputs.tags}}
-      VERSION: ${{ github.event.inputs.tag2 }}
+      VERSION: ${{needs.sing-box.outputs.version}}
     steps:
       - name: Checkout meta
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
@@ -114,7 +125,7 @@ jobs:
           
       - name: build core
         id: build
-        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${VERSION}' -s -w -buildid=" --tags="${TAGS}" 
+        run: go build -v -trimpath -ldflags "-X 'github.com/sagernet/meta/constant.Version=${VERSION}' -s -w -buildid=" -tags "${TAGS}"
         
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
@@ -129,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       RELEASE: ${{ github.event.inputs.tag3 }}
-      VERSION: ${{ github.event.inputs.tag2 }}
+      VERSION: ${{needs.sing-box.outputs.version}}
     steps:
       - name: Download file from workspace
         uses: actions/download-artifact@v4
