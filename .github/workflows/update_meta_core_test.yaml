@@ -54,8 +54,7 @@ jobs:
       - name: get meta version
         id: meta
         run: |
-          version=${{ github.event.inputs.tag2 }}
-          echo version=$version >> $GITHUB_OUTPUT
+          echo version=${{ github.event.inputs.tag2 }} >> $GITHUB_OUTPUT
 			
   cross:
     strategy:
