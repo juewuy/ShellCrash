@@ -19,6 +19,7 @@ on:
         description: 'build tags'
         required: false
         type: string
+        
 jobs:
   go:
     runs-on: ubuntu-latest
@@ -109,7 +110,7 @@ jobs:
       GOMIPS: ${{ matrix.gomips }}
       CGO_ENABLED: 0
       TAGS: ${{needs.meta.outputs.tags}}
-      VERSION: ${{needs.sing-box.outputs.version}}
+      VERSION: ${{needs.meta.outputs.version}}
     steps:
       - name: Checkout meta
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
@@ -140,7 +141,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       RELEASE: ${{ github.event.inputs.tag3 }}
-      VERSION: ${{needs.sing-box.outputs.version}}
+      VERSION: ${{needs.meta.outputs.version}}
     steps:
       - name: Download file from workspace
         uses: actions/download-artifact@v4
@@ -152,20 +153,20 @@ jobs:
           for arch in amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
             mv -f ./tmp/linux-${arch}/meta ./tmp/CrashCore
             chmod +x ./tmp/CrashCore
-            tar --no-same-owner -zcvf ./tmp/singbox-linux-${arch}.tar.gz -C ./tmp CrashCore
+            tar --no-same-owner -zcvf ./tmp/meta-linux-${arch}.tar.gz -C ./tmp CrashCore
           done
 
       - name: Create Release and Upload Release Asset
         if: ${{ env.RELEASE != '0' }}
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: singbox_core${{ github.event.inputs.tag3 }}
-          name: singbox_core${{ github.event.inputs.tag3 }}
+          tag_name: meta_core${{ github.event.inputs.tag3 }}
+          name: meta_core${{ github.event.inputs.tag3 }}
           body: "The ${{env.VERSION}} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${{env.VERSION}}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nOnly support for ShellCrash\n仅适配ShellCrash项目使用"
           draft: false
           prerelease: true
           files: |
-            ./tmp/singbox* 
+            ./tmp/meta* 
             
       - name: upload artifact
         if: ${{ env.RELEASE == '0' }}
