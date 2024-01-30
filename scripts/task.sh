@@ -142,15 +142,18 @@ croncmd(){
 		[ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
 		[ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
 		[ ! -w "$crondir" ] && crondir="/var/spool/cron"
-		[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请前往 https://t.me/ShellCrash 申请适配！"
-		[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
-		[ -f "$1" ] && cat $1 > $crondir/$USER
+		if [ -w "$crondir" ];then
+			[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
+			[ -f "$1" ] && cat $1 > $crondir/$USER
+		else
+			echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请尝试使用搜索引擎查找安装方式！"
+		fi
 	fi
 }
 cronset(){
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
 	tmpcron=${TMPDIR}/cron_$USER
-	croncmd -l > $tmpcron 
+	croncmd -l > $tmpcron 2>/dev/null
 	sed -i "/$1/d" $tmpcron
 	sed -i '/^$/d' $tmpcron
 	echo "$2" >> $tmpcron

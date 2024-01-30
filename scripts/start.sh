@@ -113,15 +113,18 @@ croncmd(){ #定时任务工具
 		[ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
 		[ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
 		[ ! -w "$crondir" ] && crondir="/var/spool/cron"
-		[ ! -w "$crondir" ] && echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请尝试使用搜索引擎查找安装方式！"
-		[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
-		[ -f "$1" ] && cat $1 > $crondir/$USER
+		if [ -w "$crondir" ];then
+			[ "$1" = "-l" ] && cat $crondir/$USER 2>/dev/null
+			[ -f "$1" ] && cat $1 > $crondir/$USER
+		else
+			echo "你的设备不支持定时任务配置，脚本大量功能无法启用，请尝试使用搜索引擎查找安装方式！"
+		fi
 	fi
 }
 cronset(){ #定时任务设置
 	# 参数1代表要移除的关键字,参数2代表要添加的任务语句
 	tmpcron=${TMPDIR}/cron_$USER
-	croncmd -l > $tmpcron 
+	croncmd -l > $tmpcron 2>/dev/null
 	sed -i "/$1/d" $tmpcron
 	sed -i '/^$/d' $tmpcron
 	echo "$2" >> $tmpcron
@@ -229,7 +232,7 @@ check_singbox_config(){ #检查singbox配置文件
 		exit 1
 	fi
 	#检测SSR节点
-	if [ -n "$(cat $core_config | grep -oE '"shadowsocksr"')" ];then
+	if [ -n "$(cat $core_config_new | grep -oE '"shadowsocksr"')" ];then
 		echo -----------------------------------------------
 		logger "singbox主干已移除对SSR相关协议的支持，请使用clash系内核或者PuerNya分支！" 33
 	fi
@@ -549,14 +552,13 @@ EOF
 	else
 		reverse_mapping=false
 	fi
-	[ -z "$(cat ${CRASHDIR}/jsons/dns.json 2>/dev/null | grep '"dns":')" ] && { 
-		[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5' || dns_nameserver=$(echo $dns_nameserver | awk -F ',' '{print $1}')
-		[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1' || dns_fallback=$(echo $dns_fallback | awk -F ',' '{print $1}')
-		[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
-		[ "$dns_mod" = "redir_host" ] && proxy_dns=dns_proxy && direct_dns=dns_direct
-		[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
-		[ "$dns_mod" = "mix" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
-		cat > ${TMPDIR}/jsons/dns.json <<EOF
+	[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5' || dns_nameserver=$(echo $dns_nameserver | awk -F ',' '{print $1}')
+	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1' || dns_fallback=$(echo $dns_fallback | awk -F ',' '{print $1}')
+	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
+	[ "$dns_mod" = "redir_host" ] && proxy_dns=dns_proxy && direct_dns=dns_direct
+	[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
+	[ "$dns_mod" = "mix" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
+	cat > ${TMPDIR}/jsons/dns.json <<EOF
 {
   "dns": { 
     "servers": [{
@@ -600,7 +602,6 @@ EOF
   }
 }
 EOF
-	}
 	#生成ntp.json
 	cat > ${TMPDIR}/jsons/ntp.json <<EOF
 {
@@ -747,10 +748,12 @@ EOF
 		}
 	done
 	#测试自定义配置文件
-	error=$(${TMPDIR}/CrashCore check -D ${BINDIR} -C ${TMPDIR}/jsons 2>&1 | grep -Eo 'cust.*\.json' | sed 's/cust_//g' )
+	error=$(${TMPDIR}/CrashCore check -D ${BINDIR} -C ${TMPDIR}/jsons 2>&1 )
 	if [ -n "$error" ];then
-		[ "$error" = 'add_rules.json' ] && error_file=${CRASHDIR}/yamls/rules.yaml自定义规则 || error_file=${CRASHDIR}/jsons/$error
-		logger "自定义配置文件校验失败，请检查 ${error_file}文件！" 31
+		echo $error
+		error_file=$(echo $error | grep -Eo 'cust.*\.json' | sed 's/cust_//g' )
+		[ "$error_file" = 'add_rules.json' ] && error_file=${CRASHDIR}/yamls/rules.yaml自定义规则 || error_file=${CRASHDIR}/jsons/$error_file
+		logger "自定义配置文件校验失败，请检查【${error_file}】文件！" 31
 		logger "尝试使用基础配置文件启动~" 33
 		#清理自定义配置文件并还原基础配置
 		rm -rf ${TMPDIR}/jsons/cust_*
@@ -1002,7 +1005,7 @@ start_output(){ #iptables本机代理
 	iptables -t nat -N shellcrash_dns_out
 	iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 453 -j RETURN #绕过本机dnsmasq
 	iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 7890 -j RETURN
-	iptables -t nat -A shellcrash_dns_out -p udp -s 127.0.0.0/8 -j REDIRECT --to $dns_port
+	iptables -t nat -A shellcrash_dns_out -p udp -j REDIRECT --to $dns_port
 	iptables -t nat -A OUTPUT -p udp --dport 53 -j shellcrash_dns_out
 	}
 	#Docker转发
@@ -1103,8 +1106,9 @@ start_nft(){ #nftables-allinone
 	#获取局域网host地址
 	getlanip
 	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
-	RESERVED_IP="$(echo $reserve_ipv4 | sed 's/ /, /g')"
-	HOST_IP="$(echo $host_ipv4 | sed 's/ /, /g')"
+	RESERVED_IP=$(echo $reserve_ipv4 | sed 's/ /, /g')
+	LOCAL_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
+	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
 	#设置策略路由
 	ip rule add fwmark $fwmark table 100
 	ip route add local default dev lo table 100
@@ -1173,6 +1177,7 @@ start_nft(){ #nftables-allinone
 		nft add rule inet shellcrash output meta skgid 7890 return && {
 			[ -n "$PORTS" ] && nft add rule inet shellcrash output tcp dport != {$PORTS} return
 			nft add rule inet shellcrash output ip daddr {$RESERVED_IP} return
+			nft add rule inet shellcrash output ip saddr != {$LOCAL_IP} return
 			nft add rule inet shellcrash output meta l4proto tcp mark set $fwmark redirect to $redir_port
 		}
 		#Docker
@@ -1466,6 +1471,7 @@ core_check(){
 				logger "核心下载失败，请重新运行或更换安装源！" 31
 				exit 1
 			else
+				mv -f ${TMPDIR}/core.new ${TMPDIR}/CrashCore
 				mv -f ${TMPDIR}/core.tar.gz ${BINDIR}/core.tar.gz
 				setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 				setconfig crashcore $crashcore
@@ -1473,6 +1479,7 @@ core_check(){
 			fi
 		fi
 	fi
+
 	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #自动授权
 }
 clash_check(){ #clash启动前检查
@@ -1523,6 +1530,7 @@ clash_check(){ #clash启动前检查
 			[ "$?" = "1" ] && rm -rf ${BINDIR}/GeoSite.dat && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
 		fi
 	fi
+	return 0
 }
 singbox_check(){ #singbox启动前检查
 	core_check
@@ -1550,6 +1558,7 @@ singbox_check(){ #singbox启动前检查
 			setconfig Geo_v $Geo_v
 		fi
 	fi
+	return 0
 }
 bfstart(){ #启动前
 	#读取ShellCrash配置
@@ -1577,6 +1586,7 @@ bfstart(){ #启动前
 	[ ! -s ${BINDIR}/ui/index.html ] && makehtml #如没有面板则创建跳转界面
 	catpac	#生成pac文件
 	#内核及内核配置文件检查
+	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #检测可执行权限
 	if [ "$crashcore" = singbox ];then
 		singbox_check	
 		[ -d ${TMPDIR}/jsons ] && rm -rf ${TMPDIR}/jsons/* || mkdir -p ${TMPDIR}/jsons #准备目录
@@ -1589,7 +1599,13 @@ bfstart(){ #启动前
 	[ -n "$(echo $local_type | grep '增强模式')" -o "$(cat /proc/1/comm)" = "systemd" ] && \
 	[ -z "$(id shellcrash 2>/dev/null | grep 'root')" ] && {
 		sed -i '/0:7890/d' /etc/passwd
-		echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >> /etc/passwd
+		sed -i '/x:7890/d' /etc/group
+		if ckcmd useradd; then
+			useradd shellcrash -u 7890
+			sed -Ei s/7890:7890/0:7890/g /etc/passwd
+		else
+			echo "shellcrash:x:0:7890:::" >> /etc/passwd
+		fi
 	}
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
@@ -1675,14 +1691,14 @@ start_old(){ #保守模式
 	#使用传统后台执行二进制文件的方式执行
 	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
 		if ckcmd su;then
-			su shellcrash -c "$COMMAND &>/dev/null" &
+			su shellcrash -c "$COMMAND >/dev/null 2>&1" &
 		else
 			logger "当前设备缺少su命令，保守模式下无法兼容本机代理增强模式，已停止启动！" 31
 			exit 1
 		fi
 	else
-		ckcmd nohup && nohup=nohup #华硕调用nohup启动
-		$nohup $COMMAND &>/dev/null &
+		ckcmd nohup && [ -d /jffs ] && nohup=nohup #华硕调用nohup启动
+		$nohup $COMMAND >/dev/null 2>&1 &
 	fi
 	afstart
 	cronset '保守模式守护进程' "* * * * * test -z \"\$(pidof CrashCore)\" && ${CRASHDIR}/start.sh daemon #ShellCrash保守模式守护进程"
@@ -1727,6 +1743,7 @@ start)
 		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 			/etc/init.d/shellcrash start 
 		elif [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
+			bfstart
 			FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
 			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
 			systemctl daemon-reload
@@ -1745,7 +1762,7 @@ stop)
 		cronset '流媒体预解析'
 		#多种方式结束进程
 
-		if [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
+		if [ "$start_old" != "已开启" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
 			systemctl stop shellcrash.service &>/dev/null
 		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 			/etc/init.d/shellcrash stop &>/dev/null
