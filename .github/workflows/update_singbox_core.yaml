@@ -12,6 +12,14 @@ on:
         required: true
         type: string
       tag3:
+        description: 'a new prerelease name (such as singbox_core_178) or only upload-artifact'
+        required: false
+        type: string
+      tag4:
+        description: 'git push as crashcore (such as singbox or singboxp) or only upload-artifact'
+        required: false
+        type: string
+      tag5:
         description: 'build tags'
         required: false
         type: string
@@ -31,7 +39,7 @@ jobs:
     needs: go
     env:
       REPO: ${{ github.event.inputs.tag1 }}
-      TAGS: ${{ github.event.inputs.tag3 }}
+      TAGS: ${{ github.event.inputs.tag5 }}
     outputs:
       version: ${{steps.sing-box.outputs.version}}
       tags: ${{steps.sing-box.outputs.tags}}
@@ -135,12 +143,14 @@ jobs:
           name: ${{ matrix.name }}
           path: sing-box
           
-  push_to_bin:
+  push_to_git:
     needs: 
       - cross
       - sing-box
     runs-on: ubuntu-latest
     env: 
+      RELEASE: ${{ github.event.inputs.tag3 }}
+      PUSHDIR: ${{ github.event.inputs.tag4 }}
       VERSION: ${{needs.sing-box.outputs.version}}
     steps:
       - name: Checkout ShellCrash
@@ -175,6 +185,18 @@ jobs:
           git add . && git commit -m "更新${crashcore}内核至${VERSION}" || exit 0
           git push
           
+      - name: Create Release and Upload Release Asset
+        if: ${{ env.RELEASE != '' && env.PUSHDIR == '' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag3 }}
+          name: ${{ github.event.inputs.tag3 }}
+          body: "The ${{env.VERSION}} version of ${{ github.event.inputs.tag1 }} \n这是${{ github.event.inputs.tag1 }}的${{env.VERSION}}版本内核文件\nhttps://github.com/${{ github.event.inputs.tag1 }}/releases \nOnly support for ShellCrash\n仅适配ShellCrash项目"
+          draft: false
+          prerelease: true
+          files: |
+            ./tmp/singbox*.tar.gz
+            
       - name: Cleanup Workflow
         uses: Mattraks/delete-workflow-runs@main
         with:
