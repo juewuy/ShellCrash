@@ -173,6 +173,7 @@ jobs:
           done
 
       - name: Commit and push
+        if: ${{ env.PUSHDIR != '' }}
         run: |
           [ "${{ github.event.inputs.tag1 }}" = SagerNet/sing-box ] && crashcore='singbox'
           [ "${{ github.event.inputs.tag1 }}" = PuerNya/sing-box ] && crashcore='singboxp'
