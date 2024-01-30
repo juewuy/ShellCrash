@@ -119,9 +119,15 @@ jobs:
         with:
           go-version: ${{ steps.go.outputs.version }}
           
+      - name: Set ENV
+        run: |
+          sudo timedatectl set-timezone "Asia/Shanghai"
+          echo "BUILDTIME=$(date)" >> $GITHUB_ENV
+        shell: bash
+          
       - name: build core
         id: build
-        run: go build -v -trimpath -ldflags "-X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -s -w -buildid=" -tags "${TAGS}" -o meta
+        run: go build -v -trimpath -ldflags "-X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -X 'github.com/metacubex/mihomo/constant.BuildTime=${BUILDTIME}' -s -w -buildid=" -tags "${TAGS}" -o meta
         
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
@@ -145,10 +151,10 @@ jobs:
           
       - name: Zip core by tar
         run: |      
-          for arch in amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
+          for arch in amd64 ;do #armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
             mv -f ./tmp/linux-${arch}/meta ./tmp/CrashCore
             chmod +x ./tmp/CrashCore
-            tar --no-same-owner -zcvf ./tmp/meta-linux-${arch}.tar.gz -C ./tmp CrashCore
+            tar --no-same-owner -zcvf ./tmp/clash-linux-${arch}.tar.gz -C ./tmp CrashCore
           done
 
       - name: Create Release and Upload Release Asset
@@ -161,15 +167,15 @@ jobs:
           draft: false
           prerelease: true
           files: |
-            ./tmp/meta* 
+            ./tmp/clash*.tar.gz
             
       - name: upload artifact
         if: ${{ env.RELEASE == '0' }}
         uses: actions/upload-artifact@v4.1.0
         with:
-          name: meta-${{env.VERSION}}-${{matrix.jobs.output}}
+          name: clash-${{env.VERSION}}-${{matrix.jobs.output}}
           path: |
-            ./tmp/meta*
+            ./tmp/clash*.tar.gz
           compression-level: 9   
           
       - name: Cleanup Workflow
