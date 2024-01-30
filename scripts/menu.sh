@@ -913,8 +913,8 @@ localproxy(){ #本机代理
 	[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && [ -w /etc/passwd ] && local_enh=1
 	echo -----------------------------------------------
 	[ -n "$local_enh" ] && {
-		ckcmd iptables && [ -n "$(lsmod | grep ^xt_owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
-		ckcmd nft && echo -e " 2 使用\033[32mnftables增强模式\033[0m配置(支持docker,推荐！)"
+		ckcmd iptables && [ -n "$(iptables -m owner --help | grep owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
+		ckcmd nft && modprobe nf_nat &> /dev/null && echo -e " 2 使用\033[32mnftables增强模式\033[0m配置(支持docker,推荐！)"
 	}
 	echo -e " 3 使用\033[33m环境变量\033[0m方式配置(部分应用可能无法使用,不推荐！)"
 	echo -e " 0 返回上级菜单"
@@ -1026,6 +1026,8 @@ setboot(){ #启动相关设置
 		if [ "$mini_clash" = "未开启" ]; then 
 			if [ "$dir_size" -gt 20480 ];then
 				echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
+			elif [ "start_old" != '已开启' -a "$(cat /proc/1/comm)" = "systemd" ];then
+				echo -e "\033[33m不支持systemd启动模式，请先启用保守模式！\033[0m"
 			else
 				[ "$BINDIR" = "$CRASHDIR" ] && BINDIR="$TMPDIR"
 				echo -e "\033[32m已经启用小闪存功能！\033[0m"
@@ -1111,18 +1113,18 @@ normal_set(){ #基础设置
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
 		[ -n "$(ls /dev/net/tun)" ] || ip tuntap &>/dev/null && sup_tun=1
-		ckcmd nft && sup_nft=1
+		ckcmd nft && modprobe nf_nat &> /dev/null && sup_nft=1 && modprobe nft_tproxy &> /dev/null && sup_nft=2
+		
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $crashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 		echo -----------------------------------------------
-		echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
-		echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
-		[ -n "$sup_tp" ] && echo -e " 3 \033[32mTproxy混合\033[0m：   Redir转发TCP，Tproxy转发UDP"
+		ckcmd iptables && echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
+		[ -n "$sup_tun" ] && echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
 		[ -n "$sup_tun" ] && echo -e " 4 \033[33mTun模式\033[0m：      使用Tun转发TCP&UDP(占用高)"
 		[ -n "$sup_tp" ] && echo -e " 5 \033[32mTproxy模式\033[0m：   使用Tproxy转发TCP&UDP"
 		[ -n "$sup_nft" ] && echo -e " 6 \033[36mNft基础\033[0m：      使用nftables转发TCP，不转发UDP"
-		[ -n "$sup_nft" ] && echo -e " 7 \033[32mNft混合\033[0m：      使用nft_tproxy转发TCP&UDP"
+		[ "$sup_nft" = 2 ] && echo -e " 7 \033[32mNft混合\033[0m：      使用nft_tproxy转发TCP&UDP"
 		echo -e " 8 \033[36m纯净模式\033[0m：     不设置流量转发"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num	
