@@ -299,5 +299,6 @@ sed -i "s/clashcore/crashcore/g" $configpath
 sed -i "s/clash_v/core_v/g" $configpath
 sed -i "s/clash.meta/meta/g" $configpath
 sed -i "s/ShellClash/ShellCrash/g" $configpath
+sed -i "s/cpucore=armv8/cpucore=arm64/g" $configpath
 
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"

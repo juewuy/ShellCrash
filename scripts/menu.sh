@@ -83,7 +83,7 @@ ckstatus(){
 		#检测系统端口占用
 		checkport
 	fi
-	[ "$crashcore" = singbox ] && corename=Sing-Box || corename=Clash
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && corename=SingBox || corename=Clash
 	[ -f ${TMPDIR}/debug.log -a -n "$PID" ] && auto="\033[33m并处于debug状态！\033[0m"
 	#输出状态
 	echo -----------------------------------------------
@@ -158,9 +158,8 @@ errornum(){
 	echo -e "\033[31m请输入正确的字母或数字！\033[0m"
 }
 startover(){
-	[ "$crashcore" = singbox ] && corename=Singbox || corename=Clash
 	echo -e "\033[32m$corename服务已启动！\033[0m"
-	echo -e "请使用 \033[4;32mhttp://$host$hostdir\033[0m 管理内置规则"
+	echo -e "请使用 \033[4;36mhttp://$host$hostdir\033[0m 管理内置规则"
 	if [ "$redir_mod" = "纯净模式" ];then
 		echo -----------------------------------------------
 		echo -e "其他设备可以使用PAC配置连接：\033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
@@ -168,7 +167,7 @@ startover(){
 	fi
 }
 start_core(){
-	if [ "$crashcore" = singbox ];then
+	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 		core_config=${CRASHDIR}/jsons/config.json
 	else
 		core_config=${CRASHDIR}/yamls/config.yaml
@@ -1229,7 +1228,7 @@ normal_set(){ #基础设置
 			echo -----------------------------------------------	
 			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		elif [ "$num" = 3 ]; then
-			if [ "$crashcore" = singbox ];then
+			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 				dns_mod=mix
 				setconfig dns_mod $dns_mod 
 				echo -----------------------------------------------	

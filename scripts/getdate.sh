@@ -94,7 +94,7 @@ setrules(){ #自定义规则
 	echo -e " 1 新增自定义规则"
 	echo -e " 2 移除自定义规则"
 	echo -e " 3 清空规则列表"
-	[ "$crashcore" = singbox ] || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
@@ -379,7 +379,7 @@ override(){ #配置文件覆写
 	echo -----------------------------------------------
 	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
 	echo -e " 2 管理\033[36m自定义规则\033[0m"
-	[ "$crashcore" = singbox ] || {
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] || {
 		echo -e " 3 管理\033[33m自定义节点\033[0m"
 		echo -e " 4 管理\033[36m自定义策略组\033[0m"
 	}
@@ -416,7 +416,7 @@ override(){ #配置文件覆写
 		override
 	;;
 	5)
-		[ "$crashcore" = singbox ] && set_singbox_adv || set_clash_adv
+		[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && set_singbox_adv || set_clash_adv
 		sleep 3
 		override
 	;;
@@ -651,7 +651,7 @@ set_core_config_link(){ #直接导入配置
 set_core_config(){ #配置文件功能
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
-	[ "$crashcore" = singbox ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
 	echo -----------------------------------------------
@@ -819,7 +819,7 @@ setcpucore(){
 	echo -e "不知道如何获取核心版本？请参考：\033[36;4mhttps://juewuy.github.io/bdaz\033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
-	setcpucore=$(echo $cpucore_list | awk '{print $"'"$num"'"}' )
+	[ -n "$num" ] && setcpucore=$(echo $cpucore_list | awk '{print $"'"$num"'"}' )
 	if [ -z "$setcpucore" ];then
 		echo -e "\033[31m请输入正确的处理器架构！\033[0m"
 		sleep 1
@@ -830,7 +830,7 @@ setcpucore(){
 	fi
 }
 setcoretype(){
-	[ "$crashcore" = singbox ] && core_old=singbox || core_old=clash
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_old=singbox || core_old=clash
 	echo -e "\033[33m请确认该自定义内核的类型：\033[0m"
 	echo -e " 1 Clash基础内核"
 	echo -e " 2 Clash-Premium内核"
@@ -843,7 +843,7 @@ setcoretype(){
 		4) crashcore=singbox ;;
 		*) crashcore=clash ;;
 	esac
-	[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
 }
 switch_core(){
 	#singbox和clash内核切换时提示是否保留文件
@@ -865,7 +865,7 @@ switch_core(){
 			 setconfig geosite_cn_v
 		}
 	}
-	if [ "$crashcore" = singbox ];then
+	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 		COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 	else
 		COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
@@ -875,7 +875,7 @@ switch_core(){
 getcore(){
 	[ -z "$crashcore" ] && crashcore=clashpre
 	[ -z "$cpucore" ] && getcpucore
-	[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
 	#获取在线内核文件
 	echo -----------------------------------------------
 	echo 正在在线获取$crashcore核心文件……
@@ -900,7 +900,7 @@ getcore(){
 		}
 		chmod +x ${TMPDIR}/CrashCore
 		[ "$crashcore" = unknow ] && setcoretype
-		if [ "$crashcore" = singbox ];then
+		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 			core_v=$(${TMPDIR}/CrashCore version 2>/dev/null | grep version | awk '{print $3}')
 		else
 			core_v=$(${TMPDIR}/CrashCore -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
@@ -964,7 +964,7 @@ setcore(){
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow" 
 	[ ! -f ${CRASHDIR}/core.tar.gz ] && crashcore="未安装核心"
-	[ "$crashcore" = singbox ] && core_old=singbox || core_old=clash
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_old=singbox || core_old=clash
 	###
 	echo -----------------------------------------------
 	[ -z "$cpucore" ] && getcpucore
@@ -973,7 +973,7 @@ setcore(){
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
 	echo -e "\033[36m如需本地上传，请将二进制文件上传至 /tmp 目录后重新运行crash命令\033[0m"
 	echo -----------------------------------------------
-	echo -e "1 \033[43;30m  Clash  \033[0m：	\033[32m占用低\033[0m"
+	echo -e "1 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
 	echo -e " (开源基础内核)  \033[33m不支持Tun、Rule-set等\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo
@@ -981,17 +981,17 @@ setcore(){
 	echo -e " (sing-box主干)  \033[33m不支持providers\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo
-	echo -e "3 \033[43;30m  Mihomo \033[0m：	\033[32m多功能，支持全面\033[0m"
-	echo -e " (Meta/Mihomo)  \033[33m内存占用较高\033[0m"
+	echo -e "3 \033[43;30m Mihomo \033[0m：	\033[32m多功能，支持全面\033[0m"
+	echo -e " (Meta/Mihomo)   \033[33m内存占用较高\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo
-	echo -e "4 \033[43;30m SingBoxP\033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
+	echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
 	echo -e " (sing-box分支)  \033[33mPuerNya分支版本\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo
 	echo -e "5 \033[32m自定义内核\033[0m：	\033[33m仅限专业用户使用\033[0m"
 	echo
-	echo "6 手动指定处理器架构"
+	echo "9 手动指定处理器架构"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
@@ -1867,7 +1867,7 @@ userguide(){
 }
 #测试菜单
 debug(){
-	[ "$crashcore" = singbox ] && config_tmp=$TMPDIR/config.json || config_tmp=$TMPDIR/config.yaml
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && config_tmp=$TMPDIR/jsons || config_tmp=$TMPDIR/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m"
 	echo -e "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m"
@@ -1879,6 +1879,7 @@ debug(){
 	echo -e " 3 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[31merror\033[0m"
 	echo -e " 4 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[32minfo\033[0m"
 	echo -e " 5 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[33mdebug\033[0m"
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && echo -e " 6 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
 	echo -----------------------------------------------
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num	
@@ -1886,7 +1887,7 @@ debug(){
 	0) ;;
 	1)
 		$CRASHDIR/start.sh stop
-		if [ "$crashcore" = singbox ] ;then
+		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ] ;then
 			$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons &
 			{ sleep 4 ; kill $! &>/dev/null & }
 			wait
@@ -1914,13 +1915,17 @@ debug(){
 		$CRASHDIR/start.sh debug debug
 		main_menu
 	;;
+	6)
+		$TMPDIR/CrashCore merge $TMPDIR/debug.json -C $TMPDIR/jsons && echo -e "\033[32m合并成功！\033[0m"
+		main_menu
+	;;
 	*)
 		errornum
 	;;	
 	esac
 }
 testcommand(){
-	[ "$crashcore" = singbox ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
+	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
@@ -1970,6 +1975,7 @@ testcommand(){
 			[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && {
 				echo ----------------OUTPUT-------------------
 				iptables -t nat -L OUTPUT --line-numbers
+				iptables -t nat -L shellcrash_dns_out --line-numbers
 				iptables -t nat -L shellcrash_out --line-numbers
 			}
 			[ "$ipv6_redir" = "已开启" ] && {

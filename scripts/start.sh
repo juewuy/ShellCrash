@@ -33,7 +33,7 @@ getconfig(){ #获取脚本配置
 	[ -z "$multiport" ] && multiport='22,53,80,123,143,194,443,465,587,853,993,995,5222,8080,8443'
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	#内核配置文件
-	if [ "$crashcore" = singbox ];then
+	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 		target=singbox
 		format=json
 		core_config=${CRASHDIR}/jsons/config.json
@@ -231,11 +231,6 @@ check_singbox_config(){ #检查singbox配置文件
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		exit 1
 	fi
-	#检测SSR节点
-	if [ -n "$(cat $core_config_new | grep -oE '"shadowsocksr"')" ];then
-		echo -----------------------------------------------
-		logger "singbox主干已移除对SSR相关协议的支持，请使用clash系内核或者PuerNya分支！" 33
-	fi
 	#检测并去除无效策略组
 	[ -n "$url_type" ] && {
 		#获得无效策略组名称
@@ -310,7 +305,7 @@ get_core_config(){ #下载内核配置文件
 		fi
 	else
 		Https=""
-		[ "$crashcore" = singbox ] && check_singbox_config || check_clash_config
+		[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && check_singbox_config || check_clash_config
 		#如果不同则备份并替换文件
 		if [ -s $core_config ];then
 			compare $core_config_new $core_config
@@ -536,9 +531,8 @@ modify_json(){ #修饰singbox配置文件
 	cat > ${TMPDIR}/jsons/log.json <<EOF
 { "log": { "level": "info", "timestamp": true } }
 EOF
-	#生成dns.json
+	#生成add_hosts.json
 	if [ "$hosts_opt" != "未启用" ];then #本机hosts
-		reverse_mapping=true
 		sys_hosts=/etc/hosts
 		[ -s /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
 		#NTP劫持
@@ -548,57 +542,81 @@ EOF
 203.107.6.88 time.android.com
 203.107.6.88 time.facebook.com
 EOF
-}
-	else
-		reverse_mapping=false
-	fi
-	[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5' || dns_nameserver=$(echo $dns_nameserver | awk -F ',' '{print $1}')
-	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1' || dns_fallback=$(echo $dns_fallback | awk -F ',' '{print $1}')
-	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
-	[ "$dns_mod" = "redir_host" ] && proxy_dns=dns_proxy && direct_dns=dns_direct
-	[ "$dns_mod" = "fake-ip" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
-	[ "$dns_mod" = "mix" ] && proxy_dns=dns_fakeip && direct_dns=dns_direct
-	cat > ${TMPDIR}/jsons/dns.json <<EOF
+		hosts_domain=$(cat $sys_hosts | grep -E "^([0-9]{1,3}[\.]){3}" | awk '{printf "\"%s\", ", $2}' | sed 's/, $//' )
+		cat > ${TMPDIR}/jsons/add_hosts.json <<EOF
 {
   "dns": { 
     "servers": [{
-      "tag": "dns_proxy",
-      "address": "$dns_fallback",
-      "strategy": "$strategy",
-      "address_resolver": "dns_resolver"
-    }, {
-      "tag": "dns_direct",
-      "address": "$dns_nameserver",
-      "strategy": "$strategy",
-      "address_resolver": "dns_resolver",
-      "detour": "DIRECT"
-    }, {
-      "tag": "dns_fakeip",
-      "address": "fakeip"
-    }, {
-      "tag": "dns_resolver",
-      "address": "223.5.5.5",
-      "detour": "DIRECT"
-    }, {
-      "tag": "block",
-      "address": "rcode://success"
+      "tag": "local",
+      "address": "local"
     }],
     "rules": [{
-      "outbound": ["any"],
-      "server": "dns_resolver"
-    }, {
-      "geosite": ["cn"],
-	  "query_type": [ "A", "AAAA" ],
-      "server": "$direct_dns"
-	}, {
-      "geosite": ["geolocation-!cn"],
-	  "query_type": [ "A", "AAAA" ],
-      "server": "$proxy_dns"
-    }],
+      "domain": [$hosts_domain],
+      "server": "local"
+    }]
+  }
+}
+EOF
+}
+	fi
+	#生成dns.json
+	[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5' || dns_nameserver=$(echo $dns_nameserver | awk -F ',' '{print $1}')
+	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1' || dns_fallback=$(echo $dns_fallback | awk -F ',' '{print $1}')
+	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
+	[ "$dns_mod" = "redir_host" ] && final_dns=dns_direct
+	[ "$dns_mod" = "fake-ip" ] && final_dns=dns_fakeip
+	[ "$dns_mod" = "mix" ] && {
+		final_dns=dns_direct
+		mix_dns="{ \"geosite\": [\"geolocation-!cn\"], \"server\": \"dns_fakeip\" },"
+	}
+	cat > ${TMPDIR}/jsons/dns.json <<EOF
+{
+  "dns": { 
+    "servers": [
+	  {
+        "tag": "dns_proxy",
+        "address": "$dns_fallback",
+        "strategy": "$strategy",
+        "address_resolver": "dns_resolver"
+      }, {
+        "tag": "dns_direct",
+        "address": "$dns_nameserver",
+        "strategy": "$strategy",
+        "address_resolver": "dns_resolver",
+        "detour": "DIRECT"
+      }, {
+        "tag": "dns_fakeip",
+        "address": "fakeip"
+      }, {
+        "tag": "dns_resolver",
+        "address": "223.5.5.5",
+        "detour": "DIRECT"
+      }, {
+        "tag": "block",
+        "address": "rcode://success"
+      }
+	],
+    "rules": [
+	  { "outbound": ["any"], "server": "dns_resolver" },
+	  { "clash_mode": "Global", "server": "$final_dns" },
+      { "clash_mode": "Direct", "server": "dns_direct" },
+	  $mix_dns
+	  { "query_type": [ "A", "AAAA" ], "server": "$final_dns" }
+	],
     "final": "dns_direct",
     "independent_cache": true,
     "reverse_mapping": true,
     "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/16" }
+  }
+}
+EOF
+	#生成add_route.json
+	cat > ${TMPDIR}/jsons/add_route.json <<EOF
+{
+  "route": {
+    "rules": [ 
+	{ "inbound": "dns-in", "outbound": "dns-out" }
+	]
   }
 }
 EOF
@@ -685,16 +703,6 @@ EOF
   }
 }
 EOF
-	#生成add_route.json
-	cat > ${TMPDIR}/jsons/add_route.json <<EOF
-{
-  "route": {
-    "rules": [ 
-	{ "inbound": "dns-in", "outbound": "dns-out" }
-	]
-  }
-}
-EOF
 	#生成自定义规则文件
 	[ -s ${CRASHDIR}/yamls/rules.yaml ] && {
 		cat ${CRASHDIR}/yamls/rules.yaml \
@@ -715,12 +723,13 @@ EOF
 			| sed '1i\{ "route": { "rules": [ ' \
 			| sed '$s/,$/ ] } }/' > ${TMPDIR}/jsons/cust_add_rules.json
 	}
-	#提取配置文件以获得outbounds.json及route.json
+	#提取配置文件以获得outbounds.json,outbound_providers.json及route.json
 	${TMPDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
 	echo '{' > ${TMPDIR}/jsons/outbounds.json
 	echo '{' > ${TMPDIR}/jsons/route.json
-	cat ${TMPDIR}/format.json | sed -n '/"outbounds":/,/"route":/{/"route":/d; p}' >> ${TMPDIR}/jsons/outbounds.json
-	cat ${TMPDIR}/format.json | sed -n '/"route":/,/"experimental":/{/"experimental":/d; p}' >> ${TMPDIR}/jsons/route.json
+	cat ${TMPDIR}/format.json | sed -n '/"outbounds":/,/^  "[a-z]/{/^  "\(route\|outbound_providers\)/d; p}' >> ${TMPDIR}/jsons/outbounds.json
+	[ "$crashcore" = "singboxp" ] && cat ${TMPDIR}/format.json | sed -n '/"outbound_providers":/,/^  "[a-z]/{/^  "route/d; p}' >> ${TMPDIR}/jsons/outbound_providers.json
+	cat ${TMPDIR}/format.json | sed -n '/"route":/,/^  "[a-z]/{/^  "experimental/d; p}' >> ${TMPDIR}/jsons/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
 	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/jsons/route.json
 	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/jsons/route.json
@@ -731,9 +740,10 @@ EOF
 	else
 		sed -i 's/"insecure":  true/"insecure":  false/' ${TMPDIR}/jsons/outbounds.json
 	fi
-	#修饰outbounds&route.json结尾
+	#修饰outbounds&outbound_providers&route.json结尾
 	sed -i 's/^  ],$/  ] }/' ${TMPDIR}/jsons/outbounds.json
 	sed -i 's/^  },$/  } }/' ${TMPDIR}/jsons/route.json
+	[ -s ${TMPDIR}/jsons/outbound_providers.json ] && sed -i 's/^  },$/  } }/' ${TMPDIR}/jsons/outbound_providers.json || rm -rf ${TMPDIR}/jsons/outbound_providers.json
 	#加载自定义配置文件
 	mkdir -p ${TMPDIR}/jsons_base
 	for char in log dns ntp experimental;do
@@ -762,6 +772,7 @@ EOF
 	#清理缓存
 	rm -rf ${TMPDIR}/*.json
 	rm -rf ${TMPDIR}/jsons_base
+	return 0
 }
 
 #设置路由规则
@@ -833,7 +844,7 @@ start_redir(){ #iptables-redir
 	iptables -t nat -A PREROUTING -p tcp $ports -j shellcrash
 	[ "$dns_mod" != "redir_host" -a "$common_ports" = "已开启" ] && iptables -t nat -A PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash
 	#设置ipv6转发
-	if [ "$ipv6_redir" = "已开启" -a -n "$(lsmod | grep 'ip6table_nat')" ];then
+	if [ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L &>/dev/null;then
 		ip6tables -t nat -N shellcrashv6
 		for ip in $reserve_ipv6 $host_ipv6;do #跳过目标保留地址及目标本机网段
 			ip6tables -t nat -A shellcrashv6 -d $ip -j RETURN
@@ -943,7 +954,7 @@ start_tproxy(){ #iptables-tproxy
 		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	}
 	#设置ipv6转发
-	[ "$ipv6_redir" = "已开启" ] && {
+	[ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L &>/dev/null && {
 		ip -6 rule add fwmark $fwmark table 101
 		ip -6 route add local ::/0 dev lo table 101
 		ip6tables -t mangle -N shellcrashv6
@@ -1072,7 +1083,7 @@ start_tun(){ #iptables-tun
 		[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j shellcrash
 		
 		#设置ipv6转发
-		[ "$ipv6_redir" = "已开启" ] && [ "$crashcore" = "singbox" -o "$crashcore" = "meta" ] && {
+		[ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L &>/dev/null && [ "$crashcore" != clash ] && {
 			ip -6 route add default dev utun table 101
 			ip -6 rule add fwmark $fwmark table 101
 			ip6tables -t mangle -N shellcrashv6
@@ -1459,7 +1470,7 @@ core_check(){
 					mv -f ${TMPDIR}/core_new/$file ${TMPDIR}/CrashCore
 			done
 			rm -rf ${TMPDIR}/core_new
-			if [ "$crashcore" = singbox ];then
+			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 				core_v=$(${TMPDIR}/CrashCore version 2>/dev/null | grep version | awk '{print $3}')
 				COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 			else
@@ -1479,8 +1490,8 @@ core_check(){
 			fi
 		fi
 	fi
-
 	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #自动授权
+	return 0
 }
 clash_check(){ #clash启动前检查
 	#检测vless/hysteria协议
@@ -1511,7 +1522,7 @@ clash_check(){ #clash启动前检查
 	#预下载GeoIP数据库
 	if [ ! -f ${BINDIR}/Country.mmdb ];then
 		if [ -f ${CRASHDIR}/Country.mmdb ];then
-			mv ${CRASHDIR}/Country.mmdb ${BINDIR}/Country.mmdb
+			ln -sf ${CRASHDIR}/Country.mmdb ${BINDIR}/Country.mmdb
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
 			get_bin ${BINDIR}/Country.mmdb bin/geodata/cn_mini.mmdb
@@ -1523,7 +1534,7 @@ clash_check(){ #clash启动前检查
 	#预下载GeoSite数据库
 	if [ -n "$(cat $core_config|grep -Ei 'geosite')" ] && [ ! -f ${BINDIR}/GeoSite.dat ];then
 		if [ -f ${CRASHDIR}/GeoSite.dat ];then
-			mv -f ${CRASHDIR}/GeoSite.dat ${BINDIR}/GeoSite.dat
+			ln -sf ${CRASHDIR}/GeoSite.dat ${BINDIR}/GeoSite.dat
 		else
 			logger "未找到GeoSite数据库，正在下载！" 33
 			get_bin ${BINDIR}/GeoSite.dat bin/geodata/geosite.dat
@@ -1533,11 +1544,20 @@ clash_check(){ #clash启动前检查
 	return 0
 }
 singbox_check(){ #singbox启动前检查
+	#检测PuerNya专属功能
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oE 'shadowsocksr|providers')" ];then
+		echo -----------------------------------------------
+		logger "检测到PuerNya内核专属功能，改为使用singboxp内核启动！" 33
+		rm -rf ${TMPDIR}/CrashCore
+		rm -rf ${CRASHDIR}/CrashCore
+		rm -rf ${CRASHDIR}/core.tar.gz
+		crashcore=singboxp		
+	fi
 	core_check
 	#预下载GeoIP数据库
 	if [ ! -f ${BINDIR}/geoip.db ];then
 		if [ -f ${CRASHDIR}/geoip.db ];then
-			mv ${CRASHDIR}/geoip.db ${BINDIR}/geoip.db
+			ln -sf ${CRASHDIR}/geoip.db ${BINDIR}/geoip.db
 		else
 			logger "未找到GeoIP数据库，正在下载！" 33
 			get_bin ${BINDIR}/geoip.db bin/geodata/geoip_cn.db
@@ -1547,9 +1567,9 @@ singbox_check(){ #singbox启动前检查
 		fi
 	fi
 	#预下载GeoSite数据库
-	if [ -n "$(cat $core_config|grep -Ei '"geosite":')" ] && [ ! -f ${BINDIR}/geosite.db ];then
+	if [ -n "cat ${CRASHDIR}/jsons/*.json | grep -Ei 'geosite')" -o "$dns_mod" = "mix" ] && [ ! -f ${BINDIR}/geosite.db ];then
 		if [ -f ${CRASHDIR}/geosite.db ];then
-			mv -f ${CRASHDIR}/geosite.db ${BINDIR}/geosite.db
+			ln -sf ${CRASHDIR}/geosite.db ${BINDIR}/geosite.db
 		else
 			logger "未找到GeoSite数据库，正在下载！" 33
 			get_bin ${BINDIR}/geosite.db bin/geodata/geosite_cn.db
@@ -1587,7 +1607,7 @@ bfstart(){ #启动前
 	catpac	#生成pac文件
 	#内核及内核配置文件检查
 	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #检测可执行权限
-	if [ "$crashcore" = singbox ];then
+	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 		singbox_check	
 		[ -d ${TMPDIR}/jsons ] && rm -rf ${TMPDIR}/jsons/* || mkdir -p ${TMPDIR}/jsons #准备目录
 		[ "$disoverride" != "1" ] && modify_json || ln -sf $core_config ${TMPDIR}/jsons/config.json
@@ -1743,7 +1763,6 @@ start)
 		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 			/etc/init.d/shellcrash start 
 		elif [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
-			bfstart
 			FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
 			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
 			systemctl daemon-reload
@@ -1786,7 +1805,7 @@ debug)
 		stop_firewall >/dev/null #清理路由策略
 		bfstart
 		[ -n "$2" ] && {
-			if [ "$crashcore" = singbox ];then
+			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 				sed -i "s/\"level\": \"info\"/\"level\": \"$2\"/"  ${TMPDIR}/config.json
 			else
 				sed -i "s/log-level: info/log-level: $2/" ${TMPDIR}/config.yaml
