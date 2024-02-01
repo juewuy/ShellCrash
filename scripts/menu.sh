@@ -114,7 +114,7 @@ ckstatus(){
 				if [ -n "$core_v" ];then
 					source ${CRASHDIR}/getdate.sh && setcoretype && \
 					mv -f $file ${TMPDIR}/CrashCore && \
-					tar -zcvf ${BINDIR}/core.tar.gz -C ${TMPDIR} CrashCore && \
+					tar -zcf ${BINDIR}/CrashCore.tar.gz -C ${TMPDIR} CrashCore && \
 					echo -e "\033[32m内核加载完成！\033[0m " && \
 					setconfig crashcore $crashcore && \
 					setconfig core_v $core_v && \
@@ -175,16 +175,18 @@ start_core(){
 	echo -----------------------------------------------
 	if [ -s $core_config -o -n "$Url" -o -n "$Https" ];then
 		${CRASHDIR}/start.sh start
-		sleep 2
-		if [ -n "$(pidof CrashCore)" ];then
-			startover
-		else
-			${COMMAND} &>${TMPDIR}/core_test.log &
-			sleep 2 ; kill $! &>/dev/null
-			${CRASHDIR}/start.sh start_error
-			${CRASHDIR}/start.sh stop
-			exit 1
-		fi
+		#设置循环检测以判定服务启动是否成功
+		i=1
+		while [ -z "$test" -a "$i" -lt 10 ];do
+			sleep 1
+			if curl --version > /dev/null 2>&1;then
+				test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
+			else
+				test=$(wget -q -O - http://127.0.0.1:${db_port}/configs | grep -o port)
+			fi
+			i=$((i+1))
+		done
+		[ -n "$test" ] && startover
 	else
 		echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"
 		source ${CRASHDIR}/getdate.sh && set_core_config
@@ -566,14 +568,16 @@ setdns(){ #DNS设置
 		
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
-		if openssl version >/dev/null 2>&1;then
+		openssldir=$(openssl version -a 2>&1 | grep OPENSSLDIR | awk -F "\"" '{print $2}')
+		[ -z "$openssldir" ] && openssldir=/etc/ssl
+		if [ -s "$openssldir/certs/ca-certificates.crt" ];then
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 			dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			setconfig dns_fallback \'"$dns_fallback"\' 
 			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"
 		else
-			echo -e "\033[31m当前设备未安装OpenSSL，无法启用加密DNS，Linux系统请自行搜索安装方式！\033[0m"
+			echo -e "\033[31m找不到根证书文件，无法启用加密DNS，Linux系统请自行搜索安装OpenSSL的方式！\033[0m"
 		fi
 		sleep 2
 		setdns
@@ -1209,7 +1213,7 @@ normal_set(){ #基础设置
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   需搭配加密DNS使用"
 		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
-		echo -e "                   限singbox内核+geosite.db!"
+		echo -e "                   限singbox1.8.0+内核!"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
@@ -1228,13 +1232,13 @@ normal_set(){ #基础设置
 			echo -----------------------------------------------	
 			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		elif [ "$num" = 3 ]; then
-			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ] && [ "$core_v" != '1.7.8' ];then
 				dns_mod=mix
 				setconfig dns_mod $dns_mod 
 				echo -----------------------------------------------	
 				echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 			else
-				echo -e "\033[31m仅限singbox内核使用！！！\033[0m"
+				echo -e "\033[31m当前内核不支持的功能！！！\033[0m"
 				sleep 1
 			fi
 		else
@@ -1469,7 +1473,7 @@ advanced_set(){ #进阶设置
 			if [ "$crashcore" = "clash" ];then
 				rm -rf ${TMPDIR}/CrashCore
 				rm -rf ${CRASHDIR}/CrashCore
-				rm -rf ${CRASHDIR}/core.tar.gz
+				rm -rf ${CRASHDIR}/CrashCore.tar.gz
 				crashcore=meta
 				setconfig crashcore $crashcore
 				echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"

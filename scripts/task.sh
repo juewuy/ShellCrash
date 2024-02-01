@@ -31,28 +31,51 @@ update_core(){ #自动更新内核
 		logger "任务【自动更新内核】中止-未检测到版本更新"
 		exit 1
 	else
-		#更新内核
-		[ "$crashcore" = singbox ] && core_new=singbox || core_new=clash
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core.new "bin/${crashcore}/${core_new}-linux-${cpucore}"
+		[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
+		if [ -n "$custcorelink" ];then
+			zip_type=$(echo $custcorelink | grep -oE 'tar.gz$')
+			[ -z "$zip_type" ] && zip_type=$(echo $custcorelink | grep -oE 'gz$')
+			if [ -n "$zip_type" ];then
+				${CRASHDIR}/start.sh webget ${TMPDIR}/core_new.${zip_type} ${custcorelink}
+			fi
+		else
+			${CRASHDIR}/start.sh get_bin ${TMPDIR}/core_new.tar.gz bin/${crashcore}/${core_new}-linux-${cpucore}.tar.gz
+		fi
 		if [ "$?" != "0" ];then
 			logger "任务【自动更新内核】出错-下载失败！"
-			rm -rf ${TMPDIR}/core.new
+			${TMPDIR}/CrashCore.tar.gz
 			return 1
 		else
-			chmod +x ${TMPDIR}/core.new
-			${CRASHDIR}/start.sh stop
-			if [ "$crashcore" = singbox ];then
-				core_v=$(${TMPDIR}/core.new version 2>/dev/null | grep version | awk '{print $3}')
+			[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
+			[ -f ${TMPDIR}/core_new.tar.gz ] && {
+				mkdir -p ${TMPDIR}/core_new
+				tar -zxf "${TMPDIR}/core_new.tar.gz" -C ${TMPDIR}/core_new/ &>/dev/null || tar -zxf "${TMPDIR}/core_new.tar.gz" --no-same-owner -C ${TMPDIR}/core_new/
+				for file in "$(ls -1 ${TMPDIR}/core_new | grep -iE 'CrashCore|sing-box|clash|mihomo|meta')" ;do
+						mv -f ${TMPDIR}/core_new/$file ${TMPDIR}/core_new
+				done
+				rm -rf ${TMPDIR}/core_new
+			}
+			[ -f ${TMPDIR}/core_new.gz ] && gunzip ${TMPDIR}/core_new.gz >/dev/null && rm -rf ${TMPDIR}/core_new.gz
+			chmod +x ${TMPDIR}/core_new
+			[ "$crashcore" = unknow ] && setcoretype
+			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+				core_v=$(${TMPDIR}/core_new version 2>/dev/null | grep version | awk '{print $3}')
 			else
-				core_v=$(${TMPDIR}/core.new -v 2>/dev/null | sed 's/ linux.*//;s/.* //')
+				core_v=$(${TMPDIR}/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 			fi
 			if [ -z "$core_v" ];then
 				logger "任务【自动更新内核】出错-内核校验失败！"
-				rm -rf ${TMPDIR}/core.new
+				rm -rf ${TMPDIR}/core_new.tar.gz
+				rm -rf ${TMPDIR}/core_new
 				${CRASHDIR}/start.sh start
 				return 1
 			else
-				mv -f ${TMPDIR}/core.new ${BINDIR}/CrashCore
+				mv -f ${TMPDIR}/core_new ${TMPDIR}/CrashCore
+				if [ -f ${TMPDIR}/core_new.tar.gz ];then
+					mv -f ${TMPDIR}/core_new.tar.gz ${BINDIR}/CrashCore.tar.gz
+				else
+					tar -zcf ${BINDIR}/CrashCore.tar.gz -C ${TMPDIR} CrashCore
+				fi
 				logger "任务【自动更新内核】下载完成，正在重启服务！"
 				setconfig core_v $core_v
 				${CRASHDIR}/start.sh start
@@ -75,7 +98,7 @@ update_shellcrash(){ #自动更新脚本
 			return 1
 		else
 			#解压
-			tar -zxvf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ || tar -zxvf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
+			tar -zxf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ || tar -zxf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
 			if [ $? -ne 0 ];then
 				rm -rf ${TMPDIR}/update.tar.gz
 				logger "任务【自动更新内核】出错-解压失败！"

@@ -767,7 +767,7 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p ${CRASHDIR} > /dev/null
-		tar -zxvf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ 2>/dev/null || tar -zxvf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
+		tar -zxf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ 2>/dev/null || tar -zxf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
 		if [ $? -ne 0 ];then
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
@@ -797,7 +797,7 @@ getsh(){
 	fi
 }
 
-getcpucore(){
+getcpucore(){ #自动获取内核架构
 	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
 	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && [ ! -d /jffs ] && cpucore="armv7"
@@ -810,7 +810,7 @@ getcpucore(){
 	fi
 	[ -n "$cpucore" ] && setconfig cpucore $cpucore
 }
-setcpucore(){
+setcpucore(){ #手动设置内核架构
 	cpucore_list="armv5 armv7 arm64 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
 	echo -----------------------------------------------
 	echo -e "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
@@ -829,7 +829,7 @@ setcpucore(){
 		setconfig cpucore $cpucore
 	fi
 }
-setcoretype(){
+setcoretype(){ #手动指定内核类型
 	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_old=singbox || core_old=clash
 	echo -e "\033[33m请确认该自定义内核的类型：\033[0m"
 	echo -e " 1 Clash基础内核"
@@ -845,7 +845,7 @@ setcoretype(){
 	esac
 	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
 }
-switch_core(){
+switch_core(){ #clash与singbox内核切换
 	#singbox和clash内核切换时提示是否保留文件
 	[ "$core_new" != "$core_old" ] && {
 		echo -e "\033[33m已从$core_old内核切换至$core_new内核\033[0m"
@@ -872,85 +872,178 @@ switch_core(){
 	fi
 	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 }
-getcore(){
-	[ -z "$crashcore" ] && crashcore=clashpre
+getcore(){ #下载内核文件
+	[ -z "$crashcore" ] && crashcore=singbox
 	[ -z "$cpucore" ] && getcpucore
 	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
 	#获取在线内核文件
 	echo -----------------------------------------------
 	echo 正在在线获取$crashcore核心文件……
 	if [ -n "$custcorelink" ];then
-		${CRASHDIR}/start.sh webget ${TMPDIR}/core.tar.gz "$custcorelink"
+		zip_type=$(echo $custcorelink | grep -oE 'tar.gz$')
+		[ -z "$zip_type" ] && zip_type=$(echo $custcorelink | grep -oE 'gz$')
+		if [ -n "$zip_type" ];then
+			${CRASHDIR}/start.sh webget ${TMPDIR}/core_new.${zip_type} "$custcorelink"
+		else
+			echo -e "\033[31m链接不是以.tar.gz或.gz结尾！下载已取消！\033[0m"
+			exit
+		fi
 	else
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core.tar.gz bin/${crashcore}/${core_new}-linux-${cpucore}.tar.gz
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core_new.tar.gz bin/${crashcore}/${core_new}-linux-${cpucore}.tar.gz
 	fi
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
-		rm -rf ${TMPDIR}/core.tar.gz
+		rm -rf ${TMPDIR}/core_new.tar.gz
 		[ -z "$custcorelink" ] && error_down
 	else
 		[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
-		[ -f ${TMPDIR}/core.tar.gz ] && {
-			mkdir -p ${TMPDIR}/core_new
-			tar -zxvf "${TMPDIR}/core.tar.gz" -C ${TMPDIR}/core_new/ &>/dev/null || tar -zxvf "${TMPDIR}/core.tar.gz" --no-same-owner -C ${TMPDIR}/core_new/
-			for file in "$(ls -1 ${TMPDIR}/core_new | grep -iE 'CrashCore|sing-box|clash|mihomo|meta')" ;do
-					mv -f ${TMPDIR}/core_new/$file ${TMPDIR}/CrashCore
+		[ -f ${TMPDIR}/core_new.tar.gz ] && {
+			mkdir -p ${TMPDIR}/core_tmp
+			tar -zxf "${TMPDIR}/core_new.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxf "${TMPDIR}/core_new.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
+			for file in "$(find ${TMPDIR}/core_tmp -type f -size +4096)" ;do
+				mv -f $file ${TMPDIR}/core_new
 			done
-			rm -rf ${TMPDIR}/core_new
+			rm -rf ${TMPDIR}/core_tmp
 		}
-		chmod +x ${TMPDIR}/CrashCore
+		[ -f ${TMPDIR}/core_new.gz ] && gunzip ${TMPDIR}/core_new.gz && rm -rf ${TMPDIR}/core_new.gz
+		chmod +x ${TMPDIR}/core_new
 		[ "$crashcore" = unknow ] && setcoretype
 		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
-			core_v=$(${TMPDIR}/CrashCore version 2>/dev/null | grep version | awk '{print $3}')
+			core_v=$(${TMPDIR}/core_new version 2>/dev/null | grep version | awk '{print $3}')
 		else
-			core_v=$(${TMPDIR}/CrashCore -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
+			core_v=$(${TMPDIR}/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 		fi
 		if [ -z "$core_v" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
-			rm -rf ${TMPDIR}/CrashCore
-			rm -rf ${TMPDIR}/core.tar.gz
+			rm -rf ${TMPDIR}/core_new
+			rm -rf ${TMPDIR}/core_new.tar.gz
 			setcpucore
 		else
 			echo -e "\033[32m$crashcore核心下载成功！\033[0m"
-			mv -f ${TMPDIR}/core.tar.gz ${BINDIR}/core.tar.gz 2>/dev/null
+			sleep 1
+			mv -f ${TMPDIR}/core_new ${TMPDIR}/CrashCore
+			if [ -f ${TMPDIR}/core_new.tar.gz ];then
+				mv -f ${TMPDIR}/core_new.tar.gz ${BINDIR}/CrashCore.tar.gz
+			else
+				tar -zcf ${BINDIR}/CrashCore.tar.gz -C ${TMPDIR} CrashCore
+			fi
 			setconfig crashcore $crashcore
 			setconfig core_v $core_v
+			setconfig custcorelink $custcorelink
 			switch_core
 		fi
 	fi
 }
-setcustcore(){
+setcustcore(){ #自定义内核
+	checkcustcore(){
+		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
+		#通过githubapi获取内核信息
+		echo -e "\033[32m正在获取内核文件链接！\033[0m"
+		${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
+		release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+		release_date=$(cat ${TMPDIR}/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
+		cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpucore}.*\.gz\"$"  | sed 's/"//' > ${TMPDIR}/core.list
+		rm -rf ${TMPDIR}/github_api
+		#
+		if [ -f ${TMPDIR}/core.list ];then
+			echo -----------------------------------------------
+			echo -e "内核版本：\033[36m$release_tag\033[0m"
+			echo -e "发布时间：\033[32m$release_date\033[0m"
+			echo -----------------------------------------------
+			echo -e "\033[33m请确认内核信息并选择：\033[0m"
+			cat ${TMPDIR}/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
+			echo -e " 0 返回上级菜单"
+			echo -----------------------------------------------
+			read -p "请输入对应数字 > " num	
+			case "$num" in
+			0)
+				setcustcore
+			;;
+			[1-99])
+				if [ "$num" -le "$(wc -l < ${TMPDIR}/core.list)" ];then
+					custcorelink=$(sed -n "$num"p ${TMPDIR}/core.list)
+					getcore
+				else
+					errornum
+				fi
+			;;
+			*)
+				errornum
+			;;
+			esac			
+		else
+			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
+			sleep 1
+		fi
+		rm -rf ${TMPDIR}/core.list
+	}
 	[ -z "$cpucore" ] && getcpucore
+	echo -----------------------------------------------
+	echo -e "\033[36m此处内核通常源自互联网采集，此处致谢各位开发者！\033[0m"
+	echo -e "\033[33m自定义内核未经过完整适配，使用出现问题请自行解决！\033[0m"
+	echo -e "\033[31m自定义内核已适配定时任务，但不支持小闪存模式！\033[0m"
+	echo -e "\033[32m如遇到网络错误请先启动ShellCrash服务！\033[0m"
+	[ -n "$custcore" ] && {
+	echo -----------------------------------------------
+	echo -e "当前内核为：\033[36m$custcore\033[0m"
+	}
+	echo -----------------------------------------------
 	echo -e "\033[33m请选择需要使用的核心！\033[0m"
-	echo -e "1 \033[32m Premium-2023.08.17内核(已停止维护) \033[0m"
-	echo -e "2 \033[32m 最新Meta.Alpha内核(每日更新)  \033[0m"
-	echo -e "3 \033[32m singbox-1.7.8内核(不支持rule-set,部分旧设备可用)  \033[0m"
-	#echo -e "4 \033[32m singbox_PuerNya内核(支持SSR、providers、rule-set)  \033[0m"
-	echo -e "9 \033[33m 自定义内核链接 \033[0m"
+	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本内核"
+	echo -e "2 \033[36mMetaCubeX/mihomo\033[32m@alpha\033[0m版本内核"
+	echo -e "3 \033[36myaling888/clash\033[32m@release\033[0m版本内核"
+	echo -e "4 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本内核"
+	echo -e "5 \033[36mPuerNya/sing-box\033[0m内核(with_gvisor,with_wireguard)"
+	echo -e "6 \033[36mSagerNet/sing-box\033[32m@1.7.8\033[0m版本内核(不支持rule-set)"
+	echo -e "7 Premium-2023.08.17内核(已停止维护)"
+	echo -e "a \033[33m自定义内核链接 \033[0m"
+	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num	
 	case "$num" in
 	1)
-		crashcore=clashpre
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.premium.latest/clash-linux-${cpucore}.tar.gz
-		getcore			
+		project=MetaCubeX/mihomo
+		api_tag=latest
+		crashcore=meta
+		checkcustcore
 	;;
 	2)
+		project=MetaCubeX/mihomo
+		api_tag=Prerelease-Alpha
 		crashcore=meta
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/clash.meta.alpha/clash-linux-${cpucore}.tar.gz
-		getcore			
+		checkcustcore
 	;;
 	3)
-		crashcore=singbox
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core/singbox-linux-${cpucore}.tar.gz
-		getcore			
+		project=yaling888/clash
+		api_tag=latest
+		crashcore=clashpre
+		checkcustcore	
 	;;
 	4)
-		crashcore=singboxp
-		custcorelink=https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/singbox-linux-${cpucore}.tar.gz
-		getcore			
+		project=SagerNet/sing-box
+		api_tag=latest
+		crashcore=singbox
+		checkcustcore
 	;;
-	9)
-		read -p "请输入自定义内核的链接地址(必须是二进制文件) > " link
+	5)
+		project=juewuy/ShellCrash
+		api_tag=singbox_core_PuerNya
+		crashcore=singboxp
+		checkcustcore
+	;;
+	6)
+		project=SagerNet/sing-box
+		api_tag=v1.7.8
+		crashcore=singbox
+		checkcustcore
+	;;
+	7)
+		project=juewuy/ShellCrash
+		api_tag=clash.premium.latest
+		crashcore=clashpre
+		checkcustcore
+	;;
+	a)
+		read -p "请输入自定义内核的链接地址(必须是以.tar.gz或.gz结尾的压缩文件) > " link
 		[ -n "$link" ] && custcorelink="$link"
 		crashcore=unknow
 		getcore
@@ -960,11 +1053,12 @@ setcustcore(){
 	;;
 	esac
 }
-setcore(){
+setcore(){ #内核选择菜单
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow" 
-	[ ! -f ${CRASHDIR}/core.tar.gz ] && crashcore="未安装核心"
+	[ ! -f ${CRASHDIR}/CrashCore.tar.gz ] && crashcore="未安装核心"
 	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_old=singbox || core_old=clash
+	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 	###
 	echo -----------------------------------------------
 	[ -z "$cpucore" ] && getcpucore
@@ -976,21 +1070,18 @@ setcore(){
 	echo -e "1 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
 	echo -e " (开源基础内核)  \033[33m不支持Tun、Rule-set等\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
-	echo
 	echo -e "2 \033[43;30m SingBox \033[0m：	\033[32m支持全面占用低\033[0m"
 	echo -e " (sing-box主干)  \033[33m不支持providers\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
-	echo
 	echo -e "3 \033[43;30m Mihomo \033[0m：	\033[32m多功能，支持全面\033[0m"
 	echo -e " (Meta/Mihomo)   \033[33m内存占用较高\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
-	echo
 	echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
 	echo -e " (sing-box分支)  \033[33mPuerNya分支版本\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
-	echo
-	echo -e "5 \033[32m自定义内核\033[0m：	\033[33m仅限专业用户使用\033[0m"
-	echo
+	echo -----------------------------------------------
+	echo -e "5 \033[36m自定义内核\033[0m	$custcore"
+	echo -----------------------------------------------
 	echo "9 手动指定处理器架构"
 	echo -----------------------------------------------
 	echo 0 返回上级菜单 
@@ -1017,19 +1108,11 @@ setcore(){
 		getcore
 	;;
 	5)
-		echo -----------------------------------------------
-		echo -e "\033[36m自定义内核均未经过适配，可能存在部分功能不兼容的问题！\033[0m"
-		echo -e "\033[36m如你不熟悉相关内核的运行机制，请使用脚本已经适配过的内核！\033[0m"
-		echo -e "\033[36m自定义内核不兼容小闪存模式，且下载可能依赖服务！\033[0m"
-		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
-		echo -----------------------------------------------
-		sleep 1
-		read -p "我确认遇到问题可以自行解决[1/0] > " res
-		[ "$res" = '1' ] && setcustcore
+		setcustcore
+		setcore
 	;;
 	9)
 		setcpucore
-		setcore
 	;;
 	*)
 		errornum
@@ -1037,7 +1120,7 @@ setcore(){
 	esac
 }
 
-getgeo(){
+getgeo(){ #下载Geo文件
 	#生成链接
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
@@ -1060,10 +1143,10 @@ getgeo(){
 	fi
 	sleep 1
 }
-setcustgeo(){
+setcustgeo(){ #下载自定义数据库文件
 	getcustgeo(){
 		echo -----------------------------------------------
-		echo 正在从服务器获取数据库文件…………
+		echo 正在获取数据库文件…………
 		${CRASHDIR}/start.sh webget ${TMPDIR}/$geoname $custgeolink
 		if [ "$?" = "1" ];then
 			echo -----------------------------------------------
@@ -1114,14 +1197,15 @@ setcustgeo(){
 			;;
 			esac
 		else
-			echo -e "\033[31m查找失败，请检查网络连接！\033[0m"
+			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
 			sleep 1
 		fi
 	}
 	rm -rf ${TMPDIR}/geo.list
 	echo -----------------------------------------------
-	echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位作者！\033[0m"
+	echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
 	echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
+	echo -e "\033[31m自定义数据库不支持定时任务及小闪存模式！\033[0m"
 	echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
 	echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
 	echo -----------------------------------------------
@@ -1178,7 +1262,7 @@ setcustgeo(){
 	;;
 	esac
 }
-setgeo(){
+setgeo(){ #数据库选择菜单
 	source $CFG_PATH > /dev/null
 	[ -n "$cn_mini.mmdb_v" ] && geo_type_des=精简版 || geo_type_des=全球版 
 	echo -----------------------------------------------
@@ -1187,15 +1271,24 @@ setgeo(){
 	echo -e "\033[36mClash内核和SingBox内核的数据库文件不通用\033[0m"
 	echo -e "在线数据库最新版本：\033[32m$GeoIP_v\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
-	echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
-	echo -e " 3 Clash全球版GeoIP数据库(约6mb)	\033[33m$Country_v\033[0m"
-	echo -e " 4 Clash精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
-	echo -e " 5 Meta完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
-	echo -e " 6 SingBox精简版GeoIP_cn数据库(约0.3mb)	\033[33m$geoip_cn_v\033[0m"
-	echo -e " 7 SingBox精简版GeoSite数据库(约0.8mb)	\033[33m$geosite_cn_v\033[0m"
+	[ "$cn_ip_route" = "已开启" ] && {
+		echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
+		echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
+	}
+	[ -z "$(echo "$crashcore" | grep sing)" ] && {
+		echo -e " 3 Clash全球版GeoIP数据库(约6mb)	\033[33m$Country_v\033[0m"
+		echo -e " 4 Clash精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
+		echo -e " 5 Meta完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
+	}
+	[ -n "$(echo "$crashcore" | grep sing)" ] && {
+		echo -e " 6 SingBox精简版GeoIP_cn数据库(约0.3mb)	\033[33m$geoip_cn_v\033[0m"
+		echo -e " 7 SingBox精简版GeoSite数据库(约0.8mb)	\033[33m$geosite_cn_v\033[0m"
+		echo -e " 8 Rule_Set_geoip_cn数据库(约0.1mb)	\033[33m$srs_geoip_cn_v\033[0m"
+		echo -e " 9 Rule_Set_geosite_cn数据库(约0.1mb)	\033[33m$srs_geosite_cn_v\033[0m"
+	}
 	echo -----------------------------------------------
-	echo -e " 9 \033[32m自定义数据库\033[0m：	\033[33m仅限专业用户使用\033[0m"
+	echo -e " a \033[32m自定义数据库文件\033[0m"
+	echo -e " b \033[31m清理数据库文件\033[0m"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -1203,97 +1296,78 @@ setgeo(){
 	0)
 	;;
 	1)
-		if [ "$cn_ip_route" = "已开启" ]; then
-			geotype=china_ip_list.txt
-			geoname=cn_ip.txt
-			getgeo
-		else
-			echo -----------------------------------------------
-			echo -e "\033[31m未开启绕过内核功能，无需更新CN-IP文件！！\033[0m"	
-			sleep 1
-		fi
+		geotype=china_ip_list.txt
+		geoname=cn_ip.txt
+		getgeo
 		setgeo
 	;;
 	2)
-		if [ "$cn_ipv6_route" = "已开启" -a "$ipv6_redir" = "已开启" ]; then
-			geotype=china_ipv6_list.txt
-			geoname=cn_ipv6.txt
-			getgeo
-		else
-			echo -----------------------------------------------
-			echo -e "\033[31m未开启ipv6下CN绕过功能，无需更新CN-IPV6文件！！\033[0m"	
-			sleep 1
-		fi
+		geotype=china_ipv6_list.txt
+		geoname=cn_ipv6.txt
+		getgeo
 		setgeo
 	;;
 	3)
-		if [ "$crashcore" != "singbox" ]; then
-			geotype=Country.mmdb
-			geoname=Country.mmdb
-			getgeo
-		else
-			echo -----------------------------------------------
-			echo -e "\033[31m当前未使用clash内核，无需使用此数据库！！\033[0m"	
-			sleep 1
-		fi
+		geotype=Country.mmdb
+		geoname=Country.mmdb
+		getgeo
 		setgeo
 	;;
 	4)
-		if [ "$crashcore" != "singbox" ]; then
-			geotype=cn_mini.mmdb
-			geoname=Country.mmdb
-			getgeo
-		else
-			echo -----------------------------------------------
-			echo -e "\033[31m当前未使用clash内核，无需使用此数据库！！\033[0m"	
-			sleep 1
-		fi
+		geotype=cn_mini.mmdb
+		geoname=Country.mmdb
+		getgeo
 		setgeo
 	;;
 	5)
-		if [ "$crashcore" = "meta" ]; then
-			geotype=geosite.dat
-			geoname=GeoSite.dat
-			getgeo
-		else
-			echo -----------------------------------------------
-			echo -e "\033[31m当前未使用meta内核，无需使用此数据库！！\033[0m"	
-			sleep 1
-		fi
+		geotype=geosite.dat
+		geoname=GeoSite.dat
+		getgeo
 		setgeo
 	;;
 	6)
-		if [ "$crashcore" = "singbox" ]; then
-			geotype=geoip_cn.db
-			geoname=geoip.db
-			getgeo
-		else
-			echo -----------------------------------------------
-			echo -e "\033[31m当前未使用singbox内核，无需使用此数据库！！\033[0m"	
-			sleep 1
-		fi
+		geotype=geoip_cn.db
+		geoname=geoip.db
+		getgeo
 		setgeo
 	;;
 	7)
-		if [ "$crashcore" = "singbox" ]; then
-			geotype=geosite_cn.db
-			geoname=geosite.db
-			getgeo
-		else
-			echo -----------------------------------------------
-			echo -e "\033[31m当前未使用singbox内核，无需使用此数据库！！\033[0m"	
-			sleep 1
-		fi
+		geotype=geosite_cn.db
+		geoname=geosite.db
+		getgeo
+		setgeo
+	;;
+	8)
+		geotype=srs_geoip_cn.srs
+		geoname=geoip-cn.srs
+		getgeo
 		setgeo
 	;;
 	9)
+		geotype=srs_geosite_cn.srs
+		geoname=geosite-cn.srs
+		getgeo
+		setgeo
+	;;
+	a)
+		setcustgeo
+		setgeo
+	;;	
+	b)
 		echo -----------------------------------------------
-		echo -e "\033[36m自定义数据库需要调用第三方地址，请尽量在服务启动后更新！\033[0m"
-		echo -e "\033[36m自定义数据库不兼容小闪存模式，也不支持自动更新！\033[0m"
-		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+		echo -e "\033[33m这将清理$CRASHDIR目录下所有数据库文件！\033[0m"
+		echo -e "\033[36m清理后启动服务即可自动下载所需文件~\033[0m"
 		echo -----------------------------------------------
-		read -p "我确认遇到问题可以自行解决[1/0] > " res
-		[ "$res" = '1' ] && setcustgeo
+		read -p "确认清理？[1/0] > " res
+		[ "$res" = '1' ] && {
+			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db ;do
+				rm -rf $CRASHDIR/$file
+			done
+			rm -rf $CRASHDIR/*.srs
+			echo -e "\033[33m所以数据库文件均已清理！\033[0m"
+			sleep 1
+		}
+		setgeo
 	;;	
 	*)
 		errornum
@@ -1315,9 +1389,9 @@ getdb(){
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		mkdir -p $dbdir > /dev/null
-		tar -zxvf "${TMPDIR}/clashdb.tar.gz" -C $dbdir > /dev/null
+		tar -zxf "${TMPDIR}/clashdb.tar.gz" -C $dbdir > /dev/null
 		if [ $? -ne 0 ];then
-			tar -zxvf "${TMPDIR}/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
+			tar -zxf "${TMPDIR}/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
 			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/clashfm.tar.gz && exit 1 
 		fi
 		#修改默认host和端口
@@ -1500,7 +1574,7 @@ setserver(){
 		setconfig url_id $url_id
 		setconfig release_type $release_type
 		echo -----------------------------------------------
-		echo -e "\033[32m源地址更新成功！\033[0m"
+		echo -e "\033[32m源地址切换成功！\033[0m"
 	}
 	echo -----------------------------------------------
 	echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
@@ -1540,11 +1614,13 @@ setserver(){
 	a)
 		release_type=stable
 		[ -z "$url_id" ] && url_id=101
+		saveserver
 		setserver
 	;;
 	b)
 		release_type=master
 		[ -z "$url_id" ] && url_id=101
+		saveserver
 		setserver
 	;;
 	c)
@@ -1556,6 +1632,7 @@ setserver(){
 		if [ "$res" = 1 ];then
 			release_type=dev
 			[ -z "$url_id" ] && url_id=101
+			saveserver
 		fi
 		setserver
 	;;
@@ -1791,7 +1868,9 @@ userguide(){
 		}
 	fi
 	#检测及下载根证书
-	if [ -d /etc/ssl/certs -a ! -f '/etc/ssl/certs/ca-certificates.crt' ];then
+	openssldir=$(openssl version -a 2>&1 | grep OPENSSLDIR | awk -F "\"" '{print $2}')
+	[ -z "$openssldir" ] && openssldir=/etc/ssl
+	if [ -d $openssldir/certs -a ! -f $openssldir/certs/ca-certificates.crt ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
 		echo -----------------------------------------------
@@ -1799,8 +1878,7 @@ userguide(){
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
 	#设置加密DNS
-	${CRASHDIR}/start.sh webget /dev/null https://baidu.com echooff rediron
-	if [ "$?" = "0" ];then
+	if [ -s $openssldir/certs/ca-certificates.crt ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
 		setconfig dns_nameserver \'"$dns_nameserver"\'
