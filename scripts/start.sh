@@ -799,7 +799,7 @@ EOF
 
 #设置路由规则
 cn_ip_route(){	#CN-IP绕过
-	[ ! -f ${BINDIR}/cn_ip.txt ] && {
+	[ -z "$(find ${BINDIR}/cn_ip.txt -size +10 2>/dev/null)" ] && {
 		if [ -f ${CRASHDIR}/cn_ip.txt ];then
 			mv ${CRASHDIR}/cn_ip.txt ${BINDIR}/cn_ip.txt
 		else
@@ -818,7 +818,7 @@ cn_ip_route(){	#CN-IP绕过
 	}
 }
 cn_ipv6_route(){ #CN-IPV6绕过
-	[ ! -f ${BINDIR}/cn_ipv6.txt ] && {
+	[ -z "$(find ${BINDIR}/cn_ipv6.txt -size +10 2>/dev/null)" ] && {
 		if [ -f ${CRASHDIR}/cn_ipv6.txt ];then
 			mv ${CRASHDIR}/cn_ipv6.txt ${BINDIR}/cn_ipv6.txt
 		else
@@ -1547,7 +1547,7 @@ clash_check(){ #clash启动前检查
 	fi
 	core_check
 	#预下载GeoIP数据库
-	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geoip')" ] && [ ! -f ${BINDIR}/Country.mmdb ];then
+	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geoip')" ] && [ -z "$(find ${BINDIR}/Country.mmdb -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/Country.mmdb ];then
 			mv -f ${CRASHDIR}/Country.mmdb ${BINDIR}/Country.mmdb
 		else
@@ -1558,7 +1558,7 @@ clash_check(){ #clash启动前检查
 		fi
 	fi
 	#预下载GeoSite数据库
-	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && [ ! -f ${BINDIR}/GeoSite.dat ];then
+	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && [ -z "$(find ${BINDIR}/GeoSite.dat -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/GeoSite.dat ];then
 			mv -f ${CRASHDIR}/GeoSite.dat ${BINDIR}/GeoSite.dat
 		else
@@ -1582,7 +1582,7 @@ singbox_check(){ #singbox启动前检查
 	fi
 	core_check
 	#预下载geoip-cn.srs数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geoip-cn\"')" ] && [ ! -f ${BINDIR}/geoip-cn.srs ];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geoip-cn\"')" ] && [ -z "$(find ${BINDIR}/geoip-cn.srs -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/geoip-cn.srs ];then
 			mv -f ${CRASHDIR}/geoip-cn.srs ${BINDIR}/geoip-cn.srs
 		else
@@ -1593,7 +1593,7 @@ singbox_check(){ #singbox启动前检查
 		fi
 	fi
 	#预下载geosite-cn.srs数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geosite-cn\"')" -o "$dns_mod" = "mix" ] && [ ! -f ${BINDIR}/geosite-cn.srs ];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geosite-cn\"')" -o "$dns_mod" = "mix" ] && [ -z "$(find ${BINDIR}/geosite-cn.srs -size +10 2>/dev/null)"];then
 		if [ -f ${CRASHDIR}/geosite-cn.srs ];then
 			mv -f ${CRASHDIR}/geosite-cn.srs ${BINDIR}/geosite-cn.srs
 		else
@@ -1604,7 +1604,7 @@ singbox_check(){ #singbox启动前检查
 		fi
 	fi
 	#预下载GeoIP数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geoip\":')" ] && [ ! -f ${BINDIR}/geoip.db ];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geoip\":')" ] && [ -z "$(find ${BINDIR}/geoip.db -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/geoip.db ];then
 			mv -f ${CRASHDIR}/geoip.db ${BINDIR}/geoip.db
 		else
@@ -1615,7 +1615,7 @@ singbox_check(){ #singbox启动前检查
 		fi
 	fi
 	#预下载GeoSite数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geosite\":')" ] && [ ! -f ${BINDIR}/geosite.db ];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geosite\":')" ] && [ -z "$(find ${BINDIR}/geosite.db -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/geosite.db ];then
 			mv -f ${CRASHDIR}/geosite.db ${BINDIR}/geosite.db
 		else
