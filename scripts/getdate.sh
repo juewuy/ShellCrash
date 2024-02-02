@@ -942,7 +942,8 @@ setcustcore(){ #自定义内核
 		${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
 		release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
 		release_date=$(cat ${TMPDIR}/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
-		cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpucore}.*\.gz\"$"  | sed 's/"//' > ${TMPDIR}/core.list
+		[ -n "$(echo $cpucore | grep mips)" ] && cpu_type=mips || cpu_type=$cpucore
+		cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$"  | sed 's/"//' > ${TMPDIR}/core.list
 		rm -rf ${TMPDIR}/github_api
 		#
 		if [ -f ${TMPDIR}/core.list ];then

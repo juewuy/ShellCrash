@@ -1137,7 +1137,7 @@ start_tun(){ #iptables-tun
 				[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j shellcrashv6
 			}
 		fi
-	} &
+	}
 }
 start_nft(){ #nftables-allinone
 	#获取局域网host地址
