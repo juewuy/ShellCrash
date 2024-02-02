@@ -276,7 +276,7 @@ done
 	mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 	#内核改名
 	mv -f ${CRASHDIR}/clash ${CRASHDIR}/CrashCore 2>/dev/null
-	#内核压缩
+	#内核压缩 
 	[ -f  ${CRASHDIR}/CrashCore ] && tar -zcf ${CRASHDIR}/CrashCore.tar.gz -C ${CRASHDIR} CrashCore
 for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh;do
 	mv -f ${CRASHDIR}/$file ${CRASHDIR}/tools/$file 2>/dev/null
@@ -291,7 +291,7 @@ sed -i '/shellclash/d' /etc/passwd
 sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
-for file in clash.sh shellcrash.rc core.new clashservice log shellcrash.service mark? mark.bak;do
+for file in CrashCore clash.sh shellcrash.rc core.new clashservice log shellcrash.service mark? mark.bak;do
 	rm -rf ${CRASHDIR}/$file
 done
 #旧版变量改名
