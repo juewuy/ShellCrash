@@ -551,7 +551,7 @@ EOF
   "dns": { 
     "rules": [{
       "domain": [$hosts_domain],
-      "server": "local"
+      "server": "dns_local"
     }]
   }
 }
@@ -608,7 +608,7 @@ EOF
         "address": "223.5.5.5",
         "detour": "DIRECT"
       }, {
-        "tag": "local",
+        "tag": "dns_local",
         "address": "local"
       }, {
         "tag": "block",
