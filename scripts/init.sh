@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.8.9d
+version=1.8.10
 
 setdir(){
 	dir_avail(){
@@ -192,10 +192,10 @@ setconfig versionsh_l $version
 	setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
 	setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env	
 }
-if [ -x ${CRASHDIR}/CrashCore ] && [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
-	COMMAND='"$BINDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
+if [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+	COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 else
-	COMMAND='"$BINDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
+	COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 fi
 setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 #设置更新地址
