@@ -51,6 +51,9 @@ setconfig(){ #脚本配置工具
 ckcmd(){ #检查命令是否存在
 	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
 }
+finds(){ #find命令兼容
+	[ -n "$(find --help 2>&1|grep size)" ] && find $1 $2 $3 $4 $5 || find $1
+}
 compare(){ #对比文件
 	if [ ! -f $1 -o ! -f $2 ];then
 		return 1
@@ -546,10 +549,6 @@ EOF
 		cat > ${TMPDIR}/jsons/add_hosts.json <<EOF
 {
   "dns": { 
-    "servers": [{
-      "tag": "local",
-      "address": "local"
-    }],
     "rules": [{
       "domain": [$hosts_domain],
       "server": "local"
@@ -560,15 +559,10 @@ EOF
 }
 	fi
 	#生成dns.json
-	[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5'
-	[ -z "$dns_fallback" ] && dns_proxy='1.0.0.1'
-	if [ "crashcore" = singboxp ];then
-		dns_direct=[\"$(echo $dns_nameserver | sed 's/, /", "/g')\"]
-		dns_proxy=[\"$(echo $dns_fallback | sed 's/, /", "/g')\"]
-	else
-		dns_direct=\"$(echo $dns_nameserver | awk -F ',' '{print $1}')\"
-		dns_proxy=\"$(echo $dns_fallback | awk -F ',' '{print $1}')\"
-	fi
+	dns_direct=\"$(echo $dns_nameserver | awk -F ',' '{print $1}')\"
+	dns_proxy=\"$(echo $dns_fallback | awk -F ',' '{print $1}')\"
+	[ -z "$dns_direct" ] && dns_direct='223.5.5.5'
+	[ -z "$dns_proxy" ] && dns_proxy='1.0.0.1'
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
 	[ "$dns_mod" = "redir_host" ] && final_dns=dns_direct && global_dns=dns_proxy
 	[ "$dns_mod" = "fake-ip" ] && final_dns=dns_fakeip && global_dns=dns_fakeip
@@ -584,7 +578,7 @@ EOF
         "tag": "geosite-cn",
         "type": "local",
         "format": "binary",
-        "path": "geosite-cn.sys"
+        "path": "geosite-cn.srs"
       }
 	]
   }
@@ -613,6 +607,9 @@ EOF
         "tag": "dns_resolver",
         "address": "223.5.5.5",
         "detour": "DIRECT"
+      }, {
+        "tag": "local",
+        "address": "local"
       }, {
         "tag": "block",
         "address": "rcode://success"
@@ -749,9 +746,12 @@ EOF
 	${TMPDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
 	echo '{' > ${TMPDIR}/jsons/outbounds.json
 	echo '{' > ${TMPDIR}/jsons/route.json
-	cat ${TMPDIR}/format.json | sed -n '/"outbounds":/,/^  "[a-z]/{/^  "\(route\|outbound_providers\)/d; p}' >> ${TMPDIR}/jsons/outbounds.json
-	[ "$crashcore" = "singboxp" ] && cat ${TMPDIR}/format.json | sed -n '/"outbound_providers":/,/^  "[a-z]/{/^  "route/d; p}' >> ${TMPDIR}/jsons/outbound_providers.json
-	cat ${TMPDIR}/format.json | sed -n '/"route":/,/^  "[a-z]/{/^  "experimental/d; p}' >> ${TMPDIR}/jsons/route.json
+	cat ${TMPDIR}/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >> ${TMPDIR}/jsons/outbounds.json
+	[ "$crashcore" = "singboxp" ] && {
+		echo '{' > ${TMPDIR}/jsons/outbound_providers.json
+		cat ${TMPDIR}/format.json | sed -n '/"outbound_providers":/,/^  "[a-z]/p}' | sed '$d' >> ${TMPDIR}/jsons/outbound_providers.json
+	}
+	cat ${TMPDIR}/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p}' | sed '$d' >> ${TMPDIR}/jsons/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
 	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/jsons/route.json
 	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/jsons/route.json
@@ -760,12 +760,17 @@ EOF
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ];then
 		sed -i 's/"insecure": false/"insecure": true/' ${TMPDIR}/jsons/outbounds.json
 	else
-		sed -i 's/"insecure":  true/"insecure":  false/' ${TMPDIR}/jsons/outbounds.json
+		sed -i 's/"insecure": true/"insecure": false/' ${TMPDIR}/jsons/outbounds.json
 	fi
-	#修饰outbounds&outbound_providers&route.json结尾
-	sed -i 's/^  ],$/  ] }/' ${TMPDIR}/jsons/outbounds.json
-	sed -i 's/^  },$/  } }/' ${TMPDIR}/jsons/route.json
-	[ -s ${TMPDIR}/jsons/outbound_providers.json ] && sed -i 's/^  },$/  } }/' ${TMPDIR}/jsons/outbound_providers.json || rm -rf ${TMPDIR}/jsons/outbound_providers.json
+	#判断可用并修饰outbounds&outbound_providers&route.json结尾
+	for file in outbounds outbound_providers route;do
+		if [ -n "$(grep ${file} ${TMPDIR}/jsons/${file}.json 2>/dev/null)" ];then
+			sed -i 's/^  },$/  }/; s/^  ],$/  ]/' ${TMPDIR}/jsons/${file}.json
+			echo '}' >> ${TMPDIR}/jsons/${file}.json
+		else
+			rm -rf ${TMPDIR}/jsons/${file}.json
+		fi
+	done
 	#加载自定义配置文件
 	mkdir -p ${TMPDIR}/jsons_base
 	for char in log dns ntp experimental;do
@@ -799,7 +804,7 @@ EOF
 
 #设置路由规则
 cn_ip_route(){	#CN-IP绕过
-	[ -z "$(find ${BINDIR}/cn_ip.txt -size +10 2>/dev/null)" ] && {
+	[ -z "$(finds ${BINDIR}/cn_ip.txt -size +10 2>/dev/null)" ] && {
 		if [ -f ${CRASHDIR}/cn_ip.txt ];then
 			mv ${CRASHDIR}/cn_ip.txt ${BINDIR}/cn_ip.txt
 		else
@@ -818,7 +823,7 @@ cn_ip_route(){	#CN-IP绕过
 	}
 }
 cn_ipv6_route(){ #CN-IPV6绕过
-	[ -z "$(find ${BINDIR}/cn_ipv6.txt -size +10 2>/dev/null)" ] && {
+	[ -z "$(finds ${BINDIR}/cn_ipv6.txt -size +10 2>/dev/null)" ] && {
 		if [ -f ${CRASHDIR}/cn_ipv6.txt ];then
 			mv ${CRASHDIR}/cn_ipv6.txt ${BINDIR}/cn_ipv6.txt
 		else
@@ -1494,7 +1499,7 @@ core_check(){
 			#校验内核
 			mkdir -p ${TMPDIR}/core_tmp
 			tar -zxvf "${TMPDIR}/CrashCore.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxvf "${TMPDIR}/CrashCore.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
-			for file in "$(find ${TMPDIR}/core_tmp -type f -size +4096)" ;do
+			for file in "$(finds ${TMPDIR}/core_tmp -type f -size +4096)" ;do
 				mv -f $file ${TMPDIR}/core_new
 			done
 			rm -rf ${TMPDIR}/core_tmp
@@ -1549,7 +1554,7 @@ clash_check(){ #clash启动前检查
 	fi
 	core_check
 	#预下载GeoIP数据库
-	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geoip')" ] && [ -z "$(find ${BINDIR}/Country.mmdb -size +10 2>/dev/null)" ];then
+	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geoip')" ] && [ -z "$(finds ${BINDIR}/Country.mmdb -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/Country.mmdb ];then
 			mv -f ${CRASHDIR}/Country.mmdb ${BINDIR}/Country.mmdb
 		else
@@ -1560,7 +1565,7 @@ clash_check(){ #clash启动前检查
 		fi
 	fi
 	#预下载GeoSite数据库
-	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && [ -z "$(find ${BINDIR}/GeoSite.dat -size +10 2>/dev/null)" ];then
+	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && [ -z "$(finds ${BINDIR}/GeoSite.dat -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/GeoSite.dat ];then
 			mv -f ${CRASHDIR}/GeoSite.dat ${BINDIR}/GeoSite.dat
 		else
@@ -1584,7 +1589,7 @@ singbox_check(){ #singbox启动前检查
 	fi
 	core_check
 	#预下载geoip-cn.srs数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geoip-cn\"')" ] && [ -z "$(find ${BINDIR}/geoip-cn.srs -size +10 2>/dev/null)" ];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geoip-cn\"')" ] && [ -z "$(finds ${BINDIR}/geoip-cn.srs -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/geoip-cn.srs ];then
 			mv -f ${CRASHDIR}/geoip-cn.srs ${BINDIR}/geoip-cn.srs
 		else
@@ -1595,7 +1600,8 @@ singbox_check(){ #singbox启动前检查
 		fi
 	fi
 	#预下载geosite-cn.srs数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geosite-cn\"')" -o "$dns_mod" = "mix" ] && [ -z "$(find ${BINDIR}/geosite-cn.srs -size +10 2>/dev/null)"];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geosite-cn\"')" -o "$dns_mod" = "mix" ] && \
+		[ -z "$(finds ${BINDIR}/geosite-cn.srs -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/geosite-cn.srs ];then
 			mv -f ${CRASHDIR}/geosite-cn.srs ${BINDIR}/geosite-cn.srs
 		else
@@ -1606,7 +1612,7 @@ singbox_check(){ #singbox启动前检查
 		fi
 	fi
 	#预下载GeoIP数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geoip\":')" ] && [ -z "$(find ${BINDIR}/geoip.db -size +10 2>/dev/null)" ];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geoip\":')" ] && [ -z "$(finds ${BINDIR}/geoip.db -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/geoip.db ];then
 			mv -f ${CRASHDIR}/geoip.db ${BINDIR}/geoip.db
 		else
@@ -1617,7 +1623,7 @@ singbox_check(){ #singbox启动前检查
 		fi
 	fi
 	#预下载GeoSite数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geosite\":')" ] && [ -z "$(find ${BINDIR}/geosite.db -size +10 2>/dev/null)" ];then
+	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geosite\":')" ] && [ -z "$(finds ${BINDIR}/geosite.db -size +10 2>/dev/null)" ];then
 		if [ -f ${CRASHDIR}/geosite.db ];then
 			mv -f ${CRASHDIR}/geosite.db ${BINDIR}/geosite.db
 		else
@@ -1691,7 +1697,7 @@ afstart(){ #启动后
 	}
 	#设置循环检测面板端口以判定服务启动是否成功
 	i=1
-	while [ -z "$test" -a "$i" -lt 10 ];do
+	while [ -z "$test" -a "$i" -lt 5 ];do
 		sleep 1
 		if curl --version > /dev/null 2>&1;then
 			test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
@@ -1700,7 +1706,7 @@ afstart(){ #启动后
 		fi
 		i=$((i+1))
 	done
-	if [ -n "$test" ];then
+	if [ -n "$test" -o -n "$(pidof CrashCore)" ];then
 		#设置DNS转发
 		start_dns(){
 			[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
@@ -1760,8 +1766,8 @@ afstart(){ #启动后
 			sed -i "${line}a\\source ${CRASHDIR}/task/affirewall" /etc/init.d/firewall
 		} &
 	else
-		start_error
 		$0 stop
+		start_error
 	fi
 }
 start_error(){ #启动报错

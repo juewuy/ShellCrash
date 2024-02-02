@@ -836,11 +836,13 @@ setcoretype(){ #手动指定内核类型
 	echo -e " 2 Clash-Premium内核"
 	echo -e " 3 Clash-Meta内核"
 	echo -e " 4 Sing-Box内核"
+	echo -e " 5 Sing-Box-Puer内核"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 		2) crashcore=clashpre ;;
 		3) crashcore=meta ;;
 		4) crashcore=singbox ;;
+		5) crashcore=singboxp ;;
 		*) crashcore=clash ;;
 	esac
 	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
@@ -900,8 +902,9 @@ getcore(){ #下载内核文件
 		[ -f ${TMPDIR}/core_new.tar.gz ] && {
 			mkdir -p ${TMPDIR}/core_tmp
 			tar -zxf "${TMPDIR}/core_new.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxf "${TMPDIR}/core_new.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
-			for file in "$(find ${TMPDIR}/core_tmp -type f -size +4096)" ;do
-				mv -f $file ${TMPDIR}/core_new
+			files=$(find ${TMPDIR}/core_tmp 2>/dev/null)
+			for file in $files ;do
+				[ -s $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
 			done
 			rm -rf ${TMPDIR}/core_tmp
 		}
