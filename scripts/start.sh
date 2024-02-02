@@ -830,7 +830,7 @@ cn_ipv6_route(){ #CN-IPV6绕过
 	[ -f ${BINDIR}/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			#ipv6
 			#see https://ispip.clang.cn/all_cn_ipv6.txt
-			echo "create cn_ip6 hash:net family inet6 hashsize 2048 maxelem 2048" > ${TMPDIR}/cn6_$USER.ipset
+			echo "create cn_ip6 hash:net family inet6 hashsize 4096 maxelem 4096" > ${TMPDIR}/cn6_$USER.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' ${BINDIR}/cn_ipv6.txt >> ${TMPDIR}/cn6_$USER.ipset
 			ipset -! flush cn_ip6 2>/dev/null
 			ipset -! restore < ${TMPDIR}/cn6_$USER.ipset 
