@@ -1498,11 +1498,12 @@ core_check(){
 				mv -f $file ${TMPDIR}/core_new
 			done
 			rm -rf ${TMPDIR}/core_tmp
+			chmod +x ${TMPDIR}/core_new
 			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
-				core_v=$(${TMPDIR}/CrashCore version 2>/dev/null | grep version | awk '{print $3}')
+				core_v=$(${TMPDIR}/core_new version 2>/dev/null | grep version | awk '{print $3}')
 				COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 			else
-				core_v=$(${TMPDIR}/CrashCore -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
+				core_v=$(${TMPDIR}/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 				COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 			fi
 			if [ -z "$core_v" ];then
@@ -1510,6 +1511,7 @@ core_check(){
 				logger "核心下载失败，请重新运行或更换安装源！" 31
 				exit 1
 			else
+				mv -f ${TMPDIR}/core_new ${TMPDIR}/CrashCore
 				mv -f ${TMPDIR}/CrashCore.tar.gz ${BINDIR}/CrashCore.tar.gz
 				setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 				setconfig crashcore $crashcore
@@ -1572,7 +1574,7 @@ clash_check(){ #clash启动前检查
 }
 singbox_check(){ #singbox启动前检查
 	#检测PuerNya专属功能
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oE 'shadowsocksr|providers')" ];then
+	if [ "$crashcore" != "singboxp" ] && [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oE 'shadowsocksr|providers')" ];then
 		echo -----------------------------------------------
 		logger "检测到PuerNya内核专属功能，改为使用singboxp内核启动！" 33
 		rm -rf ${TMPDIR}/CrashCore
