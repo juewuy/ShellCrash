@@ -51,8 +51,19 @@ setconfig(){ #脚本配置工具
 ckcmd(){ #检查命令是否存在
 	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
 }
-finds(){ #find命令兼容
-	[ -n "$(find --help 2>&1|grep size)" ] && find $1 $2 $3 $4 $5 || find $1
+ckgeo(){ #查找及下载Geo数据文件
+	[ -n "$(find --help 2>&1|grep size)" ] && find_para=' -size +20' #find命令兼容
+	[ -z "$(find ${BINDIR}/${1} $find_para 2>/dev/null)" ] && {
+		if [ -n "$(find ${CRASHDIR}/${1} $find_para 2>/dev/null)" ];then
+			mv ${CRASHDIR}/${1} ${BINDIR}/${1} #小闪存模式移动文件
+		else
+			logger "未找到${1}文件，正在下载！" 33
+			get_bin ${BINDIR}/${1} bin/geodata/${2}
+			[ "$?" = "1" ] && rm -rf ${BINDIR}/${1} && logger "${1}文件下载失败,已退出！请前往更新界面尝试手动下载！" 31 && exit 1
+			geo_v="$(echo $2 | awk -F "." '{print $1}')_v"
+			setconfig $geo_v $(date +"%Y%m%d")
+		fi
+	}
 }
 compare(){ #对比文件
 	if [ ! -f $1 -o ! -f $2 ];then
@@ -549,9 +560,13 @@ EOF
 		cat > ${TMPDIR}/jsons/add_hosts.json <<EOF
 {
   "dns": { 
+	"servers": [{
+        "tag": "hosts_local",
+        "address": "local"
+    }],
     "rules": [{
-      "domain": [$hosts_domain],
-      "server": "local"
+        "domain": [$hosts_domain],
+        "server": "hosts_local"
     }]
   }
 }
@@ -607,9 +622,6 @@ EOF
         "tag": "dns_resolver",
         "address": "223.5.5.5",
         "detour": "DIRECT"
-      }, {
-        "tag": "local",
-        "address": "local"
       }, {
         "tag": "block",
         "address": "rcode://success"
@@ -804,15 +816,7 @@ EOF
 
 #设置路由规则
 cn_ip_route(){	#CN-IP绕过
-	[ -z "$(finds ${BINDIR}/cn_ip.txt -size +10 2>/dev/null)" ] && {
-		if [ -f ${CRASHDIR}/cn_ip.txt ];then
-			mv ${CRASHDIR}/cn_ip.txt ${BINDIR}/cn_ip.txt
-		else
-			logger "未找到cn_ip列表，正在下载！" 33
-			get_bin ${BINDIR}/cn_ip.txt "bin/geodata/china_ip_list.txt"
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/cn_ip.txt && logger "列表下载失败！" 31 
-		fi
-	}
+	ckgeo cn_ip.txt china_ip_list.txt
 	[ -f ${BINDIR}/cn_ip.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			# see https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-cidr.txt
 			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > ${TMPDIR}/cn_$USER.ipset
@@ -823,15 +827,7 @@ cn_ip_route(){	#CN-IP绕过
 	}
 }
 cn_ipv6_route(){ #CN-IPV6绕过
-	[ -z "$(finds ${BINDIR}/cn_ipv6.txt -size +10 2>/dev/null)" ] && {
-		if [ -f ${CRASHDIR}/cn_ipv6.txt ];then
-			mv ${CRASHDIR}/cn_ipv6.txt ${BINDIR}/cn_ipv6.txt
-		else
-			logger "未找到cn_ipv6列表，正在下载！" 33
-			get_bin ${BINDIR}/cn_ipv6.txt "bin/geodata/china_ipv6_list.txt"
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/cn_ipv6.txt && logger "列表下载失败！" 31 
-		fi
-	}
+	ckgeo cn_ipv6.txt china_ipv6_list.txt
 	[ -f ${BINDIR}/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
 			#ipv6
 			#see https://ispip.clang.cn/all_cn_ipv6.txt
@@ -1499,8 +1495,8 @@ core_check(){
 			#校验内核
 			mkdir -p ${TMPDIR}/core_tmp
 			tar -zxvf "${TMPDIR}/CrashCore.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxvf "${TMPDIR}/CrashCore.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
-			for file in "$(finds ${TMPDIR}/core_tmp -type f -size +4096)" ;do
-				mv -f $file ${TMPDIR}/core_new
+			for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
+				[ -s $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
 			done
 			rm -rf ${TMPDIR}/core_tmp
 			chmod +x ${TMPDIR}/core_new
@@ -1554,27 +1550,9 @@ clash_check(){ #clash启动前检查
 	fi
 	core_check
 	#预下载GeoIP数据库
-	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geoip')" ] && [ -z "$(finds ${BINDIR}/Country.mmdb -size +10 2>/dev/null)" ];then
-		if [ -f ${CRASHDIR}/Country.mmdb ];then
-			mv -f ${CRASHDIR}/Country.mmdb ${BINDIR}/Country.mmdb
-		else
-			logger "未找到Country.mmdb数据库，正在下载！" 33
-			get_bin ${BINDIR}/Country.mmdb bin/geodata/cn_mini.mmdb
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/Country.mmdb && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
-			setconfig cn_mini_v $(date +"%Y%m%d")
-		fi
-	fi
+	[ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geoip')" ] && ckgeo Country.mmdb cn_mini.mmdb
 	#预下载GeoSite数据库
-	if [ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && [ -z "$(finds ${BINDIR}/GeoSite.dat -size +10 2>/dev/null)" ];then
-		if [ -f ${CRASHDIR}/GeoSite.dat ];then
-			mv -f ${CRASHDIR}/GeoSite.dat ${BINDIR}/GeoSite.dat
-		else
-			logger "未找到GeoSite.dat数据库，正在下载！" 33
-			get_bin ${BINDIR}/GeoSite.dat bin/geodata/geosite.dat
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/GeoSite.dat && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
-			setconfig geosite_v $(date +"%Y%m%d")
-		fi
-	fi
+	[ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && ckgeo GeoSite.dat GeoSite.dat
 	return 0
 }
 singbox_check(){ #singbox启动前检查
@@ -1589,50 +1567,13 @@ singbox_check(){ #singbox启动前检查
 	fi
 	core_check
 	#预下载geoip-cn.srs数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geoip-cn\"')" ] && [ -z "$(finds ${BINDIR}/geoip-cn.srs -size +10 2>/dev/null)" ];then
-		if [ -f ${CRASHDIR}/geoip-cn.srs ];then
-			mv -f ${CRASHDIR}/geoip-cn.srs ${BINDIR}/geoip-cn.srs
-		else
-			logger "未找到geoip-cn.srs数据库，正在下载！" 33
-			get_bin ${BINDIR}/geoip-cn.srs bin/geodata/srs_geoip_cn.srs
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/geoip-cn.srs && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
-			setconfig srs_geoip_cn_v $(date +"%Y%m%d")
-		fi
-	fi
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geoip-cn\"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
 	#预下载geosite-cn.srs数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geosite-cn\"')" -o "$dns_mod" = "mix" ] && \
-		[ -z "$(finds ${BINDIR}/geosite-cn.srs -size +10 2>/dev/null)" ];then
-		if [ -f ${CRASHDIR}/geosite-cn.srs ];then
-			mv -f ${CRASHDIR}/geosite-cn.srs ${BINDIR}/geosite-cn.srs
-		else
-			logger "未找到geosite-cn.srs数据库，正在下载！" 33
-			get_bin ${BINDIR}/geosite-cn.srs bin/geodata/srs_geosite_cn.srs
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/geosite-cn.srs && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
-			setconfig srs_geosite_cn_v $(date +"%Y%m%d")
-		fi
-	fi
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geosite-cn\"')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.srs srs_geosite_cn.srs
 	#预下载GeoIP数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geoip\":')" ] && [ -z "$(finds ${BINDIR}/geoip.db -size +10 2>/dev/null)" ];then
-		if [ -f ${CRASHDIR}/geoip.db ];then
-			mv -f ${CRASHDIR}/geoip.db ${BINDIR}/geoip.db
-		else
-			logger "未找到geoip.db数据库，正在下载！" 33
-			get_bin ${BINDIR}/geoip.db bin/geodata/geoip_cn.db
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/geoip.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
-			setconfig geoip_cn_v $(date +"%Y%m%d")
-		fi
-	fi
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geoip\":')" ] && ckgeo geoip.db geoip_cn.db
 	#预下载GeoSite数据库
-	if [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geosite\":')" ] && [ -z "$(finds ${BINDIR}/geosite.db -size +10 2>/dev/null)" ];then
-		if [ -f ${CRASHDIR}/geosite.db ];then
-			mv -f ${CRASHDIR}/geosite.db ${BINDIR}/geosite.db
-		else
-			logger "未找到geosite.db数据库，正在下载！" 33
-			get_bin ${BINDIR}/geosite.db bin/geodata/geosite_cn.db
-			[ "$?" = "1" ] && rm -rf ${BINDIR}/geosite.db && logger "数据库下载失败，已退出，请前往更新界面尝试手动下载！" 31 && exit 1
-			setconfig geosite_cn_v $(date +"%Y%m%d")
-		fi
-	fi
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geosite\":')" ] && ckgeo geosite.db geosite_cn.db
 	return 0
 }
 bfstart(){ #启动前
@@ -1772,7 +1713,7 @@ afstart(){ #启动后
 }
 start_error(){ #启动报错
 	if [ "$start_old" != "已开启" ] && ckcmd journalctl;then
-		ournalctl -xeu shellcrash > $TMPDIR/core_test.log
+		journalctl -u shellcrash > $TMPDIR/core_test.log
 	else
 		${COMMAND} &>${TMPDIR}/core_test.log &
 		sleep 2 ; kill $! &>/dev/null
