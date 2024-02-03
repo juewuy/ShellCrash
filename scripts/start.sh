@@ -52,7 +52,7 @@ ckcmd(){ #检查命令是否存在
 	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
 }
 ckgeo(){ #查找及下载Geo数据文件
-	[ -n "$(find --help 2>&1|grep size)" ] && find_para=' -size +20' #find命令兼容
+	[ -n "$(find --help 2>&1|grep -o size)" ] && find_para=' -size +20' #find命令兼容
 	[ -z "$(find ${BINDIR}/${1} $find_para 2>/dev/null)" ] && {
 		if [ -n "$(find ${CRASHDIR}/${1} $find_para 2>/dev/null)" ];then
 			mv ${CRASHDIR}/${1} ${BINDIR}/${1} #小闪存模式移动文件
@@ -351,7 +351,6 @@ modify_yaml(){ #修饰clash配置文件
 	}
 	#dns配置
 	[ -z "$(cat ${CRASHDIR}/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && { 
-		[ "$crashcore" = 'meta' ] && dns_default_meta='- https://223.5.5.5/dns-query'
 		cat > ${TMPDIR}/dns.yaml <<EOF
 dns:
   enable: true
@@ -361,7 +360,6 @@ dns:
   default-nameserver:
     - 114.114.114.114
     - 223.5.5.5
-    $dns_default_meta
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
   fake-ip-filter:
@@ -560,22 +558,23 @@ EOF
 		cat > ${TMPDIR}/jsons/add_hosts.json <<EOF
 {
   "dns": { 
-	"servers": [{
-        "tag": "hosts_local",
-        "address": "local"
-    }],
-    "rules": [{
-        "domain": [$hosts_domain],
-        "server": "hosts_local"
-    }]
+	"servers": [
+	  { "tag": "hosts_local", "address": "local", "detour": "direct" }
+	],
+    "rules": [
+	  { 
+	    "domain": [$hosts_domain], 
+		"server": "hosts_local" 
+	  }
+	]
   }
 }
 EOF
 }
 	fi
 	#生成dns.json
-	dns_direct=\"$(echo $dns_nameserver | awk -F ',' '{print $1}')\"
-	dns_proxy=\"$(echo $dns_fallback | awk -F ',' '{print $1}')\"
+	dns_direct=$(echo $dns_nameserver | awk -F ',' '{print $1}')
+	dns_proxy=$(echo $dns_fallback | awk -F ',' '{print $1}')
 	[ -z "$dns_direct" ] && dns_direct='223.5.5.5'
 	[ -z "$dns_proxy" ] && dns_proxy='1.0.0.1'
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
@@ -583,9 +582,10 @@ EOF
 	[ "$dns_mod" = "fake-ip" ] && final_dns=dns_fakeip && global_dns=dns_fakeip
 	[ "$dns_mod" = "mix" ] && {
 		final_dns=dns_direct && global_dns=dns_fakeip
-		mix_dns="{ \"rule_set\": [\"geosite-cn\"], \"invert\": true, \"server\": \"dns_fakeip\" },"
-		#生成add_rule_set.json
-		[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -Ei '\"tag\": \"geosite-cn\"')" ] && cat > ${TMPDIR}/jsons/add_rule_set.json <<EOF
+		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ];then
+			mix_dns="{ \"rule_set\": [\"geosite-cn\"], \"invert\": true, \"server\": \"dns_fakeip\" },"
+			#生成add_rule_set.json
+			[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -Ei '\"tag\": \"geosite-cn\"')" ] && cat > ${TMPDIR}/jsons/add_rule_set.json <<EOF
 {
   "route": {
 	"rule_set": [
@@ -599,6 +599,9 @@ EOF
   }
 }
 EOF
+		else
+			mix_dns="{ \"geosite\": [\"cn\"], \"invert\": true, \"server\": \"dns_fakeip\" },"
+		fi
 	}
 	cat > ${TMPDIR}/jsons/dns.json <<EOF
 {
@@ -606,26 +609,20 @@ EOF
     "servers": [
 	  {
         "tag": "dns_proxy",
-        "address": $dns_proxy,
+        "address": "$dns_proxy",
         "strategy": "$strategy",
         "address_resolver": "dns_resolver"
       }, {
         "tag": "dns_direct",
-        "address": $dns_direct,
+        "address": "$dns_direct",
         "strategy": "$strategy",
         "address_resolver": "dns_resolver",
-        "detour": "DIRECT"
-      }, {
-        "tag": "dns_fakeip",
-        "address": "fakeip"
-      }, {
-        "tag": "dns_resolver",
-        "address": "223.5.5.5",
-        "detour": "DIRECT"
-      }, {
-        "tag": "block",
-        "address": "rcode://success"
-      }
+        "detour": "direct"
+      }, 
+	  { "tag": "dns_fakeip", "address": "fakeip" }, 
+	  { "tag": "dns_resolver", "address": "223.5.5.5", "detour": "direct" }, 
+	  { "tag": "block", "address": "rcode://success" }, 
+	  { "tag": "local", "address": "local", "detour": "direct" }
 	],
     "rules": [
 	  { "outbound": ["any"], "server": "dns_resolver" },
@@ -652,14 +649,13 @@ EOF
 }
 EOF
 	#生成ntp.json
-	cat > ${TMPDIR}/jsons/ntp.json <<EOF
+	[ -z "$(grep '自动同步ntp时间' $CRASHDIR/task/afstart )" ] && cat > ${TMPDIR}/jsons/ntp.json <<EOF
 {
   "ntp": {
     "enabled": true,
     "server": "203.107.6.88",
     "server_port": 123,
-    "interval": "30m0s",
-    "detour": "DIRECT"
+    "interval": "30m0s"
   }
 }
 EOF
@@ -761,9 +757,9 @@ EOF
 	cat ${TMPDIR}/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >> ${TMPDIR}/jsons/outbounds.json
 	[ "$crashcore" = "singboxp" ] && {
 		echo '{' > ${TMPDIR}/jsons/outbound_providers.json
-		cat ${TMPDIR}/format.json | sed -n '/"outbound_providers":/,/^  "[a-z]/p}' | sed '$d' >> ${TMPDIR}/jsons/outbound_providers.json
+		cat ${TMPDIR}/format.json | sed -n '/"outbound_providers":/,/^  "[a-z]/p' | sed '$d' >> ${TMPDIR}/jsons/outbound_providers.json
 	}
-	cat ${TMPDIR}/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p}' | sed '$d' >> ${TMPDIR}/jsons/route.json
+	cat ${TMPDIR}/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >> ${TMPDIR}/jsons/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
 	sed -i '/"process_name": \[/,/],$/d' ${TMPDIR}/jsons/route.json
 	sed -i '/"process_name": "[^"]*",/d' ${TMPDIR}/jsons/route.json
@@ -822,7 +818,7 @@ cn_ip_route(){	#CN-IP绕过
 			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > ${TMPDIR}/cn_$USER.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' ${BINDIR}/cn_ip.txt >> ${TMPDIR}/cn_$USER.ipset
 			ipset -! flush cn_ip 2>/dev/null
-			ipset -! restore < ${TMPDIR}/cn_$USER.ipset 
+			ipset -! restore < ${TMPDIR}/cn_$USER.ipset 2>/dev/null
 			rm -rf cn_$USER.ipset
 	}
 }
@@ -834,7 +830,7 @@ cn_ipv6_route(){ #CN-IPV6绕过
 			echo "create cn_ip6 hash:net family inet6 hashsize 4096 maxelem 4096" > ${TMPDIR}/cn6_$USER.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' ${BINDIR}/cn_ipv6.txt >> ${TMPDIR}/cn6_$USER.ipset
 			ipset -! flush cn_ip6 2>/dev/null
-			ipset -! restore < ${TMPDIR}/cn6_$USER.ipset 
+			ipset -! restore < ${TMPDIR}/cn6_$USER.ipset 2>/dev/null
 			rm -rf cn6_$USER.ipset
 	}
 }
@@ -1482,12 +1478,11 @@ EOF
 }
 core_check(){
 	#检查及下载内核文件
-	if [ ! -f ${TMPDIR}/CrashCore ];then
-		if [ -f ${BINDIR}/CrashCore ];then
-			ln -sf ${BINDIR}/CrashCore ${TMPDIR}/CrashCore
-		elif [ -f ${BINDIR}/CrashCore.tar.gz ];then
-			tar -zxvf "${BINDIR}/CrashCore.tar.gz" -C ${TMPDIR}/ &>/dev/null || tar -zxvf "${BINDIR}/CrashCore.tar.gz" --no-same-owner -C ${TMPDIR}/
-		else
+	[ -n "$(find --help 2>&1|grep -o size)" ] && find_para=' -size +2000' #find命令兼容
+	[ -z "$(find ${TMPDIR}/CrashCore $find_para 2>/dev/null)" ] && [ -n "$(find ${BINDIR}/CrashCore $find_para 2>/dev/null)" ] && mv ${BINDIR}/CrashCore ${TMPDIR}/CrashCore
+	[ -z "$(find ${TMPDIR}/CrashCore $find_para 2>/dev/null)" ] && [ -n "$(find ${BINDIR}/CrashCore.tar.gz $find_para 2>/dev/null)" ] && \
+		tar -zxf "${BINDIR}/CrashCore.tar.gz" -C ${TMPDIR}/ &>/dev/null || tar -zxf "${BINDIR}/CrashCore.tar.gz" --no-same-owner -C ${TMPDIR}/
+	[ -z "$(find ${TMPDIR}/CrashCore $find_para 2>/dev/null)" ] && {
 			logger "未找到【$crashcore】核心，正在下载！" 33
 			[ -z "$cpucore" ] && source ${CRASHDIR}/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
@@ -1495,8 +1490,8 @@ core_check(){
 			#校验内核
 			mkdir -p ${TMPDIR}/core_tmp
 			tar -zxvf "${TMPDIR}/CrashCore.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxvf "${TMPDIR}/CrashCore.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
-			for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
-				[ -s $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
+			for file in $(find ${TMPDIR}/core_tmp $find_para 2>/dev/null);do
+				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|pre)')" ] && mv -f $file ${TMPDIR}/core_new
 			done
 			rm -rf ${TMPDIR}/core_tmp
 			chmod +x ${TMPDIR}/core_new
@@ -1518,8 +1513,7 @@ core_check(){
 				setconfig crashcore $crashcore
 				setconfig core_v $core_v
 			fi
-		fi
-	fi
+	}
 	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #自动授权
 	return 0
 }
@@ -1688,6 +1682,7 @@ afstart(){ #启动后
 		mark_time #标记启动时间
 		[ -s ${CRASHDIR}/configs/web_save -o -s ${CRASHDIR}/configs/web_configs ] && web_restore &>/dev/null & #后台还原面板配置
 		{ sleep 5;logger ShellCrash服务已启动！;} & #推送日志
+		ckcmd mtd_storage.sh && mtd_storage.sh save &>/dev/null & #Padavan保存/etc/storage
 		#加载定时任务
 		[ -s ${CRASHDIR}/task/cron ] && croncmd ${CRASHDIR}/task/cron
 		[ -s ${CRASHDIR}/task/running ] && {
@@ -1819,16 +1814,19 @@ debug)
 		getconfig 
 		stop_firewall >/dev/null #清理路由策略
 		bfstart
-		[ -n "$2" ] && {
+		if [ -n "$2" ];then
 			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
-				sed -i "s/\"level\": \"info\"/\"level\": \"$2\"/"  ${TMPDIR}/config.json
+				sed -i "s/\"level\": \"info\"/\"level\": \"$2\"/"  ${TMPDIR}/jsons/log.json 2>/dev/null
 			else
 				sed -i "s/log-level: info/log-level: $2/" ${TMPDIR}/config.yaml
 			fi
-		}
-		$COMMAND &>${TMPDIR}/debug.log &
+			$COMMAND >${TMPDIR}/debug.log 2>&1 &
+			sleep 2
+			logger "已运行debug模式!如需停止，请使用重启/停止服务功能！" 33 
+		else
+			$COMMAND >/dev/null 2>&1 &
+		fi
 		afstart
-		logger "已运行debug模式!如需停止，请正常重启一次服务！" 33 
 	;;
 init)
 		profile=/etc/profile

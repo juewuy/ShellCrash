@@ -903,7 +903,7 @@ getcore(){ #下载内核文件
 			mkdir -p ${TMPDIR}/core_tmp
 			tar -zxf "${TMPDIR}/core_new.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxf "${TMPDIR}/core_new.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
 			for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
-				[ -s $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
+				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
 			done
 			rm -rf ${TMPDIR}/core_tmp
 		}
@@ -942,41 +942,46 @@ setcustcore(){ #自定义内核
 		#通过githubapi获取内核信息
 		echo -e "\033[32m正在获取内核文件链接！\033[0m"
 		${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
-		release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-		release_date=$(cat ${TMPDIR}/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
-		[ -n "$(echo $cpucore | grep mips)" ] && cpu_type=mips || cpu_type=$cpucore
-		cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$"  | sed 's/"//' > ${TMPDIR}/core.list
-		rm -rf ${TMPDIR}/github_api
-		#
-		if [ -f ${TMPDIR}/core.list ];then
-			echo -----------------------------------------------
-			echo -e "内核版本：\033[36m$release_tag\033[0m"
-			echo -e "发布时间：\033[32m$release_date\033[0m"
-			echo -----------------------------------------------
-			echo -e "\033[33m请确认内核信息并选择：\033[0m"
-			cat ${TMPDIR}/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
-			echo -e " 0 返回上级菜单"
-			echo -----------------------------------------------
-			read -p "请输入对应数字 > " num	
-			case "$num" in
-			0)
-				setcustcore
-			;;
-			[1-99])
-				if [ "$num" -le "$(wc -l < ${TMPDIR}/core.list)" ];then
-					custcorelink=$(sed -n "$num"p ${TMPDIR}/core.list)
-					getcore
-				else
+		if [ "$?" = 0 ];then
+			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+			release_date=$(cat ${TMPDIR}/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
+			[ -n "$(echo $cpucore | grep mips)" ] && cpu_type=mips || cpu_type=$cpucore
+			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$"  | sed 's/"//' > ${TMPDIR}/core.list
+			rm -rf ${TMPDIR}/github_api
+			#
+			if [ -s ${TMPDIR}/core.list ];then
+				echo -----------------------------------------------
+				echo -e "内核版本：\033[36m$release_tag\033[0m"
+				echo -e "发布时间：\033[32m$release_date\033[0m"
+				echo -----------------------------------------------
+				echo -e "\033[33m请确认内核信息并选择：\033[0m"
+				cat ${TMPDIR}/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
+				echo -e " 0 返回上级菜单"
+				echo -----------------------------------------------
+				read -p "请输入对应数字 > " num	
+				case "$num" in
+				0)
+					setcustcore
+				;;
+				[1-99])
+					if [ "$num" -le "$(wc -l < ${TMPDIR}/core.list)" ];then
+						custcorelink=$(sed -n "$num"p ${TMPDIR}/core.list)
+						getcore
+					else
+						errornum
+					fi
+				;;
+				*)
 					errornum
-				fi
-			;;
-			*)
-				errornum
-			;;
-			esac			
+				;;
+				esac			
+			else
+				echo -e "\033[31m找不到可用内核，可能是作者没有编译相关CPU架构版本的内核文件！\033[0m"
+				sleep 1
+			fi
 		else
 			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
-			sleep 1
+			sleep 1		
 		fi
 		rm -rf ${TMPDIR}/core.list
 	}
@@ -1960,7 +1965,9 @@ debug(){
 	echo -e " 3 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[31merror\033[0m"
 	echo -e " 4 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[32minfo\033[0m"
 	echo -e " 5 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[33mdebug\033[0m"
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && echo -e " 6 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
+	echo -----------------------------------------------
+	echo -e " 8 后台运行完整启动流程,输出执行错误并查找上下文,之后关闭进程"
+	[ -s $TMPDIR/jsons/inbounds.json ] && echo -e " 9 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
 	echo -----------------------------------------------
 	echo " 0 返回上级目录！"
 	read -p "请输入对应数字 > " num	
@@ -1968,6 +1975,7 @@ debug(){
 	0) ;;
 	1)
 		$CRASHDIR/start.sh stop
+		$CRASHDIR/start.sh bfstart
 		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ] ;then
 			$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons &
 			{ sleep 4 ; kill $! &>/dev/null & }
@@ -1980,6 +1988,7 @@ debug(){
 	;;
 	2)
 		$CRASHDIR/start.sh stop
+		$CRASHDIR/start.sh bfstart
 		$COMMAND
 		echo -----------------------------------------------
 		exit
@@ -1996,7 +2005,11 @@ debug(){
 		$CRASHDIR/start.sh debug debug
 		main_menu
 	;;
-	6)
+	8)
+		$0 -d
+		main_menu
+	;;
+	9)
 		$TMPDIR/CrashCore merge $TMPDIR/debug.json -C $TMPDIR/jsons && echo -e "\033[32m合并成功！\033[0m"
 		main_menu
 	;;

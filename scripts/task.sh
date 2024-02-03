@@ -51,7 +51,7 @@ update_core(){ #自动更新内核
 				mkdir -p ${TMPDIR}/core_new
 				tar -zxf "${TMPDIR}/core_new.tar.gz" -C ${TMPDIR}/core_new/ &>/dev/null || tar -zxf "${TMPDIR}/core_new.tar.gz" --no-same-owner -C ${TMPDIR}/core_new/
 				for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
-					[ -s $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
+					[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
 				done
 				rm -rf ${TMPDIR}/core_new
 			}

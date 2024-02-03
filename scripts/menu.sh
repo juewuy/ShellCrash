@@ -1897,6 +1897,7 @@ case "$1" in
 		echo "	-h 帮助列表"
 		echo "	-u 卸载脚本"
 		echo "	-i 初始化脚本"
+		echo "	-d 测试运行"
 		echo -----------------------------------------
 		echo "	crash -s start	启动服务"
 		echo "	crash -s stop	停止服务"
@@ -1920,6 +1921,26 @@ case "$1" in
 	-st)
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
 		$shtype -x ${CRASHDIR}/start.sh $2 $3 $4 $5 $6
+	;;
+	-d)
+		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
+		echo -e "正在测试运行！如发现错误请截图后前往\033[32;4mt.me/ShellClash\033[0m咨询"
+		$shtype ${CRASHDIR}/start.sh debug >/dev/null 2>${TMPDIR}/sh_bug
+		$shtype -x ${CRASHDIR}/start.sh debug >/dev/null 2>${TMPDIR}/debug_sh.log
+		echo -----------------------------------------
+		if [ -s ${TMPDIR}/sh_bug ];then
+			while read line ;do
+				echo -e "发现错误：\033[33;4m$line\033[0m"
+				grep -A 1 -B 3 "$line" ${TMPDIR}/debug_sh.log
+				echo -----------------------------------------
+			done < ${TMPDIR}/sh_bug
+			rm -rf ${TMPDIR}/sh_bug
+			echo -e  "\033[32m测试完成！\033[0m完整执行记录请查看：\033[36m${TMPDIR}/debug_sh.log\033[0m"
+		else
+			echo -e  "\033[32m测试完成！没有发现问题~\033[0m" 
+			rm -rf ${TMPDIR}/debug_sh.log
+		fi
+		${CRASHDIR}/start.sh stop
 	;;
 	-u)
 		uninstall
