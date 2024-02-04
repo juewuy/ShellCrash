@@ -867,7 +867,7 @@ macfilter(){ #局域网设备过滤
 	######
 	echo -e "\033[30;47m请在此添加或移除设备\033[0m"
 	echo -e "当前过滤方式为：\033[33m$macfilter_type模式\033[0m"
-	echo -e "仅列表内设备\033[36m$macfilter_scrip经过\033[0mClash内核"
+	echo -e "仅列表内设备流量\033[36m$macfilter_scrip经过\033[0m内核"
 	if [ -n "$(cat ${CRASHDIR}/configs/mac)" ]; then
 		echo -----------------------------------------------
 		echo -e "当前已过滤设备为：\033[36m"
@@ -977,13 +977,13 @@ setboot(){ #启动相关设置
 			ckcmd systemctl && systemctl disable shellcrash.service > /dev/null 2>&1
 			touch ${CRASHDIR}/.dis_startup
 			autostart=disable
-			echo -e "\033[33m已禁止Clash开机启动！\033[0m"
+			echo -e "\033[33m已禁止ShellCrash开机启动！\033[0m"
 		elif [ "$autostart" = "disable" ]; then
 			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
 			ckcmd systemctl && systemctl enable shellcrash.service > /dev/null 2>&1
 			rm -rf ${CRASHDIR}/.dis_startup
 			autostart=enable
-			echo -e "\033[32m已设置Clash开机启动！\033[0m"
+			echo -e "\033[32m已设置ShellCrash开机启动！\033[0m"
 		fi
 		setboot
 	;;
@@ -1119,7 +1119,7 @@ normal_set(){ #基础设置
 		[ -n "$(ls /dev/net/tun)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
 		nft add table inet shellcrash 2>/dev/null && sup_nft=1 && modprobe nft_tproxy >/dev/null 2>&1 && sup_nft=2
 		echo -----------------------------------------------
-		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $crashcore \033[0m"
+		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 		echo -----------------------------------------------
 		ckcmd iptables && echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
@@ -1290,7 +1290,7 @@ normal_set(){ #基础设置
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 切换Clash运行模式: 	\033[36m$redir_mod\033[0m"
+	echo -e " 1 切换防火墙运行模式: 	\033[36m$redir_mod\033[0m"
 	[ "$disoverride" != "1" ] && {
 		echo -e " 2 切换DNS运行模式：	\033[36m$dns_mod\033[0m"
 		echo -e " 3 跳过本地证书验证：	\033[36m$skip_cert\033[0m   ————解决节点证书验证错误"
@@ -1834,7 +1834,7 @@ main_menu(){
 		${CRASHDIR}/start.sh stop
 		sleep 1
 		echo -----------------------------------------------
-		echo -e "\033[31mClash服务已停止！\033[0m"
+		echo -e "\033[31m$corename服务已停止！\033[0m"
 		main_menu
 
 	elif [ "$num" = 4 ]; then

@@ -1529,6 +1529,7 @@ core_check(){ #检查及下载内核文件
 			fi
 	}
 	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #自动授权
+	[ "$start_old" != "已开启" -a "$(cat /proc/1/comm)" = "systemd" ] && restorecon -RF $CRASHDIR 2>/dev/null #修复SELinux权限问题
 	return 0
 }
 clash_check(){ #clash启动前检查
@@ -1629,7 +1630,6 @@ bfstart(){ #启动前
 			echo "shellcrash:x:0:7890:::" >> /etc/passwd
 		fi
 	}
-	[ "$start_old" != "已开启" -a "$(cat /proc/1/comm)" = "systemd" ] && ckcmd restorecon && restorecon -rv $CRASHDIR 2>/dev/null #修复selinux权限问题
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
 	return 0
