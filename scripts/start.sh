@@ -559,7 +559,7 @@ EOF
 {
   "dns": { 
 	"servers": [
-	  { "tag": "hosts_local", "address": "local", "detour": "direct" }
+	  { "tag": "hosts_local", "address": "local", "detour": "DIRECT" }
 	],
     "rules": [
 	  { 
@@ -617,12 +617,12 @@ EOF
         "address": "$dns_direct",
         "strategy": "$strategy",
         "address_resolver": "dns_resolver",
-        "detour": "direct"
+        "detour": "DIRECT"
       }, 
 	  { "tag": "dns_fakeip", "address": "fakeip" }, 
-	  { "tag": "dns_resolver", "address": "223.5.5.5", "detour": "direct" }, 
+	  { "tag": "dns_resolver", "address": "223.5.5.5", "detour": "DIRECT" }, 
 	  { "tag": "block", "address": "rcode://success" }, 
-	  { "tag": "local", "address": "local", "detour": "direct" }
+	  { "tag": "local", "address": "local", "detour": "DIRECT" }
 	],
     "rules": [
 	  { "outbound": ["any"], "server": "dns_resolver" },
@@ -649,13 +649,14 @@ EOF
 }
 EOF
 	#生成ntp.json
-	[ -z "$(grep '自动同步ntp时间' $CRASHDIR/task/afstart )" ] && cat > ${TMPDIR}/jsons/ntp.json <<EOF
+	[ -z "$(grep '自动同步ntp时间' $CRASHDIR/task/afstart 2>/dev/null)" ] && cat > ${TMPDIR}/jsons/ntp.json <<EOF
 {
   "ntp": {
     "enabled": true,
     "server": "203.107.6.88",
     "server_port": 123,
-    "interval": "30m0s"
+    "interval": "30m0s",
+	"detour": "DIRECT"
   }
 }
 EOF
@@ -717,6 +718,14 @@ EOF
 }
 EOF
 	fi
+	#生成add_outbounds.json
+	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"tag\": *\"DIRECT\"')" ] && cat > ${TMPDIR}/jsons/add_outbounds.json <<EOF
+{
+  "outbounds": [ 
+    { "type": "direct", "tag": "DIRECT" }
+  ]
+}
+EOF
 	#生成experimental.json
 	cat > ${TMPDIR}/jsons/experimental.json <<EOF
 {
@@ -1476,24 +1485,27 @@ EOF
 	compare ${TMPDIR}/shellcrash_pac ${BINDIR}/ui/pac
 	[ "$?" = 0 ] && rm -rf ${TMPDIR}/shellcrash_pac || mv -f ${TMPDIR}/shellcrash_pac ${BINDIR}/ui/pac
 }
-core_check(){
-	#检查及下载内核文件
+core_check(){ #检查及下载内核文件
+	[ -n "$(tar --help 2>&1|grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 	[ -n "$(find --help 2>&1|grep -o size)" ] && find_para=' -size +2000' #find命令兼容
+	tar_core(){
+		mkdir -p ${TMPDIR}/core_tmp
+		tar -zxf ${1} ${tar_para} -C ${TMPDIR}/core_tmp/
+		for file in $(find ${TMPDIR}/core_tmp $find_para 2>/dev/null);do
+			[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|pre)')" ] && mv -f $file ${TMPDIR}/${2}
+		done
+		rm -rf ${TMPDIR}/core_tmp
+	}
 	[ -z "$(find ${TMPDIR}/CrashCore $find_para 2>/dev/null)" ] && [ -n "$(find ${BINDIR}/CrashCore $find_para 2>/dev/null)" ] && mv ${BINDIR}/CrashCore ${TMPDIR}/CrashCore
 	[ -z "$(find ${TMPDIR}/CrashCore $find_para 2>/dev/null)" ] && [ -n "$(find ${BINDIR}/CrashCore.tar.gz $find_para 2>/dev/null)" ] && \
-		tar -zxf "${BINDIR}/CrashCore.tar.gz" -C ${TMPDIR}/ &>/dev/null || tar -zxf "${BINDIR}/CrashCore.tar.gz" --no-same-owner -C ${TMPDIR}/
+		tar_core ${BINDIR}/CrashCore.tar.gz CrashCore
 	[ -z "$(find ${TMPDIR}/CrashCore $find_para 2>/dev/null)" ] && {
 			logger "未找到【$crashcore】核心，正在下载！" 33
 			[ -z "$cpucore" ] && source ${CRASHDIR}/getdate.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
 			get_bin ${TMPDIR}/CrashCore.tar.gz "bin/$crashcore/${target}-linux-${cpucore}.tar.gz"
 			#校验内核
-			mkdir -p ${TMPDIR}/core_tmp
-			tar -zxvf "${TMPDIR}/CrashCore.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxvf "${TMPDIR}/CrashCore.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
-			for file in $(find ${TMPDIR}/core_tmp $find_para 2>/dev/null);do
-				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|pre)')" ] && mv -f $file ${TMPDIR}/core_new
-			done
-			rm -rf ${TMPDIR}/core_tmp
+			tar_core ${TMPDIR}/CrashCore.tar.gz core_new
 			chmod +x ${TMPDIR}/core_new
 			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 				core_v=$(${TMPDIR}/core_new version 2>/dev/null | grep version | awk '{print $3}')

@@ -8,6 +8,7 @@ JSONSDIR=${CRASHDIR}/jsons
 source ${CRASHDIR}/configs/command.env &>/dev/null
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh &>/dev/null
 [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
+[ -n "$(tar --help 2>&1|grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 
 #读取配置相关
 setconfig(){
@@ -114,7 +115,7 @@ ckstatus(){
 				if [ -n "$core_v" ];then
 					source ${CRASHDIR}/getdate.sh && setcoretype && \
 					mv -f $file ${TMPDIR}/CrashCore && \
-					tar -zcf ${BINDIR}/CrashCore.tar.gz -C ${TMPDIR} CrashCore && \
+					tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore && \
 					echo -e "\033[32m内核加载完成！\033[0m " && \
 					setconfig crashcore $crashcore && \
 					setconfig core_v $core_v && \

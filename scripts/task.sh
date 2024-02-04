@@ -7,6 +7,7 @@
 CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 TMPDIR=/tmp/ShellCrash && [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
 source $CFG_PATH &> /dev/null
+[ -n "$(tar --help 2>&1|grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -49,7 +50,7 @@ update_core(){ #自动更新内核
 			[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
 			[ -f ${TMPDIR}/core_new.tar.gz ] && {
 				mkdir -p ${TMPDIR}/core_new
-				tar -zxf "${TMPDIR}/core_new.tar.gz" -C ${TMPDIR}/core_new/ &>/dev/null || tar -zxf "${TMPDIR}/core_new.tar.gz" --no-same-owner -C ${TMPDIR}/core_new/
+				tar -zxf "${TMPDIR}/core_new.tar.gz" ${tar_para} -C ${TMPDIR}/core_new/
 				for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
 					[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
 				done
@@ -74,7 +75,7 @@ update_core(){ #自动更新内核
 				if [ -f ${TMPDIR}/core_new.tar.gz ];then
 					mv -f ${TMPDIR}/core_new.tar.gz ${BINDIR}/CrashCore.tar.gz
 				else
-					tar -zcf ${BINDIR}/CrashCore.tar.gz -C ${TMPDIR} CrashCore
+					tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore
 				fi
 				logger "任务【自动更新内核】下载完成，正在重启服务！"
 				setconfig core_v $core_v
@@ -98,7 +99,7 @@ update_shellcrash(){ #自动更新脚本
 			return 1
 		else
 			#解压
-			tar -zxf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ || tar -zxf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
+			tar -zxf "${TMPDIR}/update.tar.gz" ${tar_para} -C ${CRASHDIR}/
 			if [ $? -ne 0 ];then
 				rm -rf ${TMPDIR}/update.tar.gz
 				logger "任务【自动更新内核】出错-解压失败！"

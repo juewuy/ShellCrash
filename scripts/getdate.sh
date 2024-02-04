@@ -767,7 +767,7 @@ gettar(){
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p ${CRASHDIR} > /dev/null
-		tar -zxf "${TMPDIR}/update.tar.gz" -C ${CRASHDIR}/ 2>/dev/null || tar -zxf "${TMPDIR}/update.tar.gz" --no-same-owner -C ${CRASHDIR}/
+		tar -zxf "${TMPDIR}/update.tar.gz" ${tar_para} -C ${CRASHDIR}/ 
 		if [ $? -ne 0 ];then
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
@@ -901,7 +901,7 @@ getcore(){ #下载内核文件
 		[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
 		[ -f ${TMPDIR}/core_new.tar.gz ] && {
 			mkdir -p ${TMPDIR}/core_tmp
-			tar -zxf "${TMPDIR}/core_new.tar.gz" -C ${TMPDIR}/core_tmp/ &>/dev/null || tar -zxf "${TMPDIR}/core_new.tar.gz" --no-same-owner -C ${TMPDIR}/core_tmp/
+			tar -zxf "${TMPDIR}/core_new.tar.gz" ${tar_para} -C ${TMPDIR}/core_tmp/
 			for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
 				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
 			done
@@ -927,7 +927,7 @@ getcore(){ #下载内核文件
 			if [ -f ${TMPDIR}/core_new.tar.gz ];then
 				mv -f ${TMPDIR}/core_new.tar.gz ${BINDIR}/CrashCore.tar.gz
 			else
-				tar -zcf ${BINDIR}/CrashCore.tar.gz -C ${TMPDIR} CrashCore
+				tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore
 			fi
 			setconfig crashcore $crashcore
 			setconfig core_v $core_v
@@ -1397,11 +1397,8 @@ getdb(){
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		mkdir -p $dbdir > /dev/null
-		tar -zxf "${TMPDIR}/clashdb.tar.gz" -C $dbdir > /dev/null
-		if [ $? -ne 0 ];then
-			tar -zxf "${TMPDIR}/clashdb.tar.gz" --no-same-permissions -C $dbdir > /dev/null
-			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/clashfm.tar.gz && exit 1 
-		fi
+		tar -zxf "${TMPDIR}/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
+		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/clashfm.tar.gz && exit 1 
 		#修改默认host和端口
 		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" ];then
 			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
