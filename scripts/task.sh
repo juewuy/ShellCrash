@@ -6,7 +6,7 @@
 [ -z "$BINDIR" ] && BINDIR=${CRASHDIR}
 CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 TMPDIR=/tmp/ShellCrash && [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
-source $CFG_PATH &> /dev/null
+source $CFG_PATH >/dev/null 2>&1
 [ -n "$(tar --help 2>&1|grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 
 setconfig(){
@@ -15,7 +15,7 @@ setconfig(){
 	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 ckcmd(){ #检查命令是否存在
-	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
+	command -v sh >/dev/null 2>&1 && command -v $1 >/dev/null 2>&1 || type $1 >/dev/null 2>&1
 }
 
 #任务命令
@@ -148,7 +148,7 @@ reset_firewall(){ #重设透明路由防火墙
 	${CRASHDIR}/start.sh afstart
 }
 ntp(){
-	[ "$crashcore" != singbox ] && ckcmd ntpd && ntpd -n -q -p 203.107.6.88 &>/dev/null || exit 0  &
+	[ "$crashcore" != singbox ] && ckcmd ntpd && ntpd -n -q -p 203.107.6.88 >/dev/null 2>&1 || exit 0  &
 }
 #任务工具
 

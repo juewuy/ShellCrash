@@ -4,8 +4,8 @@
 #初始化目录
 CRASHDIR=$(cd $(dirname $0);pwd)
 #加载执行目录，失败则初始化
-source ${CRASHDIR}/configs/command.env &>/dev/null
-[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh &>/dev/null
+source ${CRASHDIR}/configs/command.env >/dev/null 2>&1
+[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh >/dev/null 2>&1
 [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
 
 #脚本内部工具
@@ -49,7 +49,7 @@ setconfig(){ #脚本配置工具
 	[ -n "$(grep "${1}=" "$configpath")" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 ckcmd(){ #检查命令是否存在
-	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
+	command -v sh >/dev/null 2>&1 && command -v $1 >/dev/null 2>&1 || type $1 >/dev/null 2>&1
 }
 ckgeo(){ #查找及下载Geo数据文件
 	[ -n "$(find --help 2>&1|grep -o size)" ] && find_para=' -size +20' #find命令兼容
@@ -91,31 +91,31 @@ logger(){ #日志工具
 			url=https://api.telegram.org/bot${push_TG}/sendMessage
 			curl_data="-d chat_id=$chat_ID&text=$log_text"
 			wget_data="--post-data=$chat_ID&text=$log_text"
-			if curl --version &> /dev/null;then 
-				curl -kfsSl --connect-timeout 3 -d "chat_id=$chat_ID&text=$log_text" "$url" &>/dev/null 
+			if curl --version >/dev/null 2>&1;then 
+				curl -kfsSl --connect-timeout 3 -d "chat_id=$chat_ID&text=$log_text" "$url" >/dev/null 2>&1 
 			else
 				wget -Y on -q --timeout=3 -t 1 --post-data="chat_id=$chat_ID&text=$log_text" "$url" 
 			fi
 		}
 		[ -n "$push_bark" ] && {
 			url=${push_bark}/${log_text}${bark_param}
-			if curl --version &> /dev/null;then 
-				curl -kfsSl --connect-timeout 3 "$url" &>/dev/null 
+			if curl --version >/dev/null 2>&1;then 
+				curl -kfsSl --connect-timeout 3 "$url" >/dev/null 2>&1 
 			else
 				wget -Y on -q --timeout=3 -t 1 "$url" 
 			fi
 		}
 		[ -n "$push_Deer" ] && {
 			url=https://api2.pushdeer.com/message/push?pushkey=${push_Deer}
-			if curl --version &> /dev/null;then 
-				curl -kfsSl --connect-timeout 3 "$url"\&text="$log_text" &>/dev/null 
+			if curl --version >/dev/null 2>&1;then 
+				curl -kfsSl --connect-timeout 3 "$url"\&text="$log_text" >/dev/null 2>&1 
 			else
 				wget -Y on -q --timeout=3 -t 1 "$url"\&text="$log_text" 
 			fi
 		}
 		[ -n "$push_Po" ] && {
 			url=https://api.pushover.net/1/messages.json
-			curl -kfsSl --connect-timeout 3 --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" &>/dev/null 
+			curl -kfsSl --connect-timeout 3 --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" >/dev/null 2>&1 
 		}	
 	} &
 }
@@ -329,6 +329,7 @@ get_core_config(){ #下载内核配置文件
 		fi
 		echo -e "\033[32m已成功获取配置文件！\033[0m"
 	fi
+	return 0
 }
 modify_yaml(){ #修饰clash配置文件
 ##########需要变更的配置###########
@@ -524,9 +525,9 @@ EOF
 		logger "$(${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml | grep -Eo 'error.*=.*')" 31
 		logger "自定义配置文件校验失败！将使用基础配置文件启动！" 33
 		logger "错误详情请参考 ${TMPDIR}/error.yaml 文件！" 33
-		mv -f ${TMPDIR}/config.yaml ${TMPDIR}/error.yaml &>/dev/null
+		mv -f ${TMPDIR}/config.yaml ${TMPDIR}/error.yaml >/dev/null 2>&1
 		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d"  ${TMPDIR}/proxy-groups.yaml
-		mv -f ${TMPDIR}/set_bak.yaml ${TMPDIR}/set.yaml &>/dev/null
+		mv -f ${TMPDIR}/set_bak.yaml ${TMPDIR}/set.yaml >/dev/null 2>&1
 		#合并基础配置文件
 		cut -c 1- ${TMPDIR}/set.yaml $yaml_dns $yaml_add > ${TMPDIR}/config.yaml
 		sed -i "/#自定义/d" ${TMPDIR}/config.yaml 
@@ -649,7 +650,7 @@ EOF
 }
 EOF
 	#生成ntp.json
-	[ -z "$(grep '自动同步ntp时间' $CRASHDIR/task/afstart 2>/dev/null)" ] && cat > ${TMPDIR}/jsons/ntp.json <<EOF
+	cat > ${TMPDIR}/jsons/ntp.json <<EOF
 {
   "ntp": {
     "enabled": true,
@@ -872,7 +873,7 @@ start_redir(){ #iptables-redir
 	iptables -t nat -A PREROUTING -p tcp $ports -j shellcrash
 	[ "$dns_mod" != "redir_host" -a "$common_ports" = "已开启" ] && iptables -t nat -A PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash
 	#设置ipv6转发
-	if [ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L &>/dev/null;then
+	if [ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L >/dev/null 2>&1;then
 		ip6tables -t nat -N shellcrashv6
 		for ip in $reserve_ipv6 $host_ipv6;do #跳过目标保留地址及目标本机网段
 			ip6tables -t nat -A shellcrashv6 -d $ip -j RETURN
@@ -944,7 +945,7 @@ start_ipt_dns(){ #iptables-dns
 start_tproxy(){ #iptables-tproxy
 	#获取局域网host地址
 	getlanip
-	modprobe xt_TPROXY &>/dev/null
+	modprobe xt_TPROXY >/dev/null 2>&1
 	ip rule add fwmark $fwmark table 100
 	ip route add local default dev lo table 100
 	iptables -t mangle -N shellcrash
@@ -982,7 +983,7 @@ start_tproxy(){ #iptables-tproxy
 		iptables -I INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1
 	}
 	#设置ipv6转发
-	[ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L &>/dev/null && {
+	[ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L >/dev/null 2>&1 && {
 		ip -6 rule add fwmark $fwmark table 101
 		ip -6 route add local ::/0 dev lo table 101
 		ip6tables -t mangle -N shellcrashv6
@@ -1059,7 +1060,7 @@ start_output(){ #iptables本机代理
 	}
 }
 start_tun(){ #iptables-tun
-	modprobe tun &>/dev/null
+	modprobe tun >/dev/null 2>&1
 	#允许流量
 	iptables -I FORWARD -o utun -j ACCEPT
 	iptables -I FORWARD -s 198.18.0.0/16 -o utun -j RETURN #防止回环
@@ -1073,7 +1074,7 @@ start_tun(){ #iptables-tun
 		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
 		ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT >/dev/null 2>&1
 	fi
-	modprobe xt_mark &>/dev/null && {
+	modprobe xt_mark >/dev/null 2>&1 && {
 		i=1
 		while [ -z "$(ip route list |grep utun)" -a "$i" -le 29 ];do
 			sleep 1
@@ -1114,7 +1115,7 @@ start_tun(){ #iptables-tun
 			[ "$1" = "all" ] && iptables -t mangle -A PREROUTING -p tcp $ports -j shellcrash
 			
 			#设置ipv6转发
-			[ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L &>/dev/null && [ "$crashcore" != clash ] && {
+			[ "$ipv6_redir" = "已开启" ] && ip6tables -t nat -L >/dev/null 2>&1 && [ "$crashcore" != clash ] && {
 				ip -6 route add default dev utun table 101
 				ip -6 rule add fwmark $fwmark table 101
 				ip6tables -t mangle -N shellcrashv6
@@ -1158,7 +1159,7 @@ start_nft(){ #nftables-allinone
 	[ "$redir_mod" = "Nft基础" ] && \
 		nft add chain inet shellcrash prerouting { type nat hook prerouting priority -100 \; }
 	[ "$redir_mod" = "Nft混合" ] && {
-		modprobe nft_tproxy &> /dev/null
+		modprobe nft_tproxy >/dev/null 2>&1
 		nft add chain inet shellcrash prerouting { type filter hook prerouting priority 0 \; }
 	}
 	[ -n "$(echo $redir_mod|grep Nft)" ] && {
@@ -1224,7 +1225,7 @@ start_nft(){ #nftables-allinone
 			nft add rule inet shellcrash output meta l4proto tcp mark set $fwmark redirect to $redir_port
 		}
 		#Docker
-		type docker &>/dev/null && {
+		type docker >/dev/null 2>&1 && {
 			nft add chain inet shellcrash docker { type nat hook prerouting priority -100 \; }
 			nft add rule inet shellcrash docker ip saddr != {172.16.0.0/12} return #进代理docker网段
 			nft add rule inet shellcrash docker ip daddr {$RESERVED_IP} return #过滤保留地址
@@ -1521,6 +1522,7 @@ core_check(){ #检查及下载内核文件
 			else
 				mv -f ${TMPDIR}/core_new ${TMPDIR}/CrashCore
 				mv -f ${TMPDIR}/CrashCore.tar.gz ${BINDIR}/CrashCore.tar.gz
+				rm -rf ${TMPDIR}/CrashCore.tar.gz #小闪存模式清理文件优化内存占用
 				setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 				setconfig crashcore $crashcore
 				setconfig core_v $core_v
@@ -1595,7 +1597,6 @@ bfstart(){ #启动前
 		if [ -n "$Url" -o -n "$Https" ];then
 			logger "未找到配置文件，正在下载！" 33
 			get_core_config
-			exit 0
 		else
 			logger "未找到配置文件链接，请先导入配置文件！" 31
 			exit 1
@@ -1608,7 +1609,6 @@ bfstart(){ #启动前
 	[ ! -s ${BINDIR}/ui/index.html ] && makehtml #如没有面板则创建跳转界面
 	catpac	#生成pac文件
 	#内核及内核配置文件检查
-	[ ! -x ${TMPDIR}/CrashCore ] && chmod +x ${TMPDIR}/CrashCore 2>/dev/null #检测可执行权限
 	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 		singbox_check	
 		[ -d ${TMPDIR}/jsons ] && rm -rf ${TMPDIR}/jsons/* || mkdir -p ${TMPDIR}/jsons #准备目录
@@ -1629,6 +1629,7 @@ bfstart(){ #启动前
 			echo "shellcrash:x:0:7890:::" >> /etc/passwd
 		fi
 	}
+	[ "$start_old" != "已开启" -a "$(cat /proc/1/comm)" = "systemd" ] && ckcmd restorecon && restorecon -rv $CRASHDIR 2>/dev/null #修复selinux权限问题
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
 	return 0
@@ -1692,9 +1693,9 @@ afstart(){ #启动后
 		}
 		ckcmd iptables && start_wan #本地防火墙
 		mark_time #标记启动时间
-		[ -s ${CRASHDIR}/configs/web_save -o -s ${CRASHDIR}/configs/web_configs ] && web_restore &>/dev/null & #后台还原面板配置
+		[ -s ${CRASHDIR}/configs/web_save -o -s ${CRASHDIR}/configs/web_configs ] && web_restore >/dev/null 2>&1 & #后台还原面板配置
 		{ sleep 5;logger ShellCrash服务已启动！;} & #推送日志
-		ckcmd mtd_storage.sh && mtd_storage.sh save &>/dev/null & #Padavan保存/etc/storage
+		ckcmd mtd_storage.sh && mtd_storage.sh save >/dev/null 2>&1 & #Padavan保存/etc/storage
 		#加载定时任务
 		[ -s ${CRASHDIR}/task/cron ] && croncmd ${CRASHDIR}/task/cron
 		[ -s ${CRASHDIR}/task/running ] && {
@@ -1722,8 +1723,8 @@ start_error(){ #启动报错
 	if [ "$start_old" != "已开启" ] && ckcmd journalctl;then
 		journalctl -u shellcrash > $TMPDIR/core_test.log
 	else
-		${COMMAND} &>${TMPDIR}/core_test.log &
-		sleep 2 ; kill $! &>/dev/null
+		${COMMAND} >${TMPDIR}/core_test.log 2>&1 &
+		sleep 2 ; kill $! >/dev/null 2>&1
 	fi
 	error=$(cat $TMPDIR/core_test.log | grep -Eo 'error.*=.*|.*ERROR.*|.*FATAL.*')
 	logger "服务启动失败！请查看报错信息！详细信息请查看$TMPDIR/core_test.log" 33
@@ -1786,7 +1787,7 @@ start)
 			/etc/init.d/shellcrash start 
 		elif [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
 			FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
-			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
+			[ -f $FragmentPath ] && setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
 			systemctl daemon-reload
 			systemctl start shellcrash.service || start_error
 		else
@@ -1804,14 +1805,14 @@ stop)
 		#多种方式结束进程
 
 		if [ "$start_old" != "已开启" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
-			systemctl stop shellcrash.service &>/dev/null
+			systemctl stop shellcrash.service >/dev/null 2>&1
 		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
-			/etc/init.d/shellcrash stop &>/dev/null
+			/etc/init.d/shellcrash stop >/dev/null 2>&1
 		else
 			stop_firewall #清理路由策略
 			unset_proxy #禁用本机代理
 		fi
-		PID=$(pidof CrashCore) && [ -n "$PID" ] &&  kill -9 $PID &>/dev/null
+		PID=$(pidof CrashCore) && [ -n "$PID" ] &&  kill -9 $PID >/dev/null 2>&1
         ;;
 restart)
         $0 stop

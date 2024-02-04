@@ -162,8 +162,8 @@ else
 		#创建shellcrash用户
 		sed -i '/0:7890/d' /etc/passwd
 		sed -i '/x:7890/d' /etc/group
-		if type useradd &>/dev/null; then
-			useradd shellcrash -u 7890
+		if type useradd >/dev/null 2>&1; then
+			useradd shellcrash -u 7890 2>/dev/null
 			sed -Ei s/7890:7890/0:7890/g /etc/passwd
 		else
 			echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >> /etc/passwd
@@ -178,7 +178,7 @@ else
 		setconfig start_old 已开启
 fi
 #修饰文件及版本号
-command -v bash &>/dev/null && shtype=bash || shtype=sh 
+command -v bash >/dev/null 2>&1 && shtype=bash || shtype=sh 
 for file in start.sh task.sh ;do
 	sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file}
 	chmod 755 ${CRASHDIR}/${file}
@@ -212,7 +212,7 @@ if [ -n "$profile" ];then
 	echo "alias clash=\"$shtype $CRASHDIR/menu.sh\"" >> $profile #设置快捷命令环境变量
 	sed -i '/export CRASHDIR=*/'d $profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >> $profile #设置路径环境变量
-	source $profile &>/dev/null || echo 运行错误！请使用bash而不是dash运行安装命令！！！
+	source $profile >/dev/null 2>&1 || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
 	[ -n "$(cat /etc/shells 2>/dev/null|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
 		sed -i '/alias crash=*/'d ~/.zshrc
@@ -222,7 +222,7 @@ if [ -n "$profile" ];then
 		echo "alias clash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
 		sed -i '/export CRASHDIR=*/'d ~/.zshrc
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
-		source ~/.zshrc &>/dev/null
+		source ~/.zshrc >/dev/null 2>&1
 	}
 else
 	echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
@@ -286,7 +286,7 @@ for file in cron task.sh task.list;do
 done
 chmod 755 ${CRASHDIR}/task/task.sh
 #旧版文件清理
-userdel shellclash &>/dev/null
+userdel shellclash >/dev/null 2>&1
 sed -i '/shellclash/d' /etc/passwd
 sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash

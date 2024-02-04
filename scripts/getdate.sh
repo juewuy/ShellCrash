@@ -7,7 +7,7 @@ error_down(){
 	sleep 1
 }
 dir_avail(){
-	df -h &>/dev/null && h=$2
+	df -h >/dev/null 2>&1 && h=$2
 	df $h $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep -E 'Ava|可用' |awk '{print $2}'
 	}
 
@@ -1819,7 +1819,7 @@ userguide(){
 			redir_mod="Redir模式"
 			ckcmd nft && {
 				redir_mod="Nft基础"
-				modprobe nft_tproxy &> /dev/null && redir_mod="Nft混合"
+				modprobe nft_tproxy >/dev/null 2>&1 && redir_mod="Nft混合"
 			}
 			setconfig redir_mod "$redir_mod"
 			#自动识别IPV6
@@ -1975,7 +1975,7 @@ debug(){
 		$CRASHDIR/start.sh bfstart
 		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ] ;then
 			$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons &
-			{ sleep 4 ; kill $! &>/dev/null & }
+			{ sleep 4 ; kill $! >/dev/null 2>&1 & }
 			wait
 		else
 			$TMPDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
@@ -2091,7 +2091,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 6 ]; then
 		echo "注意：依赖curl(不支持wget)，且测试结果不保证一定准确！"
-		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! &>/dev/null & }` > /dev/null 2>&1
+		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! >/dev/null 2>&1 & }` > /dev/null 2>&1
 		delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
 		echo -----------------------------------------------
 		if [ `echo ${#delay}` -gt 1 ];then

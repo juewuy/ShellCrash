@@ -5,8 +5,8 @@ CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 YAMLSDIR=${CRASHDIR}/yamls
 JSONSDIR=${CRASHDIR}/jsons
 #加载执行目录，失败则初始化
-source ${CRASHDIR}/configs/command.env &>/dev/null
-[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh &>/dev/null
+source ${CRASHDIR}/configs/command.env >/dev/null 2>&1
+[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh >/dev/null 2>&1
 [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
 [ -n "$(tar --help 2>&1|grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 
@@ -17,7 +17,7 @@ setconfig(){
 	[ -n "$(grep "${1}=" "$configpath")" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 ckcmd(){
-	command -v sh &>/dev/null && command -v $1 &>/dev/null || type $1 &>/dev/null
+	command -v sh >/dev/null 2>&1 && command -v $1 >/dev/null 2>&1 || type $1 >/dev/null 2>&1
 }
 
 #脚本启动前检查
@@ -25,9 +25,9 @@ ckstatus(){
 	#检查/读取脚本配置文件
 	if [ -f $CFG_PATH ];then
 		[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH #检查重复行并去除
-		source $CFG_PATH &>/dev/null	
+		source $CFG_PATH >/dev/null 2>&1	
 	else
-		source ${CRASHDIR}/init.sh &>/dev/null
+		source ${CRASHDIR}/init.sh >/dev/null 2>&1
 	fi
 	versionsh=$(cat ${CRASHDIR}/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
@@ -253,7 +253,7 @@ log_pusher(){ #日志菜单
 				url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
 				[ -n "$authentication" ] && auth="$authentication@"
 				export https_proxy="http://${auth}127.0.0.1:$mix_port"
-				if curl --version &> /dev/null;then 
+				if curl --version >/dev/null 2>&1;then 
 					chat=$(curl -kfsSl $url_tg 2>/dev/null| tail -n -1)
 				else
 					chat=$(wget -Y on -q -O - $url_tg | tail -n -1)
@@ -344,7 +344,7 @@ log_pusher(){ #日志菜单
 				setconfig push_Po
 				setconfig push_Po_key
 			}
-		elif curl --version &> /dev/null;then 
+		elif curl --version >/dev/null 2>&1;then 
 			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
 			echo -e "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m"
 			echo -----------------------------------------------
@@ -918,7 +918,7 @@ localproxy(){ #本机代理
 	echo -----------------------------------------------
 	[ -n "$local_enh" ] && {
 		ckcmd iptables && [ -n "$(iptables -m owner --help | grep owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
-		ckcmd nft && modprobe nf_nat &> /dev/null && echo -e " 2 使用\033[32mnftables增强模式\033[0m配置(支持docker,推荐！)"
+		nft add table inet shellcrash 2>/dev/null && echo -e " 2 使用\033[32mnftables增强模式\033[0m配置(支持docker,推荐！)"
 	}
 	echo -e " 3 使用\033[33m环境变量\033[0m方式配置(部分应用可能无法使用,不推荐！)"
 	echo -e " 0 返回上级菜单"
@@ -1116,9 +1116,8 @@ normal_set(){ #基础设置
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
-		[ -n "$(ls /dev/net/tun)" ] || ip tuntap &>/dev/null && sup_tun=1
-		ckcmd nft && modprobe nf_nat &> /dev/null && sup_nft=1 && modprobe nft_tproxy &> /dev/null && sup_nft=2
-		
+		[ -n "$(ls /dev/net/tun)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
+		nft add table inet shellcrash 2>/dev/null && sup_nft=1 && modprobe nft_tproxy >/dev/null 2>&1 && sup_nft=2
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；Clash核心为：\033[47;30m $crashcore \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
@@ -1926,9 +1925,10 @@ case "$1" in
 	-d)
 		shtype=sh && [ -n "$(ls -l /bin/sh|grep -o dash)" ] && shtype=bash
 		echo -e "正在测试运行！如发现错误请截图后前往\033[32;4mt.me/ShellClash\033[0m咨询"
-		$shtype ${CRASHDIR}/start.sh debug >/dev/null 2>${TMPDIR}/sh_bug
+		$shtype ${CRASHDIR}/start.sh debug >/dev/null 2>${TMPDIR}/debug_sh_bug.log
 		$shtype -x ${CRASHDIR}/start.sh debug >/dev/null 2>${TMPDIR}/debug_sh.log
 		echo -----------------------------------------
+		cat ${TMPDIR}/debug_sh_bug.log | grep 'start\.sh' > ${TMPDIR}/sh_bug
 		if [ -s ${TMPDIR}/sh_bug ];then
 			while read line ;do
 				echo -e "发现错误：\033[33;4m$line\033[0m"
@@ -1938,7 +1938,7 @@ case "$1" in
 			rm -rf ${TMPDIR}/sh_bug
 			echo -e  "\033[32m测试完成！\033[0m完整执行记录请查看：\033[36m${TMPDIR}/debug_sh.log\033[0m"
 		else
-			echo -e  "\033[32m测试完成！没有发现问题~\033[0m" 
+			echo -e  "\033[32m测试完成！没有发现问题，请重新启动服务~\033[0m" 
 			rm -rf ${TMPDIR}/debug_sh.log
 		fi
 		${CRASHDIR}/start.sh stop
