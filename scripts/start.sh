@@ -580,9 +580,15 @@ EOF
 	[ -z "$dns_proxy" ] && dns_proxy='1.0.0.1'
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
 	[ "$dns_mod" = "redir_host" ] && final_dns=dns_direct && global_dns=dns_proxy
-	[ "$dns_mod" = "fake-ip" ] && final_dns=dns_fakeip && global_dns=dns_fakeip
+	[ "$dns_mod" = "fake-ip" ] && {
+		final_dns=dns_fakeip && global_dns=dns_fakeip
+		fake_ip_filter=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | awk '{printf "\"%s\", ",$1}' | sed "s/, $//" | sed 's/+/.+/g' | sed 's/*/.*/g')
+		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"local\" },"
+	}
 	[ "$dns_mod" = "mix" ] && {
 		final_dns=dns_direct && global_dns=dns_fakeip
+		fake_ip_filter=$(cat ${CRASHDIR}/configs/fake_ip_filter 2>/dev/null | grep '\.' | awk '{printf "\"%s\", ",$1}' | sed "s/, $//" | sed 's/+/.+/g' | sed 's/*/.*/g')
+		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"local\" },"
 		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ];then
 			mix_dns="{ \"rule_set\": [\"geosite-cn\"], \"invert\": true, \"server\": \"dns_fakeip\" },"
 			#生成add_rule_set.json
@@ -629,6 +635,7 @@ EOF
 	  { "outbound": ["any"], "server": "dns_resolver" },
 	  { "clash_mode": "Global", "server": "$global_dns" },
       { "clash_mode": "Direct", "server": "dns_direct" },
+	  $fake_ip_filter
 	  $mix_dns
 	  { "query_type": [ "A", "AAAA" ], "server": "$final_dns" }
 	],

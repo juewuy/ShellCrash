@@ -1300,9 +1300,10 @@ normal_set(){ #基础设置
 	echo -e " 6 设置本机代理服务:	\033[36m$local_proxy\033[0m   ————使本机流量经过ShellCrash内核"
 	echo -e " 7 屏蔽QUIC流量:	\033[36m$quic_rj\033[0m   ————优化视频性能"
 	[ "$disoverride" != "1" ] && {
-		[ "$dns_mod" = "fake-ip" -a "$crashcore" != "singbox" ] && \
-		echo -e " 8 管理Fake-ip过滤列表" || \
+		[ "$dns_mod" != "fake-ip" ] && \
 		echo -e " 8 CN_IP绕过内核:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
+		[ "$dns_mod" != "redir_host" ] && \
+		echo -e " 9 管理Fake-ip过滤列表"
 	}
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单 \033[0m"
@@ -1396,33 +1397,31 @@ normal_set(){ #基础设置
 			echo -e "\033[33m当前模式默认不会代理UDP流量，无需设置！！\033[0m"
 		fi
 		sleep 1
-		normal_set	
+		normal_set		
 		
-	elif [ "$num" = 8 ]; then
-		echo -----------------------------------------------
-		if [ "$dns_mod" = "fake-ip" -a "$crashcore" != "singbox" ];then
-			fake_ip_filter
-		else
-			if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
-				if [ "$cn_ip_route" = "未开启" ]; then 
-					echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
-					echo -e "\033[31m注意！！！此功能会导致全局模式及一切CN相关规则失效！！！\033[0m"
-					cn_ip_route=已开启
-					sleep 2
-				else
-					echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
-					cn_ip_route=未开启
-				fi
-				setconfig cn_ip_route $cn_ip_route
+	elif [ "$num" = 8 ]; then	
+		if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
+			if [ "$cn_ip_route" = "未开启" ]; then 
+				echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
+				echo -e "\033[31m注意！！！此功能会导致全局模式及一切CN相关规则失效！！！\033[0m"
+				cn_ip_route=已开启
+				sleep 2
 			else
-				echo -e "\033[31m当前设备缺少ipset模块或未使用Nft模式，无法启用绕过功能！！\033[0m"
-				sleep 1
+				echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
+				cn_ip_route=未开启
 			fi
+			setconfig cn_ip_route $cn_ip_route
+		else
+			echo -e "\033[31m当前设备缺少ipset模块或未使用Nft模式，无法启用绕过功能！！\033[0m"
+			sleep 1
 		fi
-		normal_set  	
+		normal_set
 		
-	elif [ "$num" = 9 ]; then	
-		start_core
+	elif [ "$num" = 9 ]; then
+		echo -----------------------------------------------
+		fake_ip_filter
+		normal_set  
+		
 	else
 		errornum
 	fi
