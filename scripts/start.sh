@@ -181,7 +181,7 @@ mark_time(){ #时间戳
 getlanip(){ #获取局域网host地址
 	i=1
 	while [ "$i" -le "20" ];do
-		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' ) #ipv4局域网网段
+		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot|peer' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' ) #ipv4局域网网段
 		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -f  ${TMPDIR}/ShellCrash.log ] && break
 		[ -n "$host_ipv4" -a "$ipv6_redir" != "已开启" ] && break
@@ -727,7 +727,7 @@ EOF
 EOF
 	fi
 	#生成add_outbounds.json
-	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"tag\": *\"DIRECT\"')" ] && cat > ${TMPDIR}/jsons/add_outbounds.json <<EOF
+	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"tag": *"DIRECT"')" ] && cat > ${TMPDIR}/jsons/add_outbounds.json <<EOF
 {
   "outbounds": [ 
     { "type": "direct", "tag": "DIRECT" }
@@ -1049,11 +1049,12 @@ start_output(){ #iptables本机代理
 	iptables -t nat -A OUTPUT -p tcp $ports -j shellcrash_out
 	#设置dns转发
 	[ "$dns_no" != "已禁用" ] && {
-	iptables -t nat -N shellcrash_dns_out
-	iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 453 -j RETURN #绕过本机dnsmasq
-	iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 7890 -j RETURN
-	iptables -t nat -A shellcrash_dns_out -p udp -j REDIRECT --to $dns_port
-	iptables -t nat -A OUTPUT -p udp --dport 53 -j shellcrash_dns_out
+		[ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && echo 'nameserver 127.0.0.1' >> /etc/resolv.conf #修复部分虚拟机dns查询失败的问题
+		iptables -t nat -N shellcrash_dns_out
+		iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 453 -j RETURN #绕过本机dnsmasq
+		iptables -t nat -A shellcrash_dns_out -m owner --gid-owner 7890 -j RETURN
+		iptables -t nat -A shellcrash_dns_out -p udp -j REDIRECT --to $dns_port
+		iptables -t nat -A OUTPUT -p udp --dport 53 -j shellcrash_dns_out
 	}
 	#Docker转发
 	ckcmd docker && {
@@ -1220,9 +1221,12 @@ start_nft(){ #nftables-allinone
 	#代理本机(仅TCP)
 	[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && {
 		#dns
-		nft add chain inet shellcrash dns_out { type nat hook output priority -100 \; }
-		nft add rule inet shellcrash dns_out meta skgid { 453, 7890 } return && \
-		nft add rule inet shellcrash dns_out udp dport 53 redirect to $dns_port
+		[ "$dns_no" != "已禁用" ] && {
+			[ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && echo 'nameserver 127.0.0.1' >> /etc/resolv.conf #修复部分虚拟机dns查询失败的问题
+			nft add chain inet shellcrash dns_out { type nat hook output priority -100 \; }
+			nft add rule inet shellcrash dns_out meta skgid { 453, 7890 } return && \
+			nft add rule inet shellcrash dns_out udp dport 53 redirect to $dns_port
+		}
 		#output
 		nft add chain inet shellcrash output { type nat hook output priority -100 \; }
 		nft add rule inet shellcrash output meta skgid 7890 return && {
@@ -1583,13 +1587,13 @@ singbox_check(){ #singbox启动前检查
 	fi
 	core_check
 	#预下载geoip-cn.srs数据库
-	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geoip-cn\"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"rule_set": *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
 	#预下载geosite-cn.srs数据库
-	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"rule_set\": \"geosite-cn\"')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.srs srs_geosite_cn.srs
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"rule_set": *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.srs srs_geosite_cn.srs
 	#预下载GeoIP数据库
-	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geoip\":')" ] && ckgeo geoip.db geoip_cn.db
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"geoip":')" ] && ckgeo geoip.db geoip_cn.db
 	#预下载GeoSite数据库
-	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '\"geosite\":')" ] && ckgeo geosite.db geosite_cn.db
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"geosite":')" ] && ckgeo geosite.db geosite_cn.db
 	return 0
 }
 bfstart(){ #启动前
@@ -1639,6 +1643,7 @@ bfstart(){ #启动前
 	}
 	#清理debug日志
 	rm -rf ${TMPDIR}/debug.log
+	rm -rf ${CRASHDIR}/debug.log
 	return 0
 }
 afstart(){ #启动后
@@ -1840,7 +1845,8 @@ debug)
 			else
 				sed -i "s/log-level: info/log-level: $2/" ${TMPDIR}/config.yaml
 			fi
-			$COMMAND >${TMPDIR}/debug.log 2>&1 &
+			[ "$3" = flash ] && dir=$CRASHDIR || dir=$TMPDIR
+			$COMMAND >${dir}/debug.log 2>&1 &
 			sleep 2
 			logger "已运行debug模式!如需停止，请使用重启/停止服务功能！" 33 
 		else

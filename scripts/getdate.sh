@@ -1961,6 +1961,7 @@ debug(){
 	echo -e " 3 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[31merror\033[0m"
 	echo -e " 4 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[32minfo\033[0m"
 	echo -e " 5 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[33mdebug\033[0m"
+	echo -e " 6 后台运行完整启动流程,并配置防火墙劫持,且将错误日志打印到闪存：\033[32m$CRASHDIR/debug.log\033[0m"
 	echo -----------------------------------------------
 	echo -e " 8 后台运行完整启动流程,输出执行错误并查找上下文,之后关闭进程"
 	[ -s $TMPDIR/jsons/inbounds.json ] && echo -e " 9 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
@@ -1999,6 +2000,12 @@ debug(){
 	;;
 	5)
 		$CRASHDIR/start.sh debug debug
+		main_menu
+	;;
+	6)
+		echo -e "频繁写入闪存会导致闪存寿命降低，如非遇到会导致设备死机或重启的bug，请勿使用此功能！"
+		read -p "是否继续？(1/0) > " res	
+		[ "$res" = 1 ] && $CRASHDIR/start.sh debug debug flash
 		main_menu
 	;;
 	8)

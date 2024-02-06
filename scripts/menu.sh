@@ -85,7 +85,7 @@ ckstatus(){
 		checkport
 	fi
 	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && corename=SingBox || corename=Clash
-	[ -f ${TMPDIR}/debug.log -a -n "$PID" ] && auto="\033[33m并处于debug状态！\033[0m"
+	[ -f ${TMPDIR}/debug.log -o -f ${CRASHDIR}/debug.log -a -n "$PID" ] && auto="\033[33m并处于debug状态！\033[0m"
 	#输出状态
 	echo -----------------------------------------------
 	echo -e "\033[30;46m欢迎使用ShellCrash！\033[0m		版本：$versionsh_l"
@@ -769,7 +769,7 @@ setfirewall(){ #防火墙设置
 }
 checkport(){ #自动检查端口冲突
 	for portx in $dns_port $mix_port $redir_port $db_port ;do
-		if [ -n "$(netstat -ntul 2>&1 |grep '\:$portx ')" ];then
+		if [ -n "$(netstat -ntul 2>&1 |grep ':$portx ')" ];then
 			echo -----------------------------------------------
 			echo -e "检测到端口【$portx】被以下进程占用！内核可能无法正常启动！\033[33m"
 			echo $(netstat -ntul | grep :$portx | head -n 1)
