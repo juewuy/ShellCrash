@@ -901,6 +901,7 @@ getcore(){ #下载内核文件
 		[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
 		[ -f ${TMPDIR}/core_new.tar.gz ] && {
 			mkdir -p ${TMPDIR}/core_tmp
+			[ "$BINDIR" = "$TMPDIR" ] && rm -rf ${TMPDIR}/CrashCore #小闪存模式防止空间不足
 			tar -zxf "${TMPDIR}/core_new.tar.gz" ${tar_para} -C ${TMPDIR}/core_tmp/
 			for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
 				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
@@ -1077,16 +1078,16 @@ setcore(){ #内核选择菜单
 	echo -e "\033[36m如需本地上传，请将二进制文件上传至 /tmp 目录后重新运行crash命令\033[0m"
 	echo -----------------------------------------------
 	echo -e "1 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
-	echo -e " (开源基础内核)  \033[33m不支持Tun、Rule-set等\033[0m"
+	echo -e " >>\033[32m$clash_v  	\033[33m不支持Tun、Rule-set等\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo -e "2 \033[43;30m SingBox \033[0m：	\033[32m支持全面占用低\033[0m"
-	echo -e " (sing-box主干)  \033[33m不支持providers\033[0m"
+	echo -e " >>\033[32m$singbox_v  	\033[33m不支持providers\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo -e "3 \033[43;30m Mihomo \033[0m：	\033[32m多功能，支持全面\033[0m"
-	echo -e " (Meta/Mihomo)   \033[33m内存占用较高\033[0m"
+	echo -e " >>\033[32m$meta_v   	\033[33m内存占用较高\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
-	echo -e " (sing-box分支)  \033[33mPuerNya分支版本\033[0m"
+	echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo -----------------------------------------------
 	echo -e "5 \033[36m自定义内核\033[0m	$custcore"
@@ -1599,6 +1600,7 @@ setserver(){
 	read -p "请输入对应字母或数字 > " num
 	case $num in
 	0)
+		checkupdate=false
 	;;
 	[1-99])
 		url_id_new=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
@@ -1703,7 +1705,7 @@ checkupdate(){
 	else
 		echo -e "\033[31m检查更新失败！请尝试切换其他安装源！\033[0m"
 		setserver
-		checkupdate
+		[ "$checkupdate" = false ] || checkupdate
 	fi
 	rm -rf ${TMPDIR}/version_new
 }

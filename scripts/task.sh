@@ -50,6 +50,7 @@ update_core(){ #自动更新内核
 			[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
 			[ -f ${TMPDIR}/core_new.tar.gz ] && {
 				mkdir -p ${TMPDIR}/core_new
+				[ "$BINDIR" = "$TMPDIR" ] && rm -rf ${TMPDIR}/CrashCore #小闪存模式防止空间不足
 				tar -zxf "${TMPDIR}/core_new.tar.gz" ${tar_para} -C ${TMPDIR}/core_new/
 				for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
 					[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new

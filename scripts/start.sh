@@ -672,10 +672,10 @@ EOF
 	[ -n "$authentication" ] && {
 		username=$(echo $authentication | awk -F ':' '{print $1}') #混合端口账号密码
 		password=$(echo $authentication | awk -F ':' '{print $2}')
-		userpass=', "users": [{ "username": "'$username'", "password": "'$password'" }]'
+		userpass='"users": [{ "username": "'$username'", "password": "'$password'" }], '
 	}
 	[ "$sniffer" = "已启用" ] && sniffer=true || sniffer=false #域名嗅探配置
-		
+	[ "$crashcore" = singboxp ] && always_resolve_udp='"always_resolve_udp": true,'
 	cat > ${TMPDIR}/jsons/inbounds.json <<EOF
 {
   "inbounds": [
@@ -684,7 +684,8 @@ EOF
       "tag": "mixed-in",
       "listen": "0.0.0.0",
       "listen_port": $mix_port,
-      "sniff": false$userpass
+	  $userpass
+      "sniff": false
     }, {
       "type": "direct",
       "tag": "dns-in",
@@ -702,6 +703,7 @@ EOF
       "tag": "tproxy-in",
       "listen": "::",
       "listen_port": $tproxy_port,
+	  $always_resolve_udp
       "sniff": true,
       "sniff_override_destination": $sniffer
     }
@@ -719,6 +721,7 @@ EOF
       "inet4_address": "198.18.0.0/16",
       "auto_route": false,
       "stack": "system",
+	  $always_resolve_udp
       "sniff": true,
       "sniff_override_destination": $sniffer
     }

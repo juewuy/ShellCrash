@@ -159,7 +159,7 @@ errornum(){
 	echo -e "\033[31m请输入正确的字母或数字！\033[0m"
 }
 startover(){
-	echo -e "\033[32m$corename服务已启动！\033[0m"
+	echo -e "\033[32m服务已启动！\033[0m"
 	echo -e "请使用 \033[4;36mhttp://$host$hostdir\033[0m 管理内置规则"
 	if [ "$redir_mod" = "纯净模式" ];then
 		echo -----------------------------------------------
@@ -1204,6 +1204,7 @@ normal_set(){ #基础设置
 
 	}
 	set_dns_mod(){
+		[ "$dns_mod" = mix ] && [ "$crashcore" != singbox -o "$crashcore" != singboxp ] && dns_mod=redir_host
 		echo -----------------------------------------------
 		echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
@@ -1213,7 +1214,7 @@ normal_set(){ #基础设置
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   需搭配加密DNS使用"
 		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
-		echo -e "                   限singbox1.8.0+内核!"
+		echo -e "                   依赖geosite-cn.(db/srs)数据库"
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
@@ -1232,7 +1233,7 @@ normal_set(){ #基础设置
 			echo -----------------------------------------------	
 			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		elif [ "$num" = 3 ]; then
-			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ] && [ "$core_v" != '1.7.8' ];then
+			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 				dns_mod=mix
 				setconfig dns_mod $dns_mod 
 				echo -----------------------------------------------	
