@@ -1555,6 +1555,7 @@ clash_check(){ #clash启动前检查
 		rm -rf ${BINDIR}/CrashCore
 		rm -rf ${BINDIR}/CrashCore.tar.gz
 		crashcore=meta
+		setconfig crashcore $crashcore
 		echo -----------------------------------------------
 	fi
 	#检测是否存在高级版规则或者tun模式
@@ -1587,6 +1588,7 @@ singbox_check(){ #singbox启动前检查
 		rm -rf ${BINDIR}/CrashCore
 		rm -rf ${BINDIR}/CrashCore.tar.gz
 		crashcore=singboxp		
+		setconfig crashcore $crashcore
 	fi
 	core_check
 	#预下载geoip-cn.srs数据库
