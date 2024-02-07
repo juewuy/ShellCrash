@@ -1615,7 +1615,7 @@ bfstart(){ #启动前
 		fi
 	fi
 	#检查dashboard文件
-	if [ -f ${CRASHDIR}/ui/index.html -a ! -f ${BINDIR}/ui/index.html ];then
+	if [ -f ${CRASHDIR}/ui/CNAME -a ! -f ${BINDIR}/ui/CNAME ];then
 		cp -rf ${CRASHDIR}/ui ${BINDIR}
 	fi
 	[ ! -s ${BINDIR}/ui/index.html ] && makehtml #如没有面板则创建跳转界面
@@ -1862,6 +1862,7 @@ init)
 				sleep 5 && i=$((i+1))
 			done
 			profile=/etc/profile
+			mount -t tmpfs -o remount,rw,size=45M tmpfs /tmp #增加/tmp空间以适配新的内核压缩方式
 			sed -i '' $profile #将软链接转化为一般文件
 		elif [ -d "/jffs" ];then
 			sleep 60

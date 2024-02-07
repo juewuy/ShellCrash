@@ -235,7 +235,9 @@ fi
 	echo "$CRASHDIR/start.sh init #ShellCrash初始化脚本" >> $initdir
 	chmod a+rx $initdir 2>/dev/null
 	setconfig initdir $initdir
-	}
+}
+#Padavan额外设置
+[ -f "/etc/storage/started_script.sh" ] && mount -t tmpfs -o remount,rw,size=45M tmpfs /tmp #增加/tmp空间以适配新的内核压缩方式
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ];then
 	chmod 755 ${CRASHDIR}/misnap_init.sh

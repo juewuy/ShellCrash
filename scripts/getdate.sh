@@ -929,6 +929,7 @@ getcore(){ #下载内核文件
 			else
 				tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore
 			fi
+			rm -rf ${TMPDIR}/CrashCore.tar.gz #小闪存模式清理文件优化内存占用
 			setconfig crashcore $crashcore
 			setconfig core_v $core_v
 			setconfig custcorelink $custcorelink
