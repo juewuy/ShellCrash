@@ -118,6 +118,7 @@ jobs:
       GOARM: ${{ matrix.goarm }}
       GOMIPS: ${{ matrix.gomips }}
       CGO_ENABLED: 0
+      REPO: ${{ github.event.inputs.tag1 }}
       TAGS: ${{needs.sing-box.outputs.tags}}
       VERSION: ${{needs.sing-box.outputs.version}}
     steps:
@@ -132,6 +133,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.go.outputs.version }}
+          
+      - name: checkout sing repository
+        if: ${{ env.REPO == 'PuerNya/sing-box' }}
+        uses: actions/checkout@v4.1.1
+        with:
+          ref: fix-interface
+          path: sing
+          repository: PuerNya/sing
+
+      - name: replace sing
+        if: ${{ env.REPO == 'PuerNya/sing-box' }}
+        run: sed -i 's/^\/\/replace github.com.*$/replace github.com\/sagernet\/sing => .\/sing/' go.mod
           
       - name: build core
         id: build
