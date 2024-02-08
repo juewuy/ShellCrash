@@ -110,7 +110,9 @@ jobs:
 
       fail-fast: false
     runs-on: ubuntu-latest
-    needs: sing-box
+    needs: 
+      - go
+      - sing-box
     env:
       GOOS: ${{ matrix.goos }}
       GOARCH: ${{ matrix.goarch }}
@@ -132,7 +134,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ steps.go.outputs.version }}
+          go-version: ${{needs.go.outputs.version}}
           
       - name: checkout sing repository
         if: ${{ env.REPO == 'PuerNya/sing-box' }}
