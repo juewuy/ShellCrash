@@ -730,7 +730,7 @@ EOF
 EOF
 	fi
 	#生成add_outbounds.json
-	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"tag": *"DIRECT"')" ] && cat > ${TMPDIR}/jsons/add_outbounds.json <<EOF
+	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oE '"tag": *"DIRECT"')" ] && cat > ${TMPDIR}/jsons/add_outbounds.json <<EOF
 {
   "outbounds": [ 
     { "type": "direct", "tag": "DIRECT" }
