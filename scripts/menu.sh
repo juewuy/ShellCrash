@@ -990,11 +990,13 @@ setboot(){ #启动相关设置
 	2)
 		if [ "$start_old" = "未开启" ] > /dev/null 2>&1; then 
 			echo -e "\033[33m改为使用保守模式启动服务！！\033[0m"
+			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash > /dev/null 2>&1 && cd - >/dev/null
+			ckcmd systemctl && systemctl disable shellcrash.service > /dev/null 2>&1
 			start_old=已开启
 			setconfig start_old $start_old
 			${CRASHDIR}/start.sh stop
 		else
-			if [ -n "$(pidof procd)" -o -w /etc/systemd/system -o -w /usr/lib/systemd/system ];then
+			if [ "$(cat /proc/1/comm)" = "procd" -o "$(cat /proc/1/comm)" = "systemd" ];then
 				echo -e "\033[32m改为使用系统守护进程启动服务！！\033[0m"
 				${CRASHDIR}/start.sh cronset "ShellCrash初始化"
 				start_old=未开启
