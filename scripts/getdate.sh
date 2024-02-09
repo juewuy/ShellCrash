@@ -359,7 +359,11 @@ EOF
 		echo -e "\033[33m未找到本地模版，尝试在线获取！\033[0m"
 		mkdir -p ${CRASHDIR}/providers
 		${CRASHDIR}/start.sh get_bin ${CRASHDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
-		[ "$?" != 0 ] && echo -e "\033[31m下载失败，已退出！\033[0m" && exit
+		[ "$?" != 0 ] && {
+			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
+			setserver
+			setproviders
+		}
 	fi
 	#生成proxy_providers模块
 	mkdir -p ${TMPDIR}/providers
@@ -425,7 +429,11 @@ EOF
 		echo -e "\033[33m未找到本地模版，尝试在线获取！\033[0m"
 		mkdir -p ${CRASHDIR}/providers
 		${CRASHDIR}/start.sh get_bin ${CRASHDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
-		[ "$?" != 0 ] && echo -e "\033[31m下载失败，已退出！\033[0m" && exit
+		[ "$?" != 0 ] && {
+			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
+			setserver
+			setproviders
+		}
 	fi
 	#生成outbound_providers模块
 	mkdir -p ${TMPDIR}/providers
@@ -566,6 +574,15 @@ setproviders(){ #自定义providers
 		setproviders
 	;;
 	c)	
+		[ ! -s ${CRASHDIR}/configs/${coretype}_providers.list ] && {
+		echo -e "\033[32m正在在线获取模版列表！\033[0m"
+		${CRASHDIR}/start.sh get_bin ${CRASHDIR}/configs/${coretype}_providers.list rules/${coretype}_providers/${coretype}_providers.list
+		[ "$?" != 0 ] && {
+			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
+			setserver
+			setproviders
+			}
+		}
 		if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
 			provider_temp_des=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
 		else
@@ -921,7 +938,7 @@ set_core_config(){ #配置文件功能
 	echo -----------------------------------------------
 	echo -e " 1 在线\033[32m生成$crashcore配置文件\033[0m"
 	echo -e " 2 在线\033[33m获取完整配置文件\033[0m"
-	echo -e " 3 本地\033[32m生成providers配置文件\033[0m"	
+	echo -e " 3 本地\033[32m生成providers配置文件\033[0m(实验性)\033[0m"	
 	echo -e " 4 本地\033[33m上传完整配置文件\033[0m"
 	echo -e " 5 设置\033[36m自动更新\033[0m"
 	echo -e " 6 \033[32m自定义\033[0m配置文件"
