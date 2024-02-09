@@ -1536,7 +1536,6 @@ core_check(){ #检查及下载内核文件
 			else
 				mv -f ${TMPDIR}/core_new ${TMPDIR}/CrashCore
 				mv -f ${TMPDIR}/CrashCore.tar.gz ${BINDIR}/CrashCore.tar.gz
-				rm -rf ${TMPDIR}/CrashCore.tar.gz #小闪存模式清理文件优化内存占用
 				setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 				setconfig crashcore $crashcore
 				setconfig core_v $core_v
@@ -1637,6 +1636,7 @@ bfstart(){ #启动前
 	#添加shellcrash用户
 	[ -n "$(echo $local_type | grep '增强模式')" -o "$(cat /proc/1/comm)" = "systemd" ] && \
 	[ -z "$(id shellcrash 2>/dev/null | grep 'root')" ] && {
+		ckcmd userdel && userdel shellcrash 2>/dev/null
 		sed -i '/0:7890/d' /etc/passwd
 		sed -i '/x:7890/d' /etc/group
 		if ckcmd useradd; then
@@ -1672,6 +1672,7 @@ afstart(){ #启动后
 		i=$((i+1))
 	done
 	if [ -n "$test" -o -n "$(pidof CrashCore)" ];then
+		rm -rf ${TMPDIR}/CrashCore #删除缓存目录内核文件
 		#设置DNS转发
 		start_dns(){
 			[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route

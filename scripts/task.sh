@@ -389,6 +389,7 @@ task_manager(){ #任务管理列表
 	cat ${TMPDIR}/task_cronlist ${CRASHDIR}/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > ${TMPDIR}/task_list
 	cat ${CRASHDIR}/task/bfstart ${CRASHDIR}/task/afstart ${CRASHDIR}/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> ${TMPDIR}/task_list
 	cat ${TMPDIR}/task_cronlist 2>/dev/null | sort -u | grep -oE " #.*" | grep -v "守护" | awk -F '#' '{print "0 旧版任务-"$2}' >> ${TMPDIR}/task_list
+	sed -i '/^ *$/d' ${TMPDIR}/task_list
 	rm -rf ${TMPDIR}/task_cronlist
 	#判断为空则返回
 	if [ ! -s ${TMPDIR}/task_list ];then

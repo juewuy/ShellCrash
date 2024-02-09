@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.0pre4
+version=1.9.0pre5
 
 setdir(){
 	dir_avail(){
@@ -160,6 +160,7 @@ else
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
 		#创建shellcrash用户
+		ckcmd userdel && userdel shellcrash 2>/dev/null
 		sed -i '/0:7890/d' /etc/passwd
 		sed -i '/x:7890/d' /etc/group
 		if type useradd >/dev/null 2>&1; then
@@ -173,9 +174,10 @@ else
 		sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
 		rm -rf $sysdir/clash.service #旧版文件清理
 		systemctl daemon-reload
-	fi
+	else
 		#设为保守模式启动
 		setconfig start_old 已开启
+	fi
 fi
 #修饰文件及版本号
 command -v bash >/dev/null 2>&1 && shtype=bash || shtype=sh 
