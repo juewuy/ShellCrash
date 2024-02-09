@@ -1,0 +1,38 @@
+#DustinWin-ruleset全分组规则
+proxy-groups:
+  - {name: 🚀 节点选择, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
+  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 本机直连]}
+  - {name: 🛑 广告拦截, type: select, proxies: [REJECT, 🎯 本机直连]}
+  - {name: 🔗 直连域名, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 🪜 代理域名, type: select, proxies: [🚀 节点选择, 🎯 本机直连]}
+  - {name: 🎮 游戏平台, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: Ⓜ️ 微软服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 📢 谷歌服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 🍎 苹果服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 🇨🇳 国内 IP, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 📲 电报消息, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
+  - {name: 🔒 私有网络, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 📈 网络测试, type: select, proxies: [🎯 本机直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
+  - {name: 🎯 本机直连, type: select, proxies: [DIRECT]}
+  - {name: 🚀 手动切换, type: select, use: [{providers_tags}]}
+  - {name: 🇭🇰 香港节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)港|hk|hongkong|hong kong"}
+  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)台|tw|taiwan"}
+  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)日本|jp|japan"}
+  - {name: 🇸🇬 新加坡节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)新|sg|singapore"}
+  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)美|us|unitedstates|united states"}
+
+rules:
+  - GEOSITE,category-ads-all,🛑 广告拦截
+  - GEOSITE,private,🔒 私有网络
+  - GEOSITE,microsoft@cn,Ⓜ️ 微软服务
+  - GEOSITE,apple-cn,🍎 苹果服务
+  - GEOSITE,google-cn,📢 谷歌服务
+  - GEOSITE,category-games@cn,🎮 游戏平台
+  - GEOSITE,speedtest,📈 网络测试
+  - GEOSITE,geolocation-!cn,🪜 代理域名
+  - GEOSITE,cn,🔗 直连域名
+  - GEOIP,telegram,📲 电报消息
+  - GEOIP,private,🔒 私有网络,no-resolve
+  - GEOIP,cn,🇨🇳 国内 IP
+  - MATCH,🐟 漏网之鱼
+  
