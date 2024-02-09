@@ -334,6 +334,270 @@ setproxies(){ #自定义clash节点
 	;;
 	esac
 }
+gen_clash_providers(){ #生成clash的providers配置文件
+	gen_clash_providers_txt(){ 
+		cat >> $TMPDIR/providers/providers.yaml <<EOF
+  ${1}:
+    type: http
+    url: "${2}"
+    path: ./providers/${1}.yaml
+    interval: 43200
+    health-check:
+      enable: true
+      lazy: true
+      url: "https://www.gstatic.com/generate_204"
+      interval: 600
+EOF
+}
+	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+		provider_temp_file=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $2}')
+	else
+		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
+	fi
+	echo -----------------------------------------------
+	if [ ! -s ${CRASHDIR}/providers/${provider_temp_file} ];then
+		echo -e "\033[33m未找到本地模版，尝试在线获取！\033[0m"
+		mkdir -p ${CRASHDIR}/providers
+		${CRASHDIR}/start.sh get_bin ${CRASHDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
+		[ "$?" != 0 ] && echo -e "\033[31m下载失败，已退出！\033[0m" && exit
+	fi
+	#生成proxy_providers模块
+	mkdir -p ${TMPDIR}/providers
+	#预创建文件并写入对应文件头
+	echo 'proxy-providers:' > ${TMPDIR}/providers/providers.yaml
+	#切割模版文件
+	sed -n '/^proxy-groups:/,/^[a-z]/ { /^rule/d; p; }' ${CRASHDIR}/providers/${provider_temp_file} > ${TMPDIR}/providers/proxy-groups.yaml
+	sed -n '/^rule/,$p' ${CRASHDIR}/providers/${provider_temp_file} > ${TMPDIR}/providers/rules.yaml
+	#生成providers模块
+	if [ -n "$2" ];then
+		gen_clash_providers_txt $1 $2
+	else
+		providers_tags=''
+		while read line;do
+			tag=$(echo $line | awk '{print $1}')
+			url=$(echo $line | awk '{print $2}')
+			providers_tags=$(echo "$providers_tags, $tag" | sed 's/^, //')
+			gen_clash_providers_txt $tag $url
+			echo '  - {name: '${tag}', type: url-test, tolerance: 100, lazy: true, use: ['${tag}']}' >> ${TMPDIR}/providers/proxy-groups.yaml
+		done < ${CRASHDIR}/configs/providers.cfg
+	fi
+	#修饰模版文件并合并
+	sed -i "s/{providers_tags}/$providers_tags/g" ${TMPDIR}/providers/proxy-groups.yaml
+	cut -c 1- ${TMPDIR}/providers/providers.yaml ${TMPDIR}/providers/proxy-groups.yaml ${TMPDIR}/providers/rules.yaml > ${TMPDIR}/config.yaml
+	rm -rf ${TMPDIR}/providers
+	#调用内核测试
+	${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml >/dev/null
+	if [ "$?" = 0 ];then
+		echo -e "\033[32m配置文件生成成功！\033[0m"
+		mv -f ${TMPDIR}/config.yaml ${CRASHDIR}/yamls/config.yaml
+		read -p "是否立即启动/重启服务？(1/0) > " res
+		[ "$res" = 1 ] && {
+			start_core
+			exit
+		}
+	else
+		echo -e "\033[31m生成配置文件出错，请仔细检查输入！\033[0m"
+	fi
+}
+gen_singbox_providers(){ #生成singbox的providers配置文件
+	gen_singbox_providers_txt(){ 
+		cat >> ${TMPDIR}/providers/providers.json <<EOF
+	{
+      "tag": "${1}",
+      "type": "http",
+      "healthcheck_url": "https://www.gstatic.com/generate_204",
+      "healthcheck_interval": "10m",
+      "download_url": "${2}",
+      "path": "./providers/${1}.yaml",
+      "download_ua": "clash",
+      "download_interval": "24h",
+      "download_detour": "DIRECT"
+	},
+EOF
+	}
+	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+		provider_temp_file=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $2}')
+	else
+		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
+	fi
+	echo -----------------------------------------------
+	if [ ! -s ${CRASHDIR}/providers/${provider_temp_file} ];then
+		echo -e "\033[33m未找到本地模版，尝试在线获取！\033[0m"
+		mkdir -p ${CRASHDIR}/providers
+		${CRASHDIR}/start.sh get_bin ${CRASHDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
+		[ "$?" != 0 ] && echo -e "\033[31m下载失败，已退出！\033[0m" && exit
+	fi
+	#生成outbound_providers模块
+	mkdir -p ${TMPDIR}/providers
+	#预创建文件并写入对应文件头
+	cat > ${TMPDIR}/providers/providers.json <<EOF
+{
+  "outbound_providers": [
+EOF
+	cat > ${TMPDIR}/providers/outbounds_add.json <<EOF
+{
+  "outbounds": [
+EOF
+	if [ -n "$2" ];then
+		gen_singbox_providers_txt $1 $2
+	else
+		providers_tags=''
+		while read line;do
+			tag=$(echo $line | awk '{print $1}')
+			url=$(echo $line | awk '{print $2}')
+			providers_tags=$(echo "$providers_tags, \"$tag\"" | sed 's/^, //')
+			gen_singbox_providers_txt $tag $url
+			echo '{ "tag": "'${tag}'", "type": "urltest", "tolerance": 100, "providers": "'${tag}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
+		done < ${CRASHDIR}/configs/providers.cfg
+	fi
+	sed -i '$s/},/}]}/' ${TMPDIR}/providers/providers.json #修复文件格式
+	sed -i '$s/},/}]}/' ${TMPDIR}/providers/outbounds_add.json #修复文件格式
+	#使用模版生成outbounds和rules模块
+	cat ${CRASHDIR}/providers/${provider_temp_file} | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
+	#调用内核测试
+	${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
+	if [ "$?" = 0 ];then
+		echo -e "\033[32m配置文件生成成功！\033[0m"
+		mv -f ${TMPDIR}/config.json ${CRASHDIR}/jsons/config.json
+		rm -rf ${TMPDIR}/providers
+		read -p "是否立即启动/重启服务？(1/0) > " res
+		[ "$res" = 1 ] && {
+			start_core
+			exit
+		}
+	else
+		echo -e "\033[31m生成配置文件出错，请仔细检查输入！\033[0m"
+		rm -rf ${TMPDIR}/providers
+	fi
+}
+setproviders(){ #自定义providers
+	echo -----------------------------------------------
+	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers提供者\033[0m"
+	[ -s $CRASHDIR/configs/providers.cfg ] && { 
+		echo -----------------------------------------------
+		echo -e "\033[36m输入对应数字可管理providers提供者\033[0m"
+		cat $CRASHDIR/configs/providers.cfg | awk -F "#" '{print " "NR" "$1" "$2}'
+	}
+	echo -----------------------------------------------
+	echo -e " a \033[36m添加\033[0mproviders提供者"
+	echo -e " b \033[32m生成\033[0m基于providers的配置文件"
+	echo -e " c 选择\033[33m规则模版\033[0m"
+	echo -e " d \033[31m清空\033[0mproviders列表"
+	echo -e " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	case $num in
+	0)
+	;;	
+	[1-9]|[1-9][0-9])
+		provider_name=$(sed -n "$num p" $CRASHDIR/configs/providers.cfg | awk '{print $1}')
+		provider_url=$(sed -n "$num p" $CRASHDIR/configs/providers.cfg | awk '{print $2}')
+		if [ -z "$provider_name" ];then
+			errornum
+		else
+			echo -----------------------------------------------
+			echo -e " 1 修改代理提供者：\033[36m$provider_name\033[0m"
+			echo -e " 2 修改链接地址：\033[32m$provider_url\033[0m"
+			echo -e " 3 生成\033[33m仅包含此提供者\033[0m的配置文件"
+			echo -e " 4 \033[31m移除此提供者\033[0m"
+			echo -----------------------------------------------
+			echo -e " 0 返回上级菜单" 
+			read -p "请选择需要执行的操作 > " num
+			case "$num" in
+			0)
+			;;
+			1)
+				read -p "请输入代理提供者的名称或者代称(如有多个提供者不可重复) > " name
+				if [ -n "$name" ] && [ -z "$(grep "$name" $CRASHDIR/configs/providers.cfg)" ];then
+					sed -i "s|$provider_name $provider_url|$name $provider_url|" $CRASHDIR/configs/providers.cfg
+				else
+					echo -e "\033[31m输入错误，请重新输入！\033[0m" 
+				fi
+			;;	
+			2)
+				read -p "请输入http(s)格式的providers链接地址 > " link
+				if [ -n "$(echo $link | grep -E '.*\..*')" ] && [ -z "$(grep "$link" $CRASHDIR/configs/providers.cfg)" ];then
+					sed -i "s|$provider_name $provider_url|$provider_name $link|" $CRASHDIR/configs/providers.cfg
+				else
+					echo -e "\033[31m输入错误，请重新输入！\033[0m" 
+				fi
+			;;	
+			3)
+				gen_outbound_providers $provider_name $provider_url
+			;;	
+			4)
+				sed -i "/$provider_name/d" $CRASHDIR/configs/providers.cfg
+			;;
+			*)
+				errornum
+			;;
+			esac
+			sleep 1
+		fi
+		setproviders
+	;;
+	a)
+		echo -----------------------------------------------
+		read -p "请输入http(s)格式的providers链接地址 > " link
+		[ -n "$(echo $link | grep -E '.*\..*')" ] && {
+			read -p "请输入代理提供者的名称或者代号(不可重复) > " name
+			[ -n "$name" ] && [ -z "$(grep "name" $CRASHDIR/configs/providers.cfg)" ] && { 
+				echo -----------------------------------------------
+				echo -e "代理提供者：\033[36m$name\033[0m"
+				echo -e "链接地址：\033[32m$link\033[0m"
+				read -p "确认添加？(1/0) > " res
+					[ "$res" = 1 ] && {
+						echo "$name $link" >> $CRASHDIR/configs/providers.cfg
+						echo -e "\033[32mproviders已添加！\033[0m" 
+					}
+			}
+		}
+		[ "$?" != 0 ] && echo -e "\033[31m操作已取消！\033[0m"
+		sleep 1
+		setproviders
+	;;
+	b)	
+		echo -----------------------------------------------
+		echo -e "\033[33msingboxp与mihomo内核的providers配置文件不互通！\033[0m"
+		echo -----------------------------------------------
+		read -p "确认生成${coretype}配置文件？(1/0) > " res
+		[ "$res" = "1" ] && {
+			gen_${coretype}_providers
+		}
+		setproviders
+	;;
+	c)	
+		if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+			provider_temp_des=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
+		else
+			provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
+			provider_temp_des=$(grep "$provider_temp_file" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
+		fi
+		echo -----------------------------------------------
+		echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
+		echo -e "\033[33m请选择在线模版：\033[0m"
+		echo -----------------------------------------------
+		cat ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print " "NR" "$1}'
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num
+		provider_temp_file=$(sed -n "$num p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $2}')
+		if [ -z "$provider_temp_file" ];then
+			errornum
+		else
+			setconfig provider_temp_${coretype} $provider_temp_file
+		fi
+		setproviders
+	;;
+	d)
+		read -p "确认清空全部providers提供者？(1/0) > " res
+		[ "$res" = "1" ] && rm -rf $CRASHDIR/configs/providers.cfg
+		setproviders
+	;;
+	*)
+		errornum
+	;;
+	esac
+}
+
 set_clash_adv(){ #自定义clash高级规则
 		[ ! -f $YAMLSDIR/user.yaml ] && cat > $YAMLSDIR/user.yaml <<EOF
 #用于编写自定义设定(可参考https://lancellc.gitbook.io/clash/clash-config-file/general 或 https://docs.metacubex.one/function/general)
@@ -656,11 +920,13 @@ set_core_config(){ #配置文件功能
 	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 在线\033[32m生成$crashcore配置文件\033[0m"
-	echo -e " 2 导入\033[33m外部配置文件链接\033[0m"
-	echo -e " 3 \033[36m管理\033[0m配置文件"
-	echo -e " 4 \033[33m更新\033[0m配置文件"
+	echo -e " 2 在线\033[33m获取完整配置文件\033[0m"
+	echo -e " 3 本地\033[32m生成providers配置文件\033[0m"	
+	echo -e " 4 本地\033[33m上传完整配置文件\033[0m"
 	echo -e " 5 设置\033[36m自动更新\033[0m"
 	echo -e " 6 \033[32m自定义\033[0m配置文件"
+	echo -e " 7 \033[33m更新\033[0m配置文件"
+	echo -e " 8 \033[36m还原\033[0m配置文件"
 	echo -----------------------------------------------
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
@@ -684,7 +950,7 @@ set_core_config(){ #配置文件功能
 	;;
 	2)
 		echo -----------------------------------------------
-		echo -e "\033[33m此功能可能会导致严重bug！！！\033[0m"
+		echo -e "\033[33m此功能可能会导致一些bug！！！\033[0m"
 		echo -e "强烈建议你使用\033[32m在线生成配置文件功能！\033[0m"
 		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
 		echo -----------------------------------------------
@@ -700,27 +966,38 @@ set_core_config(){ #配置文件功能
 		fi
 	;;
 	3)
-		if [ ! -f ${config_path}.bak ];then
-			echo -----------------------------------------------
-			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
-			set_core_config
+		if [ "$crashcore" = meta -o "$crashcore" = clashpre ];then
+			coretype=clash
+			setproviders
+		elif [ "$crashcore" = singboxp ];then
+			coretype=singbox
+			setproviders
 		else
-			echo -----------------------------------------------
-			echo -e 备份文件共有"\033[32m`wc -l < ${config_path}.bak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < ${config_path}`\033[0m"行内容
-			read -p "确认还原配置文件？此操作不可逆！[1/0] > " res
-			if [ "$res" = '1' ]; then
-				mv ${config_path}.bak ${config_path}
-				echo -----------------------------------------------
-				echo -e "\033[32m配置文件已还原！请手动重启服务！\033[0m"
-				sleep 1
-			else 
-				echo -----------------------------------------------
-				echo -e "\033[31m操作已取消！返回上级菜单！\033[0m"
-				set_core_config
-			fi
+			echo -e "\033[33msingbox官方内核及Clash基础内核不支持此功能，请先更换内核！\033[0m"
+			sleep 1
+			checkupdate && setcore
 		fi
+		set_core_config
 	;;
 	4)
+		echo -----------------------------------------------
+		echo -e "\033[33m请将本地配置文件上传到/tmp目录并重命名为config.yaml或者config.json\033[0m"
+		echo -e "\033[32m之后重新运行本脚本即可自动弹出导入提示！\033[0m"
+		exit
+	;;
+	5)
+		source ${CRASHDIR}/task/task.sh && task_add
+		set_core_config
+	;;
+	6)
+		checkcfg=$(cat $CFG_PATH)
+		override
+		if [ -n "$PID" ];then
+			checkcfg_new=$(cat $CFG_PATH)
+			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+		fi
+	;;
+	7)
 		if [ -z "$Url" -a -z "$Https" ];then
 			echo -----------------------------------------------
 			echo -e "\033[31m没有找到你的配置文件/订阅链接！请先输入链接！\033[0m"
@@ -739,16 +1016,25 @@ set_core_config(){ #配置文件功能
 			fi
 		fi
 	;;
-	5)
-		source ${CRASHDIR}/task/task.sh && task_add
-		set_core_config
-	;;
-	6)
-		checkcfg=$(cat $CFG_PATH)
-		override
-		if [ -n "$PID" ];then
-			checkcfg_new=$(cat $CFG_PATH)
-			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+	8)
+		if [ ! -f ${config_path}.bak ];then
+			echo -----------------------------------------------
+			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
+			set_core_config
+		else
+			echo -----------------------------------------------
+			echo -e 备份文件共有"\033[32m`wc -l < ${config_path}.bak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < ${config_path}`\033[0m"行内容
+			read -p "确认还原配置文件？此操作不可逆！[1/0] > " res
+			if [ "$res" = '1' ]; then
+				mv ${config_path}.bak ${config_path}
+				echo -----------------------------------------------
+				echo -e "\033[32m配置文件已还原！请手动重启服务！\033[0m"
+				sleep 1
+			else 
+				echo -----------------------------------------------
+				echo -e "\033[31m操作已取消！返回上级菜单！\033[0m"
+				set_core_config
+			fi
 		fi
 	;;
 	*)
@@ -1981,7 +2267,7 @@ debug(){
 			{ sleep 4 ; kill $! >/dev/null 2>&1 & }
 			wait
 		else
-			$TMPDIR/CrashCore -t -d $BINDIR -f $TMPDIR/config.yaml
+			${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
 		fi
 		echo -----------------------------------------------
 		exit
