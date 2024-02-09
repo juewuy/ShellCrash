@@ -1672,7 +1672,7 @@ afstart(){ #启动后
 		i=$((i+1))
 	done
 	if [ -n "$test" -o -n "$(pidof CrashCore)" ];then
-		rm -rf ${TMPDIR}/CrashCore #删除缓存目录内核文件
+		#rm -rf ${TMPDIR}/CrashCore #删除缓存目录内核文件
 		#设置DNS转发
 		start_dns(){
 			[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
