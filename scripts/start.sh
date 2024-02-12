@@ -592,7 +592,7 @@ EOF
 		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ];then
 			mix_dns="{ \"rule_set\": [\"geosite-cn\"], \"invert\": true, \"server\": \"dns_fakeip\" },"
 			#生成add_rule_set.json
-			[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -Ei '\"tag\": \"geosite-cn\"')" ] && cat > ${TMPDIR}/jsons/add_rule_set.json <<EOF
+			[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -Ei '\"tag\" *: *\"geosite-cn\"')" ] && cat > ${TMPDIR}/jsons/add_rule_set.json <<EOF
 {
   "route": {
 	"rule_set": [
