@@ -355,10 +355,10 @@ EOF
 		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
 	fi
 	echo -----------------------------------------------
-	if [ ! -s ${CRASHDIR}/providers/${provider_temp_file} ];then
+	if [ ! -s ${TMPDIR}/providers/${provider_temp_file} ];then
 		echo -e "\033[33m未找到本地模版，尝试在线获取！\033[0m"
-		mkdir -p ${CRASHDIR}/providers
-		${CRASHDIR}/start.sh get_bin ${CRASHDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
+		mkdir -p ${TMPDIR}/providers
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
 		[ "$?" != 0 ] && {
 			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
 			setserver
@@ -375,6 +375,8 @@ EOF
 	#生成providers模块
 	if [ -n "$2" ];then
 		gen_clash_providers_txt $1 $2
+		providers_tags=$1
+		sed -i 's/, {providers_tags}//g' ${TMPDIR}/providers/proxy-groups.yaml
 	else
 		providers_tags=''
 		while read line;do
@@ -401,6 +403,7 @@ EOF
 		}
 	else
 		rm -rf ${TMPDIR}/CrashCore
+		#rm -rf ${TMPDIR}/config.yaml
 		echo -e "\033[31m生成配置文件出错，请仔细检查输入！\033[0m"
 	fi
 }
@@ -426,10 +429,10 @@ EOF
 		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
 	fi
 	echo -----------------------------------------------
-	if [ ! -s ${CRASHDIR}/providers/${provider_temp_file} ];then
+	if [ ! -s ${TMPDIR}/providers/${provider_temp_file} ];then
 		echo -e "\033[33m未找到本地模版，尝试在线获取！\033[0m"
-		mkdir -p ${CRASHDIR}/providers
-		${CRASHDIR}/start.sh get_bin ${CRASHDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
+		mkdir -p ${TMPDIR}/providers
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/providers/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
 		[ "$?" != 0 ] && {
 			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
 			setserver
@@ -443,13 +446,14 @@ EOF
 {
   "outbound_providers": [
 EOF
-	cat > ${TMPDIR}/providers/outbounds_add.json <<EOF
+	if [ -n "$2" ];then
+		gen_singbox_providers_txt $1 $2
+		providers_tags=\"$1\"
+	else
+		cat > ${TMPDIR}/providers/outbounds_add.json <<EOF
 {
   "outbounds": [
 EOF
-	if [ -n "$2" ];then
-		gen_singbox_providers_txt $1 $2
-	else
 		providers_tags=''
 		while read line;do
 			tag=$(echo $line | awk '{print $1}')
@@ -458,9 +462,9 @@ EOF
 			gen_singbox_providers_txt $tag $url
 			echo '{ "tag": "'${tag}'", "type": "urltest", "tolerance": 100, "providers": "'${tag}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
 		done < ${CRASHDIR}/configs/providers.cfg
+		sed -i '$s/},/}]}/' ${TMPDIR}/providers/outbounds_add.json #修复文件格式
 	fi
 	sed -i '$s/},/}]}/' ${TMPDIR}/providers/providers.json #修复文件格式
-	sed -i '$s/},/}]}/' ${TMPDIR}/providers/outbounds_add.json #修复文件格式
 	#使用模版生成outbounds和rules模块
 	cat ${CRASHDIR}/providers/${provider_temp_file} | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
 	#调用内核测试
@@ -534,7 +538,7 @@ setproviders(){ #自定义providers
 				fi
 			;;	
 			3)
-				gen_outbound_providers $provider_name $provider_url
+				gen_${coretype}_providers $provider_name $provider_url
 			;;	
 			4)
 				sed -i "/$provider_name/d" $CRASHDIR/configs/providers.cfg
