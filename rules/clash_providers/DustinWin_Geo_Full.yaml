@@ -4,12 +4,13 @@ proxy-groups:
   - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 本机直连]}
   - {name: 🔗 直连域名, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 🪜 代理域名, type: select, proxies: [🚀 节点选择, 🎯 本机直连]}
+  - {name: 🤖 人工智能, type: select, proxies: [🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🚀 节点选择, 🚀 手动切换]}
+  - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
   - {name: 🎮 游戏平台, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: Ⓜ️ 微软服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 📢 谷歌服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 🍎 苹果服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 🇨🇳 国内 IP, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
-  - {name: 📲 电报消息, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
   - {name: 🔒 私有网络, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 📈 网络测试, type: select, proxies: [🎯 本机直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
   - {name: 🎯 本机直连, type: select, proxies: [DIRECT]}
@@ -22,6 +23,7 @@ proxy-groups:
 
 rules:
   - GEOSITE,private,🔒 私有网络
+  - GEOSITE,ai,🤖 人工智能
   - GEOSITE,microsoft@cn,Ⓜ️ 微软服务
   - GEOSITE,apple-cn,🍎 苹果服务
   - GEOSITE,google-cn,📢 谷歌服务
