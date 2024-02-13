@@ -160,7 +160,7 @@ else
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
 		#创建shellcrash用户
-		ckcmd userdel && userdel shellcrash 2>/dev/null
+		type userdel && userdel shellcrash 2>/dev/null
 		sed -i '/0:7890/d' /etc/passwd
 		sed -i '/x:7890/d' /etc/group
 		if type useradd >/dev/null 2>&1; then
@@ -217,12 +217,12 @@ if [ -n "$profile" ];then
 	source $profile >/dev/null 2>&1 || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
 	[ -n "$(cat /etc/shells 2>/dev/null|grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null|grep CRASHDIR)" ] && { 
-		sed -i '/alias crash=*/'d ~/.zshrc
+		sed -i '/alias crash=*/'d ~/.zshrc 2>/dev/null
 		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
   		# 兼容 clash 命令
-		sed -i '/alias clash=*/'d ~/.zshrc
+		sed -i '/alias clash=*/'d ~/.zshrc 2>/dev/null
 		echo "alias clash=\"$shtype $CRASHDIR/menu.sh\"" >> ~/.zshrc
-		sed -i '/export CRASHDIR=*/'d ~/.zshrc
+		sed -i '/export CRASHDIR=*/'d ~/.zshrc 2>/dev/null
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc >/dev/null 2>&1
 	}

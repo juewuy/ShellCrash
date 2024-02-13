@@ -730,10 +730,14 @@ EOF
 EOF
 	fi
 	#生成add_outbounds.json
-	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oE '"tag": *"DIRECT"')" ] && cat > ${TMPDIR}/jsons/add_outbounds.json <<EOF
+	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oE '"tag" *: *"DIRECT"')" ] && add_direct='{ "type": "direct", "tag": "DIRECT" }'
+	[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -oE '"tag" *: *"REJECT"')" ] && add_reject='{ "type": "block", "tag": "REJECT" }'
+	[ -n "$add_direct" -a -n "$add_reject" ] && add_direct="${add_direct},"
+	[ -n "$add_direct" -o -n "$add_reject" ] && cat > ${TMPDIR}/jsons/add_outbounds.json <<EOF
 {
   "outbounds": [ 
-    { "type": "direct", "tag": "DIRECT" }
+    $add_direct
+	$add_reject
   ]
 }
 EOF
@@ -1426,11 +1430,7 @@ web_restore(){ #还原面板选择
 	i=1
 	while [ -z "$test" -a "$i" -lt 20 ];do
 		sleep 2
-		if curl --version > /dev/null 2>&1;then
-			test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
-		else
-			test=$(wget -q -O - http://127.0.0.1:${db_port}/configs | grep -o port)
-		fi
+		test=$(get_save http://127.0.0.1:${db_port}/configs | grep -o port)
 		i=$((i+1))
 	done
 	[ -n "$test" ] && {
@@ -1465,11 +1465,11 @@ makehtml(){ #生成面板跳转文件
     <div style="text-align: center; margin-top: 50px;">
         <h1>您还未安装本地面板</h1>
 		<h3>请在脚本更新功能中(9-4)安装<br>或者使用在线面板：</h3>
+		<h4>请复制当前地址/ui(不包括)前面的内容，填入url位置即可连接</h3>
         <a href="https://metacubexd.pages.dev" style="font-size: 24px;">Meta XD面板(推荐)<br></a>
         <a href="https://yacd.metacubex.one" style="font-size: 24px;">Meta YACD面板(推荐)<br></a>
         <a href="https://yacd.haishan.me" style="font-size: 24px;">Clash YACD面板<br></a>
-        <a href="https://clash.razord.top" style="font-size: 24px;">Clash Razord面板<br></a>
-        <a style="font-size: 16px;"><br>如已安装，请使用Ctrl+F5强制刷新！<br></a>		
+        <a style="font-size: 18px;"><br>如已安装，请使用Ctrl+F5强制刷新！<br></a>		
     </div>
 </body>
 </html
@@ -1591,9 +1591,9 @@ singbox_check(){ #singbox启动前检查
 	fi
 	core_check
 	#预下载geoip-cn.srs数据库
-	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"rule_set": *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
 	#预下载geosite-cn.srs数据库
-	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"rule_set": *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.srs srs_geosite_cn.srs
+	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"rule_set" *: *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.srs srs_geosite_cn.srs
 	#预下载GeoIP数据库
 	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"geoip":')" ] && ckgeo geoip.db geoip_cn.db
 	#预下载GeoSite数据库
@@ -1633,6 +1633,9 @@ bfstart(){ #启动前
 		clash_check
 		[ "$disoverride" != "1" ] && modify_yaml || ln -sf $core_config ${TMPDIR}/config.yaml
 	fi
+	#检查下载cnip绕过相关文件
+	[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
+	[ "$ipv6_redir" = "已开启" ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
 	#添加shellcrash用户
 	[ -n "$(echo $local_type | grep '增强模式')" -o "$(cat /proc/1/comm)" = "systemd" ] && \
 	[ -z "$(id shellcrash 2>/dev/null | grep 'root')" ] && {
@@ -1672,11 +1675,9 @@ afstart(){ #启动后
 		i=$((i+1))
 	done
 	if [ -n "$test" -o -n "$(pidof CrashCore)" ];then
-		#rm -rf ${TMPDIR}/CrashCore #删除缓存目录内核文件
+		rm -rf ${TMPDIR}/CrashCore #删除缓存目录内核文件
 		#设置DNS转发
 		start_dns(){
-			[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
-			[ "$ipv6_redir" = "已开启" ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
 			if [ "$dns_no" != "已禁用" ];then
 				if [ "$dns_redir" != "已开启" ];then
 					[ -n "$(echo $redir_mod|grep Nft)" ] && start_nft_dns || start_ipt_dns

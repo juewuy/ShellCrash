@@ -390,16 +390,17 @@ EOF
 	cut -c 1- ${TMPDIR}/providers/providers.yaml ${TMPDIR}/providers/proxy-groups.yaml ${TMPDIR}/providers/rules.yaml > ${TMPDIR}/config.yaml
 	rm -rf ${TMPDIR}/providers
 	#调用内核测试
-	${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml >/dev/null
+	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml >/dev/null
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
 		mv -f ${TMPDIR}/config.yaml ${CRASHDIR}/yamls/config.yaml
 		read -p "是否立即启动/重启服务？(1/0) > " res
 		[ "$res" = 1 ] && {
-			start_core
+			start_core && $CRASHDIR/start.sh cronset '更新订阅'
 			exit
 		}
 	else
+		rm -rf ${TMPDIR}/CrashCore
 		echo -e "\033[31m生成配置文件出错，请仔细检查输入！\033[0m"
 	fi
 }
@@ -463,24 +464,26 @@ EOF
 	#使用模版生成outbounds和rules模块
 	cat ${CRASHDIR}/providers/${provider_temp_file} | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
 	#调用内核测试
-	${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
+	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
 		mv -f ${TMPDIR}/config.json ${CRASHDIR}/jsons/config.json
 		rm -rf ${TMPDIR}/providers
 		read -p "是否立即启动/重启服务？(1/0) > " res
 		[ "$res" = 1 ] && {
-			start_core
+			start_core && $CRASHDIR/start.sh cronset '更新订阅'
 			exit
 		}
 	else
 		echo -e "\033[31m生成配置文件出错，请仔细检查输入！\033[0m"
+		rm -rf ${TMPDIR}/CrashCore
 		rm -rf ${TMPDIR}/providers
 	fi
 }
 setproviders(){ #自定义providers
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers提供者\033[0m"
+	echo -e "\033[33m暂时只支持yaml格式的配置导入\033[0m"
 	[ -s $CRASHDIR/configs/providers.cfg ] && { 
 		echo -----------------------------------------------
 		echo -e "\033[36m输入对应数字可管理providers提供者\033[0m"
@@ -524,6 +527,7 @@ setproviders(){ #自定义providers
 			2)
 				read -p "请输入http(s)格式的providers链接地址 > " link
 				if [ -n "$(echo $link | grep -E '.*\..*')" ] && [ -z "$(grep "$link" $CRASHDIR/configs/providers.cfg)" ];then
+					link=$(echo $link | sed 's/\&/\\\&/g') #特殊字符添加转义
 					sed -i "s|$provider_name $provider_url|$provider_name $link|" $CRASHDIR/configs/providers.cfg
 				else
 					echo -e "\033[31m输入错误，请重新输入！\033[0m" 
@@ -1003,7 +1007,7 @@ set_core_config(){ #配置文件功能
 		exit
 	;;
 	5)
-		source ${CRASHDIR}/task/task.sh && task_add
+		source ${CRASHDIR}/task/task.sh && task_menu
 		set_core_config
 	;;
 	6)
@@ -1676,7 +1680,7 @@ setgeo(){ #数据库选择菜单
 				rm -rf $CRASHDIR/$file
 			done
 			rm -rf $CRASHDIR/*.srs
-			echo -e "\033[33m所以数据库文件均已清理！\033[0m"
+			echo -e "\033[33m所有数据库文件均已清理！\033[0m"
 			sleep 1
 		}
 		setgeo
@@ -2285,6 +2289,7 @@ debug(){
 		else
 			${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
 		fi
+		rm -rf ${TMPDIR}/CrashCore
 		echo -----------------------------------------------
 		exit
 	;;
@@ -2292,6 +2297,7 @@ debug(){
 		$CRASHDIR/start.sh stop
 		$CRASHDIR/start.sh bfstart
 		$COMMAND
+		rm -rf ${TMPDIR}/CrashCore
 		echo -----------------------------------------------
 		exit
 	;;
@@ -2318,7 +2324,8 @@ debug(){
 		main_menu
 	;;
 	9)
-		$TMPDIR/CrashCore merge $TMPDIR/debug.json -C $TMPDIR/jsons && echo -e "\033[32m合并成功！\033[0m"
+		${CRASHDIR}/start.sh core_check && $TMPDIR/CrashCore merge $TMPDIR/debug.json -C $TMPDIR/jsons && echo -e "\033[32m合并成功！\033[0m"
+		rm -rf ${TMPDIR}/CrashCore
 		main_menu
 	;;
 	*)

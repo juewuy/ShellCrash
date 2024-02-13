@@ -152,7 +152,6 @@ ntp(){
 	[ "$crashcore" != singbox ] && ckcmd ntpd && ntpd -n -q -p 203.107.6.88 >/dev/null 2>&1 || exit 0  &
 }
 #任务工具
-
 logger(){
 	[ "$task_push" = 1 ] && push= || push=off
 	[ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
