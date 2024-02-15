@@ -240,7 +240,7 @@ check_clash_config(){ #检查clash配置文件
 }
 check_singbox_config(){ #检查singbox配置文件
 	#检测节点或providers
-	if [ -z "$(cat $core_config_new | grep -Eo '"server":|"outbound_providers":' )" ];then
+	if [ -z "$(cat $core_config_new | grep -Eo 'server|outbound_providers' )" ];then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		exit 1
