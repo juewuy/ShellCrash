@@ -392,7 +392,7 @@ EOF
 	cut -c 1- ${TMPDIR}/providers/providers.yaml ${TMPDIR}/providers/proxy-groups.yaml ${TMPDIR}/providers/rules.yaml > ${TMPDIR}/config.yaml
 	rm -rf ${TMPDIR}/providers
 	#调用内核测试
-	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml >/dev/null
+	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
 		mv -f ${TMPDIR}/config.yaml ${CRASHDIR}/yamls/config.yaml
@@ -498,7 +498,7 @@ setproviders(){ #自定义providers
 	echo -e " b \033[32m生成\033[0m基于providers的配置文件"
 	echo -e " c 选择\033[33m规则模版\033[0m"
 	echo -e " d \033[31m清空\033[0mproviders列表"
-	echo -e " e \033[31m清理\033[0mproviders目录"
+	echo -e " e \033[33m清理\033[0mproviders目录"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
@@ -949,7 +949,7 @@ set_core_config(){ #配置文件功能
 	echo -----------------------------------------------
 	echo -e " 1 在线\033[32m生成$crashcore配置文件\033[0m"
 	echo -e " 2 在线\033[33m获取完整配置文件\033[0m"
-	echo -e " 3 本地\033[32m生成providers配置文件\033[0m(实验性)\033[0m"	
+	echo -e " 3 本地\033[32m生成providers配置文件\033[0m"	
 	echo -e " 4 本地\033[33m上传完整配置文件\033[0m"
 	echo -e " 5 设置\033[36m自动更新\033[0m"
 	echo -e " 6 \033[32m自定义\033[0m配置文件"
