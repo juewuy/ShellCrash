@@ -1,10 +1,9 @@
 #DustinWin-ruleset全分组规则
 proxy-groups:
-  - {name: 🚀 节点选择, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
+  - {name: 🚀 节点选择, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换, 🎯 本机直连]}
   - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 本机直连]}
   - {name: 🛑 广告拦截, type: select, proxies: [REJECT, 🎯 本机直连]}
   - {name: 🔗 直连域名, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
-  - {name: 🪜 代理域名, type: select, proxies: [🚀 节点选择, 🎯 本机直连]}
   - {name: 🤖 人工智能, type: select, proxies: [🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🚀 节点选择, 🚀 手动切换]}
   - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
   - {name: 🎮 游戏平台, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
@@ -110,7 +109,7 @@ rules:
   - RULE-SET,google-cn,📢 谷歌服务
   - RULE-SET,games-cn,🎮 游戏平台
   - RULE-SET,networktest,📈 网络测试
-  - RULE-SET,proxy,🪜 代理域名
+  - RULE-SET,proxy,🚀 节点选择
   - RULE-SET,cn,🔗 直连域名
   - RULE-SET,telegramip,📲 电报消息
   - RULE-SET,privateip,🔒 私有网络,no-resolve

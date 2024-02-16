@@ -1,0 +1,11 @@
+#ShellCrash-geoip极简规则
+proxy-groups:
+  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}, 🚀 手动切换]}
+  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 本机直连]}
+  - {name: 🎯 本机直连, type: select, proxies: [DIRECT]}
+  - {name: 🚀 手动切换, type: select, use: [{providers_tags}]}
+
+rules:
+  - GEOIP,cn,🎯 本机直连
+  - MATCH,🐟 漏网之鱼
+  
