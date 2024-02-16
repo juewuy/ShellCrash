@@ -1089,7 +1089,7 @@ start_tun(){ #iptables-tun
 		iptables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT >/dev/null 2>&1 
 		ip6tables -I FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT >/dev/null 2>&1
 	fi
-	modprobe xt_mark >/dev/null 2>&1 && {
+	if [ -n "$(iptables -j MARK 2>&1 | grep 'mark')" ];then
 		i=1
 		while [ -z "$(ip route list |grep utun)" -a "$i" -le 29 ];do
 			sleep 1
@@ -1159,7 +1159,9 @@ start_tun(){ #iptables-tun
 				[ "$1" = "all" ] && ip6tables -t mangle -A PREROUTING -p tcp $ports -j shellcrashv6
 			}
 		fi
-	}
+	else
+		logger "iptables缺少-J MARK功能，放弃启动tun相关防火墙规则！" 31
+	fi
 }
 start_nft(){ #nftables-allinone
 	#获取局域网host地址

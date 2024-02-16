@@ -487,7 +487,7 @@ EOF
 setproviders(){ #自定义providers
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers提供者\033[0m"
-	echo -e "\033[33m暂时只支持yaml格式的配置导入\033[0m"
+	echo -e "\033[33m暂时只支持yaml格式的配置导入，并且不支持跳过证书验证功能\033[0m"
 	[ -s $CRASHDIR/configs/providers.cfg ] && { 
 		echo -----------------------------------------------
 		echo -e "\033[36m输入对应数字可管理providers提供者\033[0m"
@@ -498,6 +498,7 @@ setproviders(){ #自定义providers
 	echo -e " b \033[32m生成\033[0m基于providers的配置文件"
 	echo -e " c 选择\033[33m规则模版\033[0m"
 	echo -e " d \033[31m清空\033[0mproviders列表"
+	echo -e " e \033[31m清理\033[0mproviders目录"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
@@ -611,6 +612,12 @@ setproviders(){ #自定义providers
 	d)
 		read -p "确认清空全部providers提供者？(1/0) > " res
 		[ "$res" = "1" ] && rm -rf $CRASHDIR/configs/providers.cfg
+		setproviders
+	;;
+	d)
+		echo -e "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
+		read -p "是否继续？(1/0) > " res
+		[ "$res" = "1" ] && rm -rf $CRASHDIR/providers
 		setproviders
 	;;
 	*)

@@ -176,6 +176,7 @@ else
 		systemctl daemon-reload
 	else
 		#设为保守模式启动
+		systemctl disable shellcrash 2>/dev/null
 		setconfig start_old 已开启
 	fi
 fi
