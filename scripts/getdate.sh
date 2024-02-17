@@ -550,7 +550,7 @@ setproviders(){ #自定义providers
 				gen_${coretype}_providers $provider_name $provider_url
 			;;	
 			4)
-				sed -i "/$provider_name/d" $CRASHDIR/configs/providers.cfg
+				sed -i "/^$provider_name /d" $CRASHDIR/configs/providers.cfg
 			;;
 			*)
 				errornum
