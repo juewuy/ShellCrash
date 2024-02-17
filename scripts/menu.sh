@@ -175,7 +175,12 @@ start_core(){
 		core_config=${CRASHDIR}/yamls/config.yaml
 	fi
 	echo -----------------------------------------------
-	if [ -s $core_config -o -n "$Url" -o -n "$Https" ];then
+	if [ ! -s $core_config -a -s $CRASHDIR/configs/providers.cfg ];then
+		echo -e "\033[33m没有找到${crashcore}配置文件，尝试生成providers配置文件！\033[0m"
+		[ "$crashcore" = singboxp ] && coretype=singbox
+		[ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
+		source ${CRASHDIR}/getdate.sh && gen_${coretype}_providers
+	elif [ -s $core_config -o -n "$Url" -o -n "$Https" ];then
 		${CRASHDIR}/start.sh start
 		#设置循环检测以判定服务启动是否成功
 		i=1
@@ -1207,7 +1212,6 @@ normal_set(){ #基础设置
 
 	}
 	set_dns_mod(){
-		[ "$dns_mod" = mix ] && [ "$crashcore" != singbox -o "$crashcore" != singboxp ] && dns_mod=redir_host
 		echo -----------------------------------------------
 		echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"

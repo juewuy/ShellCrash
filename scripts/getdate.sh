@@ -348,7 +348,15 @@ gen_clash_providers(){ #生成clash的providers配置文件
       url: "https://www.gstatic.com/generate_204"
       interval: 600
 EOF
-}
+		[ "$crashcore" = 'meta' ] && {
+		[ "$skip_cert" = "已开启" ] && skip_cert_verify='skip-cert-verify: true'
+		cat >> $TMPDIR/providers/providers.yaml <<EOF
+    override:
+      udp: true
+      $skip_cert_verify
+EOF
+		}
+	}
 	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
 		provider_temp_file=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $2}')
 	else
@@ -417,7 +425,7 @@ gen_singbox_providers(){ #生成singbox的providers配置文件
       "healthcheck_interval": "10m",
       "download_url": "${2}",
       "path": "./providers/${1}.yaml",
-      "download_ua": "clash",
+      "download_ua": "clash.meta",
       "download_interval": "24h",
       "download_detour": "DIRECT"
 	},
@@ -1164,6 +1172,8 @@ setcoretype(){ #手动指定内核类型
 switch_core(){ #clash与singbox内核切换
 	#singbox和clash内核切换时提示是否保留文件
 	[ "$core_new" != "$core_old" ] && {
+		[ "$dns_mod" = "redir_host" ] && [ "$core_old" = "clash" ] && setconfig dns_mod mix #singbox自动切换dns
+		[ "$dns_mod" = "mix" ] && [ "$core_old" = "singbox" ] && setconfig dns_mod fake-ip #singbox自动切换dns
 		echo -e "\033[33m已从$core_old内核切换至$core_new内核\033[0m"
 		echo -e "\033[33m二者Geo数据库及yaml/json配置文件不通用\033[0m"
 		read -p "是否保留相关数据库文件？(1/0) > " res

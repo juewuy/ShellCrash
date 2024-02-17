@@ -1776,8 +1776,10 @@ update_config(){ #更新订阅并重启
 hotupdate(){ #热更新订阅
 		getconfig
 		get_core_config
+		core_check
 		modify_$format && \
 		put_save http://127.0.0.1:${db_port}/configs "{\"path\":\"${CRASHDIR}/config.$format\"}"
+		rm -rf ${TMPDIR}/CrashCore
 }
 set_proxy(){ #设置环境变量
 	getconfig
@@ -1807,10 +1809,12 @@ start)
 		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 			/etc/init.d/shellcrash start 
 		elif [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
-			FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
-			[ -f $FragmentPath ] && setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
-			systemctl daemon-reload
-			systemctl start shellcrash.service || start_error
+			bfstart && {
+				FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
+				[ -f $FragmentPath ] && setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
+				systemctl daemon-reload
+				systemctl start shellcrash.service || start_error
+			}
 		else
 			bfstart && start_old
 		fi
