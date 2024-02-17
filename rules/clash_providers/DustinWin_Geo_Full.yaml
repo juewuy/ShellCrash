@@ -3,7 +3,7 @@ proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📺 省流节点, 👍 高级节点, {providers_tags}, 🚀 手动切换, 🎯 本机直连]}
   - {name: 🐟 漏网之鱼, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📺 省流节点, 👍 高级节点, {providers_tags}, 🚀 手动切换, 🎯 本机直连]}
   - {name: 🎯 全球直连, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
-  - {name: 🤖 人工智能, type: select, proxies: [🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🚀 节点选择, 🚀 手动切换]}
+  - {name: 🤖 人工智能, type: select, proxies: [🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🚀 节点选择, 🚀 手动切换]}
   - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
   - {name: 🎮 游戏平台, type: select, proxies: [🎯 本机直连, 👍 高级节点, 🚀 节点选择]}
   - {name: Ⓜ️ 微软服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
