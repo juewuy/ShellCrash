@@ -47,8 +47,13 @@ ckstatus(){
 	[ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
 	[ -z "$host" ] && host='设备IP地址'
 	#dashboard目录位置
-	[ -f ${CRASHDIR}/ui/index.html ] && dbdir=${CRASHDIR}/ui && hostdir=":$db_port/ui"
-	[ -f /www/clash/index.html ] && dbdir=/www/clash && hostdir=/clash
+	if [ -f /www/clash/index.html ];then
+		dbdir=/www/clash
+		hostdir=/clash
+	else
+		dbdir=${CRASHDIR}/ui
+		hostdir=":$db_port/ui"
+	fi
 	#开机自启检测
 	if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 		[ -n "$(find /etc/rc.d -name '*shellcrash')" ] && autostart=enable || autostart=disable
@@ -922,6 +927,10 @@ localproxy(){ #本机代理
 	[ -w /etc/systemd/system/shellcrash.service -o -w /usr/lib/systemd/system/shellcrash.service -o -x /bin/su ] && local_enh=1
 	[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && [ -w /etc/passwd ] && local_enh=1
 	echo -----------------------------------------------
+	echo -e "\033[31m注意:\033[0m如果你不了解Linux系统的流量机制及$crashcore内核的流量劫持机制"
+	echo -e "启用此功能将可能导致\033[31m流量回环乃至设备死机\033[0m等严重问题！！！"
+	echo -e "\033[33m如你使用了第三方DNS如smartdns等，请务必禁用此功能或者使用shellcrash用户执行！\033[0m"
+	sleep 1
 	[ -n "$local_enh" ] && {
 		ckcmd iptables && [ -n "$(iptables -m owner --help | grep owner)" ] && echo -e " 1 使用\033[32miptables增强模式\033[0m配置(支持docker,推荐！)"
 		nft add table inet shellcrash 2>/dev/null && echo -e " 2 使用\033[32mnftables增强模式\033[0m配置(支持docker,推荐！)"

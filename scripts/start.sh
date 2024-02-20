@@ -382,8 +382,8 @@ EOF
 		}		
 }
 	#域名嗅探配置
-	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}}}"
-	[ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
+	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}}}"
+	[ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" -o "$sniffer" = "已启用" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0, sniff-tls-sni: true}"
 	#生成set.yaml
 	cat > ${TMPDIR}/set.yaml <<EOF
 mixed-port: $mix_port
@@ -590,7 +590,7 @@ EOF
 		fake_ip_filter=$(cat ${CRASHDIR}/configs/fake_ip_filter 2>/dev/null | grep '\.' | awk '{printf "\"%s\", ",$1}' | sed "s/, $//" | sed 's/+/.+/g' | sed 's/*/.*/g')
 		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"local\" },"
 		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ];then
-			mix_dns="{ \"rule_set\": [\"geosite-cn\"], \"invert\": true, \"server\": \"dns_fakeip\" },"
+			mix_dns="{ \"rule_set\": [\"geosite-cn\"], \"invert\": true, \"server\": \"dns_fakeip\", \"rewrite_ttl\": 1 },"
 			#生成add_rule_set.json
 			[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -Ei '\"tag\" *: *\"geosite-cn\"')" ] && cat > ${TMPDIR}/jsons/add_rule_set.json <<EOF
 {
@@ -607,7 +607,7 @@ EOF
 }
 EOF
 		else
-			mix_dns="{ \"geosite\": [\"cn\"], \"invert\": true, \"server\": \"dns_fakeip\" },"
+			mix_dns="{ \"geosite\": [\"geolocation-cn\"], \"invert\": true, \"server\": \"dns_fakeip\", \"rewrite_ttl\": 1 },"
 		fi
 	}
 	cat > ${TMPDIR}/jsons/dns.json <<EOF
@@ -633,7 +633,7 @@ EOF
 	],
     "rules": [
 	  { "outbound": ["any"], "server": "dns_resolver" },
-	  { "clash_mode": "Global", "server": "$global_dns" },
+	  { "clash_mode": "Global", "server": "$global_dns", "rewrite_ttl": 1 },
       { "clash_mode": "Direct", "server": "dns_direct" },
 	  $fake_ip_filter
 	  $mix_dns
