@@ -1,0 +1,11 @@
+#ShellCrash-geoip极简规则
+proxy-groups:
+  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}, 📺 省流节点, 👍 高级节点], use: [{providers_tags}]}
+  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, DIRECT]}
+  - {name: 🎯 全球直连, type: select, proxies: [DIRECT, 🚀 节点选择]}
+  - {name: 📺 省流节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(0.[1-5]|低倍率|省流|大流量)"}
+  - {name: 👍 高级节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(专线|专用|高级|直连|急速|高倍率|游戏|game|Game|GAME|IEPL|IPLC|AIA|CTM|CC|iepl|iplc|aia|ctm|cc|AC)"}
+rules:
+  - GEOIP,cn,🎯 全球直连
+  - MATCH,🐟 漏网之鱼
+  

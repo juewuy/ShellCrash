@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.0pre8
+version=1.9.0pre11
 
 setdir(){
 	dir_avail(){
@@ -176,6 +176,7 @@ else
 		systemctl daemon-reload
 	else
 		#设为保守模式启动
+		systemctl disable shellcrash 2>/dev/null
 		setconfig start_old 已开启
 	fi
 fi
@@ -272,7 +273,7 @@ for file in config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml 
 	mv -f ${CRASHDIR}/$file ${CRASHDIR}/yamls/$file 2>/dev/null
 done
 	[ ! -L ${CRASHDIR}/config.yaml ] && mv -f ${CRASHDIR}/config.yaml ${CRASHDIR}/yamls/config.yaml 2>/dev/null
-for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallback_filter.list;do
+for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallback_filter.list singbox_providers.list clash_providers.list;do
 	mv -f ${CRASHDIR}/$file ${CRASHDIR}/configs/$file 2>/dev/null
 done
 	#配置文件改名

@@ -1,0 +1,62 @@
+#DustinWin-ruleset轻量规则
+proxy-groups:
+  - {name: 🚀 节点选择, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📺 省流节点, 👍 高级节点, {providers_tags}, 🚀 手动切换, 🎯 本机直连]}
+  - {name: 🐟 漏网之鱼, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📺 省流节点, 👍 高级节点, {providers_tags}, 🚀 手动切换, 🎯 本机直连]}
+  - {name: 🎯 全球直连, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 🤖 人工智能, type: select, proxies: [🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🚀 节点选择, 🚀 手动切换]}
+  - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
+  - {name: 🎯 本机直连, type: select, proxies: [DIRECT]}
+  - {name: 🚀 手动切换, type: select, use: [{providers_tags}]}
+  - {name: 📺 省流节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(0.[1-5]|低倍率|省流|大流量)"}
+  - {name: 👍 高级节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(专线|专用|高级|直连|急速|高倍率|游戏|game|Game|GAME|IEPL|IPLC|AIA|CTM|CC|iepl|iplc|aia|ctm|cc|AC)"}
+  - {name: 🇭🇰 香港节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)港|hk|hongkong|hong kong"}
+  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)台|tw|taiwan"}
+  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)日本|jp|japan"}
+  - {name: 🇸🇬 新加坡节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)新|sg|singapore"}
+  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)美|us|unitedstates|united states"}
+rule-providers:
+  private:
+    type: http
+    behavior: domain
+    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/private.yaml"
+    path: ./providers/private.yaml
+    interval: 86400
+  ai:
+    type: http
+    behavior: domain
+    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/ai.yaml"
+    path: ./providers/ai.yaml
+    interval: 86400
+  proxy:
+    type: http
+    behavior: domain
+    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/proxy.yaml"
+    path: ./providers/proxy.yaml
+    interval: 86400
+  telegramip:
+    type: http
+    behavior: ipcidr
+    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/telegramip.yaml"
+    path: ./providers/telegramip.yaml
+    interval: 86400
+  privateip:
+    type: http
+    behavior: ipcidr
+    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/privateip.yaml"
+    path: ./providers/privateip.yaml
+    interval: 86400
+  cnip:
+    type: http
+    behavior: ipcidr
+    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/cnip.yaml"
+    path: ./providers/cnip.yaml
+    interval: 86400
+
+rules:
+  - RULE-SET,private,🎯 全球直连
+  - RULE-SET,ai,🤖 人工智能
+  - RULE-SET,proxy,🚀 节点选择
+  - RULE-SET,telegramip,📲 电报消息
+  - RULE-SET,privateip,🎯 全球直连,no-resolve
+  - RULE-SET,cnip,🎯 全球直连
+  - MATCH,🐟 漏网之鱼

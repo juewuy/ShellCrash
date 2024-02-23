@@ -1,0 +1,20 @@
+//ShellCrash-geoip极简规则
+{
+  "outbounds": [
+    { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ {providers_tags} ], "use_all_providers": true },
+    { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 本机直连" ] },
+    { "tag": "🎯 全球直连", "type": "selector", "outbounds": [ "🎯 本机直连", "🚀 节点选择" ] },
+	{ "tag": "GLOBAL", "type": "selector", "outbounds": [ "🎯 本机直连", {providers_tags} ], "use_all_providers": true },
+	{ "tag": "🎯 本机直连", "type": "direct" },
+    { "tag": "dns-out", "type": "dns" }
+  ],
+  "route": {
+    "rules": [
+      { "protocol": "dns", "outbound": "dns-out" },
+      { "clash_mode": "Global", "outbound": "GLOBAL" },
+      { "clash_mode": "Direct", "outbound": "🎯 本机直连" },
+      { "geoip": "cn", "outbound": "🎯 全球直连" }
+    ],
+    "final": "🐟 漏网之鱼"
+  }
+}
