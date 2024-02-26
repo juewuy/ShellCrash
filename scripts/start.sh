@@ -621,17 +621,18 @@ EOF
         "tag": "dns_proxy",
         "address": "$dns_proxy",
         "strategy": "$strategy",
-        "address_resolver": "local"
+        "address_resolver": "dns_resolver"
       }, {
         "tag": "dns_direct",
         "address": "$dns_direct",
         "strategy": "$strategy",
-        "address_resolver": "local",
+        "address_resolver": "dns_resolver",
         "detour": "DIRECT"
       }, 
 	  { "tag": "dns_fakeip", "address": "fakeip" }, 
-	  { "tag": "local", "address": "local" }, 
-	  { "tag": "block", "address": "rcode://success" }
+	  { "tag": "dns_resolver", "address": "223.5.5.5", "detour": "DIRECT" }, 
+	  { "tag": "block", "address": "rcode://success" }, 
+	  { "tag": "local", "address": "local", "detour": "DIRECT" }
 	],
     "rules": [
 	  { "outbound": ["any"], "server": "dns_direct" },
