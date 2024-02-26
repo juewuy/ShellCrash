@@ -4,7 +4,7 @@
 102#$CRASHDIR/start.sh stop#停止clash服务
 103#$CRASHDIR/start.sh restart#重启clash服务
 104#$CRASHDIR/start.sh update_config#更新订阅并重启服务
-105#$CRASHDIR/start.sh hotupdate#热更新订阅
+105#$CRASHDIR/start.sh hotupdate#热更新订阅(不推荐)
 106#$CRASHDIR/start.sh web_save#自动保存面板配置
 107#$CRASHDIR/task/task.sh ntp#自动同步ntp时间
 

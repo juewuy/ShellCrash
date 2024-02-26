@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.0pre11
+version=1.9.0pre12
 
 setdir(){
 	dir_avail(){
@@ -279,6 +279,8 @@ done
 	#配置文件改名
 	mv -f ${CRASHDIR}/mark ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 	mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
+	#数据库改名
+	mv -f ${CRASHDIR}/geosite.dat ${CRASHDIR}/GeoSite.dat 2>/dev/null
 	#内核改名
 	mv -f ${CRASHDIR}/clash ${CRASHDIR}/CrashCore 2>/dev/null
 	#内核压缩 

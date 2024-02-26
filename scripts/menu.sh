@@ -1133,7 +1133,7 @@ normal_set(){ #基础设置
 			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
 		}
 		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
-		[ -n "$(ls /dev/net/tun)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
+		[ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
 		nft add table inet shellcrash 2>/dev/null && sup_nft=1 && modprobe nft_tproxy >/dev/null 2>&1 && sup_nft=2
 		echo -----------------------------------------------
 		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
@@ -1227,10 +1227,13 @@ normal_set(){ #基础设置
 		echo -----------------------------------------------
 		echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
 		echo -e "                   不支持绕过CN-IP功能"
-		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
-		echo -e "                   需搭配加密DNS使用"
-		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
-		echo -e "                   依赖geosite-cn.(db/srs)数据库"
+		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+			echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
+			echo -e "                   依赖geosite-cn.(db/srs)数据库"
+		else
+			echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
+			echo -e "                   需搭配加密DNS使用"
+		fi
 		echo " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
 		if [ -z "$num" ]; then
@@ -1474,11 +1477,7 @@ advanced_set(){ #进阶设置
 	1)
 		setipv6
 		advanced_set
-	;;	
-	2)
-		setmeta
-		advanced_set	
-	;;	
+	;;
 	3)
 		setfirewall
 		advanced_set	

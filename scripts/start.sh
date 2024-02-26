@@ -181,7 +181,7 @@ mark_time(){ #时间戳
 getlanip(){ #获取局域网host地址
 	i=1
 	while [ "$i" -le "20" ];do
-		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -Ev 'iot|peer' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' ) #ipv4局域网网段
+		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'brd' | grep -Ev 'iot|peer' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' ) #ipv4局域网网段
 		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g' ) #ipv6公网地址段
 		[ -f  ${TMPDIR}/ShellCrash.log ] && break
 		[ -n "$host_ipv4" -a "$ipv6_redir" != "已开启" ] && break
@@ -355,7 +355,7 @@ modify_yaml(){ #修饰clash配置文件
 		cat > ${TMPDIR}/dns.yaml <<EOF
 dns:
   enable: true
-  listen: 0.0.0.0:$dns_port
+  listen: :$dns_port
   use-hosts: true
   ipv6: $dns_v6
   default-nameserver:
@@ -579,18 +579,21 @@ EOF
 	[ -z "$dns_direct" ] && dns_direct='223.5.5.5'
 	[ -z "$dns_proxy" ] && dns_proxy='1.0.0.1'
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
-	[ "$dns_mod" = "redir_host" ] && final_dns=dns_direct && global_dns=dns_proxy
+	[ "$dns_mod" = "redir_host" ] && {
+		global_dns=dns_proxy
+		direct_dns="{ \"query_type\": [ \"A\", \"AAAA\" ], \"server\": \"dns_direct\" },"
+	}
 	[ "$dns_mod" = "fake-ip" ] && {
-		final_dns=dns_fakeip && global_dns=dns_fakeip
+		global_dns=dns_fakeip
 		fake_ip_filter=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | awk '{printf "\"%s\", ",$1}' | sed "s/, $//" | sed 's/+/.+/g' | sed 's/*/.*/g')
-		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"local\" },"
+		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"dns_direct\" },"
 	}
 	[ "$dns_mod" = "mix" ] && {
-		final_dns=dns_direct && global_dns=dns_fakeip
+		global_dns=dns_fakeip
 		fake_ip_filter=$(cat ${CRASHDIR}/configs/fake_ip_filter 2>/dev/null | grep '\.' | awk '{printf "\"%s\", ",$1}' | sed "s/, $//" | sed 's/+/.+/g' | sed 's/*/.*/g')
-		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"local\" },"
+		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"dns_direct\" },"
 		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ];then
-			mix_dns="{ \"rule_set\": [\"geosite-cn\"], \"invert\": true, \"server\": \"dns_fakeip\", \"rewrite_ttl\": 1 },"
+			direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
 			#生成add_rule_set.json
 			[ -z "$(cat ${CRASHDIR}/jsons/*.json | grep -Ei '\"tag\" *: *\"geosite-cn\"')" ] && cat > ${TMPDIR}/jsons/add_rule_set.json <<EOF
 {
@@ -607,7 +610,7 @@ EOF
 }
 EOF
 		else
-			mix_dns="{ \"geosite\": [\"geolocation-cn\"], \"invert\": true, \"server\": \"dns_fakeip\", \"rewrite_ttl\": 1 },"
+			direct_dns="{ \"geosite\": \"geolocation-cn\", \"server\": \"dns_direct\" },"
 		fi
 	}
 	cat > ${TMPDIR}/jsons/dns.json <<EOF
@@ -618,26 +621,25 @@ EOF
         "tag": "dns_proxy",
         "address": "$dns_proxy",
         "strategy": "$strategy",
-        "address_resolver": "dns_resolver"
+        "address_resolver": "local"
       }, {
         "tag": "dns_direct",
         "address": "$dns_direct",
         "strategy": "$strategy",
-        "address_resolver": "dns_resolver",
+        "address_resolver": "local",
         "detour": "DIRECT"
       }, 
 	  { "tag": "dns_fakeip", "address": "fakeip" }, 
-	  { "tag": "dns_resolver", "address": "223.5.5.5", "detour": "DIRECT" }, 
-	  { "tag": "block", "address": "rcode://success" }, 
-	  { "tag": "local", "address": "local", "detour": "DIRECT" }
+	  { "tag": "local", "address": "local" }, 
+	  { "tag": "block", "address": "rcode://success" }
 	],
     "rules": [
-	  { "outbound": ["any"], "server": "dns_resolver" },
+	  { "outbound": ["any"], "server": "dns_direct" },
 	  { "clash_mode": "Global", "server": "$global_dns", "rewrite_ttl": 1 },
       { "clash_mode": "Direct", "server": "dns_direct" },
 	  $fake_ip_filter
-	  $mix_dns
-	  { "query_type": [ "A", "AAAA" ], "server": "$final_dns" }
+	  $direct_dns
+	  { "query_type": [ "A", "AAAA" ], "server": "dns_fakeip", "rewrite_ttl": 1 }
 	],
     "final": "dns_direct",
     "independent_cache": true,
@@ -682,7 +684,7 @@ EOF
     {
       "type": "mixed",
       "tag": "mixed-in",
-      "listen": "0.0.0.0",
+      "listen": "::",
       "listen_port": $mix_port,
 	  $userpass
       "sniff": false
@@ -755,7 +757,7 @@ EOF
 }
 EOF
 	#生成自定义规则文件
-	[ -s ${CRASHDIR}/yamls/rules.yaml ] && {
+	[ -n "$(grep -Ev ^# ${CRASHDIR}/yamls/rules.yaml 2>/dev/null)" ] && {
 		cat ${CRASHDIR}/yamls/rules.yaml \
 			| sed '/#.*/d' \
 			| grep -oE '\-.*,.*,.*' \
@@ -773,6 +775,7 @@ EOF
 			| sed 's/$/" },/g' \
 			| sed '1i\{ "route": { "rules": [ ' \
 			| sed '$s/,$/ ] } }/' > ${TMPDIR}/jsons/cust_add_rules.json
+		[ ! -s ${TMPDIR}/jsons/cust_add_rules.json ] && rm -rf ${TMPDIR}/jsons/cust_add_rules.json
 	}
 	#提取配置文件以获得outbounds.json,outbound_providers.json及route.json
 	${TMPDIR}/CrashCore format -c $core_config > ${TMPDIR}/format.json
@@ -1415,7 +1418,7 @@ web_save(){ #最小化保存面板节点选择
 	done < ${TMPDIR}/web_proxies
 	rm -rf ${TMPDIR}/web_proxies
 	#获取面板设置
-	[ "$crashcore" != singbox ] && get_save http://127.0.0.1:${db_port}/configs > ${TMPDIR}/web_configs
+	#[ "$crashcore" != singbox ] && get_save http://127.0.0.1:${db_port}/configs > ${TMPDIR}/web_configs
 	#对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
 	for file in web_save web_configs ;do
 		if [ -s ${TMPDIR}/${file} ];then
@@ -1448,10 +1451,10 @@ web_restore(){ #还原面板选择
 			done
 		}
 		#还原面板设置
-		[ "$crashcore" != singbox ] && [ -s ${CRASHDIR}/configs/web_configs ] && {
-			sleep 5
-			put_save http://127.0.0.1:${db_port}/configs "$(cat ${CRASHDIR}/configs/web_configs)" PATCH
-		}
+		#[ "$crashcore" != singbox ] && [ -s ${CRASHDIR}/configs/web_configs ] && {
+			#sleep 5
+			#put_save http://127.0.0.1:${db_port}/configs "$(cat ${CRASHDIR}/configs/web_configs)" PATCH
+		#}
 	}
 }
 makehtml(){ #生成面板跳转文件
@@ -1577,7 +1580,7 @@ clash_check(){ #clash启动前检查
 	#预下载GeoIP数据库
 	[ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geoip')" ] && ckgeo Country.mmdb cn_mini.mmdb
 	#预下载GeoSite数据库
-	[ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && ckgeo GeoSite.dat GeoSite.dat
+	[ -n "$(cat ${CRASHDIR}/yamls/*.yaml | grep -oEi 'geosite')" ] && ckgeo GeoSite.dat geosite.dat
 	return 0
 }
 singbox_check(){ #singbox启动前检查
@@ -1747,7 +1750,7 @@ start_error(){ #启动报错
 		${COMMAND} >${TMPDIR}/core_test.log 2>&1 &
 		sleep 2 ; kill $! >/dev/null 2>&1
 	fi
-	error=$(cat $TMPDIR/core_test.log | grep -Eo 'error.*=.*|.*ERROR.*|.*FATAL.*')
+	error=$(cat $TMPDIR/core_test.log | grep -iEo 'error.*=.*|.*ERROR.*|.*FATAL.*')
 	logger "服务启动失败！请查看报错信息！详细信息请查看$TMPDIR/core_test.log" 33
 	logger "$error" 31
 	exit 1
