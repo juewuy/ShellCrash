@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.0pre13
+version=test
 
 setdir(){
 	dir_avail(){
@@ -201,6 +201,12 @@ else
 	COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 fi
 setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
+#设置防火墙执行模式
+[ -z "$(grep firewall_mod $CRASHDIR/configs/ShellClash.cfg 2>/dev/null)" ] && {
+	ckcmd iptables && firewall_mod=iptables
+	nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
+	setconfig firewall_mod $firewall_mod
+}
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
 #设置环境变量
@@ -307,5 +313,7 @@ sed -i "s/clash_v/core_v/g" $configpath
 sed -i "s/clash.meta/meta/g" $configpath
 sed -i "s/ShellClash/ShellCrash/g" $configpath
 sed -i "s/cpucore=armv8/cpucore=arm64/g" $configpath
+sed -i "s/redir_mod=Nft基础/redir_mod=Redir模式/g" $configpath
+sed -i "s/redir_mod=Nft混合/redir_mod=Tproxy模式/g" $configpath
 
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"

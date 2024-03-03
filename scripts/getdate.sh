@@ -2142,10 +2142,6 @@ userguide(){
 		elif [ "$num" = 1 ];then
 			#设置运行模式
 			redir_mod="Redir模式"
-			ckcmd nft && {
-				redir_mod="Nft基础"
-				modprobe nft_tproxy >/dev/null 2>&1 && redir_mod="Nft混合"
-			}
 			setconfig redir_mod "$redir_mod"
 			#自动识别IPV6
 			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {
@@ -2386,7 +2382,7 @@ testcommand(){
 		exit;
 	elif [ "$num" = 4 ]; then
 
-		if [ -n "$(echo $redir_mod | grep 'Nft')" -o "$local_type" = "nftables增强模式" ];then
+		if [ "$firewall_mod" = "nftables" ];then
 			nft list table inet shellcrash
 		else
 			echo -------------------Redir---------------------

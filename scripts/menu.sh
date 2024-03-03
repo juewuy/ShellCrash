@@ -1115,188 +1115,243 @@ setboot(){ #启动相关设置
 	esac	
 
 }
-metacfg(){
+set_redir_mod(){
+	set_redir_config(){
+		setconfig redir_mod $redir_mod
+		setconfig dns_mod $dns_mod 
+		echo -----------------------------------------------	
+		echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
+	}
+	[ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
+	[ -z "$firewall_area" ] && firewall_area=1
+	firewall_area_dsc=$(echo "仅局域网 仅本机 局域网+本机 已禁用 主-旁转发($bypass_host)" | cut -d' ' -f$firewall_area)
 	echo -----------------------------------------------
+	echo -e "当前代理模式为：\033[47;30m$redir_mod\033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
+	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
+	echo -----------------------------------------------
+	[ -n "$firewall_mod" ] && {
+		if [ $firewall_area -le 4 ];then
+			echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
+			echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
+			echo -e " 3 \033[32mTproxy模式\033[0m：   Tproxy转发TCP&UDP"
+			echo -e " 4 \033[33mTun模式\033[0m：      Tun转发TCP&UDP(占用高不推荐)"
+		else
+			echo -e " 5 \033[32mTCP旁路转发\033[0m：    仅转发TCP流量至旁路由"
+			echo -e " 6 \033[36mT&U旁路转发\033[0m：    转发TCP&UDP流量至旁路由"
+		fi
+		echo -----------------------------------------------
+		echo -e " 7 设置劫持范围：\033[47;30m$firewall_area_dsc\033[0m"
+		echo -e " 8 切换防火墙应用：\033[47;30m$firewall_mod\033[0m"
+	}
 	
-}
-normal_set(){ #基础设置
-	set_redir_mod(){
-		set_redir_config(){
-			setconfig redir_mod $redir_mod
-			setconfig dns_mod $dns_mod 
-			if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ] && [ "$crashcore" = "clash" ];then
-				rm -rf ${BINDIR}/clash
-				rm -rf ${CRASHDIR}/clash
-				setconfig crashcore meta
-			fi
-			echo -----------------------------------------------	
-			echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
-		}
-		[ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] && sup_tp=1
-		[ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
-		nft add table inet shellcrash 2>/dev/null && sup_nft=1 && modprobe nft_tproxy >/dev/null 2>&1 && sup_nft=2
-		echo -----------------------------------------------
-		echo -e "当前代理模式为：\033[47;30m $redir_mod \033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
-		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
-		echo -----------------------------------------------
-		ckcmd iptables && echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
-		[ -n "$sup_tun" ] && echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
-		[ -n "$sup_tun" ] && echo -e " 4 \033[33mTun模式\033[0m：      使用Tun转发TCP&UDP(占用高)"
-		[ -n "$sup_tp" ] && echo -e " 5 \033[32mTproxy模式\033[0m：   使用Tproxy转发TCP&UDP"
-		[ -n "$sup_nft" ] && echo -e " 6 \033[36mNft基础\033[0m：      使用nftables转发TCP，不转发UDP"
-		[ "$sup_nft" = 2 ] && echo -e " 7 \033[32mNft混合\033[0m：      使用nft_tproxy转发TCP&UDP"
-		echo -e " 8 \033[36m纯净模式\033[0m：     不设置流量转发"
-		echo " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num	
-		if [ -z "$num" ]; then
-			errornum
-		elif [ "$num" = 0 ]; then
-			i=
-		elif [ "$num" = 1 ]; then
-			redir_mod=Redir模式
-			dns_mod=redir_host
+	echo " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num	
+	case $num in 
+	0) ;;
+	1)
+		redir_mod=Redir模式
+		set_redir_config
+		set_redir_mod
+	;;
+	2)
+		if [ -n "$sup_tun" ];then
+			redir_mod=混合模式
 			set_redir_config
-
-		elif [ "$num" = 2 ]; then
-			[ -n "$sup_tun" ] || {
-				echo -e "\033[32m设备未检测到Tun内核模块，可能无法代理UDP流量！\033[0m"
-				sleep 1
-			}
-			redir_mod=混合模式	
-			set_redir_config
-			
-		elif [ "$num" = 3 ]; then
+		else
+			echo -e "\033[31m设备未检测到Tun内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
+			sleep 1
+		fi
+		set_redir_mod
+	;;
+	3)
+		if [ "$firewall_mod" = "iptables" ] ;then
 			if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
-				read -p "当前设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
-				[ "$res" = '1' ] && ${CRASHDIR}/misnap_init.sh tproxyfix && redir_mod=Tproxy混合
+				read -p "xiaomi设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
+				[ "$res" = '1' ] && ${CRASHDIR}/misnap_init.sh tproxyfix && redir_mod=Tproxy模式
+			elif [ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] ;then
+				redir_mod=Tproxy模式
+				set_redir_config
 			else
-				redir_mod=Tproxy混合
+				echo -e "\033[31m设备未检测到iptables-mod-tproxy模块，请尝试其他模式或者安装相关依赖！\033[0m"
+				sleep 1					
 			fi	
-			set_redir_config
-			
-		elif [ "$num" = 4 ]; then
+		elif [ "$firewall_mod" = "nftables" ] ;then
+			if modprobe nft_tproxy >/dev/null 2>&1;then
+				redir_mod=Tproxy模式
+				set_redir_config
+			else
+				echo -e "\033[31m设备未检测到nft_tproxy内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
+				sleep 1					
+			fi
+		fi
+		set_redir_mod
+	;;
+	4)
+		if [ -n "$sup_tun" ];then
 			redir_mod=Tun模式
 			set_redir_config
-			
-		elif [ "$num" = 5 ]; then
-			if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
-				read -p "当前设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
-				[ "$res" = '1' ] && ${CRASHDIR}/misnap_init.sh tproxyfix && redir_mod=Tproxy模式
-			else
-				redir_mod=Tproxy模式
-			fi	
-			set_redir_config
-			
-		elif [ "$num" = 6 ]; then
-			if ckcmd opkg && [ -z "$(opkg list-installed | grep firewall4)" ];then
-				read -p "检测到缺少firewall4依赖，是否自动安装？(1/0) > " res
-				[ "$res" = '1' ] && opkg install firewall4 && redir_mod=Nft基础
-			else
-				redir_mod=Nft基础
-			fi
-			set_redir_config
-			
-		elif [ "$num" = 7 ]; then
-			if ckcmd opkg && [ -z "$(opkg list-installed | grep kmod-nft-tproxy)" ];then
-				read -p "检测到缺少kmod-nft-tproxy依赖，是否自动安装？(1/0) > " res
-				[ "$res" = '1' ] && opkg install kmod-nft-tproxy && redir_mod=Nft混合
-			else
-				redir_mod=Nft混合
-			fi
-			set_redir_config	
-			
-		elif [ "$num" = 8 ]; then
-			redir_mod=纯净模式	
-			set_redir_config		
+		else
+			echo -e "\033[31m设备未检测到Tun内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
+			sleep 1
+		fi
+		set_redir_mod
+	;;
+	5)
+		redir_mod=TCP旁路转发
+		set_redir_config
+		set_redir_mod
+	;;
+	6)
+		redir_mod=T&U旁路转发
+		set_redir_config
+		set_redir_mod
+	;;
+	7)
+		echo -----------------------------------------------
+		echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请使用1或3！"
+		echo -----------------------------------------------
+		echo -e " 1 \033[32m仅劫持局域网流量\033[0m"
+		echo -e " 2 \033[36m仅劫持本机流量\033[0m"
+		echo -e " 3 \033[32m劫持局域网+本机流量\033[0m"
+		echo -e " 4 不配置流量劫持(纯净模式)\033[0m"
+		echo -e " 5 \033[33m转发局域网流量到旁路由设备\033[0m"
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num	
+		case $num in
+		[1-4]) 
+			[ "$firewall_area" = 5 ] && {
+				redir_mod=Redir模式
+				setconfig redir_mod $redir_mod	
+			}
+			firewall_area=$num
+			setconfig firewall_area $firewall_area
+		;;
+		5) 
 			echo -----------------------------------------------
-			echo -e "\033[33m当前模式需要手动在设备WiFi或应用中配置HTTP或sock5代理\033[0m"
-			echo -e "HTTP/SOCK5代理服务器地址：\033[30;47m$host\033[0m;端口均为：\033[30;47m$mix_port\033[0m"
-			echo -e "也可以使用更便捷的PAC自动代理，PAC代理链接为："
-			echo -e "\033[30;47m http://$host:$db_port/ui/pac \033[0m"
-			echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
-			sleep 2
-		else
-			errornum
-		fi
-
-	}
-	set_dns_mod(){
-		echo -----------------------------------------------
-		echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
-		echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
-		echo -----------------------------------------------
-		echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
-		echo -e "                   不支持绕过CN-IP功能"
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
-			echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
-			echo -e "                   依赖geosite-cn.(db/srs)数据库"
-		else
-			echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
-			echo -e "                   需搭配加密DNS使用"
-		fi
-		echo " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		if [ -z "$num" ]; then
-			errornum
-		elif [ "$num" = 0 ]; then
-			i=
-		elif [ "$num" = 1 ]; then
-			dns_mod=fake-ip
-			setconfig dns_mod $dns_mod 
-			echo -----------------------------------------------	
-			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-
-		elif [ "$num" = 2 ]; then
-			dns_mod=redir_host
-			setconfig dns_mod $dns_mod 
-			echo -----------------------------------------------	
-			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-		elif [ "$num" = 3 ]; then
-			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
-				dns_mod=mix
-				setconfig dns_mod $dns_mod 
-				echo -----------------------------------------------	
-				echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+			echo -e "\033[31m注意：\033[0m此功能存在多种风险如无网络基础请勿尝试！"
+			echo -e "\033[33m说明：\033[0m此功能不启动内核仅配置防火墙转发，且子设备无需额外设置网关DNS"
+			echo -e "\033[33m说明：\033[0支持防火墙分流及设备过滤，支持部分定时任务，但不支持ipv6！"
+			echo -e "\033[31m注意：\033[0如需代理UDP，请确保旁路由运行了支持UDP代理的模式！"
+			echo -----------------------------------------------
+			read -p "请输入旁路由IPV4地址 > " bypass_host
+			[ -n "$bypass_host" ] && {
+				firewall_area=$num
+				setconfig firewall_area $firewall_area
+				setconfig bypass_host $bypass_host
+				redir_mod=TCP旁路转发
+				setconfig redir_mod $redir_mod
+			}
+		;;
+		*) errornum ;;
+		esac
+		sleep 1
+		set_redir_mod
+	;;	
+	8)
+		if [ "$firewall_mod" = 'iptables' ];then
+			if nft add table inet shellcrash 2>/dev/null;then
+				firewall_mod=nftables
+				redir_mod=Redir模式
+				setconfig redir_mod $redir_mod
 			else
-				echo -e "\033[31m当前内核不支持的功能！！！\033[0m"
-				sleep 1
+				echo -e "\033[31m当前设备未安装nftables或者nftables版本过低(<1.0.2),无法切换！\033[0m" 
 			fi
 		else
-			errornum
+			if ckcmd iptables;then
+				firewall_mod=iptables
+				redir_mod=Redir模式
+				setconfig redir_mod $redir_mod
+			else
+				echo -e "\033[31m当前设备未安装iptables,无法切换！\033[0m" 
+			fi
 		fi
-	}
-	fake_ip_filter(){
-		echo -e "\033[32m用于解决Fake-ip模式下部分地址或应用无法连接的问题\033[0m"
-		echo -e "\033[31m脚本已经内置了大量地址，你只需要添加出现问题的地址！\033[0m"
-		echo -e "\033[36m示例：a.b.com"
-		echo -e "示例：*.b.com"
-		echo -e "示例：*.*.b.com\033[0m"
-		echo -----------------------------------------------
-		if [ -s ${CRASHDIR}/configs/fake_ip_filter ];then
-			echo -e "\033[33m已添加Fake-ip过滤地址：\033[0m"
-			cat ${CRASHDIR}/configs/fake_ip_filter | awk '{print NR" "$1}'
+		sleep 1
+		setconfig firewall_mod $firewall_mod
+		set_redir_mod
+	;;			
+	*)
+		errornum
+	;;
+	esac
+}
+set_dns_mod(){
+	echo -----------------------------------------------
+	echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
+	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
+	echo -e "                   不支持绕过CN-IP功能"
+	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
+		echo -e "                   依赖geosite-cn.(db/srs)数据库"
+	else
+		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
+		echo -e "                   需搭配加密DNS使用"
+	fi
+	echo " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	if [ -z "$num" ]; then
+		errornum
+	elif [ "$num" = 0 ]; then
+		i=
+	elif [ "$num" = 1 ]; then
+		dns_mod=fake-ip
+		setconfig dns_mod $dns_mod 
+		echo -----------------------------------------------	
+		echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+
+	elif [ "$num" = 2 ]; then
+		dns_mod=redir_host
+		setconfig dns_mod $dns_mod 
+		echo -----------------------------------------------	
+		echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+	elif [ "$num" = 3 ]; then
+		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+			dns_mod=mix
+			setconfig dns_mod $dns_mod 
+			echo -----------------------------------------------	
+			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		else
-			echo -e "\033[33m你还未添加Fake-ip过滤地址\033[0m" 
+			echo -e "\033[31m当前内核不支持的功能！！！\033[0m"
+			sleep 1
 		fi
-		echo -----------------------------------------------
-		echo -e "\033[32m输入数字直接移除对应地址，输入地址直接添加！\033[0m"
-		read -p "请输入数字或地址 > " input
-		case $input in
-		0) ;;
-		'') ;;
-		[0-99])
-			sed -i "${input}d" ${CRASHDIR}/configs/fake_ip_filter	2>/dev/null
-			echo -e "\033[32m移除成功！\033[0m"	
-			fake_ip_filter
-		;;
-		*)
-			echo -e "你输入的地址是：\033[32m$input\033[0m"	
-			read -p "确认添加？(1/0) > " res
-			[ "$res" = 1 ] && echo $input >> ${CRASHDIR}/configs/fake_ip_filter
-			fake_ip_filter
-		;;
-		esac
-	}
+	else
+		errornum
+	fi
+}
+fake_ip_filter(){
+	echo -e "\033[32m用于解决Fake-ip模式下部分地址或应用无法连接的问题\033[0m"
+	echo -e "\033[31m脚本已经内置了大量地址，你只需要添加出现问题的地址！\033[0m"
+	echo -e "\033[36m示例：a.b.com"
+	echo -e "示例：*.b.com"
+	echo -e "示例：*.*.b.com\033[0m"
+	echo -----------------------------------------------
+	if [ -s ${CRASHDIR}/configs/fake_ip_filter ];then
+		echo -e "\033[33m已添加Fake-ip过滤地址：\033[0m"
+		cat ${CRASHDIR}/configs/fake_ip_filter | awk '{print NR" "$1}'
+	else
+		echo -e "\033[33m你还未添加Fake-ip过滤地址\033[0m" 
+	fi
+	echo -----------------------------------------------
+	echo -e "\033[32m输入数字直接移除对应地址，输入地址直接添加！\033[0m"
+	read -p "请输入数字或地址 > " input
+	case $input in
+	0) ;;
+	'') ;;
+	[0-99])
+		sed -i "${input}d" ${CRASHDIR}/configs/fake_ip_filter	2>/dev/null
+		echo -e "\033[32m移除成功！\033[0m"	
+		fake_ip_filter
+	;;
+	*)
+		echo -e "你输入的地址是：\033[32m$input\033[0m"	
+		read -p "确认添加？(1/0) > " res
+		[ "$res" = 1 ] && echo $input >> ${CRASHDIR}/configs/fake_ip_filter
+		fake_ip_filter
+	;;
+	esac
+}
+normal_set(){ #基础设置
 	#获取设置默认显示
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$common_ports" ] && common_ports=已开启

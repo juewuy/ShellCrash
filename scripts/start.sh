@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright (C) Juewuy
 
 #初始化目录
@@ -1168,107 +1168,110 @@ start_tun(){ #iptables-tun
 	fi
 }
 start_nft(){ #nftables-allinone
-	#获取局域网host地址
-	getlanip
+	table_type=$1
+	[ -n "$2" ] && table=$2 || table=$1
 	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
 	RESERVED_IP=$(echo $reserve_ipv4 | sed 's/ /, /g')
-	LOCAL_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
-	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
-	#设置策略路由
-	ip rule add fwmark $fwmark table 100
-	ip route add local default dev lo table 100
-	[ "$redir_mod" = "Nft基础" ] && \
-		nft add chain inet shellcrash prerouting { type nat hook prerouting priority -100 \; }
-	[ "$redir_mod" = "Nft混合" ] && {
+	if [ "$1" = 'output' ];then
+		HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
+		chain_type=route
+	else
+		HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+		chain_type=nat
+	fi
+	#不同模式调整
+	[ "$redir_mod" = "Redir模式" ] && \
+		nft add chain inet shellcrash $table { type nat hook $table_type priority -100 \; }
+	[ "$redir_mod" = "Tproxy模式" ] && {
 		modprobe nft_tproxy >/dev/null 2>&1
-		nft add chain inet shellcrash prerouting { type filter hook prerouting priority 0 \; }
+		nft add chain inet shellcrash $table { type $chain_type hook $table_type priority mangle \; }
 	}
-	[ -n "$(echo $redir_mod|grep Nft)" ] && {
-		#过滤局域网设备
-		[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
-			MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
-			[ "$macfilter_type" = "黑名单" ] && \
-				nft add rule inet shellcrash prerouting ether saddr {$MAC} return || \
-				nft add rule inet shellcrash prerouting ether saddr != {$MAC} return
-		}
-		#过滤保留地址
-		nft add rule inet shellcrash prerouting ip daddr {$RESERVED_IP} return
-		#仅代理本机局域网网段流量
-		nft add rule inet shellcrash prerouting ip saddr != {$HOST_IP} return
-		#绕过CN-IP
-		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f ${BINDIR}/cn_ip.txt ] && {
-			CN_IP=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ip.txt)
-			[ -n "$CN_IP" ] && nft add rule inet shellcrash prerouting ip daddr {$CN_IP} return
-		}
-		#过滤常用端口
-		[ -n "$PORTS" ] && nft add rule inet shellcrash prerouting tcp dport != {$PORTS} ip daddr != {198.18.0.0/16} return
-		#ipv6支持
-		if [ "$ipv6_redir" = "已开启" ];then
-			RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
-			HOST_IP6="$(echo $host_ipv6 | sed 's/ /, /g')"
-			ip -6 rule add fwmark $fwmark table 101 2> /dev/null
-			ip -6 route add local ::/0 dev lo table 101 2> /dev/null
-			#过滤保留地址及本机地址
-			nft add rule inet shellcrash prerouting ip6 daddr {$RESERVED_IP6} return
-			#仅代理本机局域网网段流量
-			nft add rule inet shellcrash prerouting ip6 saddr != {$HOST_IP6} return
-			#绕过CN_IPV6
-			[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" -a -f ${BINDIR}/cn_ipv6.txt ] && {
-				CN_IP6=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ipv6.txt)
-				[ -n "$CN_IP6" ] && nft add rule inet shellcrash prerouting ip6 daddr {$CN_IP6} return
-			}
+	[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
+		modprobe tun >/dev/null 2>&1
+		i=1
+		while [ -z "$(ip route list |grep utun)" -a "$i" -le 29 ];do
+			sleep 1
+			i=$((i+1))
+		done
+		if [ -z "$(ip route list |grep utun)" ];then
+			logger "找不到tun模块，放弃启动tun相关防火墙规则！" 31
+			exit 1
 		else
-			nft add rule inet shellcrash prerouting meta nfproto ipv6 return
+			nft add chain inet shellcrash $table { type $chain_type hook $table_type priority mangle \; }
 		fi
-		#透明路由
-		[ "$redir_mod" = "Nft基础" ] && nft add rule inet shellcrash prerouting meta l4proto tcp mark set $fwmark redirect to $redir_port
-		[ "$redir_mod" = "Nft混合" ] && nft add rule inet shellcrash prerouting meta l4proto {tcp, udp} mark set $fwmark tproxy to :$tproxy_port
 	}
-	#屏蔽QUIC
-	[ "$quic_rj" = 已启用 ] && {
-		nft add chain inet shellcrash input { type filter hook input priority 0 \; }
-		[ -n "$CN_IP" ] && nft add rule inet shellcrash input ip daddr {$CN_IP} return
-		[ -n "$CN_IP6" ] && nft add rule inet shellcrash input ip6 daddr {$CN_IP6} return
-		nft add rule inet shellcrash input udp dport 443 reject comment 'ShellCrash-QUIC-REJECT'
+	[ "$firewall_area" = 5 ] && {
+		nft add chain inet shellcrash $table { type $chain_type hook $table_type priority mangle \; }
+		nft add rule inet shellcrash $table ip daddr {$bypass_host} return
 	}
-	#代理本机(仅TCP)
-	[ "$local_proxy" = "已开启" ] && [ "$local_type" = "nftables增强模式" ] && {
-		#dns
-		[ "$dns_no" != "已禁用" ] && {
-			[ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && echo 'nameserver 127.0.0.1' >> /etc/resolv.conf #修复部分虚拟机dns查询失败的问题
-			nft add chain inet shellcrash dns_out { type nat hook output priority -100 \; }
-			nft add rule inet shellcrash dns_out meta skgid { 453, 7890 } return && \
-			nft add rule inet shellcrash dns_out udp dport 53 redirect to $dns_port
-		}
-		#output
-		nft add chain inet shellcrash output { type nat hook output priority -100 \; }
-		nft add rule inet shellcrash output meta skgid 7890 return && {
-			[ -n "$PORTS" ] && nft add rule inet shellcrash output tcp dport != {$PORTS} return
-			nft add rule inet shellcrash output ip daddr {$RESERVED_IP} return
-			nft add rule inet shellcrash output ip saddr != {$LOCAL_IP} return
-			nft add rule inet shellcrash output meta l4proto tcp mark set $fwmark redirect to $redir_port
-		}
-		#Docker
-		type docker >/dev/null 2>&1 && {
-			nft add chain inet shellcrash docker { type nat hook prerouting priority -100 \; }
-			nft add rule inet shellcrash docker ip saddr != {172.16.0.0/12} return #进代理docker网段
-			nft add rule inet shellcrash docker ip daddr {$RESERVED_IP} return #过滤保留地址
-			nft add rule inet shellcrash docker udp dport 53 redirect to $dns_port
-			nft add rule inet shellcrash docker meta l4proto tcp mark set $fwmark redirect to $redir_port
-		}
-	}
-}
-start_nft_dns(){ #nftables-dns
-	nft add chain inet shellcrash dns { type nat hook prerouting priority -100 \; }
 	#过滤局域网设备
 	[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
 		MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
 		[ "$macfilter_type" = "黑名单" ] && \
-			nft add rule inet shellcrash dns ether saddr {$MAC} return || \
-			nft add rule inet shellcrash dns ether saddr != {$MAC} return
+			nft add rule inet shellcrash $table ether saddr {$MAC} return || \
+			nft add rule inet shellcrash $table ether saddr != {$MAC} return
 	}
-	nft add rule inet shellcrash dns udp dport 53 redirect to ${dns_port}
-	nft add rule inet shellcrash dns tcp dport 53 redirect to ${dns_port}
+	#过滤保留地址
+	nft add rule inet shellcrash $table ip daddr {$RESERVED_IP} return
+	#仅代理本机局域网网段流量
+	nft add rule inet shellcrash $table ip saddr != {$HOST_IP} return
+	#绕过CN-IP
+	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f ${BINDIR}/cn_ip.txt ] && {
+		CN_IP=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ip.txt)
+		[ -n "$CN_IP" ] && nft add rule inet shellcrash $table ip daddr {$CN_IP} return
+	}
+	#过滤常用端口
+	[ -n "$PORTS" ] && nft add rule inet shellcrash $table tcp dport != {$PORTS} ip daddr != {198.18.0.0/16} return
+	#局域网ipv6支持
+	if [ "$ipv6_redir" = "已开启" -a "$table_type" = 'prerouting' -a "$firewall_area" != 5 ];then
+		RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
+		HOST_IP6="$(echo $host_ipv6 | sed 's/ /, /g')"
+		ip -6 rule add fwmark $fwmark table 101 2> /dev/null
+		ip -6 route add local ::/0 dev lo table 101 2> /dev/null
+		#过滤保留地址及本机地址
+		nft add rule inet shellcrash $table ip6 daddr {$RESERVED_IP6} return
+		#仅代理本机局域网网段流量
+		nft add rule inet shellcrash $table ip6 saddr != {$HOST_IP6} return
+		#绕过CN_IPV6
+		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" -a -f ${BINDIR}/cn_ipv6.txt ] && {
+			CN_IP6=$(awk '{printf "%s, ",$1}' ${BINDIR}/cn_ipv6.txt)
+			[ -n "$CN_IP6" ] && nft add rule inet shellcrash $table ip6 daddr {$CN_IP6} return
+		}
+	else
+		nft add rule inet shellcrash $table meta nfproto ipv6 return
+	fi
+	#	nft add rule inet shellcrash local_tproxy log prefix \"pre\" level debug
+	[ "$table_type" = 'output' ] && nft add rule inet shellcrash $table meta skgid 7890 return #本机流量防回环
+	[ "$redir_mod" = "Redir模式" ] && nft add rule inet shellcrash $table meta l4proto tcp redirect to $redir_port	
+	[ "$redir_mod" = "混合模式" ] && {
+		nft add rule inet shellcrash $table meta l4proto udp mark set $fwmark
+		nft add rule inet shellcrash $table meta l4proto tcp mark set $((fwmark + 1))
+		nft add chain inet shellcrash ${table}_mixtcp { type nat hook $table_type priority -100 \; }
+		nft add rule inet shellcrash ${table}_mixtcp mark == $((fwmark + 1)) meta l4proto tcp redirect to $redir_port
+	}	
+	[ "$redir_mod" = "Tproxy模式" ] && {
+		nft add rule inet shellcrash $table meta l4proto {tcp, udp} mark set $fwmark
+		nft add chain inet shellcrash ${table}_tproxy { type filter hook $table_type priority -100 \; }
+		nft add rule inet shellcrash ${table}_tproxy meta mark == $fwmark meta l4proto {tcp, udp} tproxy to :$tproxy_port
+	}
+	[ "$redir_mod" = "Tun模式" ] && nft add rule inet shellcrash $table meta l4proto {tcp, udp} mark set $fwmark
+	[ "$redir_mod" = "TCP旁路转发" ] && nft add rule inet shellcrash $table meta l4proto tcp mark set $fwmark
+	[ "$redir_mod" = "T&U旁路转发" ] && nft add rule inet shellcrash $table meta l4proto {tcp, udp} mark set $fwmark
+}
+start_nft_dns(){ #nftables-dns
+	nft add chain inet shellcrash ${1}_dns { type nat hook $1 priority -100 \; }
+	#过滤局域网设备
+	[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
+		MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
+		[ "$macfilter_type" = "黑名单" ] && \
+			nft add rule inet shellcrash ${1}_dns ether saddr {$MAC} return || \
+			nft add rule inet shellcrash ${1}_dns ether saddr != {$MAC} return
+	}
+	[ "$1" = 'output' ] && {
+		nft add rule inet shellcrash ${1}_dns meta skgid { 453, 7890 } return
+	}
+	nft add rule inet shellcrash ${1}_dns udp dport 53 redirect to ${dns_port}
+	nft add rule inet shellcrash ${1}_dns tcp dport 53 redirect to ${dns_port}
 }
 start_wan(){ #iptables公网访问防火墙
 	#获取局域网host地址
@@ -1403,6 +1406,8 @@ stop_firewall(){ #还原防火墙配置
 	}
 	#还原防火墙文件
 	[ -s /etc/init.d/firewall.bak ] && mv -f /etc/init.d/firewall.bak /etc/init.d/firewall
+	#others
+	sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf
 }
 #启动相关
 web_save(){ #最小化保存面板节点选择
@@ -1664,6 +1669,7 @@ afstart(){ #启动后
 
 	#读取配置文件
 	getconfig
+	[ -z "$firewall_area" ] && firewall_area=1
 	#延迟启动
 	[ ! -f ${TMPDIR}/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
 		logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
@@ -1686,7 +1692,8 @@ afstart(){ #启动后
 		start_dns(){
 			if [ "$dns_no" != "已禁用" ];then
 				if [ "$dns_redir" != "已开启" ];then
-					[ -n "$(echo $redir_mod|grep Nft)" ] && start_nft_dns || start_ipt_dns
+					[ "$firewall_mod" = 'iptables' ] && start_ipt_dns
+					[ "$firewall_mod" = 'nftables' ] && start_nft_dns prerouting
 				else
 					#openwrt使用dnsmasq转发
 					uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
@@ -1700,21 +1707,46 @@ afstart(){ #启动后
 			return 0
 		}
 		#设置路由规则
-		[ "$redir_mod" = "Redir模式" ] && start_dns && start_redir 	
-		[ "$redir_mod" = "混合模式" ] && start_dns && start_redir && start_tun udp
-		[ "$redir_mod" = "Tproxy混合" ] && start_dns && start_redir && start_tproxy udp
-		[ "$redir_mod" = "Tun模式" ] && start_dns && start_tun all
-		[ "$redir_mod" = "Tproxy模式" ] && start_dns && start_tproxy all
-		[ -n "$(echo $redir_mod|grep Nft)" -o "$local_type" = "nftables增强模式" ] && {
-			nft add table inet shellcrash #初始化nftables
-			nft flush table inet shellcrash
-		}
-		[ -n "$(echo $redir_mod|grep Nft)" ] && start_dns && start_nft
-		#设置本机代理
-		[ "$local_proxy" = "已开启" ] && {
-			[ "$local_type" = "环境变量" ] && $0 set_proxy $mix_port $db_port
-			[ "$local_type" = "iptables增强模式" ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && start_output
-			[ "$local_type" = "nftables增强模式" ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && [ "$redir_mod" = "纯净模式" ] && start_nft
+		[ "$firewall_area" != 4 ] && {
+			getlanip #获取局域网host地址
+			#设置策略路由
+			[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table 100
+			[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && ip route add default dev utun table 100
+			[ "$firewall_area" = 5 ] && ip route add default via $bypass_host table 100
+			[ "$redir_mod" != "纯净模式" -a "$redir_mod" != "Redir模式" ] && ip rule add fwmark $fwmark table 100
+			[ "$firewall_mod" = 'iptables' ] && {
+				[ "$redir_mod" = "Redir模式" ] && start_dns && start_redir 	
+				[ "$redir_mod" = "混合模式" ] && start_dns && start_redir && start_tun udp
+				[ "$redir_mod" = "Tun模式" ] && start_dns && start_tun all
+				[ "$redir_mod" = "Tproxy模式" ] && start_dns && start_tproxy all
+				[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && start_output #设置本机代理
+			}
+			[ "$firewall_mod" = 'nftables' ] && {
+				nft add table inet shellcrash #初始化nftables
+				nft flush table inet shellcrash
+				#局域网代理
+				[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 ] && {
+					start_dns
+					start_nft prerouting
+					#屏蔽QUIC
+					[ "$quic_rj" = 已启用 ] && {
+						nft add chain inet shellcrash input { type filter hook input priority 0 \; }
+						[ -n "$CN_IP" ] && nft add rule inet shellcrash input ip daddr {$CN_IP} return
+						[ -n "$CN_IP6" ] && nft add rule inet shellcrash input ip6 daddr {$CN_IP6} return
+						nft add rule inet shellcrash input udp dport 443 reject comment 'ShellCrash-QUIC-REJECT'
+					}
+				}
+				#设置本机代理
+				[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && {
+					start_nft_dns output
+					start_nft output
+					#修复部分虚拟机dns查询失败的问题
+					[ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && {
+						line=$(grep -n 'nameserver' /etc/resolv.conf | awk -F: 'FNR==1{print $1}')
+						sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf 
+					}
+				}
+			}
 		}
 		ckcmd iptables && start_wan #本地防火墙
 		mark_time #标记启动时间
