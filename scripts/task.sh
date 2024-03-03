@@ -127,22 +127,21 @@ update_mmdb(){ #自动更新数据库
 			if [ "$?" != "0" ];then
 				logger "任务【自动更新数据库文件】更新【$2】下载失败！"
 				rm -rf ${TMPDIR}/$1
-				return 1
 			else
 				mv -f ${TMPDIR}/$1 ${BINDIR}/$1
 				setconfig $geo_v $GeoIP_v
 				logger "任务【自动更新数据库文件】更新【$2】成功！"
-				return 0
 			fi
 		fi
 	}
-	[ -n "${Country_v}" ] && getgeo Country.mmdb Country.mmdb
-	[ -n "${cn_mini_v}" ] && getgeo Country.mmdb cn_mini.mmdb
-	[ -n "${china_ip_list_v}" ] && getgeo cn_ip.txt china_ip_list.txt
-	[ -n "${china_ipv6_list_v}" ] && getgeo cn_ipv6.txt china_ipv6_list.txt
-	[ -n "${geosite_v}" ] && getgeo GeoSite.dat geosite.dat
-	[ -n "${geoip_cn_v}" ] && getgeo geoip.db geoip_cn.db
-	[ -n "${geosite_cn_v}" ] && getgeo geosite.db geosite_cn.db
+	[ -n "${Country_v}" -a -s $CRASHDIR/Country.mmdb ] && getgeo Country.mmdb Country.mmdb
+	[ -n "${cn_mini_v}" -a -s $CRASHDIR/Country.mmdb ] && getgeo Country.mmdb cn_mini.mmdb
+	[ -n "${china_ip_list_v}" -a -s $CRASHDIR/cn_ip.txt ] && getgeo cn_ip.txt china_ip_list.txt
+	[ -n "${china_ipv6_list_v}" -a -s $CRASHDIR/cn_ipv6.txt ] && getgeo cn_ipv6.txt china_ipv6_list.txt
+	[ -n "${geosite_v}" -a -s $CRASHDIR/GeoSite.dat ] && getgeo GeoSite.dat geosite.dat
+	[ -n "${geoip_cn_v}" -a -s $CRASHDIR/geoip.db ] && getgeo geoip.db geoip_cn.db
+	[ -n "${geosite_cn_v}" -a -s $CRASHDIR/geosite.db ] && getgeo geosite.db geosite_cn.db
+	return 0
 }
 reset_firewall(){ #重设透明路由防火墙
 	${CRASHDIR}/start.sh stop_firewall
