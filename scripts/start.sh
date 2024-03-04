@@ -1167,7 +1167,34 @@ start_tun(){ #iptables-tun
 		logger "iptables缺少-J MARK功能，放弃启动tun相关防火墙规则！" 31
 	fi
 }
-start_nft(){ #nftables-allinone
+start_ipt_wan(){ #iptables公网防火墙
+	#获取局域网host地址
+	getlanip
+	if [ "$public_support" = "已开启" ];then
+		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
+		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 
+	else
+		#仅允许非公网设备访问面板
+		for ip in $reserve_ipv4;do
+			iptables -A INPUT -p tcp -s $ip --dport $db_port -j ACCEPT
+		done
+		iptables -A INPUT -p tcp --dport $db_port -j REJECT
+		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $db_port -j REJECT
+	fi
+	if [ "$public_mixport" = "已开启" ];then
+		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 
+	else
+		#仅允许局域网设备访问混合端口
+		for ip in $reserve_ipv4;do
+			iptables -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
+		done
+		iptables -A INPUT -p tcp --dport $mix_port -j REJECT
+		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 
+	fi
+	iptables -I INPUT -p tcp -d 127.0.0.1 -j ACCEPT #本机请求全放行
+}
+start_nft(){ #nftables-all-in-one
 	table_type=$1
 	[ -n "$2" ] && table=$2 || table=$1
 	[ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
@@ -1198,12 +1225,15 @@ start_nft(){ #nftables-allinone
 			exit 1
 		else
 			nft add chain inet shellcrash $table { type $chain_type hook $table_type priority mangle \; }
+			nft add rule inet shellcrash $table ip saddr 198.18.0.0/16 return #防止回环
 		fi
 	}
 	[ "$firewall_area" = 5 ] && {
 		nft add chain inet shellcrash $table { type $chain_type hook $table_type priority mangle \; }
 		nft add rule inet shellcrash $table ip daddr {$bypass_host} return
 	}
+	#本机流量防回环
+	[ "$table_type" = 'output' ] && nft add rule inet shellcrash $table meta skgid 7890 return 
 	#过滤局域网设备
 	[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
 		MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
@@ -1241,7 +1271,6 @@ start_nft(){ #nftables-allinone
 		nft add rule inet shellcrash $table meta nfproto ipv6 return
 	fi
 	#	nft add rule inet shellcrash local_tproxy log prefix \"pre\" level debug
-	[ "$table_type" = 'output' ] && nft add rule inet shellcrash $table meta skgid 7890 return #本机流量防回环
 	[ "$redir_mod" = "Redir模式" ] && nft add rule inet shellcrash $table meta l4proto tcp redirect to $redir_port	
 	[ "$redir_mod" = "混合模式" ] && {
 		nft add rule inet shellcrash $table meta l4proto udp mark set $fwmark
@@ -1273,32 +1302,26 @@ start_nft_dns(){ #nftables-dns
 	nft add rule inet shellcrash ${1}_dns udp dport 53 redirect to ${dns_port}
 	nft add rule inet shellcrash ${1}_dns tcp dport 53 redirect to ${dns_port}
 }
-start_wan(){ #iptables公网访问防火墙
+start_nft_wan(){ #nftables公网防火墙
 	#获取局域网host地址
 	getlanip
+	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+	nft add chain inet shellcrash input { type filter hook input priority -100 \; }
+	nft add rule inet shellcrash input ip daddr 127.0.0.1 accept
 	if [ "$public_support" = "已开启" ];then
-		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
-		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT 
+		nft add rule inet shellcrash input tcp dport $db_port accept
 	else
 		#仅允许非公网设备访问面板
-		for ip in $reserve_ipv4;do
-			iptables -A INPUT -p tcp -s $ip --dport $db_port -j ACCEPT
-		done
-		iptables -A INPUT -p tcp --dport $db_port -j REJECT
-		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $db_port -j REJECT
+		nft add rule inet shellcrash input tcp dport $db_port ip saddr {$HOST_IP} accept
+		nft add rule inet shellcrash input tcp dport $db_port reject
 	fi
 	if [ "$public_mixport" = "已开启" ];then
-		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT 
+		nft add rule inet shellcrash input tcp dport $mix_port accept
 	else
 		#仅允许局域网设备访问混合端口
-		for ip in $reserve_ipv4;do
-			iptables -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
-		done
-		iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT 
+		nft add rule inet shellcrash input tcp dport $mix_port ip saddr {$HOST_IP} accept
+		nft add rule inet shellcrash input tcp dport $mix_port reject
 	fi
-	iptables -I INPUT -p tcp -d 127.0.0.1 -j ACCEPT #本机请求全放行
 }
 stop_firewall(){ #还原防火墙配置
 	getconfig
@@ -1748,7 +1771,9 @@ afstart(){ #启动后
 				}
 			}
 		}
-		ckcmd iptables && start_wan #本地防火墙
+		#启用公网访问防火墙
+		[ "$firewall_mod" = 'iptables' ] && start_ipt_wan 
+		[ "$firewall_mod" = 'nftables' ] && start_nft_wan
 		mark_time #标记启动时间
 		[ -s ${CRASHDIR}/configs/web_save -o -s ${CRASHDIR}/configs/web_configs ] && web_restore >/dev/null 2>&1 & #后台还原面板配置
 		{ sleep 5;logger ShellCrash服务已启动！;} & #推送日志
