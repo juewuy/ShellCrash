@@ -2414,32 +2414,38 @@ testcommand(){
 		if [ "$firewall_mod" = "nftables" ];then
 			nft list table inet shellcrash
 		else
-			echo -------------------Redir---------------------
+			echo ----------------Redir+DNS---------------------
 			iptables -t nat -L PREROUTING --line-numbers
 			iptables -t nat -L shellcrash_dns --line-numbers
-			iptables -t nat -L shellcrash --line-numbers
+			[ "$redir_mod" = "Redir模式" ] && iptables -t nat -L shellcrash --line-numbers
 			[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
 				echo ----------------Tun/Tproxy-------------------
 				iptables -t mangle -L PREROUTING --line-numbers
-				iptables -t mangle -L shellcrash --line-numbers
+				iptables -t mangle -L shellcrash_mark --line-numbers
 			}
-			[ "$local_proxy" = "已开启" ] && [ "$local_type" = "iptables增强模式" ] && {
-				echo ----------------OUTPUT-------------------
+			[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && {
+				echo -------------OUTPUT-Redir+DNS----------------
 				iptables -t nat -L OUTPUT --line-numbers
 				iptables -t nat -L shellcrash_dns_out --line-numbers
-				iptables -t nat -L shellcrash_out --line-numbers
+				if [ "$redir_mod" = "Redir模式" ];then
+					iptables -t nat -L shellcrash_out --line-numbers
+				else
+					echo ------------OUTPUT-Tun/Tproxy---------------
+					iptables -t mangle -L OUTPUT --line-numbers
+					iptables -t mangle -L shellcrash_mark_out --line-numbers
+				fi
 			}
 			[ "$ipv6_redir" = "已开启" ] && {
-				[ -n "$(lsmod | grep 'ip6table_nat')" ] && {
-					echo -------------------Redir---------------------
+				ip6tables -t nat -L >/dev/null 2>&1 && {
+					echo -------------IPV6-Redir+DNS-------------------
 					ip6tables -t nat -L PREROUTING --line-numbers
 					ip6tables -t nat -L shellcrashv6_dns --line-numbers
-					ip6tables -t nat -L shellcrashv6 --line-numbers
+					[ "$redir_mod" = "Redir模式" ] && ip6tables -t nat -L shellcrashv6 --line-numbers
 				}
 				[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
-					echo ----------------Tun/Tproxy-------------------
+					echo -------------IPV6-Tun/Tproxy------------------
 					ip6tables -t mangle -L PREROUTING --line-numbers
-					ip6tables -t mangle -L shellcrashv6 --line-numbers
+					ip6tables -t mangle -L shellcrashv6_mark --line-numbers
 				}
 			}
 		fi

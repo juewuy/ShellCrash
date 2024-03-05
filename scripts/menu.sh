@@ -688,7 +688,7 @@ setipv6(){ #ipv6设置
 			setconfig ipv6_redir $ipv6_redir
 			setconfig ipv6_support $ipv6_support
 		fi
-		if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
+		if [ -n "$(ipset -v 2>/dev/null)" -o "$firewall_mod" = 'nftables' ];then
 			[ "$cn_ipv6_route" = "未开启" ] && cn_ipv6_route=已开启 || cn_ipv6_route=未开启
 			setconfig cn_ipv6_route $cn_ipv6_route
 		else
@@ -1168,7 +1168,7 @@ set_redir_mod(){
 			if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
 				read -p "xiaomi设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
 				[ "$res" = '1' ] && ${CRASHDIR}/misnap_init.sh tproxyfix && redir_mod=Tproxy模式
-			elif [ -n "$(iptables -j TPROXY 2>&1 | grep 'on-port')" ] ;then
+			elif [ -n "$(grep -E '^TPROXY$' /proc/net/ip_tables_targets)" ] ;then
 				redir_mod=Tproxy模式
 				set_redir_config
 			else
@@ -1475,7 +1475,7 @@ normal_set(){ #基础设置
 		normal_set		
 		
 	elif [ "$num" = 8 ]; then	
-		if [ -n "$(ipset -v 2>/dev/null)" -o -n "$(echo $redir_mod | grep Nft)" ];then
+		if [ -n "$(ipset -v 2>/dev/null)" -o "$firewall_mod" = 'nftables' ];then
 			if [ "$cn_ip_route" = "未开启" ]; then 
 				echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
 				echo -e "\033[31m注意！！！此功能会导致全局模式及一切CN相关规则失效！！！\033[0m"
