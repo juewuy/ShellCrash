@@ -1457,7 +1457,7 @@ core_check(){ #检查及下载内核文件
 		tar_core ${BINDIR}/CrashCore.tar.gz CrashCore
 	[ -z "$(find ${TMPDIR}/CrashCore $find_para 2>/dev/null)" ] && {
 			logger "未找到【$crashcore】核心，正在下载！" 33
-			[ -z "$cpucore" ] && source ${CRASHDIR}/getdate.sh && getcpucore
+			[ -z "$cpucore" ] && source ${CRASHDIR}/update.sh && getcpucore
 			[ -z "$cpucore" ] && logger 找不到设备的CPU信息，请手动指定处理器架构类型！ 31 && exit 1
 			get_bin ${TMPDIR}/CrashCore.tar.gz "bin/$crashcore/${target}-linux-${cpucore}.tar.gz"
 			#校验内核

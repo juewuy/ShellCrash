@@ -1104,7 +1104,7 @@ set_core_config(){ #配置文件功能
 	esac
 }
 #下载更新相关
-gettar(){
+getscripts(){ #更新脚本文件
 	${CRASHDIR}/start.sh get_bin ${TMPDIR}/update.tar.gz bin/clashfm.tar.gz
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
@@ -1127,7 +1127,7 @@ gettar(){
 	rm -rf ${TMPDIR}/update.tar.gz
 	exit
 }
-getsh(){
+setscripts(){
 	echo -----------------------------------------------
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
 	echo -e "最新脚本版本为：\033[32m $version_new \033[0m"
@@ -1136,7 +1136,7 @@ getsh(){
 	read -p "是否更新脚本？[1/0] > " res
 	if [ "$res" = '1' ]; then
 		#下载更新
-		gettar
+		getscripts
 		#提示
 		echo -----------------------------------------------
 		echo -e "\033[32m管理脚本更新成功!\033[0m"
@@ -1737,7 +1737,7 @@ setgeo(){ #数据库选择菜单
 esac
 }
 
-getdb(){
+getdb(){ #下载Dashboard文件
 	dblink="${update_url}/"
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
@@ -1870,7 +1870,7 @@ setdb(){
 	esac
 }
 
-getcrt(){
+getcrt(){ #下载根证书文件
 	echo -----------------------------------------------
 	echo 正在连接服务器获取安装文件…………
 	${CRASHDIR}/start.sh get_bin ${TMPDIR}/ca-certificates.crt bin/fix/ca-certificates.crt
@@ -2096,7 +2096,7 @@ update(){
 	elif [ "$num" = 0 ]; then
 		i=
 	elif [ "$num" = 1 ]; then	
-		getsh	
+		setscripts	
 
 	elif [ "$num" = 2 ]; then	
 		setcore
