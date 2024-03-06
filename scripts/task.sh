@@ -86,7 +86,7 @@ update_core(){ #自动更新内核
 		fi
 	fi
 }
-update_shellcrash(){ #自动更新脚本
+update_scripts(){ #自动更新脚本
 	#检查版本
 	check_update
 	if [ -z "$versionsh" -o "$versionsh" = "versionsh_l" ];then

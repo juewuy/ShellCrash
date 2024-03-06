@@ -2054,7 +2054,6 @@ checkupdate(){
 	[ "$?" = "0" ] && version_new=$(cat ${TMPDIR}/version_new | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
 	if [ -n "$version_new" ];then
 		source ${TMPDIR}/version_new 2>/dev/null
-		cat ${TMPDIR}/version_new
 	else
 		echo -e "\033[31m检查更新失败！请尝试切换其他安装源！\033[0m"
 		setserver

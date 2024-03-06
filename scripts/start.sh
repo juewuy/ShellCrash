@@ -1464,6 +1464,9 @@ makehtml(){ #生成面板跳转文件
 	cat > ${BINDIR}/ui/index.html <<EOF
 <!DOCTYPE html>
 <html lang="en">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1477,7 +1480,7 @@ makehtml(){ #生成面板跳转文件
         <a href="https://metacubexd.pages.dev" style="font-size: 24px;">Meta XD面板(推荐)<br></a>
         <a href="https://yacd.metacubex.one" style="font-size: 24px;">Meta YACD面板(推荐)<br></a>
         <a href="https://yacd.haishan.me" style="font-size: 24px;">Clash YACD面板<br></a>
-        <a style="font-size: 18px;"><br>如已安装，请使用Ctrl+F5强制刷新！<br></a>		
+        <a style="font-size: 21px;"><br>如已安装，请刷新此页面！<br></a>		
     </div>
 </body>
 </html
@@ -1553,31 +1556,24 @@ core_check(){ #检查及下载内核文件
 	[ "$start_old" != "已开启" -a "$(cat /proc/1/comm)" = "systemd" ] && restorecon -RF $CRASHDIR 2>/dev/null #修复SELinux权限问题
 	return 0
 }
+core_exchange(){ #升级为高级内核
+	#$1：目标内核  $2：提示语句
+	logger "检测到${2}！将改为使用${1}核心启动！" 33
+	rm -rf ${TMPDIR}/CrashCore
+	rm -rf ${BINDIR}/CrashCore
+	rm -rf ${BINDIR}/CrashCore.tar.gz
+	crashcore=${1}
+	setconfig crashcore ${1}
+	echo -----------------------------------------------
+}
 clash_check(){ #clash启动前检查
 	#检测vless/hysteria协议
-	if [ "$crashcore" != "meta" ] && [ -n "$(cat $core_config | grep -oE 'type: vless|type: hysteria')" ];then
-		echo -----------------------------------------------
-		logger "检测到vless/hysteria协议！将改为使用meta核心启动！" 33
-		rm -rf ${TMPDIR}/CrashCore
-		rm -rf ${BINDIR}/CrashCore
-		rm -rf ${BINDIR}/CrashCore.tar.gz
-		crashcore=meta
-		setconfig crashcore $crashcore
-		echo -----------------------------------------------
-	fi
+	[ "$crashcore" != "meta" ] && [ -n "$(cat $core_config | grep -oE 'type: vless|type: hysteria')" ] && core_exchange meta 'vless/hy协议'
 	#检测是否存在高级版规则或者tun模式
 	if [ "$crashcore" = "clash" ];then
 		[ -n "$(cat $core_config | grep -aiE '^script:|proxy-providers|rule-providers|rule-set')" ] || \
 		[ "$redir_mod" = "混合模式" ] || \
-		[ "$redir_mod" = "Tun模式" ] && {
-			echo -----------------------------------------------
-			logger "检测到高级功能！将改为使用meta核心启动！" 33
-			rm -rf ${TMPDIR}/CrashCore
-			rm -rf ${BINDIR}/CrashCore
-			rm -rf ${BINDIR}/CrashCore.tar.gz
-			crashcore=meta
-			echo -----------------------------------------------
-		}
+		[ "$redir_mod" = "Tun模式" ] && core_exchange meta '当前内核不支持的配置'
 	fi
 	core_check
 	#预下载GeoIP数据库
@@ -1588,15 +1584,7 @@ clash_check(){ #clash启动前检查
 }
 singbox_check(){ #singbox启动前检查
 	#检测PuerNya专属功能
-	if [ "$crashcore" != "singboxp" ] && [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oE 'shadowsocksr|providers')" ];then
-		echo -----------------------------------------------
-		logger "检测到PuerNya内核专属功能，改为使用singboxp内核启动！" 33
-		rm -rf ${TMPDIR}/CrashCore
-		rm -rf ${BINDIR}/CrashCore
-		rm -rf ${BINDIR}/CrashCore.tar.gz
-		crashcore=singboxp		
-		setconfig crashcore $crashcore
-	fi
+	[ "$crashcore" != "singboxp" ] && [ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oE 'shadowsocksr|providers')" ] && core_exchange singboxp 'PuerNya内核专属功能'
 	core_check
 	#预下载geoip-cn.srs数据库
 	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
