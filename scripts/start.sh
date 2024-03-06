@@ -1366,12 +1366,14 @@ web_save(){ #最小化保存面板节点选择
 web_restore(){ #还原面板选择
 	getconfig
 	#设置循环检测面板端口以判定服务启动是否成功
-	i=1
+	test=""
+ 	i=1
 	while [ -z "$test" -a "$i" -lt 20 ];do
 		sleep 2
 		test=$(get_save http://127.0.0.1:${db_port}/configs | grep -o port)
 		i=$((i+1))
 	done
+ 	sleep 1
 	[ -n "$test" ] && {
 		#发送节点选择数据
 		[ -s ${CRASHDIR}/configs/web_save ] && {
