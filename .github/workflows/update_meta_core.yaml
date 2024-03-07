@@ -89,11 +89,11 @@ jobs:
             goos: linux
             goarch: mips
             gomips: softfloat
-          - name: linux-mipsel-softfloat
+          - name: linux-mipsle-softfloat
             goos: linux
             goarch: mipsle
             gomips: softfloat
-          - name: linux-mipsel-hardfloat
+          - name: linux-mipsle-hardfloat
             goos: linux
             goarch: mipsle
             gomips: hardfloat   
