@@ -9,14 +9,14 @@ source ${CRASHDIR}/configs/command.env >/dev/null 2>&1
 [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
 
 #脚本内部工具
-getconfig(){ #获取脚本配置
+getconfig(){ #读取配置及全局变量
 	#加载配置文件
 	source ${CRASHDIR}/configs/ShellCrash.cfg >/dev/null
 	#默认设置
 	[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
-	[ -z "$dns_mod" ] && dns_mod=redir_host
+	[ -z "$dns_mod" ] && dns_mod=fake-ip
 	[ -z "$ipv6_support" ] && ipv6_support=已开启
 	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
@@ -27,6 +27,7 @@ getconfig(){ #获取脚本配置
 	[ -z "$db_port" ] && db_port=9999
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$fwmark" ] && fwmark=$redir_port
+	routing_mark=$((fwmark + 2))
 	[ -z "$sniffer" ] && sniffer=已开启
 	#是否代理常用端口
 	[ -z "$common_ports" ] && common_ports=已开启
@@ -81,7 +82,6 @@ logger(){ #日志工具
 	echo $log_text >> ${TMPDIR}/ShellCrash.log
 	[ "$(wc -l  ${TMPDIR}/ShellCrash.log | awk '{print $1}')" -gt 99 ] && sed -i '1,50d'  ${TMPDIR}/ShellCrash.log
 	[ -z "$3" ] && {
-		getconfig
 		[ -n "$device_name" ] && log_text="$log_text($device_name)"
 		[ -n "$(pidof CrashCore)" ] && {
 			[ -n "$authentication" ] && auth="$authentication@" 
@@ -261,7 +261,6 @@ check_singbox_config(){ #检查singbox配置文件
 	} 
 }
 get_core_config(){ #下载内核配置文件
-	getconfig
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
 	Server=$(grep -aE '^3|^4' ${CRASHDIR}/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
@@ -401,6 +400,7 @@ $tun
 $exper
 $sniffer_set
 $find_process
+routing-mark: $routing_mark
 EOF
 	#读取本机hosts并生成配置文件
 	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -aE '^hosts:' ${CRASHDIR}/yamls/user.yaml 2>/dev/null)" ];then
@@ -655,7 +655,8 @@ EOF
   "route": {
     "rules": [ 
 	{ "inbound": "dns-in", "outbound": "dns-out" }
-	]
+	],
+	"default_mark": $routing_mark
   }
 }
 EOF
@@ -876,10 +877,12 @@ start_ipt_route(){ #iptables-route通用工具
 	}
 	#创建新的shellcrash链表
 	$1 -t $2 -N $4
-	#本机代理防回环
+	#防回环
+	$1 -t $2 -A $4 -m mark --mark $routing_mark -j RETURN
 	[ "$3" = 'OUTPUT' ] && for gid in 453 7890;do
 		$1 -t $2 -A $4 -m owner --gid-owner $gid -j RETURN
 	done
+	[ "$firewall_area" = 5 ] && $1 -t $2 -A $4 -s $bypass_host -j RETURN
 	#跳过目标保留地址及目标本机网段
 	for ip in $HOST_IP $RESERVED_IP;do
 		$1 -t $2 -A $4 -d $ip -j RETURN
@@ -913,10 +916,15 @@ start_ipt_route(){ #iptables-route通用工具
 start_ipt_dns(){ #iptables-dns通用工具
 	#$1:iptables/ip6tables	$2:所在的表(OUTPUT/PREROUTING)	$3:新创建的shellcrash表	
 	$1 -t nat -N $3
-	#绕过本机dns应用
+	#防回环
+	$1 -t nat -A $3 -m mark --mark $routing_mark -j RETURN
 	[ "$2" = 'OUTPUT' ] && for gid in 453 7890;do
 		$1 -t nat -A $3 -m owner --gid-owner $gid -j RETURN
 	done
+	[ "$firewall_area" = 5 ] && {
+		$1 -t nat -A $3 -p tcp -s $bypass_host -j RETURN
+		$1 -t nat -A $3 -p udp -s $bypass_host -j RETURN
+	}
 	if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
 		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
 			$1 -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to $dns_port
@@ -983,7 +991,7 @@ start_iptables(){ #iptables配置总入口
 				if ip6tables -t nat -L >/dev/null 2>&1;then
 					start_ipt_route ip6tables nat PREROUTING shellcrashv6 tcp #ipv6-局域网tcp转发
 				else
-					logger "当前设备内核缺少ip6tables-nat模块支持，已放弃启动相关规则！" 31
+					logger "当前设备内核缺少ip6tables_nat模块支持，已放弃启动相关规则！" 31
 				fi
 			}
 		}
@@ -993,15 +1001,25 @@ start_iptables(){ #iptables配置总入口
 		JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
 		if [ -n "$(grep -E '^TPROXY$' /proc/net/ip_tables_targets)" ];then
 			[ "$lan_proxy" = true ] && start_ipt_route iptables mangle PREROUTING shellcrash_mark all
-			[ "$local_proxy" = true ] && start_ipt_route iptables mangle OUTPUT shellcrash_mark_out all
+			[ "$local_proxy" = true ] && {
+				if [ -n "$(grep -E '^MARK$' /proc/net/ip_tables_targets)" ];then
+					JUMP="MARK --set-mark $fwmark" #跳转劫持的具体命令
+					start_ipt_route iptables mangle OUTPUT shellcrash_mark_out all
+					iptables -t mangle -A PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port
+					iptables -t mangle -A PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port
+				else
+					logger "当前设备内核可能缺少xt_mark模块支持，已放弃启动本机代理相关规则！" 31
+				fi					
+			}
 		else
-			logger "当前设备内核可能缺少kmod-ipt-tproxy模块支持，已放弃启动相关规则！" 31
+			logger "当前设备内核可能缺少kmod_ipt_tproxy模块支持，已放弃启动相关规则！" 31
 		fi
 		[ "$ipv6_redir" = "已开启" ] && [ "$lan_proxy" = true ] && {
 			if [ -n "$(grep -E '^TPROXY$' /proc/net/ip6_tables_targets)" ];then
+				JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
 				start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark all
 			else
-				logger "当前设备内核可能缺少kmod-ipt-tproxy模块支持，已放弃启动相关规则！" 31
+				logger "当前设备内核可能缺少kmod_ipt_tproxy或者xt_mark模块支持，已放弃启动相关规则！" 31
 			fi
 		}	
 	}
@@ -1011,16 +1029,20 @@ start_iptables(){ #iptables配置总入口
 		[ "$redir_mod" = "混合模式" ] && protocol=udp
 		[ "$redir_mod" = "TCP旁路转发" ] && protocol=tcp
 		if [ -n "$(grep -E '^MARK$' /proc/net/ip_tables_targets)" ];then
-			[ "$lan_proxy" = true ] && start_ipt_route iptables mangle PREROUTING shellcrash_mark $protocol
+			[ "$lan_proxy" = true ] && {
+				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && iptables -I FORWARD -o utun -j ACCEPT
+				start_ipt_route iptables mangle PREROUTING shellcrash_mark $protocol
+			}
 			[ "$local_proxy" = true ] && start_ipt_route iptables mangle OUTPUT shellcrash_mark_out $protocol
 		else
-			logger "当前设备内核可能缺少xt-mark模块支持，已放弃启动相关规则！" 31
+			logger "当前设备内核可能缺少x_mark模块支持，已放弃启动相关规则！" 31
 		fi		
-		[ "$ipv6_redir" = "已开启" ] && [ "$lan_proxy" = true ] && {
+		[ "$ipv6_redir" = "已开启" ] && [ "$lan_proxy" = true ] && [ "$crashcore" != clashpre ] && {
 			if [ -n "$(grep -E '^MARK$' /proc/net/ip6_tables_targets)" ];then
+				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && ip6tables -I FORWARD -o utun -j ACCEPT
 				start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark $protocol
 			else
-				logger "当前设备内核可能缺少xt-mark模块支持，已放弃启动相关规则！" 31
+				logger "当前设备内核可能缺少xt_mark模块支持，已放弃启动相关规则！" 31
 			fi
 		}
 	}
@@ -1043,9 +1065,10 @@ start_nft_route(){ #nftables-route通用工具
 	#添加新链
 	nft add chain inet shellcrash $1 { type $3 hook $2 priority $4 \; }
 	#防回环
+	nft add rule inet shellcrash $1 meta mark $routing_mark return 
 	nft add rule inet shellcrash $1 meta skgid 7890 return 
 	nft add rule inet shellcrash $1 ip saddr 198.18.0.0/16 return
-	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip daddr $bypass_host return
+	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip saddr $bypass_host return
 	#过滤局域网设备
 	[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
 		MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
@@ -1080,22 +1103,25 @@ start_nft_route(){ #nftables-route通用工具
 		nft add rule inet shellcrash $1 meta nfproto ipv6 return
 	fi
 	#添加通用路由
-	nft add rule inet shellcrash $1 $JUMP
+	nft add rule inet shellcrash "$1" "$JUMP"
 	#处理特殊路由
 	[ "$redir_mod" = "Tproxy模式" ] && {
 		nft add chain inet shellcrash ${1}_tproxy { type filter hook $2 priority -100 \; }
-		nft add rule inet shellcrash ${1}_tproxy meta mark == $fwmark meta l4proto {tcp, udp} tproxy to :$tproxy_port
+		nft add rule inet shellcrash ${1}_tproxy meta mark $fwmark meta l4proto {tcp, udp} tproxy to :$tproxy_port
 	}
 	[ "$redir_mod" = "混合模式" ] && {
 		nft add rule inet shellcrash $1 meta l4proto tcp mark set $((fwmark + 1))
 		nft add chain inet shellcrash ${1}_mixtcp { type nat hook $2 priority -100 \; }
-		nft add rule inet shellcrash ${1}_mixtcp mark == $((fwmark + 1)) meta l4proto tcp redirect to $redir_port
+		nft add rule inet shellcrash ${1}_mixtcp mark $((fwmark + 1)) meta l4proto tcp redirect to $redir_port
 	}
 	#nft add rule inet shellcrash local_tproxy log prefix \"pre\" level debug
 }
 start_nft_dns(){ #nftables-dns
 	nft add chain inet shellcrash ${1}_dns { type nat hook $1 priority -100 \; }
+	#防回环
+	nft add rule inet shellcrash ${1}_dns meta mark $routing_mark return 
 	nft add rule inet shellcrash ${1}_dns meta skgid { 453, 7890 } return
+	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash ${1}_dns ip saddr $bypass_host return
 	#过滤局域网设备
 	[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
 		MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
@@ -1151,15 +1177,16 @@ start_nftables(){ #nftables配置总入口
 		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -150
 		[ "$local_proxy" = true ] && start_nft_route output output route -150
 	}
-	[ "$redir_mod" = "Tun模式" ] && [ "$tun_statu" != false ] && {
-		JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
-		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -150
+	[ "$tun_statu" = true ] && {
+		[ "$redir_mod" = "Tun模式" ] && JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
+		[ "$redir_mod" = "混合模式" ] && JUMP="meta l4proto udp mark set $fwmark" #跳转劫持的具体命令
+		[ "$lan_proxy" = true ] && {
+			start_nft_route prerouting prerouting nat -150
+			#放行流量
+			nft add chain inet shellcrash forward { type filter hook forward priority -150 \; }
+			nft add rule inet shellcrash forward oifname "utun" accept
+		}
 		[ "$local_proxy" = true ] && start_nft_route output output route -150
-	}
-	[ "$redir_mod" = "混合模式" ] && [ "$tun_statu" != false ] && {
-		JUMP="meta l4proto udp mark set $fwmark" #跳转劫持的具体命令
-		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -150
-		[ "$local_proxy" = true ] && start_nft_route output output route -150		
 	}
 	[ "$firewall_area" = 5 ] && {
 		[ "$redir_mod" = "T&U旁路转发" ] && JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
@@ -1188,11 +1215,9 @@ start_firewall(){ #路由规则总入口
 				i=$((i+1))
 			done
 			if [ -z "$(ip route list |grep utun)" ];then
-				tun_statu=false
 				logger "找不到tun模块，放弃启动tun相关防火墙规则！" 31
 			else
-				ip route add default dev utun table $table
-				#iptables -I FORWARD -o utun -j ACCEPT
+				ip route add default dev utun table $table && tun_statu=true
 			fi
 		}
 		[ "$firewall_area" = 5 ] && ip route add default via $bypass_host table $table
@@ -1229,7 +1254,6 @@ start_firewall(){ #路由规则总入口
 	fi
 }
 stop_firewall(){ #还原防火墙配置
-	getconfig
 	#获取局域网host地址
 	getlanip
     #重置iptables相关规则
@@ -1262,9 +1286,10 @@ stop_firewall(){ #还原防火墙配置
 		iptables -t mangle -D OUTPUT -p udp $ports -j shellcrash_mark_out 2>/dev/null
 		iptables -t mangle -D OUTPUT -p tcp -d 198.18.0.0/16 -j shellcrash_mark_out 2>/dev/null
 		iptables -t mangle -D OUTPUT -p udp -d 198.18.0.0/16 -j shellcrash_mark_out 2>/dev/null
+		iptables -t mangle -D PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port 2>/dev/null
+		iptables -t mangle -D PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port 2>/dev/null
 		#tun
 		iptables -D FORWARD -o utun -j ACCEPT 2>/dev/null
-		iptables -D FORWARD -s 198.18.0.0/16 -o utun -j RETURN 2>/dev/null
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip -j REJECT 2>/dev/null
@@ -1339,7 +1364,6 @@ stop_firewall(){ #还原防火墙配置
 }
 #启动相关
 web_save(){ #最小化保存面板节点选择
-	getconfig
 	#使用get_save获取面板节点设置
 	get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector"' | grep -aoE '"name":.*"now":".*",' > ${TMPDIR}/web_proxies
 	while read line ;do
@@ -1364,7 +1388,6 @@ web_save(){ #最小化保存面板节点选择
 	done
 }
 web_restore(){ #还原面板选择
-	getconfig
 	#设置循环检测面板端口以判定服务启动是否成功
 	test=""
  	i=1
@@ -1542,8 +1565,8 @@ singbox_check(){ #singbox启动前检查
 	return 0
 }
 bfstart(){ #启动前
+	routing_mark=$((fwmark + 2))
 	#读取ShellCrash配置
-	getconfig
 	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master
 	[ ! -d ${BINDIR}/ui ] && mkdir -p ${BINDIR}/ui
 	[ -z "$crashcore" ] && crashcore=clash
@@ -1578,7 +1601,7 @@ bfstart(){ #启动前
 	[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
 	[ "$ipv6_redir" = "已开启" ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
 	#添加shellcrash用户
-	[ -n "$(echo $local_type | grep '增强模式')" -o "$(cat /proc/1/comm)" = "systemd" ] && \
+	[ "$firewall_area" = 2 ] || [ "$firewall_area" = 3 ] || [ "$(cat /proc/1/comm)" = "systemd" ] && \
 	[ -z "$(id shellcrash 2>/dev/null | grep 'root')" ] && {
 		ckcmd userdel && userdel shellcrash 2>/dev/null
 		sed -i '/0:7890/d' /etc/passwd
@@ -1596,9 +1619,6 @@ bfstart(){ #启动前
 	return 0
 }
 afstart(){ #启动后
-
-	#读取配置文件
-	getconfig
 	[ -z "$firewall_area" ] && firewall_area=1
 	#延迟启动
 	[ ! -f ${TMPDIR}/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
@@ -1660,27 +1680,20 @@ start_error(){ #启动报错
 }
 start_old(){ #保守模式
 	#使用传统后台执行二进制文件的方式执行
-	if [ "$local_proxy" = "已开启" -a -n "$(echo $local_type | grep '增强模式')" ];then
-		if ckcmd su;then
-			su shellcrash -c "$COMMAND >/dev/null 2>&1" &
-		else
-			logger "当前设备缺少su命令，保守模式下无法兼容本机代理增强模式，已停止启动！" 31
-			exit 1
-		fi
+	if ckcmd su && [ -n "$(grep 'shellcrash:x:0:7890' /etc/passwd)" ];then
+		su shellcrash -c "$COMMAND >/dev/null 2>&1" &
 	else
-		ckcmd nohup && [ -d /jffs ] && nohup=nohup #华硕调用nohup启动
+		ckcmd nohup && local nohup=nohup
 		$nohup $COMMAND >/dev/null 2>&1 &
 	fi
 	afstart &
 }
 #杂项
 update_config(){ #更新订阅并重启
-		getconfig
 		get_core_config && \
 		$0 restart
 }
 hotupdate(){ #热更新订阅
-		getconfig
 		get_core_config
 		core_check
 		modify_$format && \
@@ -1688,7 +1701,6 @@ hotupdate(){ #热更新订阅
 		rm -rf ${TMPDIR}/CrashCore
 }
 set_proxy(){ #设置环境变量
-	getconfig
 	if  [ "$local_type" = "环境变量" ];then
 		[ -w ~/.bashrc ] && profile=~/.bashrc
 		[ -w /etc/profile ] && profile=/etc/profile
@@ -1703,11 +1715,12 @@ unset_proxy(){	#卸载环境变量
 	sed -i '/ALL_PROXY/'d  $profile
 }
 
+getconfig #读取配置及全局变量
+
 case "$1" in
 
 start)		
 		[ -n "$(pidof CrashCore)" ] && $0 stop #禁止多实例
-		getconfig
 		stop_firewall #清理路由策略
 		#使用不同方式启动服务
 		if [ "$start_old" = "已开启" ];then
@@ -1726,7 +1739,6 @@ start)
 		fi
 	;;
 stop)	
-		getconfig
 		logger ShellCrash服务即将关闭……
 		[ -n "$(pidof CrashCore)" ] && web_save #保存面板配置
 		#删除守护进程&面板配置自动保存
@@ -1755,7 +1767,6 @@ daemon)
         ;;
 debug)		
 		[ -n "$(pidof CrashCore)" ] && $0 stop >/dev/null #禁止多实例
-		getconfig 
 		stop_firewall >/dev/null #清理路由策略
 		bfstart
 		if [ -n "$2" ];then
@@ -1802,7 +1813,6 @@ init)
 webget)
 		#设置临时代理 
 		if [ -n "$(pidof CrashCore)" ];then
-			getconfig
 			[ -n "$authentication" ] && auth="$authentication@"
 			export all_proxy="http://${auth}127.0.0.1:$mix_port"
 			url=$(echo $3 | sed 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')

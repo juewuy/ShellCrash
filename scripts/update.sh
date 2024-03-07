@@ -1314,7 +1314,7 @@ setcustcore(){ #自定义内核
 				0)
 					setcustcore
 				;;
-				[1-99])
+				[1-9]|[1-9][0-9])
 					if [ "$num" -le "$(wc -l < ${TMPDIR}/core.list)" ];then
 						custcorelink=$(sed -n "$num"p ${TMPDIR}/core.list)
 						getcore

@@ -1115,7 +1115,7 @@ setboot(){ #启动相关设置
 	esac	
 
 }
-set_redir_mod(){
+set_redir_mod(){ #代理模式设置
 	set_redir_config(){
 		setconfig redir_mod $redir_mod
 		setconfig dns_mod $dns_mod 
@@ -1274,7 +1274,7 @@ set_redir_mod(){
 	;;
 	esac
 }
-set_dns_mod(){
+set_dns_mod(){ #DNS设置
 	echo -----------------------------------------------
 	echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
@@ -1284,7 +1284,7 @@ set_dns_mod(){
 	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
 		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
 		echo -e "                   依赖geosite-cn.(db/srs)数据库"
-	else
+	elif [ "$crashcore" = meta ];then
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   需搭配加密DNS使用"
 	fi
@@ -1355,7 +1355,7 @@ normal_set(){ #基础设置
 	#获取设置默认显示
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$common_ports" ] && common_ports=已开启
-	[ -z "$dns_mod" ] && dns_mod=redir_host
+	[ -z "$dns_mod" ] && dns_mod=fake-ip
 	[ -z "$dns_over" ] && dns_over=已开启
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$local_proxy" ] && local_proxy=未开启

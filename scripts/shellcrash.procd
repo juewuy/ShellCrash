@@ -12,7 +12,7 @@ source ${CRASHDIR}/configs/command.env #加载启动命令和启动目录
 
 start_service() {
 	#本机代理用户
-	[ -n "$(grep -E 'local_type.*增强模式' ${CRASHDIR}/configs/ShellCrash.cfg)" ] && USER=shellcrash || USER=root
+	[ -n "$(grep 'shellcrash:x:0:7890' /etc/passwd)" ] && USER=shellcrash || USER=root
 	#检测必须文件
 	$CRASHDIR/start.sh bfstart
 	if [ "$?" = "0" ];then
