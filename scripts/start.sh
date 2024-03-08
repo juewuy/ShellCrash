@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright (C) Juewuy
 
 #初始化目录
@@ -873,7 +873,7 @@ start_ipt_route(){ #iptables-route通用工具
 	[ "$1" = 'iptables' ] && {
 		RESERVED_IP=$reserve_ipv4
 		HOST_IP=$host_ipv4
-		[ "$4" = 'OUTPUT' ] && HOST_IP="127.0.0.0/8 $local_ipv4"
+		[ "$3" = 'OUTPUT' ] && HOST_IP="127.0.0.0/8 $local_ipv4"
 	}
 	[ "$1" = 'ip6tables' ] && {
 		RESERVED_IP=$reserve_ipv6
@@ -895,13 +895,14 @@ start_ipt_route(){ #iptables-route通用工具
 	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && \
 	$1 -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	#局域网mac地址黑名单过滤
-	[ -s "$(cat ${CRASHDIR}/configs/mac)" -a "$macfilter_type" != "白名单" ] && \
-	for mac in $(cat ${CRASHDIR}/configs/mac); do
-		$1 -t $2 -A $4 -m mac --mac-source $mac -j RETURN
-	done
+	[ "$3" = 'PREROUTING' ] && [ -s "$(cat ${CRASHDIR}/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
+		for mac in $(cat ${CRASHDIR}/configs/mac); do
+			$1 -t $2 -A $4 -m mac --mac-source $mac -j RETURN
+		done
+	}
 	#tcp&udp分别进代理链
 	proxy_set(){
-		if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+		if [ "$3" = 'PREROUTING' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat ${CRASHDIR}/configs/mac)" ];then
 			for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
 				$1 -t $2 -A $4 -p $5 -m mac --mac-source $mac -j $JUMP
 			done
@@ -929,15 +930,18 @@ start_ipt_dns(){ #iptables-dns通用工具
 		$1 -t nat -A $3 -p tcp -s $bypass_host -j RETURN
 		$1 -t nat -A $3 -p udp -s $bypass_host -j RETURN
 	}
-	if [ "$macfilter_type" = "白名单" -a -n "$(cat ${CRASHDIR}/configs/mac)" ];then
-		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac白名单
+	#局域网mac地址黑名单过滤
+	[ "$3" = 'PREROUTING' ] && [ -s "$(cat ${CRASHDIR}/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
+		for mac in $(cat ${CRASHDIR}/configs/mac); do
+			$1 -t nat -A $3 -m mac --mac-source $mac -j RETURN
+		done
+	}	
+	if [ "$3" = 'PREROUTING' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+		for mac in $(cat ${CRASHDIR}/configs/mac); do
 			$1 -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 			$1 -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
 		done
-	else
-		for mac in $(cat ${CRASHDIR}/configs/mac); do #mac黑名单
-			$1 -t nat -A $3 -m mac --mac-source $mac -j RETURN
-		done	
+	else	
 		$1 -t nat -A $3 -p tcp -j REDIRECT --to $dns_port
 		$1 -t nat -A $3 -p udp -j REDIRECT --to $dns_port
 	fi
@@ -1034,7 +1038,10 @@ start_iptables(){ #iptables配置总入口
 		[ "$redir_mod" = "TCP旁路转发" ] && protocol=tcp
 		if [ -n "$(grep -E '^MARK$' /proc/net/ip_tables_targets)" ];then
 			[ "$lan_proxy" = true ] && {
-				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && iptables -I FORWARD -o utun -j ACCEPT
+				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
+					iptables -I FORWARD -o utun -j ACCEPT
+					ip route del 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.0 #移除内核生成的tun路由
+				}
 				start_ipt_route iptables mangle PREROUTING shellcrash_mark $protocol
 			}
 			[ "$local_proxy" = true ] && start_ipt_route iptables mangle OUTPUT shellcrash_mark_out $protocol
@@ -1186,6 +1193,7 @@ start_nftables(){ #nftables配置总入口
 		[ "$redir_mod" = "混合模式" ] && JUMP="meta l4proto udp mark set $fwmark" #跳转劫持的具体命令
 		[ "$lan_proxy" = true ] && {
 			start_nft_route prerouting prerouting nat -150
+			ip route del 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.0 #移除内核生成的tun路由
 			#放行流量
 			nft add chain inet shellcrash forward { type filter hook forward priority -150 \; }
 			nft add rule inet shellcrash forward oifname "utun" accept
