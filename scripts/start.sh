@@ -319,7 +319,11 @@ get_core_config(){ #下载内核配置文件
 		fi
 	else
 		Https=""
-		[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && check_singbox_config || check_clash_config
+		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+			check_singbox_config
+		else
+			check_clash_config
+		fi
 		#如果不同则备份并替换文件
 		if [ -s $core_config ];then
 			compare $core_config_new $core_config
