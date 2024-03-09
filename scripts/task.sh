@@ -93,20 +93,24 @@ update_scripts(){ #自动更新脚本
 		logger "任务【自动更新脚本】中止-未检测到版本更新"
 		exit 1
 	else	
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/update.tar.gz "bin/update.tar.gz"
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/clashfm.tar.gz "bin/update.tar.gz"
 		if [ "$?" != "0" ];then
-			rm -rf ${TMPDIR}/update.tar.gz
+			rm -rf ${TMPDIR}/clashfm.tar.gz
 			logger "任务【自动更新内核】出错-下载失败！"
 			return 1
 		else
+			#停止服务
+			${CRASHDIR}/start.sh stop
 			#解压
-			tar -zxf "${TMPDIR}/update.tar.gz" ${tar_para} -C ${CRASHDIR}/
+			tar -zxf "${TMPDIR}/clashfm.tar.gz" ${tar_para} -C ${CRASHDIR}/
 			if [ $? -ne 0 ];then
-				rm -rf ${TMPDIR}/update.tar.gz
+				rm -rf ${TMPDIR}/clashfm.tar.gz
 				logger "任务【自动更新内核】出错-解压失败！"
+				${CRASHDIR}/start.sh start
 				return 1
 			else
 				source ${CRASHDIR}/init.sh >/dev/null
+				${CRASHDIR}/start.sh start
 				return 0
 			fi		
 		fi
