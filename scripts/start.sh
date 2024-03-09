@@ -17,7 +17,6 @@ getconfig(){ #读取配置及全局变量
 	[ -z "$redir_mod" ] && redir_mod=纯净模式
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$dns_mod" ] && dns_mod=fake-ip
-	[ -z "$ipv6_support" ] && ipv6_support=已开启
 	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
 	[ -z "$cn_ipv6_route" ] && cn_ipv6_route=未开启
@@ -339,7 +338,6 @@ modify_yaml(){ #修饰clash配置文件
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$skip_cert" ] && skip_cert=已开启
-	[ "$ipv6_support" = "已开启" ] && ipv6='ipv6: true' || ipv6='ipv6: false'
 	[ "$ipv6_dns" = "已开启" ] && dns_v6='true' || dns_v6='false'
 	external="external-controller: 0.0.0.0:$db_port"
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ];then
@@ -396,7 +394,7 @@ authentication: ["$authentication"]
 allow-lan: true
 mode: Rule
 log-level: info
-$ipv6
+ipv6: true
 external-controller: :$db_port
 external-ui: ui
 secret: $secret
@@ -1723,7 +1721,9 @@ start)
 		[ -n "$(pidof CrashCore)" ] && $0 stop #禁止多实例
 		stop_firewall #清理路由策略
 		#使用不同方式启动服务
-		if [ "$start_old" = "已开启" ];then
+		if [ "$firewall_area" = "5" ];then #主旁转发
+			start_firewall
+		elif [ "$start_old" = "已开启" ];then
 			bfstart && start_old
 		elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ];then
 			/etc/init.d/shellcrash start 

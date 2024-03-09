@@ -2414,7 +2414,7 @@ testcommand(){
 		if [ "$firewall_mod" = "nftables" ];then
 			nft list table inet shellcrash
 		else
-			[ "$firewall_area" = 1 -o "$firewall_area" = 3 ] && {
+			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 ] && {
 				echo ----------------Redir+DNS---------------------
 				iptables -t nat -L PREROUTING --line-numbers
 				iptables -t nat -L shellcrash_dns --line-numbers
