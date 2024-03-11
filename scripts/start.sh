@@ -844,7 +844,7 @@ EOF
 #设置路由规则
 cn_ip_route(){	#CN-IP绕过
 	ckgeo cn_ip.txt china_ip_list.txt
-	[ -f ${BINDIR}/cn_ip.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
+	[ -f ${BINDIR}/cn_ip.txt ] && [ "$firewall_mod" = iptables ] && {
 			# see https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-cidr.txt
 			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > ${TMPDIR}/cn_$USER.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' ${BINDIR}/cn_ip.txt >> ${TMPDIR}/cn_$USER.ipset
@@ -855,7 +855,7 @@ cn_ip_route(){	#CN-IP绕过
 }
 cn_ipv6_route(){ #CN-IPV6绕过
 	ckgeo cn_ipv6.txt china_ipv6_list.txt
-	[ -f ${BINDIR}/cn_ipv6.txt -a -z "$(echo $redir_mod|grep 'Nft')" ] && {
+	[ -f ${BINDIR}/cn_ipv6.txt ] && [ "$firewall_mod" = iptables ] && {
 			#ipv6
 			#see https://ispip.clang.cn/all_cn_ipv6.txt
 			echo "create cn_ip6 hash:net family inet6 hashsize 4096 maxelem 4096" > ${TMPDIR}/cn6_$USER.ipset
@@ -980,7 +980,7 @@ start_iptables(){ #iptables配置总入口
 	[ "$dns_no" != "已禁用" -a "$dns_redir" != "已开启" -a "$firewall_area" -le 3 ] && {
 		[ "$lan_proxy" = true ] && {
 			start_ipt_dns iptables PREROUTING shellcrash_dns #ipv4-局域网dns转发
-			if ip6tables -t nat -L >/dev/null 2>&1;then
+			if [ -n "$(grep -E '^REDIRECT$' /proc/net/ip6_tables_targets)" ];then
 				start_ipt_dns ip6tables PREROUTING shellcrashv6_dns #ipv6-局域网dns转发
 			else
 				ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT 2>/dev/null
@@ -994,10 +994,10 @@ start_iptables(){ #iptables配置总入口
 		[ "$lan_proxy" = true ] && {
 			start_ipt_route iptables nat PREROUTING shellcrash tcp #ipv4-局域网tcp转发
 			[ "$ipv6_redir" = "已开启" ] && {
-				if ip6tables -t nat -L >/dev/null 2>&1;then
+			if [ -n "$(grep -E '^REDIRECT$' /proc/net/ip6_tables_targets)" ];then
 					start_ipt_route ip6tables nat PREROUTING shellcrashv6 tcp #ipv6-局域网tcp转发
 				else
-					logger "当前设备内核缺少ip6tables_nat模块支持，已放弃启动相关规则！" 31
+					logger "当前设备内核缺少ip6tables_REDIRECT模块支持，已放弃启动相关规则！" 31
 				fi
 			}
 		}
