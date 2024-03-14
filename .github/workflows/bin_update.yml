@@ -113,7 +113,7 @@ jobs:
         curl -kfSL -o geodata/srs_geoip_cn.srs https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs
         curl -kfSL -o geodata/srs_geosite_cn.srs https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs
         curl -kfSL -o fix/ca-certificates.crt https://raw.githubusercontent.com/P3TERX/ca-certificates.crt/download/ca-certificates.crt
-        sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d)/" version #修改版本号
+        sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d')/" version #修改版本号
         echo 数据库及根证书文件更新完成！
 
     - name: Commit and push
