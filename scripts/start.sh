@@ -846,11 +846,11 @@ cn_ip_route(){	#CN-IP绕过
 	ckgeo cn_ip.txt china_ip_list.txt
 	[ -f ${BINDIR}/cn_ip.txt ] && [ "$firewall_mod" = iptables ] && {
 			# see https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-cidr.txt
-			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > ${TMPDIR}/cn_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' ${BINDIR}/cn_ip.txt >> ${TMPDIR}/cn_$USER.ipset
+			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > ${TMPDIR}/cn_ip.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' ${BINDIR}/cn_ip.txt >> ${TMPDIR}/cn_ip.ipset
 			ipset -! flush cn_ip 2>/dev/null
-			ipset -! restore < ${TMPDIR}/cn_$USER.ipset 2>/dev/null
-			rm -rf cn_$USER.ipset
+			ipset -! restore < ${TMPDIR}/cn_ip.ipset
+			rm -rf ${TMPDIR}/cn_ip.ipset
 	}
 }
 cn_ipv6_route(){ #CN-IPV6绕过
@@ -858,11 +858,11 @@ cn_ipv6_route(){ #CN-IPV6绕过
 	[ -f ${BINDIR}/cn_ipv6.txt ] && [ "$firewall_mod" = iptables ] && {
 			#ipv6
 			#see https://ispip.clang.cn/all_cn_ipv6.txt
-			echo "create cn_ip6 hash:net family inet6 hashsize 4096 maxelem 4096" > ${TMPDIR}/cn6_$USER.ipset
-			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' ${BINDIR}/cn_ipv6.txt >> ${TMPDIR}/cn6_$USER.ipset
+			echo "create cn_ip6 hash:net family inet6 hashsize 5120 maxelem 5120" > ${TMPDIR}/cn_ipv6.ipset
+			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' ${BINDIR}/cn_ipv6.txt >> ${TMPDIR}/cn_ipv6.ipset
 			ipset -! flush cn_ip6 2>/dev/null
-			ipset -! restore < ${TMPDIR}/cn6_$USER.ipset 2>/dev/null
-			rm -rf cn6_$USER.ipset
+			ipset -! restore < ${TMPDIR}/cn_ipv6.ipset
+			rm -rf ${TMPDIR}/cn_ipv6.ipset
 	}
 }
 start_ipt_route(){ #iptables-route通用工具
@@ -890,8 +890,8 @@ start_ipt_route(){ #iptables-route通用工具
 		$1 -t $2 -A $4 -d $ip -j RETURN
 	done
 	#绕过CN_IP
-	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && \
-	$1 -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	[ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f ${BINDIR}/cn_ip.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	[ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && [ -f ${BINDIR}/cn_ipv6.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 	#局域网mac地址黑名单过滤
 	[ "$3" = 'PREROUTING' ] && [ -s "$(cat ${CRASHDIR}/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat ${CRASHDIR}/configs/mac); do
