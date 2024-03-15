@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.1alpha7
+version=1.9.1alpha8
 
 setdir(){
 	dir_avail(){
@@ -315,6 +315,7 @@ sed -i "s/ShellClash/ShellCrash/g" $configpath
 sed -i "s/cpucore=armv8/cpucore=arm64/g" $configpath
 sed -i "s/redir_mod=Nft基础/redir_mod=Redir模式/g" $configpath
 sed -i "s/redir_mod=Nft混合/redir_mod=Tproxy模式/g" $configpath
+sed -i "s/redir_mod=Tproxy混合/redir_mod=Tproxy模式/g" $configpath
 sed -i "s/redir_mod=纯净模式/firewall_area=4/g" $configpath
 
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"

@@ -1038,7 +1038,7 @@ start_iptables(){ #iptables配置总入口
 			[ "$lan_proxy" = true ] && {
 				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
 					iptables -I FORWARD -o utun -j ACCEPT
-					ip route del 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.0 #移除内核生成的tun路由
+					#ip route show | grep "dev utun proto kernel scope link src" | while read route; do ip route del $route; done #移除内核生成的tun路由
 				}
 				start_ipt_route iptables mangle PREROUTING shellcrash_mark $protocol
 			}
@@ -1114,10 +1114,6 @@ start_nft_route(){ #nftables-route通用工具
 	#添加通用路由
 	nft add rule inet shellcrash "$1" "$JUMP"
 	#处理特殊路由
-	[ "$redir_mod" = "Tproxy模式" ] && {
-		nft add chain inet shellcrash ${1}_tproxy { type filter hook $2 priority -100 \; }
-		nft add rule inet shellcrash ${1}_tproxy meta mark $fwmark meta l4proto {tcp, udp} tproxy to :$tproxy_port
-	}
 	[ "$redir_mod" = "混合模式" ] && {
 		nft add rule inet shellcrash $1 meta l4proto tcp mark set $((fwmark + 1))
 		nft add chain inet shellcrash ${1}_mixtcp { type nat hook $2 priority -100 \; }
@@ -1182,16 +1178,20 @@ start_nftables(){ #nftables配置总入口
 		[ "$local_proxy" = true ] && start_nft_route output output nat -100
 	}
 	[ "$redir_mod" = "Tproxy模式" ] && modprobe nft_tproxy >/dev/null 2>&1 && {
-		JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
+		JUMP="meta l4proto {tcp, udp} mark set $fwmark tproxy to :$tproxy_port" #跳转劫持的具体命令
 		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -150
-		[ "$local_proxy" = true ] && start_nft_route output output route -150
+		[ "$local_proxy" = true ] && {
+			JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
+			start_nft_route output output route -150
+			nft add chain inet shellcrash mark_out { type filter hook prerouting priority -100 \; }
+			nft add rule inet shellcrash mark_out meta mark $fwmark meta l4proto {tcp, udp} tproxy to :$tproxy_port
+		}
 	}
 	[ "$tun_statu" = true ] && {
 		[ "$redir_mod" = "Tun模式" ] && JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
 		[ "$redir_mod" = "混合模式" ] && JUMP="meta l4proto udp mark set $fwmark" #跳转劫持的具体命令
 		[ "$lan_proxy" = true ] && {
 			start_nft_route prerouting prerouting nat -150
-			ip route del 198.18.0.0/16 dev utun proto kernel scope link src 198.18.0.0 #移除内核生成的tun路由
 			#放行流量
 			nft add chain inet shellcrash forward { type filter hook forward priority -150 \; }
 			nft add rule inet shellcrash forward oifname "utun" accept
