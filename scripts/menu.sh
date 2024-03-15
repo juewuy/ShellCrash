@@ -689,7 +689,7 @@ setipv6(){ #ipv6设置
 			setconfig ipv6_redir $ipv6_redir
 			setconfig ipv6_support $ipv6_support
 		fi
-		if [ -n "$(ipset -v 2>/dev/null)"] || [ "$firewall_mod" = nftables ];then
+		if [ -n "$(ipset -v 2>/dev/null)" ] || [ "$firewall_mod" = nftables ];then
 			[ "$cn_ipv6_route" = "未开启" ] && cn_ipv6_route=已开启 || cn_ipv6_route=未开启
 			setconfig cn_ipv6_route $cn_ipv6_route
 		else
