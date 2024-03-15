@@ -893,7 +893,7 @@ start_ipt_route(){ #iptables-route通用工具
 	[ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f ${BINDIR}/cn_ip.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	[ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && [ -f ${BINDIR}/cn_ipv6.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 	#局域网mac地址黑名单过滤
-	[ "$3" = 'PREROUTING' ] && [ -s "$(cat ${CRASHDIR}/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
+	[ "$3" = 'PREROUTING' ] && [ -n "$(cat ${CRASHDIR}/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat ${CRASHDIR}/configs/mac); do
 			$1 -t $2 -A $4 -m mac --mac-source $mac -j RETURN
 		done
