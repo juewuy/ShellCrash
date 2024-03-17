@@ -228,6 +228,7 @@ log_pusher(){ #日志菜单
 	[ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
 	[ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
 	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
+	[ -n "$push_PP" ] && stat_PP=32m已启用 || stat_PP=33m未启用
 	[ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
 	[ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	echo -----------------------------------------------
@@ -236,7 +237,8 @@ log_pusher(){ #日志菜单
 	echo -e " 3 PushDeer推送	——\033[$stat_Deer\033[0m"
 	echo -e " 4 Bark推送-IOS	——\033[$stat_bark\033[0m"
 	echo -e " 5 Passover推送	——\033[$stat_Po\033[0m"
-	echo -e " 6 推送任务日志	——\033[$stat_task\033[0m"
+	echo -e " 6 PushPlus推送	——\033[$stat_PP\033[0m"
+	echo -e " 7 推送任务日志	——\033[$stat_task\033[0m"
 	echo -e " 8 设置设备名称	——\033[$device_s\033[0m"
 	echo -e " 9 清空日志文件"
 	echo -----------------------------------------------
@@ -366,7 +368,7 @@ log_pusher(){ #日志菜单
 				setconfig push_Po
 				setconfig push_Po_key
 			}
-		elif curl --version >/dev/null 2>&1;then 
+		else
 			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
 			echo -e "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m"
 			echo -----------------------------------------------
@@ -391,13 +393,35 @@ log_pusher(){ #日志菜单
 			else
 				echo -e "\033[31m输入错误，请重新输入！\033[0m"
 			fi
-		else
-			echo -e "\033[33mPashover不支持使用wget命令推送，请尝试其他推送方式！\033[0m"
 		fi
 		sleep 1
 		log_pusher
 	;;
-	6)	
+	6)
+		echo -----------------------------------------------
+		if [ -n "$push_PP" ];then
+			read -p "确认关闭PushPlus日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_PP=
+				setconfig push_PP
+			}
+		else
+			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+			echo -e "请先通过 \033[32;4mhttps://www.pushplus.plus/push1.html\033[0m 注册账号并获取\033[36mtoken\033[0m"
+			echo -----------------------------------------------
+			read -p "请输入你的token > " Token
+			if [ -n "$Token" ];then
+				push_PP=$Token
+				setconfig push_PP $Token
+				${CRASHDIR}/start.sh logger "已完成PushPlus日志推送设置！" 32
+			else
+				echo -e "\033[31m输入错误，请重新输入！\033[0m"
+			fi
+		fi
+		sleep 1
+		log_pusher
+	;;
+	7)	
 		[ "$task_push" = 1 ] && task_push='' || task_push=1
 		setconfig task_push $task_push
 		sleep 1
@@ -1170,7 +1194,11 @@ set_redir_mod(){ #代理模式设置
 			if [ "$firewall_mod" = "iptables" ] ;then
 				if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ] ;then
 					read -p "xiaomi设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
-					[ "$res" = '1' ] && ${CRASHDIR}/misnap_init.sh tproxyfix && redir_mod=Tproxy模式
+					[ "$res" = '1' ] && {
+						${CRASHDIR}/misnap_init.sh tproxyfix
+						redir_mod=Tproxy模式
+						set_redir_config
+					}
 				elif [ -n "$(grep -E '^TPROXY$' /proc/net/ip_tables_targets)" ] ;then
 					redir_mod=Tproxy模式
 					set_redir_config

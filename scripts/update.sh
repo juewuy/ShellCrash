@@ -372,10 +372,12 @@ EOF
 		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
 	fi
 	echo -----------------------------------------------
-	if [ ! -s ${TMPDIR}/${provider_temp_file} ];then
+	if [ -s ${provider_temp_file} ];then
+		ln -sf ${provider_temp_file} ${TMPDIR}/provider_temp_file
+	else
 		echo -e "\033[33m正在获取在线模版！\033[0m"
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
-		[ -z "$(grep -o 'rules' ${TMPDIR}/${provider_temp_file})" ] && {
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/provider_temp_file rules/${coretype}_providers/${provider_temp_file}
+		[ -z "$(grep -o 'rules' ${TMPDIR}/provider_temp_file)" ] && {
 			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
 			setserver
 			setproviders
@@ -386,9 +388,9 @@ EOF
 	#预创建文件并写入对应文件头
 	echo 'proxy-providers:' > ${TMPDIR}/providers/providers.yaml
 	#切割模版文件
-	sed -n '/^proxy-groups:/,/^[a-z]/ { /^rule/d; p; }' ${TMPDIR}/${provider_temp_file} > ${TMPDIR}/providers/proxy-groups.yaml
-	sed -n '/^rule/,$p' ${TMPDIR}/${provider_temp_file} > ${TMPDIR}/providers/rules.yaml
-	rm -rf ${TMPDIR}/${provider_temp_file}
+	sed -n '/^proxy-groups:/,/^[a-z]/ { /^rule/d; p; }' ${TMPDIR}/provider_temp_file > ${TMPDIR}/providers/proxy-groups.yaml
+	sed -n '/^rule/,$p' ${TMPDIR}/provider_temp_file > ${TMPDIR}/providers/rules.yaml
+	rm -rf ${TMPDIR}/provider_temp_file
 	#生成providers模块
 	if [ -n "$2" ];then
 		gen_clash_providers_txt $1 $2
@@ -459,10 +461,12 @@ EOF
 		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
 	fi
 	echo -----------------------------------------------
-	if [ ! -s ${TMPDIR}/${provider_temp_file} ];then
+	if [ -s ${provider_temp_file} ];then
+		ln -sf ${provider_temp_file} ${TMPDIR}/provider_temp_file
+	else
 		echo -e "\033[33m正在获取在线模版！\033[0m"
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/${provider_temp_file} rules/${coretype}_providers/${provider_temp_file}
-		[ -z "$(grep -o 'route' ${TMPDIR}/${provider_temp_file})" ] && {
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/provider_temp_file rules/${coretype}_providers/${provider_temp_file}
+		[ -z "$(grep -o 'route' ${TMPDIR}/provider_temp_file)" ] && {
 			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
 			setserver
 			setproviders
@@ -495,8 +499,8 @@ EOF
 	fi
 	sed -i '$s/},/}]}/' ${TMPDIR}/providers/providers.json #修复文件格式
 	#使用模版生成outbounds和rules模块
-	cat ${TMPDIR}/${provider_temp_file} | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
-	rm -rf ${TMPDIR}/${provider_temp_file}
+	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
+	rm -rf ${TMPDIR}/provider_temp_file
 	#调用内核测试
 	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
 	if [ "$?" = 0 ];then
@@ -515,6 +519,14 @@ EOF
 	fi
 }
 setproviders(){ #自定义providers
+	#获取模版名称
+	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+		provider_temp_des=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
+	else
+		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
+		provider_temp_des=$(grep "$provider_temp_file" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
+		[ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
+	fi
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers提供者\033[0m"
 	echo -e "\033[36m支持在线及本地的Yaml格式配置导入\033[0m"
@@ -527,7 +539,7 @@ setproviders(){ #自定义providers
 	echo -----------------------------------------------
 	echo -e " a \033[36m添加\033[0mproviders提供者"
 	echo -e " b \033[32m生成\033[0m基于providers的配置文件"
-	echo -e " c 选择\033[33m规则模版\033[0m"
+	echo -e " c 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
 	echo -e " d \033[31m清空\033[0mproviders列表"
 	echo -e " e \033[33m清理\033[0mproviders目录"
 	echo -e " 0 返回上级菜单"
@@ -622,25 +634,38 @@ setproviders(){ #自定义providers
 		setproviders
 	;;
 	c)	
-		if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
-			provider_temp_des=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
-		else
-			provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
-			provider_temp_des=$(grep "$provider_temp_file" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
-		fi
 		echo -----------------------------------------------
 		echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
 		echo -e "\033[33m请选择在线模版：\033[0m"
 		echo -----------------------------------------------
 		cat ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print " "NR" "$1}'
 		echo -----------------------------------------------
-		read -p "请输入对应数字 > " num
-		provider_temp_file=$(sed -n "$num p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $2}')
-		if [ -z "$provider_temp_file" ];then
-			errornum
-		else
-			setconfig provider_temp_${coretype} $provider_temp_file
-		fi
+		echo -e " a 使用\033[36m本地模版\033[0m"
+		echo -----------------------------------------------
+		read -p "请输入对应字母或数字 > " num
+		case $num in
+		0)
+		;;
+		a)
+			read -p "请输入模版的路径(绝对路径) > " dir
+			if [ -s $dir ];then
+				provider_temp_file=$dir
+				setconfig provider_temp_${coretype} $provider_temp_file
+				echo -e "\033[32m设置成功！\033[0m"
+			else
+				echo -e "\033[31m输入错误，找不到对应模版文件！\033[0m"
+			fi
+			sleep 1
+		;;
+		*)
+			provider_temp_file=$(sed -n "$num p" ${CRASHDIR}/configs/${coretype}_providers.list 2>/dev/null | awk '{print $2}')
+			if [ -z "$provider_temp_file" ];then
+				errornum
+			else
+				setconfig provider_temp_${coretype} $provider_temp_file
+			fi
+		;;
+		esac
 		setproviders
 	;;
 	d)

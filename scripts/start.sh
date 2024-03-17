@@ -87,7 +87,7 @@ logger(){ #日志工具
 			export https_proxy="http://${auth}127.0.0.1:$mix_port"
 		}
 		[ -n "$push_TG" ] && {
-			url=https://api.telegram.org/bot${push_TG}/sendMessage
+			url="https://api.telegram.org/bot${push_TG}/sendMessage"
 			curl_data="-d chat_id=$chat_ID&text=$log_text"
 			wget_data="--post-data=$chat_ID&text=$log_text"
 			if curl --version >/dev/null 2>&1;then 
@@ -97,7 +97,7 @@ logger(){ #日志工具
 			fi
 		}
 		[ -n "$push_bark" ] && {
-			url=${push_bark}/${log_text}${bark_param}
+			url="${push_bark}/${log_text}${bark_param}"
 			if curl --version >/dev/null 2>&1;then 
 				curl -kfsSl --connect-timeout 3 "$url" >/dev/null 2>&1 
 			else
@@ -105,7 +105,7 @@ logger(){ #日志工具
 			fi
 		}
 		[ -n "$push_Deer" ] && {
-			url=https://api2.pushdeer.com/message/push?pushkey=${push_Deer}
+			url="https://api2.pushdeer.com/message/push?pushkey=${push_Deer}"
 			if curl --version >/dev/null 2>&1;then 
 				curl -kfsSl --connect-timeout 3 "$url"\&text="$log_text" >/dev/null 2>&1 
 			else
@@ -113,9 +113,23 @@ logger(){ #日志工具
 			fi
 		}
 		[ -n "$push_Po" ] && {
-			url=https://api.pushover.net/1/messages.json
-			curl -kfsSl --connect-timeout 3 --form-string "token=$push_Po" --form-string "user=$push_Po_key" --form-string "message=$log_text" "$url" >/dev/null 2>&1 
-		}	
+			url="https://api.pushover.net/1/messages.json"
+			content="{\"token\":\"${push_Po}\",\"user\":\"${push_Po_key}\",\"title\":\"ShellCrash日志推送\",\"message\":\"$log_text\"}"
+			if curl --version >/dev/null 2>&1;then 
+				curl -kfsSl -X POST --connect-timeout 3 -H "Content-Type: application/json" "$url" -d "$content" >/dev/null 2>&1 
+			else
+				wget -Y on -q --timeout=3 -t 1 --method=POST --header="Content-Type: application/json" --body-data="$content" "$url"
+			fi
+		}
+		[ -n "$push_PP" ] && {
+			url="http://www.pushplus.plus/send"
+			content="{\"token\":\"${push_PP}\",\"title\":\"ShellCrash日志推送\",\"content\":\"$log_text\"}"
+			if curl --version >/dev/null 2>&1;then 
+				curl -sS -X POST --connect-timeout 3 -H "Content-Type: application/json" "$url" -d "$content" >/dev/null 2>&1 
+			else
+				wget -Y on -q --timeout=3 -t 1 --method=POST --header="Content-Type: application/json" --body-data="$content" "$url"
+			fi
+		}		
 	} &
 }
 croncmd(){ #定时任务工具
@@ -848,7 +862,7 @@ cn_ip_route(){	#CN-IP绕过
 			# see https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-cidr.txt
 			echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > ${TMPDIR}/cn_ip.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' ${BINDIR}/cn_ip.txt >> ${TMPDIR}/cn_ip.ipset
-			ipset -! flush cn_ip 2>/dev/null
+			ipset destroy cn_ip >/dev/null 2>&1
 			ipset -! restore < ${TMPDIR}/cn_ip.ipset
 			rm -rf ${TMPDIR}/cn_ip.ipset
 	}
@@ -860,7 +874,7 @@ cn_ipv6_route(){ #CN-IPV6绕过
 			#see https://ispip.clang.cn/all_cn_ipv6.txt
 			echo "create cn_ip6 hash:net family inet6 hashsize 5120 maxelem 5120" > ${TMPDIR}/cn_ipv6.ipset
 			awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' ${BINDIR}/cn_ipv6.txt >> ${TMPDIR}/cn_ipv6.ipset
-			ipset -! flush cn_ip6 2>/dev/null
+			ipset destroy cn_ip6 >/dev/null 2>&1
 			ipset -! restore < ${TMPDIR}/cn_ipv6.ipset
 			rm -rf ${TMPDIR}/cn_ipv6.ipset
 	}
@@ -936,12 +950,12 @@ start_ipt_dns(){ #iptables-dns通用工具
 	}	
 	if [ "$3" = 'PREROUTING' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat ${CRASHDIR}/configs/mac)" ];then
 		for mac in $(cat ${CRASHDIR}/configs/mac); do
-			$1 -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to $dns_port
-			$1 -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to $dns_port
+			$1 -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
+			$1 -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
 		done
 	else	
-		$1 -t nat -A $3 -p tcp -j REDIRECT --to $dns_port
-		$1 -t nat -A $3 -p udp -j REDIRECT --to $dns_port
+		$1 -t nat -A $3 -p tcp -j REDIRECT --to-ports $dns_port
+		$1 -t nat -A $3 -p udp -j REDIRECT --to-ports $dns_port
 	fi
 	$1 -t nat -I $2 -p tcp --dport 53 -j $3
 	$1 -t nat -I $2 -p udp --dport 53 -j $3
@@ -1785,13 +1799,12 @@ debug)
 		afstart
 	;;
 init)
-		profile=/etc/profile
         if [ -d "/etc/storage/clash" -o -d "/etc/storage/ShellCrash" ];then
 			i=1
 			while [ ! -w /etc/profile -a "$i" -lt 10 ];do
-				sleep 5 && i=$((i+1))
+				sleep 3 && i=$((i+1))
 			done
-			profile=/etc/profile
+			[ -w /etc/profile ] && profile=/etc/profile || profile=/etc_ro/profile
 			mount -t tmpfs -o remount,rw,size=45M tmpfs /tmp #增加/tmp空间以适配新的内核压缩方式
 			sed -i '' $profile #将软链接转化为一般文件
 		elif [ -d "/jffs" ];then

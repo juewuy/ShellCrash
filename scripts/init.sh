@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.1alpha8
+version=1.9.1alpha9
 
 setdir(){
 	dir_avail(){
@@ -297,7 +297,6 @@ done
 for file in cron task.sh task.list;do
 	mv -f ${CRASHDIR}/$file ${CRASHDIR}/task/$file 2>/dev/null
 done
-chmod 755 ${CRASHDIR}/task/task.sh
 #旧版文件清理
 userdel shellclash >/dev/null 2>&1
 sed -i '/shellclash/d' /etc/passwd
