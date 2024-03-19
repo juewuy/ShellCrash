@@ -275,10 +275,10 @@ check_singbox_config(){ #检查singbox配置文件
 }
 get_core_config(){ #下载内核配置文件
 	[ -z "$rule_link" ] && rule_link=1
-	[ -z "$server_link" ] && server_link=1
+	[ -z "$server_link" ] || [ $server_link -gt $(grep -aE '^4' ${CRASHDIR}/configs/servers.list | wc -l) ] && server_link=1
 	Server=$(grep -aE '^3|^4' ${CRASHDIR}/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
 	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' ${CRASHDIR}/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ "$retry" = 4 ] && Server=$(grep -aE '^497' ${CRASHDIR}/configs/servers.list | awk '{print $3}')
+	[ "$retry" = 3 ] && Server=$(grep -aE '^497' ${CRASHDIR}/configs/servers.list | awk '{print $3}')
 	Config=$(grep -aE '^5' ${CRASHDIR}/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ];then
@@ -304,11 +304,11 @@ get_core_config(){ #下载内核配置文件
 			echo -----------------------------------------------
 			exit 1
 		else
-			if [ "$retry" = 4 ];then
+			if [ "$retry" = 3 ];then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
 				echo -e "\033[32m也可用浏览器下载以上链接后，使用WinSCP手动上传到/tmp目录后执行crash命令本地导入！\033[0m"
 				exit 1
-			elif [ "$retry" = 3 ];then
+			elif [ "$retry" = 2 ];then
 				retry=4
 				logger "配置文件获取失败！将尝试使用http协议备用服务器获取！" 31
 				echo -e "\033[32m如担心数据安全，请在3s内使用【Ctrl+c】退出！\033[0m"
@@ -319,8 +319,8 @@ get_core_config(){ #下载内核配置文件
 				retry=$((retry+1))
 				logger "配置文件获取失败！" 31
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在重试第$retry次/共4次！" 33
-				if [ "$server_link" -ge 5 ]; then
+				logger "正在重试第$retry次/共3次！" 33
+				if [ "$server_link" -ge 4 ]; then
 					server_link=0
 				fi
 				server_link=$((server_link+1))
@@ -677,17 +677,17 @@ EOF
 }
 EOF
 	#生成ntp.json
-	cat > ${TMPDIR}/jsons/ntp.json <<EOF
-{
-  "ntp": {
-    "enabled": true,
-    "server": "203.107.6.88",
-    "server_port": 123,
-    "interval": "30m0s",
-	"detour": "DIRECT"
-  }
-}
-EOF
+	# cat > ${TMPDIR}/jsons/ntp.json <<EOF
+# {
+  # "ntp": {
+    # "enabled": true,
+    # "server": "203.107.6.88",
+    # "server_port": 123,
+    # "interval": "30m0s",
+	# "detour": "DIRECT"
+  # }
+# }
+# EOF
 	#生成inbounds.json
 	[ -n "$authentication" ] && {
 		username=$(echo $authentication | awk -F ':' '{print $1}') #混合端口账号密码
@@ -994,10 +994,10 @@ start_iptables(){ #iptables配置总入口
 	[ "$dns_no" != "已禁用" -a "$dns_redir" != "已开启" -a "$firewall_area" -le 3 ] && {
 		[ "$lan_proxy" = true ] && {
 			start_ipt_dns iptables PREROUTING shellcrash_dns #ipv4-局域网dns转发
-			if [ -n "$(grep -E '^REDIRECT$' /proc/net/ip6_tables_targets)" ];then
+			if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports';then
 				start_ipt_dns ip6tables PREROUTING shellcrashv6_dns #ipv6-局域网dns转发
 			else
-				ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT 2>/dev/null
+				ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT
 			fi
 		}
 		[ "$local_proxy" = true ] && start_ipt_dns iptables OUTPUT shellcrash_dns_out #ipv4-本机dns转发
@@ -1008,7 +1008,7 @@ start_iptables(){ #iptables配置总入口
 		[ "$lan_proxy" = true ] && {
 			start_ipt_route iptables nat PREROUTING shellcrash tcp #ipv4-局域网tcp转发
 			[ "$ipv6_redir" = "已开启" ] && {
-			if [ -n "$(grep -E '^REDIRECT$' /proc/net/ip6_tables_targets)" ];then
+			if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports';then
 					start_ipt_route ip6tables nat PREROUTING shellcrashv6 tcp #ipv6-局域网tcp转发
 				else
 					logger "当前设备内核缺少ip6tables_REDIRECT模块支持，已放弃启动相关规则！" 31
@@ -1019,7 +1019,7 @@ start_iptables(){ #iptables配置总入口
 	}
 	[ "$redir_mod" = "Tproxy模式" ] && {
 		JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
-		if [ -n "$(grep -E '^TPROXY$' /proc/net/ip_tables_targets)" ];then
+		if iptables -j TPROXY -h 2>/dev/null | grep -q '\--on-port';then
 			[ "$lan_proxy" = true ] && start_ipt_route iptables mangle PREROUTING shellcrash_mark all
 			[ "$local_proxy" = true ] && {
 				if [ -n "$(grep -E '^MARK$' /proc/net/ip_tables_targets)" ];then
@@ -1035,7 +1035,7 @@ start_iptables(){ #iptables配置总入口
 			logger "当前设备内核可能缺少kmod_ipt_tproxy模块支持，已放弃启动相关规则！" 31
 		fi
 		[ "$ipv6_redir" = "已开启" ] && [ "$lan_proxy" = true ] && {
-			if [ -n "$(grep -E '^TPROXY$' /proc/net/ip6_tables_targets)" ];then
+			if ip6tables -j TPROXY -h 2>/dev/null | grep -q '\--on-port';then
 				JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
 				start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark all
 			else
@@ -1048,12 +1048,9 @@ start_iptables(){ #iptables配置总入口
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "T&U旁路转发" ] && protocol=all
 		[ "$redir_mod" = "混合模式" ] && protocol=udp
 		[ "$redir_mod" = "TCP旁路转发" ] && protocol=tcp
-		if [ -n "$(grep -E '^MARK$' /proc/net/ip_tables_targets)" ];then
+		if iptables -j MARK -h 2>/dev/null | grep -q '\--set-mark';then
 			[ "$lan_proxy" = true ] && {
-				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
-					iptables -I FORWARD -o utun -j ACCEPT
-					#ip route show | grep "dev utun proto kernel scope link src" | while read route; do ip route del $route; done #移除内核生成的tun路由
-				}
+				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && iptables -I FORWARD -o utun -j ACCEPT
 				start_ipt_route iptables mangle PREROUTING shellcrash_mark $protocol
 			}
 			[ "$local_proxy" = true ] && start_ipt_route iptables mangle OUTPUT shellcrash_mark_out $protocol
@@ -1061,7 +1058,7 @@ start_iptables(){ #iptables配置总入口
 			logger "当前设备内核可能缺少x_mark模块支持，已放弃启动相关规则！" 31
 		fi		
 		[ "$ipv6_redir" = "已开启" ] && [ "$lan_proxy" = true ] && [ "$crashcore" != clashpre ] && {
-			if [ -n "$(grep -E '^MARK$' /proc/net/ip6_tables_targets)" ];then
+			if ip6tables -j MARK -h 2>/dev/null | grep -q '\--set-mark';then
 				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && ip6tables -I FORWARD -o utun -j ACCEPT
 				start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark $protocol
 			else
@@ -1406,8 +1403,6 @@ web_save(){ #最小化保存面板节点选择
 		if [ -s ${TMPDIR}/${file} ];then
 			compare ${TMPDIR}/${file} ${CRASHDIR}/configs/${file}
 			[ "$?" = 0 ] && rm -rf ${TMPDIR}/${file} || mv -f ${TMPDIR}/${file} ${CRASHDIR}/configs/${file}
-		else
-			echo > ${CRASHDIR}/configs/${file}
 		fi
 	done
 }
@@ -1610,8 +1605,10 @@ bfstart(){ #启动前
 		[ "$disoverride" != "1" ] && modify_yaml || ln -sf $core_config ${TMPDIR}/config.yaml
 	fi
 	#检查下载cnip绕过相关文件
-	[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && cn_ip_route
-	[ "$ipv6_redir" = "已开启" ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
+	[ "$firewall_mod" = nftables ] || ckcmd ipset && [ "$dns_mod" != "fake-ip" ] && {
+		[ "$cn_ip_route" = "已开启" ] && cn_ip_route
+		[ "$ipv6_redir" = "已开启" ] && [ "$cn_ipv6_route" = "已开启" ] && cn_ipv6_route
+	}
 	#添加shellcrash用户
 	[ "$firewall_area" = 2 ] || [ "$firewall_area" = 3 ] || [ "$(cat /proc/1/comm)" = "systemd" ] && \
 	[ -z "$(id shellcrash 2>/dev/null | grep 'root')" ] && {
@@ -1652,7 +1649,7 @@ afstart(){ #启动后
 		rm -rf ${TMPDIR}/CrashCore #删除缓存目录内核文件
 		start_firewall #配置防火墙流量劫持
 		mark_time #标记启动时间
-		[ -s ${CRASHDIR}/configs/web_save -o -s ${CRASHDIR}/configs/web_configs ] && web_restore >/dev/null 2>&1 & #后台还原面板配置
+		[ -s ${CRASHDIR}/configs/web_save ] && web_restore >/dev/null 2>&1 & #后台还原面板配置
 		{ sleep 5;logger ShellCrash服务已启动！;} & #推送日志
 		ckcmd mtd_storage.sh && mtd_storage.sh save >/dev/null 2>&1 & #Padavan保存/etc/storage
 		#加载定时任务

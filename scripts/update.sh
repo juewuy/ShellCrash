@@ -395,7 +395,7 @@ EOF
 	if [ -n "$2" ];then
 		gen_clash_providers_txt $1 $2
 		providers_tags=$1
-		sed -i 's/, {providers_tags}//g' ${TMPDIR}/providers/proxy-groups.yaml
+		echo '  - {name: '${1}', type: url-test, tolerance: 100, lazy: true, use: ['${1}']}' >> ${TMPDIR}/providers/proxy-groups.yaml
 	else
 		providers_tags=''
 		while read line;do
@@ -479,14 +479,16 @@ EOF
 {
   "outbound_providers": [
 EOF
-	if [ -n "$2" ];then
-		gen_singbox_providers_txt $1 $2
-		providers_tags=\"$1\"
-	else
-		cat > ${TMPDIR}/providers/outbounds_add.json <<EOF
+	cat > ${TMPDIR}/providers/outbounds_add.json <<EOF
 {
   "outbounds": [
 EOF
+	#单独指定节点时使用特殊方式
+	if [ -n "$2" ];then
+		gen_singbox_providers_txt $1 $2
+		providers_tags=\"$1\"
+		echo '{ "tag": "'${1}'", "type": "urltest", "tolerance": 100, "providers": "'${1}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
+	else
 		providers_tags=''
 		while read line;do
 			tag=$(echo $line | awk '{print $1}')
@@ -495,9 +497,10 @@ EOF
 			gen_singbox_providers_txt $tag $url
 			echo '{ "tag": "'${tag}'", "type": "urltest", "tolerance": 100, "providers": "'${tag}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
 		done < ${CRASHDIR}/configs/providers.cfg
-		sed -i '$s/},/}]}/' ${TMPDIR}/providers/outbounds_add.json #修复文件格式
 	fi
-	sed -i '$s/},/}]}/' ${TMPDIR}/providers/providers.json #修复文件格式
+	#修复文件格式
+	sed -i '$s/},/}]}/' ${TMPDIR}/providers/outbounds_add.json
+	sed -i '$s/},/}]}/' ${TMPDIR}/providers/providers.json
 	#使用模版生成outbounds和rules模块
 	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
 	rm -rf ${TMPDIR}/provider_temp_file

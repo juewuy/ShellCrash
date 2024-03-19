@@ -13,6 +13,6 @@
 113#$CRASHDIR/task/task.sh update_mmdb#自动更新数据库文件
 
 121#$CRASHDIR/task/task.sh reset_firewall#重设透明路由防火墙
-122#reboot#重启路由设备(慎用)
+122#sleep 70 && touch /etc/banner && reboot#重启路由设备(慎用)
 
 
