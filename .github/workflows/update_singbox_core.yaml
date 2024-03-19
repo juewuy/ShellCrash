@@ -51,7 +51,7 @@ jobs:
           fetch-depth: 0
 
       - name: setup go
-        uses: actions/setup-go@v4.1.0
+        uses: actions/setup-go@v5.0.0
         with:
           go-version: ${{needs.go.outputs.version}}
 
@@ -140,7 +140,7 @@ jobs:
         if: ${{ env.REPO == 'PuerNya/sing-box' }}
         uses: actions/checkout@v4.1.1
         with:
-          ref: fix-interface
+          ref: building
           path: sing
           repository: PuerNya/sing
 
