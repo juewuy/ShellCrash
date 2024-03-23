@@ -23,6 +23,24 @@ on:
         description: 'build tags'
         required: false
         type: string
+  workflow_call:
+    inputs:
+      tag1:
+        required: true
+        type: string
+      tag2:
+        required: true
+        type: string
+      tag3:
+        required: false
+        type: string
+      tag4:
+        required: false
+        type: string
+      tag5:
+        required: false
+        type: string
+
 jobs:
   go:
     runs-on: ubuntu-latest
