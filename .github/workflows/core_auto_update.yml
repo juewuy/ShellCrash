@@ -9,22 +9,30 @@ jobs:
   update_singboxp:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
       - name: Auto update singbox_core_PuerNya to prerelease
         uses: actions/github-script@v7
         with:
           script: |
-            const { Octokit } = require("@octokit/core");
+            const { GitHub } = require('@actions/github');
+            const github = new GitHub(process.env.GITHUB_TOKEN);
 
-            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-
-            const { data: { id } } = await octokit.request('GET /repos/{owner}/{repo}/actions/workflows', {
+            const { data: { workflows } } = await github.actions.listRepoWorkflows({
               owner: context.repo.owner,
               repo: context.repo.repo
             });
-            await octokit.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', {
+
+            const targetWorkflow = workflows.find(workflow => workflow.name === 'update_singbox_core');
+            const workflowID = targetWorkflow.id;
+
+            await github.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              workflow_id: 'update_singbox_core.yaml',
+              workflow_id: workflowID,
               ref: 'dev',
               inputs: {
                 tag1: 'PuerNya/sing-box',
