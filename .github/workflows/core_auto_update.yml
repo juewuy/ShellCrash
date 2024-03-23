@@ -9,30 +9,11 @@ jobs:
   auto_update_singboxp_with_wg:
     permissions:
       id-token: write # need this for OIDC
-      contents: read
+      contents: write
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
       tag1: PuerNya/sing-box
       tag2: building
+      tag3: singbox_core_PuerNya
       tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_clash_api,with_gvisor
     secrets: inherit
-  push_to_git:
-    needs: 
-      - auto_update_singboxp_with_wg
-    runs-on: ubuntu-latest
-    steps:    
-      - name: Create Release and Upload Release Asset
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: singbox_core_PuerNya
-          name: singbox_core_PuerNya
-          draft: false
-          prerelease: true
-          files: |
-            ./tmp/singbox*.tar.gz
-            
-      - name: Cleanup Workflow
-        uses: Mattraks/delete-workflow-runs@main
-        with:
-          retain_days: 1
-          keep_minimum_runs: 2   
