@@ -7,13 +7,14 @@ on:
 
 jobs:
   update_singboxp:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Auto update singbox_core_PuerNya to prerelease
-      uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
-      with:
-        tag1: PuerNya/sing-box
-        tag2: building
-        tag3: singbox_core_PuerNya
-        tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_clash_api,with_gvisor
-        
+    permissions:
+      id-token: write # need this for OIDC
+      contents: read
+    uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
+    with:
+      tag1: PuerNya/sing-box
+      tag2: building
+      tag3: singbox_core_PuerNya
+      tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_clash_api,with_gvisor
+    secrets: inherit
+    
