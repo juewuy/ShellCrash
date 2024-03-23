@@ -22,7 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:    
       - name: Create Release and Upload Release Asset
-        if: ${{ env.RELEASE != '' && env.PUSHDIR == '' }}
         uses: softprops/action-gh-release@v1
         with:
           tag_name: singbox_core_PuerNya
