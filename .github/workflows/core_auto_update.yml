@@ -2,11 +2,11 @@ name: core_auto_update
 
 on: 
     schedule:
-        - cron: 0 18 * * *
+        - cron: 0 18 * * 6
     workflow_dispatch:
 
 jobs:
-  update_singboxp:
+  auto_update_singboxp_with_wg:
     permissions:
       id-token: write # need this for OIDC
       contents: read
@@ -17,4 +17,3 @@ jobs:
       tag3: singbox_core_PuerNya
       tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_clash_api,with_gvisor
     secrets: inherit
-    
