@@ -12,7 +12,7 @@ jobs:
       - name: Get old version
         run: |
           version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version) 
-          echo version_old=$version_old >> "$GITHUB_OUTPUT"
+          #echo version_old=$version_old >> "$GITHUB_OUTPUT"
         
       - name: checkout
         uses: actions/checkout@v4
@@ -25,7 +25,11 @@ jobs:
           git remote add sekai https://github.com/SagerNet/sing-box.git
           git fetch --tags sekai
           version_new=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
-          echo version_new=$version_new >> "$GITHUB_OUTPUT"    
+          #echo version_new=$version_new >> "$GITHUB_OUTPUT"    
+          if [ $version_old = $version_new ];then
+            echo "未检查到版本更新，已退出！"
+            exit 1
+          fi
     
   auto_update_singboxp_with_wg:
     needs: check_version
@@ -40,6 +44,7 @@ jobs:
     secrets: inherit
 
   cleanup:
+    needs: check_version
     runs-on: ubuntu-latest
     steps:
       - name: cleanup
