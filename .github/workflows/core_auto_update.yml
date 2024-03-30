@@ -11,7 +11,8 @@ jobs:
     steps:
       - name: Get old version
         run: |
-          echo version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version) >> $GITHUB_OUTPUT
+          version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version) 
+          echo version_old=$version_old >> "$GITHUB_OUTPUT"
         
       - name: checkout
         uses: actions/checkout@v4
@@ -23,11 +24,15 @@ jobs:
         run: |
           git remote add sekai https://github.com/SagerNet/sing-box.git
           git fetch --tags sekai
-          echo version_new=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag) >> $GITHUB_OUTPUT      
+          version_new=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
+          echo version_new=$version_new >> "$GITHUB_OUTPUT"    
     
   auto_update_singboxp_with_wg:
     needs: check_version
-    if: ${{ needs.check_version.outputs.version_new != needs.check_version.outputs.version_old }}
+    env: 
+      VERSION_NEW: ${{ needs.check_version.outputs.version_new }}
+      VERSION_OLD: ${{ needs.check_version.outputs.version_old }}
+    if: ${{ env.VERSION_NEW != env.VERSION_OLD }}
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
