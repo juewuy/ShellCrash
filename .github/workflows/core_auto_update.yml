@@ -21,7 +21,7 @@ jobs:
           git fetch --tags sekai
           version_new=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
           version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version)    
-          [ $version_old = $version_new ] && {
+          [ "$version_old" = "$version_new" ] && {
             echo "未检查到版本更新，已退出！"
             exit 1
           }
