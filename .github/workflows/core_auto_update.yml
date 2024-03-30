@@ -29,10 +29,7 @@ jobs:
     
   auto_update_singboxp_with_wg:
     needs: check_version
-    env: 
-      VERSION_NEW: ${{ needs.check_version.outputs.version_new }}
-      VERSION_OLD: ${{ needs.check_version.outputs.version_old }}
-    if: ${{ env.VERSION_NEW != env.VERSION_OLD }}
+    if: ${{ needs.check_version.outputs.version_new != needs.check_version.outputs.version_old }}
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
@@ -41,3 +38,9 @@ jobs:
       tag3: singbox_core_PuerNya
       tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_clash_api,with_gvisor
     secrets: inherit
+
+  cleanup:
+    uses: Mattraks/delete-workflow-runs@main
+    with:
+      retain_days: 1
+      keep_minimum_runs: 2   
