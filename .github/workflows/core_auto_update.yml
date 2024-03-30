@@ -14,7 +14,7 @@ jobs:
           echo version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version) >> $GITHUB_OUTPUT
         
       - name: checkout
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
         with:
           repository: PuerNya/sing-box
           ref: building
