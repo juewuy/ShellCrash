@@ -41,7 +41,7 @@ jobs:
 
   cleanup:
     needs: check_version
-    uses: Mattraks/delete-workflow-runs@main
+    uses: .github/workflows/Mattraks/delete-workflow-runs@main
     with:
       retain_days: 1
       keep_minimum_runs: 2   
