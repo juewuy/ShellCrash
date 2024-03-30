@@ -9,23 +9,18 @@ jobs:
   check_version:
     runs-on: ubuntu-latest
     steps:
-      - name: Get old version
-        run: |
-          version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version) 
-          #echo version_old=$version_old >> "$GITHUB_OUTPUT"
-        
       - name: checkout
         uses: actions/checkout@v4
         with:
           repository: PuerNya/sing-box
           ref: building
           fetch-depth: 0   
-      - name: Get new version    
+      - name: Check version
         run: |
           git remote add sekai https://github.com/SagerNet/sing-box.git
           git fetch --tags sekai
           version_new=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
-          #echo version_new=$version_new >> "$GITHUB_OUTPUT"    
+          version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version)    
           if [ $version_old = $version_new ];then
             echo "未检查到版本更新，已退出！"
             exit 1
@@ -33,7 +28,7 @@ jobs:
     
   auto_update_singboxp_with_wg:
     needs: check_version
-    if: ${{ needs.check_version.outputs.version_new != needs.check_version.outputs.version_old }}
+    if: ${{ success() }}
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
