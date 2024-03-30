@@ -161,10 +161,6 @@ jobs:
           ref: building
           path: sing
           repository: PuerNya/sing
-
-      - name: replace sing
-        if: ${{ env.REPO == 'PuerNya/sing-box' }}
-        run: sed -i 's/^\/\/replace github.com.*$/replace github.com\/sagernet\/sing => .\/sing/' go.mod
           
       - name: build core
         id: build
@@ -206,6 +202,7 @@ jobs:
           done
           mv -f ./tmp/singbox-linux-mipsel-hardfloat.tar.gz ./tmp/singbox-linux-mipsle-hardfloat.tar.gz
           mv -f ./tmp/singbox-linux-mipsel-softfloat.tar.gz ./tmp/singbox-linux-mipsle-softfloat.tar.gz
+          echo ${VERSION} > ./tmp/version
 
       - name: Commit and push
         if: ${{ env.PUSHDIR != '' }}
@@ -232,6 +229,7 @@ jobs:
           prerelease: true
           files: |
             ./tmp/singbox*.tar.gz
+            ./tmp/version
             
       - name: Cleanup Workflow
         uses: Mattraks/delete-workflow-runs@main
