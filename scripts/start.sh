@@ -606,7 +606,7 @@ EOF
 	}
 	[ "$dns_mod" = "mix" ] && {
 		global_dns=dns_fakeip
-		fake_ip_filter=$(cat ${CRASHDIR}/configs/fake_ip_filter 2>/dev/null | grep '\.' | awk '{printf "\"%s\", ",$1}' | sed "s/, $//" | sed 's/+/.+/g' | sed 's/*/.*/g')
+		fake_ip_filter=$(cat ${CRASHDIR}/configs/fake_ip_filter 2>/dev/null | grep '\.' | awk '{printf "\"%s\", ",$1}' | sed "s/, $//" | sed 's/\"+/\".+/g' | sed 's/\"\*/\".*/g')
 		[ -n "$fake_ip_filter" ] && fake_ip_filter="{ \"domain_regex\": [$fake_ip_filter], \"server\": \"dns_direct\" },"
 		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ];then
 			direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
