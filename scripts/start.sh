@@ -1674,6 +1674,11 @@ afstart(){ #启动后
 		$0 stop
 		start_error
 	fi
+        sleep 10
+	if [ $(pidof CrashCore | wc -w) -ge 2 ]; then
+            { sleep 5;logger 检测到运行多个实例执行重启服务;} & #推送日志
+	    ${CRASHDIR}/start.sh start
+	fi
 }
 start_error(){ #启动报错
 	if [ "$start_old" != "已开启" ] && ckcmd journalctl;then
