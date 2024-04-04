@@ -743,7 +743,7 @@ EOF
       "stack": "system",
 	  $always_resolve_udp
       "sniff": true,
-      "sniff_override_destination": $sniffer
+      "sniff_override_destination": true
     }
   ]
 }
@@ -932,6 +932,12 @@ start_ipt_route(){ #iptables-route通用工具
 }
 start_ipt_dns(){ #iptables-dns通用工具
 	#$1:iptables/ip6tables	$2:所在的表(OUTPUT/PREROUTING)	$3:新创建的shellcrash表	
+	#区分ipv4/ipv6
+	[ "$1" = 'iptables' ] && {
+		HOST_IP=$host_ipv4
+		[ "$2" = 'OUTPUT' ] && HOST_IP="127.0.0.0/8 $local_ipv4"
+	}
+	[ "$1" = 'ip6tables' ] && HOST_IP=$host_ipv6
 	$1 -t nat -N $3
 	#防回环
 	$1 -t nat -A $3 -m mark --mark $routing_mark -j RETURN
@@ -954,8 +960,10 @@ start_ipt_dns(){ #iptables-dns通用工具
 			$1 -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
 		done
 	else	
-		$1 -t nat -A $3 -p tcp -j REDIRECT --to-ports $dns_port
-		$1 -t nat -A $3 -p udp -j REDIRECT --to-ports $dns_port
+		for ip in $HOST_IP;do #仅限指定网段流量
+			$1 -t nat -A $3 -p tcp -s $ip -j REDIRECT --to-ports $dns_port
+			$1 -t nat -A $3 -p udp -s $ip -j REDIRECT --to-ports $dns_port
+		done
 	fi
 	$1 -t nat -I $2 -p tcp --dport 53 -j $3
 	$1 -t nat -I $2 -p udp --dport 53 -j $3
@@ -1133,11 +1141,14 @@ start_nft_route(){ #nftables-route通用工具
 	#nft add rule inet shellcrash local_tproxy log prefix \"pre\" level debug
 }
 start_nft_dns(){ #nftables-dns
+	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+	[ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
 	nft add chain inet shellcrash ${1}_dns { type nat hook $1 priority -100 \; }
 	#防回环
 	nft add rule inet shellcrash ${1}_dns meta mark $routing_mark return 
 	nft add rule inet shellcrash ${1}_dns meta skgid { 453, 7890 } return
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash ${1}_dns ip saddr $bypass_host return
+	nft add rule inet shellcrash ${1}_dns ip saddr != {$HOST_IP} return #屏蔽外部请求
 	#过滤局域网设备
 	[ -n "$(cat ${CRASHDIR}/configs/mac)" ] && {
 		MAC=$(awk '{printf "%s, ",$1}' ${CRASHDIR}/configs/mac)
