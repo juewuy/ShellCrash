@@ -80,55 +80,46 @@ logger(){ #日志工具
 	log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
 	echo $log_text >> ${TMPDIR}/ShellCrash.log
 	[ "$(wc -l  ${TMPDIR}/ShellCrash.log | awk '{print $1}')" -gt 99 ] && sed -i '1,50d'  ${TMPDIR}/ShellCrash.log
-	[ -z "$3" ] && {
-		[ -n "$device_name" ] && log_text="$log_text($device_name)"
+	#推送工具
+	webpush(){
 		[ -n "$(pidof CrashCore)" ] && {
 			[ -n "$authentication" ] && auth="$authentication@" 
 			export https_proxy="http://${auth}127.0.0.1:$mix_port"
 		}
+		if curl --version >/dev/null 2>&1;then 
+			curl -kfsSl -X POST --connect-timeout 3 -H "Content-Type: application/json; charset=utf-8" "$1" -d "$2" >/dev/null 2>&1 
+		elif wget --version >/dev/null 2>&1;then 
+			wget -Y on -q --timeout=3 -t 1 --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1"
+		else
+			echo "找不到有效的curl或wget应用，请先安装！"
+		fi
+	}
+	[ -z "$3" ] && {
+		[ -n "$device_name" ] && log_text="$log_text($device_name)"
 		[ -n "$push_TG" ] && {
 			url="https://api.telegram.org/bot${push_TG}/sendMessage"
-			curl_data="-d chat_id=$chat_ID&text=$log_text"
-			wget_data="--post-data=$chat_ID&text=$log_text"
-			if curl --version >/dev/null 2>&1;then 
-				curl -kfsSl --connect-timeout 3 -d "chat_id=$chat_ID&text=$log_text" "$url" >/dev/null 2>&1 
-			else
-				wget -Y on -q --timeout=3 -t 1 --post-data="chat_id=$chat_ID&text=$log_text" "$url" 
-			fi
+			content="{\"chat_id\":\"${chat_ID}\",\"text\":\"$log_text\"}"
+			webpush "$url" "$content" &
 		}
 		[ -n "$push_bark" ] && {
-			url="${push_bark}/${log_text}${bark_param}"
-			if curl --version >/dev/null 2>&1;then 
-				curl -kfsSl --connect-timeout 3 "$url" >/dev/null 2>&1 
-			else
-				wget -Y on -q --timeout=3 -t 1 "$url" 
-			fi
+			url="${push_bark}"
+			content="{\"body\":\"${log_text}\",\"title\":\"ShellCrash日志推送\",\"level\":\"passive\",\"badge\":\"1\"}"
+			webpush "$url" "$content" &
 		}
 		[ -n "$push_Deer" ] && {
-			url="https://api2.pushdeer.com/message/push?pushkey=${push_Deer}"
-			if curl --version >/dev/null 2>&1;then 
-				curl -kfsSl --connect-timeout 3 "$url"\&text="$log_text" >/dev/null 2>&1 
-			else
-				wget -Y on -q --timeout=3 -t 1 "$url"\&text="$log_text" 
-			fi
+			url="https://api2.pushdeer.com/message/push"
+			content="{\"pushkey\":\"${push_Deer}\",\"text\":\"$log_text\"}"
+			webpush "$url" "$content" &
 		}
 		[ -n "$push_Po" ] && {
 			url="https://api.pushover.net/1/messages.json"
 			content="{\"token\":\"${push_Po}\",\"user\":\"${push_Po_key}\",\"title\":\"ShellCrash日志推送\",\"message\":\"$log_text\"}"
-			if curl --version >/dev/null 2>&1;then 
-				curl -kfsSl -X POST --connect-timeout 3 -H "Content-Type: application/json" "$url" -d "$content" >/dev/null 2>&1 
-			else
-				wget -Y on -q --timeout=3 -t 1 --method=POST --header="Content-Type: application/json" --body-data="$content" "$url"
-			fi
+			webpush "$url" "$content" &
 		}
 		[ -n "$push_PP" ] && {
 			url="http://www.pushplus.plus/send"
 			content="{\"token\":\"${push_PP}\",\"title\":\"ShellCrash日志推送\",\"content\":\"$log_text\"}"
-			if curl --version >/dev/null 2>&1;then 
-				curl -sS -X POST --connect-timeout 3 -H "Content-Type: application/json" "$url" -d "$content" >/dev/null 2>&1 
-			else
-				wget -Y on -q --timeout=3 -t 1 --method=POST --header="Content-Type: application/json" --body-data="$content" "$url"
-			fi
+			webpush "$url" "$content" &
 		}		
 	} &
 }
@@ -738,12 +729,12 @@ EOF
       "type": "tun",
       "tag": "tun-in",
       "interface_name": "utun",
-      "inet4_address": "198.18.0.0/16",
+      "inet4_address": "172.19.0.1/30",
       "auto_route": false,
       "stack": "system",
 	  $always_resolve_udp
       "sniff": true,
-      "sniff_override_destination": true
+      "sniff_override_destination": $sniffer
     }
   ]
 }
@@ -1584,8 +1575,11 @@ singbox_check(){ #singbox启动前检查
 }
 bfstart(){ #启动前
 	routing_mark=$((fwmark + 2))
-	#读取ShellCrash配置
-	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master
+	#延迟启动
+	[ ! -f ${TMPDIR}/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+		logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
+		sleep $start_delay
+	}
 	[ ! -d ${BINDIR}/ui ] && mkdir -p ${BINDIR}/ui
 	[ -z "$crashcore" ] && crashcore=clash
 	#执行条件任务
@@ -1640,11 +1634,6 @@ bfstart(){ #启动前
 }
 afstart(){ #启动后
 	[ -z "$firewall_area" ] && firewall_area=1
-	#延迟启动
-	[ ! -f ${TMPDIR}/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
-		logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
-		sleep $start_delay
-	}
 	#设置循环检测面板端口以判定服务启动是否成功
 	i=1
 	while [ -z "$test" -a "$i" -lt 5 ];do

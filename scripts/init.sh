@@ -160,10 +160,10 @@ else
 	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ];then
 		#创建shellcrash用户
-		type userdel && userdel shellcrash 2>/dev/null
+		userdel shellcrash 2>/dev/null
 		sed -i '/0:7890/d' /etc/passwd
 		sed -i '/x:7890/d' /etc/group
-		if type useradd >/dev/null 2>&1; then
+		if useradd -h >/dev/null 2>&1; then
 			useradd shellcrash -u 7890 2>/dev/null
 			sed -Ei s/7890:7890/0:7890/g /etc/passwd
 		else
@@ -181,8 +181,9 @@ else
 	fi
 fi
 #修饰文件及版本号
-command -v bash >/dev/null 2>&1 && shtype=bash || shtype=sh 
-for file in start.sh task.sh ;do
+command -v bash >/dev/null 2>&1 && shtype=bash 
+[ -x /bin/ash ] && shtype=ash 
+for file in start.sh task.sh menu.sh;do
 	sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file}
 	chmod 755 ${CRASHDIR}/${file}
 done
@@ -203,7 +204,7 @@ fi
 setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 #设置防火墙执行模式
 [ -z "$(grep firewall_mod $CRASHDIR/configs/ShellClash.cfg 2>/dev/null)" ] && {
-	ckcmd iptables && firewall_mod=iptables
+	iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
 	nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
 	setconfig firewall_mod $firewall_mod
 }
@@ -232,6 +233,14 @@ if [ -n "$profile" ];then
 		sed -i '/export CRASHDIR=*/'d ~/.zshrc 2>/dev/null
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc >/dev/null 2>&1
+	}
+	#在允许的情况下创建/usr/bin/crash文件
+	[ -w /usr/bin ] && {
+		cat > /usr/bin/crash <<EOF
+#/bin/$shtype
+$CRASHDIR/menu.sh \$1 \$2 \$3 \$4 \$5
+EOF
+		chmod +x /usr/bin/crash
 	}
 else
 	echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"

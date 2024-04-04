@@ -1,11 +1,12 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+CRASHDIR=$(cd $(dirname $0);pwd)
 CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 YAMLSDIR=${CRASHDIR}/yamls
 JSONSDIR=${CRASHDIR}/jsons
 #加载执行目录，失败则初始化
-source ${CRASHDIR}/configs/command.env >/dev/null 2>&1
+source ${CRASHDIR}/configs/command.env 2>/dev/null
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh >/dev/null 2>&1
 [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
 [ -n "$(tar --help 2>&1|grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
@@ -25,7 +26,7 @@ ckstatus(){
 	#检查/读取脚本配置文件
 	if [ -f $CFG_PATH ];then
 		[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH > $CFG_PATH #检查重复行并去除
-		source $CFG_PATH >/dev/null 2>&1	
+		source $CFG_PATH 2>/dev/null
 	else
 		source ${CRASHDIR}/init.sh >/dev/null 2>&1
 	fi
@@ -270,7 +271,7 @@ log_pusher(){ #日志菜单
 			echo -----------------------------------------------
 			read -p "请输入你获取到的API TOKEN > " TOKEN
 			echo -----------------------------------------------
-			echo -e "\033[32m请通过Telegram的对话窗口，向该机器人发送任意消息！\033[0m"
+			echo -e "请向\033[32m你申请的机器人\033[31m而不是BotFather\033[0m，发送任意几条消息！"
 			echo -----------------------------------------------
 			read -p "我已经发送完成(1/0) > " res
 			if [ "$res" = 1 ];then
@@ -342,14 +343,6 @@ log_pusher(){ #日志菜单
 			if [ -n "$url" ];then
 				push_bark=$url
 				setconfig push_bark $url
-				echo -----------------------------------------------
-				echo -e "\033[32m例: ?group=ShellCrash\033[0m"
-				read -p "请输入你的Bark请求参数(默认回车为空) > " param
-				param=$(echo $param | sed 's/\&/\\\&/g')
-				if [ -n "$param" ];then
-					bark_param=$param
-					setconfig bark_param \'$param\'
-				fi
 				${CRASHDIR}/start.sh logger "已完成Bark日志推送设置！" 32
 			else
 				echo -e "\033[31m输入错误，请重新输入！\033[0m"
@@ -1651,6 +1644,7 @@ uninstall(){
 		rm -rf /usr/lib/systemd/system/shellcrash.service
 		rm -rf /www/clash
 		rm -rf /tmp/ShellCrash
+		rm -rf /usr/bin/crash
 		sed -i '/0:7890/d' /etc/passwd
 		userdel -r shellcrash 2>/dev/null
 		nvram set script_usbmount="" 2>/dev/null
