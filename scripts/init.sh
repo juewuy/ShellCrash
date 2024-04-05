@@ -136,6 +136,9 @@ setconfig(){
 	systype=asusrouter #华硕固件
 	[ -f "/jffs/.asusrouter" ] && initdir='/jffs/.asusrouter'
 	[ -d "/jffs/scripts" ] && initdir='/jffs/scripts/nat-start' 
+	#华硕启用jffs
+	nvram set jffs2_scripts="1"
+	nvram commit
 	}
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot #NETGEAR设备
@@ -234,18 +237,18 @@ if [ -n "$profile" ];then
 		echo "export CRASHDIR=\"$CRASHDIR\"" >> ~/.zshrc
 		source ~/.zshrc >/dev/null 2>&1
 	}
-	#在允许的情况下创建/usr/bin/crash文件
-	[ -w /usr/bin ] && {
-		cat > /usr/bin/crash <<EOF
-#/bin/$shtype
-$CRASHDIR/menu.sh \$1 \$2 \$3 \$4 \$5
-EOF
-		chmod +x /usr/bin/crash
-	}
 else
 	echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
 	exit 1
 fi
+#在允许的情况下创建/usr/bin/crash文件
+touch /usr/bin/crash 2>/dev/null && {
+	cat > /usr/bin/crash <<EOF
+#/bin/$shtype
+$CRASHDIR/menu.sh \$1 \$2 \$3 \$4 \$5
+EOF
+	chmod +x /usr/bin/crash
+}
 #梅林/Padavan额外设置
 [ -n "$initdir" ] && {
 	sed -i '/ShellCrash初始化/'d $initdir

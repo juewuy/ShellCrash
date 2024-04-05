@@ -43,10 +43,10 @@ tproxyfix(){
 }
 init(){
 	#等待启动完成
-	log_file=$(uci get system.@system[0].log_file)
-	while ! /sbin/ip a| grep -q lan; do
+	while ! ip a| grep -q lan; do
 		sleep 10
 	done
+	sleep 20
 	#初始化环境变量
 	sed -i "/alias crash/d" $profile
 	sed -i "/alias clash/d" $profile

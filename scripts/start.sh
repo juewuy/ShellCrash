@@ -940,12 +940,12 @@ start_ipt_dns(){ #iptables-dns通用工具
 		$1 -t nat -A $3 -p udp -s $bypass_host -j RETURN
 	}
 	#局域网mac地址黑名单过滤
-	[ "$3" = 'PREROUTING' ] && [ -s "$(cat ${CRASHDIR}/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
+	[ "$2" = 'PREROUTING' ] && [ -s ${CRASHDIR}/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat ${CRASHDIR}/configs/mac); do
 			$1 -t nat -A $3 -m mac --mac-source $mac -j RETURN
 		done
 	}	
-	if [ "$3" = 'PREROUTING' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat ${CRASHDIR}/configs/mac)" ];then
+	if [ "$2" = 'PREROUTING' ] && [ -s ${CRASHDIR}/configs/mac ] && [ "$macfilter_type" = "白名单" ];then
 		for mac in $(cat ${CRASHDIR}/configs/mac); do
 			$1 -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
 			$1 -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
