@@ -42,7 +42,6 @@
       { "rule_set": "proxy", "outbound": "🚀 节点选择" },
       { "rule_set": "cn", "outbound": "🎯 全球直连" },
       { "rule_set": "telegramip", "outbound": "📲 电报消息" },
-      { "rule_set": "privateip", "outbound": "🎯 全球直连" },
       { "rule_set": "cnip", "outbound": "🎯 全球直连" }
     ],
     "rule_set": [
@@ -121,13 +120,6 @@
         "type": "remote",
         "format": "binary",
         "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/telegramip.srs",
-        "download_detour": "🎯 本机直连"
-      },
-      {
-        "tag": "privateip",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/privateip.srs",
         "download_detour": "🎯 本机直连"
       },
       {

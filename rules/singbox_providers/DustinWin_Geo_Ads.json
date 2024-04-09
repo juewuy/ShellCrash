@@ -40,7 +40,6 @@
       { "geosite": "geolocation-!cn", "outbound": "🚀 节点选择" },
       { "geosite": "cn", "outbound": "🎯 全球直连" },
       { "geoip": "telegram", "outbound": "📲 电报消息" },
-      { "geoip": "private",  "outbound": "🎯 全球直连" },
       { "geoip": "cn", "outbound": "🎯 全球直连" }
     ],
     "final": "🐟 漏网之鱼"
