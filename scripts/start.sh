@@ -2,10 +2,7 @@
 # Copyright (C) Juewuy
 
 #初始化目录
-CRASHDIR=$(
-	cd $(dirname $0)
-	pwd
-)
+CRASHDIR=$(cd $(dirname $0);pwd)
 #加载执行目录，失败则初始化
 . "$CRASHDIR"/configs/command.env >/dev/null 2>&1
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && . "$CRASHDIR"/init.sh >/dev/null 2>&1
@@ -49,7 +46,7 @@ getconfig() { #读取配置及全局变量
 setconfig() { #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
-	grep -q ""$1"=" "$configpath" && sed -i "s#"$1"=.*#"$1"="$2"#g" "$configpath" || echo ""$1"="$2"" >> "$configpath"
+	grep -q "${1}=" "$configpath" && sed -i "s#${1}=.*#${1}=${2}#g" "$configpath" || echo "${1}=${2}" >> "$configpath"
 }
 ckcmd() { #检查命令是否存在
 	command -v sh >/dev/null 2>&1 && command -v "$1" >/dev/null 2>&1 || type "$1" >/dev/null 2>&1
@@ -1540,7 +1537,7 @@ core_check() { #检查及下载内核文件
 }
 core_exchange() { #升级为高级内核
 	#$1：目标内核  $2：提示语句
-	logger "检测到"$2"！将改为使用"$1"核心启动！" 33
+	logger "检测到${2}！将改为使用${1}核心启动！" 33
 	rm -rf "$TMPDIR"/CrashCore
 	rm -rf "$BINDIR"/CrashCore
 	rm -rf "$BINDIR"/CrashCore.tar.gz
