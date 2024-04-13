@@ -593,8 +593,8 @@ EOF
 	[ "$dns_mod" = "fake-ip" ] && {
 		global_dns=dns_fakeip
 		fake_ip_filter_domain=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|\+|\*|Mijia' | sed '/^\s*$/d' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-  		fake_ip_filter_suffix=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|.\*' | grep -E '\*|\+' | awk '{sub(/^[*+]\./,""); print} {print "."$0}' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-    		fake_ip_filter_regex=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '.\*' | sed 's/^*/.\*/' | sed 's/^+/.\+/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+  		fake_ip_filter_suffix=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|.\*' | grep -E '\*|\+' | awk '{sub(/^[*+]\./,""); print}' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+  		fake_ip_filter_regex=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '.\*' | sed 's/^*/.\*/' | sed 's/^+/.\+/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
   		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
     		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
@@ -602,11 +602,11 @@ EOF
 	[ "$dns_mod" = "mix" ] && {
 		global_dns=dns_fakeip
 		fake_ip_filter_domain=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|\+|\*|Mijia' | sed '/^\s*$/d' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-  		fake_ip_filter_suffix=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|.\*' | grep -E '\*|\+' | awk '{sub(/^[*+]\./,""); print} {print "."$0}' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-    		fake_ip_filter_regex=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '.\*' | sed 's/^*/.\*/' | sed 's/^+/.\+/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+  		fake_ip_filter_suffix=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|.\*' | grep -E '\*|\+' | awk '{sub(/^[*+]\./,""); print}' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+  		fake_ip_filter_regex=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '.\*' | sed 's/^*/.\*/' | sed 's/^+/.\+/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
   		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
-    		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
+  		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
 		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ]; then
 			direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
 			#生成add_rule_set.json
@@ -654,7 +654,7 @@ EOF
 	  { "clash_mode": "Global", "server": "$global_dns", "rewrite_ttl": 1 },
       { "clash_mode": "Direct", "server": "dns_direct" },
 	  $fake_ip_filter_domain
-          $fake_ip_filter_suffix
+	  $fake_ip_filter_suffix
 	  $fake_ip_filter_regex
 	  $direct_dns
 	  { "query_type": [ "A", "AAAA" ], "server": "dns_fakeip", "rewrite_ttl": 1 }
