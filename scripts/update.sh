@@ -75,7 +75,7 @@ setrules(){ #自定义规则
 		'')	;;
 		*)
 			text=$(cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | sed -n "$num p" | awk '{print $2}')
-			if [ -n $text ];then	
+			if [ -n "$text" ];then	
 				sed -i "/$text/d" $YAMLSDIR/rules.yaml
 				sleep 1
 				del_rule_type
@@ -676,7 +676,7 @@ setproviders(){ #自定义providers
 		[ "$res" = "1" ] && rm -rf $CRASHDIR/configs/providers.cfg
 		setproviders
 	;;
-	d)
+	e)
 		echo -e "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
 		read -p "是否继续？(1/0) > " res
 		[ "$res" = "1" ] && rm -rf $CRASHDIR/providers
@@ -1651,7 +1651,7 @@ setcustgeo(){ #下载自定义数据库文件
 }
 setgeo(){ #数据库选择菜单
 	source $CFG_PATH > /dev/null
-	[ -n "$cn_mini.mmdb_v" ] && geo_type_des=精简版 || geo_type_des=全球版 
+	[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版 
 	echo -----------------------------------------------
 	echo -e "\033[36m请选择需要更新的Geo/CN数据库文件：\033[0m"
 	echo -e "\033[36m全球版GeoIP和精简版CN-IP数据库不共存\033[0m"

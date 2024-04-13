@@ -193,7 +193,7 @@ start_core(){
 		${CRASHDIR}/start.sh start
 		#设置循环检测以判定服务启动是否成功
 		i=1
-		while [ -z "$test" -a "$i" -lt 5 ];do
+		while [ -z "$test" -a "$i" -lt 10 ];do
 			sleep 1
 			if curl --version > /dev/null 2>&1;then
 				test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)

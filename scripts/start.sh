@@ -89,7 +89,7 @@ logger(){ #日志工具
 		if curl --version >/dev/null 2>&1;then 
 			curl -kfsSl -X POST --connect-timeout 3 -H "Content-Type: application/json; charset=utf-8" "$1" -d "$2" >/dev/null 2>&1 
 		elif wget --version >/dev/null 2>&1;then 
-			wget -Y on -q --timeout=3 -t 1 --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1"
+			wget -Y on -q --timeout=3 --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1"
 		else
 			echo "找不到有效的curl或wget应用，请先安装！"
 		fi
@@ -650,8 +650,8 @@ EOF
 	  { "query_type": [ "A", "AAAA" ], "server": "dns_fakeip", "rewrite_ttl": 1 }
 	],
     "final": "dns_direct",
-    "independent_cache": true,
-    "reverse_mapping": true,
+    "independent_cache": false,
+    "reverse_mapping": false,
     "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/16" }
   }
 }
@@ -1573,12 +1573,25 @@ singbox_check(){ #singbox启动前检查
 	[ -n "$(cat ${CRASHDIR}/jsons/*.json | grep -oEi '"geosite":')" ] && ckgeo geosite.db geosite_cn.db
 	return 0
 }
+network_check(){ #检查是否联网
+	for host in 223.5.5.5 114.114.114.114 1.2.4.8 dns.alidns.com doh.pub doh.360.cn;do
+		ping -c 3 $host >/dev/null 2>&1 && exit 0
+		sleep 2
+	done
+	logger "当前设备无法连接网络，已取消开机启动！" 33
+	exit 1
+}
 bfstart(){ #启动前
 	routing_mark=$((fwmark + 2))
-	#延迟启动
-	[ ! -f ${TMPDIR}/crash_start_time ] && [ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
-		logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
-		sleep $start_delay
+	#启动前等待
+	[ ! -f ${TMPDIR}/crash_start_time ] && {
+		#延迟启动
+		[ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+			logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
+			sleep $start_delay
+		}
+		#检测网络连接
+		network_check
 	}
 	[ ! -d ${BINDIR}/ui ] && mkdir -p ${BINDIR}/ui
 	[ -z "$crashcore" ] && crashcore=clash
@@ -1636,7 +1649,7 @@ afstart(){ #启动后
 	[ -z "$firewall_area" ] && firewall_area=1
 	#设置循环检测面板端口以判定服务启动是否成功
 	i=1
-	while [ -z "$test" -a "$i" -lt 5 ];do
+	while [ -z "$test" -a "$i" -lt 10 ];do
 		sleep 1
 		if curl --version > /dev/null 2>&1;then
 			test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
@@ -1843,7 +1856,7 @@ webget)
 				[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 				[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 				[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-				timeout='--timeout=5 -t 2'
+				timeout='--timeout=5'
 			fi
 			[ "$4" = "echoon" ] && progress=''
 			[ "$4" = "echooff" ] && progress='-q'
