@@ -900,7 +900,7 @@ start_ipt_route() { #iptables-route通用工具
 	#局域网mac地址黑名单过滤
 	[ "$3" = 'PREROUTING' ] && [ -n "$(cat "$CRASHDIR"/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
-			$1 -t $2 -A $4 -m mac --mac-. $mac -j RETURN
+			$1 -t $2 -A $4 -m mac --mac-source $mac -j RETURN
 		done
 	}
 	#tcp&udp分别进代理链
@@ -909,7 +909,7 @@ start_ipt_route() { #iptables-route通用工具
 			for mac in $( #mac白名单
 				cat "$CRASHDIR"/configs/mac
 			); do
-				$1 -t $2 -A $4 -p $5 -m mac --mac-. $mac -j $JUMP
+				$1 -t $2 -A $4 -p $5 -m mac --mac-source $mac -j $JUMP
 			done
 		else
 			for ip in $HOST_IP; do #仅限指定网段流量
@@ -944,13 +944,13 @@ start_ipt_dns() { #iptables-dns通用工具
 	#局域网mac地址黑名单过滤
 	[ "$2" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
-			$1 -t nat -A $3 -m mac --mac-. $mac -j RETURN
+			$1 -t nat -A $3 -m mac --mac-source $mac -j RETURN
 		done
 	}
 	if [ "$2" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" = "白名单" ]; then
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
-			$1 -t nat -A $3 -p tcp -m mac --mac-. $mac -j REDIRECT --to-ports $dns_port
-			$1 -t nat -A $3 -p udp -m mac --mac-. $mac -j REDIRECT --to-ports $dns_port
+			$1 -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
+			$1 -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
 		done
 	else
 		for ip in $HOST_IP; do #仅限指定网段流量
