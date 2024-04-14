@@ -1587,7 +1587,7 @@ singbox_check() { #singbox启动前检查
 }
 network_check() { #检查是否联网
 	for host in 223.5.5.5 114.114.114.114 1.2.4.8 dns.alidns.com doh.pub doh.360.cn; do
-		ping -c 3 $host >/dev/null 2>&1 && exit 0
+		ping -c 3 $host >/dev/null 2>&1 && return 0
 		sleep 2
 	done
 	logger "当前设备无法连接网络，已取消开机启动！" 33
