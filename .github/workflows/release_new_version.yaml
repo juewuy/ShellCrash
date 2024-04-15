@@ -53,7 +53,7 @@ jobs:
     - name: Commit and push
       if: ${{ github.event.inputs.release_type != '内测版' }}
       run: |
-        git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
         git add . && git commit -m "${new_type} ${new_version} 打包" || exit 0
         git push
         if [[ "${new_type}" == "正式版" ]]; then
