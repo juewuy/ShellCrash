@@ -118,7 +118,7 @@ jobs:
 
     - name: Commit and push
       run: |
-        git config --global user.email "juewuy@gmail.com" && git config --global user.name "Bot"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
         git add . && git commit -m "自动更新最新Dashboard、地址库、根证书" || exit 0
         git push
         
