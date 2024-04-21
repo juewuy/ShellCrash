@@ -46,7 +46,7 @@ getconfig() { #读取配置及全局变量
 setconfig() { #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
-	grep -q "${1}=" "$configpath" && sed -i "s#${1}=.*#${1}=${2}#g" "$configpath" || echo "${1}=${2}" >> "$configpath"
+	grep -q "${1}=" "$configpath" && sed -i "s#${1}=.*#${1}=${2}#g" "$configpath" || sed -i "\$a\\${1}=${2}" $configpath
 }
 ckcmd() { #检查命令是否存在
 	command -v sh >/dev/null 2>&1 && command -v "$1" >/dev/null 2>&1 || type "$1" >/dev/null 2>&1
@@ -968,6 +968,10 @@ start_ipt_dns() { #iptables-dns通用工具
 			$1 -t nat -A $3 -p udp -s $ip -j REDIRECT --to-ports $dns_port
 		done
 	fi
+	[ "$1" = 'ip6tables' ] && {
+		$1 -t nat -A $3 -p tcp -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT
+		$1 -t nat -A $3 -p udp -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT
+	}
 	$1 -t nat -I $2 -p tcp --dport 53 -j $3
 	$1 -t nat -I $2 -p udp --dport 53 -j $3
 }
