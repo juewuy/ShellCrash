@@ -951,6 +951,8 @@ start_ipt_dns() { #iptables-dns通用工具
 		$1 -t nat -A $3 -p tcp -s $bypass_host -j RETURN
 		$1 -t nat -A $3 -p udp -s $bypass_host -j RETURN
 	}
+ 	ip6tables -t nat -A $3 -p tcp -s $bypass_host -j REJECT
+	ip6tables -t nat -A $3 -p udp -s $bypass_host -j REJECT
 	#局域网mac地址黑名单过滤
 	[ "$2" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
