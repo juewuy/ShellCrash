@@ -969,8 +969,8 @@ start_ipt_dns() { #iptables-dns通用工具
 		done
 	fi
 	[ "$1" = 'ip6tables' ] && {
-		$1 -t nat -A $3 -p tcp -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT
-		$1 -t nat -A $3 -p udp -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT
+		$1 -t nat -A $3 -p tcp -j RETURN
+		$1 -t nat -A $3 -p udp -j RETURN
 	}
 	$1 -t nat -I $2 -p tcp --dport 53 -j $3
 	$1 -t nat -I $2 -p udp --dport 53 -j $3
