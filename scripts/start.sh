@@ -1005,18 +1005,6 @@ start_ipt_wan() { #iptables公网防火墙
 start_iptables() { #iptables配置总入口
 	#启动公网访问防火墙
 	start_ipt_wan
-	#启动DNS劫持
-	[ "$dns_no" != "已禁用" -a "$dns_redir" != "已开启" -a "$firewall_area" -le 3 ] && {
-		[ "$lan_proxy" = true ] && {
-			start_ipt_dns iptables PREROUTING shellcrash_dns #ipv4-局域网dns转发
-			if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
-				start_ipt_dns ip6tables PREROUTING shellcrashv6_dns #ipv6-局域网dns转发
-			else
-				ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT
-			fi
-		}
-		[ "$local_proxy" = true ] && start_ipt_dns iptables OUTPUT shellcrash_dns_out #ipv4-本机dns转发
-	}
 	#分模式设置流量劫持
 	[ "$redir_mod" = "Redir模式" -o "$redir_mod" = "混合模式" ] && {
 		JUMP="REDIRECT --to-ports $redir_port" #跳转劫持的具体命令
@@ -1081,6 +1069,18 @@ start_iptables() { #iptables配置总入口
 			fi
 		}
 	}
+	#启动DNS劫持
+	[ "$dns_no" != "已禁用" -a "$dns_redir" != "已开启" -a "$firewall_area" -le 3 ] && {
+		[ "$lan_proxy" = true ] && {
+			start_ipt_dns iptables PREROUTING shellcrash_dns #ipv4-局域网dns转发
+			if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
+				start_ipt_dns ip6tables PREROUTING shellcrashv6_dns #ipv6-局域网dns转发
+			else
+				ip6tables -I INPUT -p udp --dport 53 -m comment --comment "ShellCrash-IPV6_DNS-REJECT" -j REJECT
+			fi
+		}
+		[ "$local_proxy" = true ] && start_ipt_dns iptables OUTPUT shellcrash_dns_out #ipv4-本机dns转发
+	}
 	#屏蔽QUIC
 	[ "$quic_rj" = '已启用' -a "$lan_proxy" = true -a "$redir_mod" != "Redir模式" ] && {
 		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && {
@@ -1102,7 +1102,7 @@ start_nft_route() { #nftables-route通用工具
 	#防回环
 	nft add rule inet shellcrash $1 meta mark $routing_mark return
 	nft add rule inet shellcrash $1 meta skgid 7890 return
-	nft add rule inet shellcrash $1 ip saddr 198.18.0.0/16 return
+	#nft add rule inet shellcrash $1 ip saddr 198.18.0.0/16 return
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip saddr $bypass_host return
 	#过滤局域网设备
 	[ -n "$(cat "$CRASHDIR"/configs/mac)" ] && {
@@ -1208,7 +1208,7 @@ start_nftables() { #nftables配置总入口
 	}
 	[ "$redir_mod" = "Tproxy模式" ] && modprobe nft_tproxy >/dev/null 2>&1 && {
 		JUMP="meta l4proto {tcp, udp} mark set $fwmark tproxy to :$tproxy_port" #跳转劫持的具体命令
-		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -150
+		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting filter -150
 		[ "$local_proxy" = true ] && {
 			JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
 			start_nft_route output output route -150
@@ -1220,7 +1220,7 @@ start_nftables() { #nftables配置总入口
 		[ "$redir_mod" = "Tun模式" ] && JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
 		[ "$redir_mod" = "混合模式" ] && JUMP="meta l4proto udp mark set $fwmark"         #跳转劫持的具体命令
 		[ "$lan_proxy" = true ] && {
-			start_nft_route prerouting prerouting nat -150
+			start_nft_route prerouting prerouting filter -150
 			#放行流量
 			nft add chain inet shellcrash forward { type filter hook forward priority -150 \; }
 			nft add rule inet shellcrash forward oifname "utun" accept
@@ -1230,7 +1230,7 @@ start_nftables() { #nftables配置总入口
 	[ "$firewall_area" = 5 ] && {
 		[ "$redir_mod" = "T&U旁路转发" ] && JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
 		[ "$redir_mod" = "TCP旁路转发" ] && JUMP="meta l4proto tcp mark set $fwmark"        #跳转劫持的具体命令
-		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -150
+		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting filter -150
 		[ "$local_proxy" = true ] && start_nft_route output output route -150
 	}
 	#屏蔽QUIC
