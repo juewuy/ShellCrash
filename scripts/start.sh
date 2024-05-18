@@ -660,8 +660,8 @@ EOF
 	  { "query_type": [ "A", "AAAA" ], "server": "dns_fakeip", "rewrite_ttl": 1 }
 	],
     "final": "dns_direct",
-    "independent_cache": false,
-    "reverse_mapping": false,
+    "independent_cache": true,
+    "reverse_mapping": true,
     "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/16" }
   }
 }
@@ -751,14 +751,17 @@ EOF
 EOF
 	fi
 	#生成add_outbounds.json
-	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"DIRECT"')" ] && add_direct='{ "type": "direct", "tag": "DIRECT" }'
-	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"REJECT"')" ] && add_reject='{ "type": "block", "tag": "REJECT" }'
+	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"DIRECT"')" ] && add_direct='{ "tag": "DIRECT", "type": "direct" }'
+	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"REJECT"')" ] && add_reject='{ "tag": "REJECT", "type": "block" }'
+	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"dns-out"')" ] && add_dnsout='{ "tag": "dns-out", "type": "dns" }'
 	[ -n "$add_direct" -a -n "$add_reject" ] && add_direct="${add_direct},"
-	[ -n "$add_direct" -o -n "$add_reject" ] && cat >"$TMPDIR"/jsons/add_outbounds.json <<EOF
+	[ -n "$add_reject" -a -n "$add_dnsout" ] && add_reject="${add_reject},"
+	[ -n "$add_direct" -o -n "$add_reject" -o -n "$add_dnsout" ] && cat >"$TMPDIR"/jsons/add_outbounds.json <<EOF
 {
   "outbounds": [ 
     $add_direct
 	$add_reject
+	$add_dnsout
   ]
 }
 EOF
@@ -1222,8 +1225,11 @@ start_nftables() { #nftables配置总入口
 		[ "$lan_proxy" = true ] && {
 			start_nft_route prerouting prerouting filter -150
 			#放行流量
-			nft add chain inet shellcrash forward { type filter hook forward priority -150 \; }
-			nft add rule inet shellcrash forward oifname "utun" accept
+			nft list table inet fw4 >/dev/null 2>&1 || nft add table inet fw4
+			nft list chain inet fw4 forward >/dev/null 2>&1 || nft add chain inet fw4 forward { type filter hook forward priority filter \; } 2>/dev/null
+			nft list chain inet fw4 input >/dev/null 2>&1 || nft add chain inet fw4 input { type filter hook input priority filter \; } 2>/dev/null
+			nft list chain inet fw4 forward | grep -q 'oifname "utun" accept' || nft insert rule inet fw4 forward oifname "utun" accept
+			nft list chain inet fw4 input | grep -q 'oifname "utun" accept' || nft insert rule inet fw4 input iifname "utun" accept
 		}
 		[ "$local_proxy" = true ] && start_nft_route output output route -150
 	}
@@ -1368,8 +1374,8 @@ stop_firewall() { #还原防火墙配置
 		ip6tables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" -j REJECT >/dev/null 2>&1
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
-		iptables -D INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
-		iptables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
+		ip6tables -D INPUT -p udp --dport 443 -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
+		ip6tables -D FORWARD -p udp --dport 443 -o utun -m comment --comment "ShellCrash-QUIC-REJECT" $set_cn_ip6 -j REJECT 2>/dev/null
 		#公网访问
 		ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2>/dev/null
 		ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2>/dev/null
