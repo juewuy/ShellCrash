@@ -112,7 +112,7 @@ ckstatus(){
 	#检查执行权限
 	[ ! -x ${CRASHDIR}/start.sh ] && chmod +x ${CRASHDIR}/start.sh
 	#检查/tmp内核文件
-	for file in `ls -F /tmp | grep -v [/\$] | grep -v ' ' | grep -Ev  ".*[(gz)(zip)(7z)(tar)]$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box|^clash.meta.*'` ; do 
+	for file in `ls -F /tmp | grep -v [/\$] | grep -v ' ' | grep -Ev  ".*(gz|zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box|^clash.meta.*'` ; do 
 		file=/tmp/$file
 		chmod +x $file
 		echo -e "发现可用的内核文件： \033[36m$file\033[0m "
