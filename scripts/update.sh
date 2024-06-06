@@ -1917,7 +1917,9 @@ getcrt(){ #下载根证书文件
 		error_down
 	else
 		echo -----------------------------------------------
-		mkdir -p $openssldir
+		[ "$systype" = 'mi_snapshot' ] && cp -f ${TMPDIR}/ca-certificates.crt $CRASHDIR/tools #镜像化设备特殊处理
+		[ -f $openssldir/certs ] && rm -rf $openssldir/certs #如果certs不是目录而是文件则删除并创建目录
+		mkdir -p $openssldir/certs
 		mv -f ${TMPDIR}/ca-certificates.crt $crtdir
 		${CRASHDIR}/start.sh webget /dev/null https://baidu.com echooff rediron skipceroff
 		if [ "$?" = "1" ];then
@@ -2231,12 +2233,11 @@ userguide(){
 				} && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！" || echo "开启失败！请自行谷歌查找当前设备的开启方法！"
 			fi
 		elif [ "$num" = 2 ];then
-			setconfig redir_mod "纯净模式"
+			setconfig redir_mod "Redir模式"
 			setconfig crashcore "clash"
 			setconfig common_ports "未开启"
-			echo -----------------------------------------------
-			echo -e "\033[36m请选择设置本机代理的方式\033[0m"
-			localproxy
+			setconfig firewall_area '2'
+			
 		elif [ "$num" = 3 ];then
 			mv -f $CFG_PATH.bak $CFG_PATH
 			echo -e "\033[32m脚本设置已还原！\033[0m"

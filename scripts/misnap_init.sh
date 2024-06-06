@@ -62,9 +62,11 @@ init(){
 	#启动服务
 	if [ ! -f $CRASHDIR/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
-		[ -f $CRASHDIR/configs/tun.ko ] && tunfix
+		[ -s $CRASHDIR/tools/tun.ko ] && tunfix
 		#小米7000/小米万兆修复tproxy
 		[ -f /etc/init.d/qca-nss-ecm ] && [ -n "$(grep 'redir_mod=Tproxy' $CRASHDIR/configs/ShellCrash.cfg )" ] && tproxyfix
+		#自动覆盖根证书文件
+		[ -s $CRASHDIR/tools/ca-certificates.crt ] && cp -f $CRASHDIR/tools/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 		#启动服务
 		$CRASHDIR/start.sh start
 		/etc/init.d/shellcrash enable
