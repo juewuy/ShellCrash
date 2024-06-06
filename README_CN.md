@@ -17,7 +17,7 @@
 功能简介：
 --
 
-~通过管理脚本在Shell环境下便捷使用<br>
+~通过管理脚本在Shell环境下便捷使用Mihomo/Singbox内核<br>
 ~支持在Shell环境下管理<br>
 ~支持在线导入订阅及配置链接<br>
 ~支持配置定时任务，支持配置文件定时更新<br>
@@ -160,5 +160,4 @@ ubus/iproute-doc	极低		缺少时无法正常获取本机host地址
 
 机场推荐：
 --
-#### [大米-群友力荐，流媒体解锁，月付推荐](https://cloud.bigme.pro/user#/register?code=2PuWY9I7)<br>
-#### [Dler-老牌稳定，流媒体解锁，年付推荐](https://dler.best/auth/register?affid=89698)<br>
+#### [大米-群友力荐，流媒体解锁，月付推荐](https://1s.bigmeok.me/user#/register?code=2PuWY9I7)<br>
