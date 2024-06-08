@@ -347,7 +347,7 @@ gen_clash_providers(){ #生成clash的providers配置文件
 		fi
 		cat >> $TMPDIR/providers/providers.yaml <<EOF
   ${1}:
-    type: http
+    type: $type
     url: "$download_url"
     path: "$path"
     interval: 43200
@@ -432,7 +432,7 @@ gen_singbox_providers(){ #生成singbox的providers配置文件
 			cat >> ${TMPDIR}/providers/providers.json <<EOF
 	{
       "tag": "${1}",
-      "type": "file",
+      "type": "local",
       "healthcheck_url": "https://www.gstatic.com/generate_204",
       "healthcheck_interval": "10m",
 	  "path": "${2}"
@@ -442,7 +442,7 @@ EOF
 			cat >> ${TMPDIR}/providers/providers.json <<EOF
 	{
       "tag": "${1}",
-      "type": "http",
+      "type": "remote",
       "healthcheck_url": "https://www.gstatic.com/generate_204",
       "healthcheck_interval": "10m",
       "download_url": "${2}",

@@ -865,10 +865,10 @@ cn_ip_route() { #CN-IP绕过
 	ckgeo cn_ip.txt china_ip_list.txt
 	[ -f "$BINDIR"/cn_ip.txt ] && [ "$firewall_mod" = iptables ] && {
 		# see https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-cidr.txt
-		echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" >"$TMPDIR"/cn_ip.ipset
-		awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' "$BINDIR"/cn_ip.txt >>"$TMPDIR"/cn_ip.ipset
+		echo "create cn_ip hash:net family inet hashsize 10240 maxelem 10240" > "$TMPDIR"/cn_ip.ipset
+		awk '!/^$/&&!/^#/{printf("add cn_ip %s'" "'\n",$0)}' "$BINDIR"/cn_ip.txt >> "$TMPDIR"/cn_ip.ipset
 		ipset destroy cn_ip >/dev/null 2>&1
-		ipset -! restore <"$TMPDIR"/cn_ip.ipset
+		ipset -! restore < "$TMPDIR"/cn_ip.ipset
 		rm -rf "$TMPDIR"/cn_ip.ipset
 	}
 }
@@ -877,10 +877,10 @@ cn_ipv6_route() { #CN-IPV6绕过
 	[ -f "$BINDIR"/cn_ipv6.txt ] && [ "$firewall_mod" = iptables ] && {
 		#ipv6
 		#see https://ispip.clang.cn/all_cn_ipv6.txt
-		echo "create cn_ip6 hash:net family inet6 hashsize 5120 maxelem 5120" >"$TMPDIR"/cn_ipv6.ipset
-		awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' "$BINDIR"/cn_ipv6.txt >>"$TMPDIR"/cn_ipv6.ipset
+		echo "create cn_ip6 hash:net family inet6 hashsize 5120 maxelem 5120" > "$TMPDIR"/cn_ipv6.ipset
+		awk '!/^$/&&!/^#/{printf("add cn_ip6 %s'" "'\n",$0)}' "$BINDIR"/cn_ipv6.txt >> "$TMPDIR"/cn_ipv6.ipset
 		ipset destroy cn_ip6 >/dev/null 2>&1
-		ipset -! restore <"$TMPDIR"/cn_ipv6.ipset
+		ipset -! restore < "$TMPDIR"/cn_ipv6.ipset
 		rm -rf "$TMPDIR"/cn_ipv6.ipset
 	}
 }
@@ -1253,7 +1253,7 @@ start_firewall() { #路由规则总入口
 	#设置策略路由
 	[ "$firewall_area" != 4 ] && {
 		local table=100
-		[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table
+		[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table 2>/dev/null
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
 			i=1
 			while [ -z "$(ip route list | grep utun)" -a "$i" -le 29 ]; do
@@ -1266,14 +1266,14 @@ start_firewall() { #路由规则总入口
 				ip route add default dev utun table $table && tun_statu=true
 			fi
 		}
-		[ "$firewall_area" = 5 ] && ip route add default via $bypass_host table $table
-		[ "$redir_mod" != "Redir模式" ] && ip rule add fwmark $fwmark table $table
+		[ "$firewall_area" = 5 ] && ip route add default via $bypass_host table $table 2>/dev/null
+		[ "$redir_mod" != "Redir模式" ] && ip rule add fwmark $fwmark table $table 2>/dev/null
 	}
 	#添加ipv6路由
 	[ "$ipv6_redir" = "已开启" -a "$firewall_area" -le 3 ] && {
-		[ "$redir_mod" = "Tproxy模式" ] && ip -6 route add local default dev lo table $((table + 1))
-		[ -n "$(ip route list | grep utun)" ] && ip -6 route add default dev utun table $((table + 1))
-		[ "$redir_mod" != "Redir模式" ] && ip -6 rule add fwmark $fwmark table $((table + 1))
+		[ "$redir_mod" = "Tproxy模式" ] && ip -6 route add local default dev lo table $((table + 1)) 2>/dev/null
+		[ -n "$(ip route list | grep utun)" ] && ip -6 route add default dev utun table $((table + 1)) 2>/dev/null
+		[ "$redir_mod" != "Redir模式" ] && ip -6 rule add fwmark $fwmark table $((table + 1)) 2>/dev/null
 	}
 	#判断代理用途
 	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && local_proxy=true
