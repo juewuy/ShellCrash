@@ -187,7 +187,7 @@ getlanip() { #获取局域网host地址
 	i=1
 	while [ "$i" -le "20" ]; do
 		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'brd' | grep -Ev 'iot|peer' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g') #ipv4局域网网段
-		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')                                                #ipv6公网地址段
+		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g') #ipv6公网地址段
 		[ -f "$TMPDIR"/ShellCrash.log ] && break
 		[ -n "$host_ipv4" -a "$ipv6_redir" != "已开启" ] && break
 		[ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
@@ -197,7 +197,7 @@ getlanip() { #获取局域网host地址
 	host_ipv4="$host_ipv4$cust_host_ipv4"
 	#缺省配置
 	[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
-	[ -z "$host_ipv6" ] && host_ipv6='fe80::/10 fd00::/8'
+	host_ipv6="fe80::/10 fd00::/8 $host_ipv6"
 	#获取本机出口IP地址
 	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot|docker' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g')
 	[ -z "$local_ipv4" ] && local_ipv4=$(ip route 2>&1 | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
@@ -697,7 +697,7 @@ EOF
 		userpass='"users": [{ "username": "'$username'", "password": "'$password'" }], '
 	}
 	[ "$sniffer" = "已启用" ] && sniffer=true || sniffer=false #域名嗅探配置
-	[ "$crashcore" = singboxp ] && always_resolve_udp='"always_resolve_udp": true,'
+	#[ "$crashcore" = singboxp ] && always_resolve_udp='"always_resolve_udp": true,'
 	cat >"$TMPDIR"/jsons/inbounds.json <<EOF
 {
   "inbounds": [
@@ -725,7 +725,6 @@ EOF
       "tag": "tproxy-in",
       "listen": "::",
       "listen_port": $tproxy_port,
-	  $always_resolve_udp
       "sniff": true,
       "sniff_override_destination": $sniffer
     }
@@ -743,7 +742,6 @@ EOF
       "inet4_address": "172.19.0.1/30",
       "auto_route": false,
       "stack": "system",
-	  $always_resolve_udp
       "sniff": true,
       "sniff_override_destination": $sniffer
     }
@@ -912,17 +910,15 @@ start_ipt_route() { #iptables-route通用工具
 	[ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f "$BINDIR"/cn_ip.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	[ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && [ -f "$BINDIR"/cn_ipv6.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 	#局域网mac地址黑名单过滤
-	[ "$3" = 'PREROUTING' ] && [ -n "$(cat "$CRASHDIR"/configs/mac)" ] && [ "$macfilter_type" != "白名单" ] && {
+	[ "$3" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
 			$1 -t $2 -A $4 -m mac --mac-source $mac -j RETURN
 		done
 	}
 	#tcp&udp分别进代理链
 	proxy_set() {
-		if [ "$3" = 'PREROUTING' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat "$CRASHDIR"/configs/mac)" ]; then
-			for mac in $( #mac白名单
-				cat "$CRASHDIR"/configs/mac
-			); do
+		if [ "$3" = 'PREROUTING' ] && [ "$macfilter_type" = "白名单" ] && [ -s "$CRASHDIR"/configs/mac ]; then
+			for mac in $(cat "$CRASHDIR"/configs/mac); do
 				$1 -t $2 -A $4 -p $5 -m mac --mac-source $mac -j $JUMP
 			done
 		else
@@ -1109,7 +1105,7 @@ start_nft_route() { #nftables-route通用工具
 	#nft add rule inet shellcrash $1 ip saddr 198.18.0.0/16 return
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip saddr $bypass_host return
 	#过滤局域网设备
-	[ -n "$(cat "$CRASHDIR"/configs/mac)" ] && {
+	[ -s "$CRASHDIR"/configs/mac ] && {
 		MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
 		if [ "$macfilter_type" = "黑名单" ]; then
 			nft add rule inet shellcrash $1 ether saddr {$MAC} return
@@ -1153,6 +1149,7 @@ start_nft_route() { #nftables-route通用工具
 }
 start_nft_dns() { #nftables-dns
 	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+	HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
 	[ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
 	nft add chain inet shellcrash "$1"_dns { type nat hook $1 priority -100 \; }
 	#防回环
@@ -1160,8 +1157,9 @@ start_nft_dns() { #nftables-dns
 	nft add rule inet shellcrash "$1"_dns meta skgid { 453, 7890 } return
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash "$1"_dns ip saddr $bypass_host return
 	nft add rule inet shellcrash "$1"_dns ip saddr != {$HOST_IP} return #屏蔽外部请求
+	[ "$1" = 'prerouting' ] && nft add rule inet shellcrash "$1"_dns ip6 saddr != {$HOST_IP6} return #屏蔽外部请求
 	#过滤局域网设备
-	[ -n "$(cat "$CRASHDIR"/configs/mac)" ] && {
+	[ -s "$CRASHDIR"/configs/mac ] && {
 		MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
 		if [ "$macfilter_type" = "黑名单" ]; then
 			nft add rule inet shellcrash "$1"_dns ether saddr {$MAC} return
