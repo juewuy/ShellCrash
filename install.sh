@@ -30,7 +30,8 @@ webget(){
 		[ -z "$4" ] && redirect='-L' || redirect=''
 		result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
 		[ -n "$(echo $result | grep -e ^2)" ] && result="200"
-	else
+	fi
+ 	if [ "$result" != "200" ];then
 		if wget --version > /dev/null 2>&1;then
 			[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 			[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
