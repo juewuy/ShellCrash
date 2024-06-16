@@ -1876,7 +1876,8 @@ webget)
 		[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
 		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
 		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
-	else
+	fi
+ 	if [ "$result" != "200" ];then
 		if wget --version >/dev/null 2>&1; then
 			[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 			[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
