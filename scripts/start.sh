@@ -1159,7 +1159,7 @@ start_nft_route() { #nftables-route通用工具
 		}
 	elif [ "$ipv6_redir" = "已开启" -a "$1" = 'output' -a \( "$firewall_area" = 2 -o "$firewall_area" = 3 \) ]; then
 		RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
-		HOST_IP6="$(::1, echo $local_ipv6 | sed 's/ /, /g')"
+		HOST_IP6="::1, $(echo $local_ipv6 | sed 's/ /, /g')"
 		#过滤保留地址及本机地址
 		nft add rule inet shellcrash $1 ip6 daddr {$RESERVED_IP6} return
 		#仅代理本机局域网网段流量
