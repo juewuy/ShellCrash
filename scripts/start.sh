@@ -1020,15 +1020,15 @@ start_iptables() { #iptables配置总入口
 			}
 		}
 		[ "$local_proxy" = true ] && {
-  			start_ipt_route iptables nat OUTPUT shellcrash_out tcp #ipv4-本机tcp转发
-     			[ "$ipv6_redir" = "已开启" ] && {
+			start_ipt_route iptables nat OUTPUT shellcrash_out tcp #ipv4-本机tcp转发
+			[ "$ipv6_redir" = "已开启" ] && {
 				if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
 					start_ipt_route ip6tables nat OUTPUT shellcrashv6_out tcp #ipv6-本机tcp转发
 				else
 					logger "当前设备内核缺少ip6tables_REDIRECT模块支持，已放弃启动相关规则！" 31
 				fi
 			}
-   		}
+		}
 	}
 	[ "$redir_mod" = "Tproxy模式" ] && {
 		JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
