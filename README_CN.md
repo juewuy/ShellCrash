@@ -131,8 +131,8 @@ export url='https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$
 安装完成管理脚本后，执行如下命令使用~
 
 ```Shell
-Clash 		#进入对话
-Clash -h 	#帮助列表
+crash 		#进入对话
+crash -h 	#帮助列表
 ```
 
 #### **运行时的额外依赖**：<br>
