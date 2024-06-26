@@ -1402,12 +1402,12 @@ stop_firewall() { #还原防火墙配置
 		ip6tables -t nat -D PREROUTING -p udp --dport 53 -j shellcrashv6_dns 2>/dev/null
 		#redir
 		ip6tables -t nat -D PREROUTING -p tcp $ports -j shellcrashv6 2>/dev/null
-  		ip6tables -t nat -D OUTPUT -p tcp $ports -j shellcrashv6_out 2>/dev/null
+		ip6tables -t nat -D OUTPUT -p tcp $ports -j shellcrashv6_out 2>/dev/null
 		ip6tables -D INPUT -p udp --dport 53 -j REJECT 2>/dev/null
 		#mark
 		ip6tables -t mangle -D PREROUTING -p tcp $ports -j shellcrashv6_mark 2>/dev/null
 		ip6tables -t mangle -D PREROUTING -p udp $ports -j shellcrashv6_mark 2>/dev/null
-  		ip6tables -t mangle -D OUTPUT -p tcp $ports -j shellcrashv6_mark_out 2>/dev/null
+		ip6tables -t mangle -D OUTPUT -p tcp $ports -j shellcrashv6_mark_out 2>/dev/null
 		ip6tables -t mangle -D OUTPUT -p udp $ports -j shellcrashv6_mark_out 2>/dev/null
 		ip6tables -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
 		#tun
