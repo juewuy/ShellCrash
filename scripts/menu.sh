@@ -15,7 +15,7 @@ source ${CRASHDIR}/configs/command.env 2>/dev/null
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=${CFG_PATH} || configpath="${3}"
-	grep -q "${1}=" "$configpath" && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || sed -i "\$a\\${1}=${2}" $configpath
+	grep -q "${1}=" "$configpath" && sed -i "s#${1}=.*#${1}=$(printf '%q' "${2}")#g" $configpath || sed -i "\$a\\${1}=$(printf '%q' "${2}")" $configpath
 }
 ckcmd(){
 	command -v sh >/dev/null 2>&1 && command -v $1 >/dev/null 2>&1 || type $1 >/dev/null 2>&1
@@ -343,6 +343,14 @@ log_pusher(){ #日志菜单
 			if [ -n "$url" ];then
 				push_bark=$url
 				setconfig push_bark $url
+				echo -----------------------------------------------
+				echo -e "\033[32m例: ,\"group\":\"ShellCrash\"\033[0m"
+				read -p "请输入你的Bark请求参数(默认回车为空) > " param
+				param=$(echo $param | sed 's/"/\\\"'/g)
+				if [ -n "$param" ];then
+					bark_param=$param
+					setconfig bark_param $param
+				fi
 				${CRASHDIR}/start.sh logger "已完成Bark日志推送设置！" 32
 			else
 				echo -e "\033[31m输入错误，请重新输入！\033[0m"

@@ -104,7 +104,7 @@ logger() { #日志工具
 		}
 		[ -n "$push_bark" ] && {
 			url="${push_bark}"
-			content="{\"body\":\"${log_text}\",\"title\":\"ShellCrash日志推送\",\"level\":\"passive\",\"badge\":\"1\"}"
+			content="{\"body\":\"${log_text}\",\"title\":\"ShellCrash日志推送\",\"level\":\"passive\",\"badge\":\"1\"${bark_param}}"
 			webpush "$url" "$content" &
 		}
 		[ -n "$push_Deer" ] && {
