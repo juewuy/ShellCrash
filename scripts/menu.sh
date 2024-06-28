@@ -688,6 +688,7 @@ setipv6(){ #ipv6设置
 			ipv6_redir=已开启
 			sleep 2
 		else
+                        ipv6_support=未开启
 			ipv6_redir=未开启
 		fi
 		setconfig ipv6_redir $ipv6_redir
