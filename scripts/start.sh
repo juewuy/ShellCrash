@@ -18,6 +18,7 @@ getconfig() { #读取配置及全局变量
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$dns_mod" ] && dns_mod=fake-ip
 	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
+ 	[ -z "$ipv6_support" ] && ipv6_support=未开启
 	[ -z "$ipv6_dns" ] && ipv6_dns=已开启
 	[ -z "$cn_ipv6_route" ] && cn_ipv6_route=未开启
 	[ -z "$macfilter_type" ] && macfilter_type=黑名单
@@ -345,6 +346,7 @@ modify_yaml() { #修饰clash配置文件
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ "$ipv6_dns" = "已开启" ] && dns_v6='true' || dns_v6='false'
+ 	[ "$ipv6_support" = "已开启" ] && support_v6='true' || support_v6='false'
 	external="external-controller: 0.0.0.0:$db_port"
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
 		[ "$crashcore" = 'meta' ] && tun_meta=', device: utun, auto-route: false'
@@ -400,7 +402,7 @@ authentication: ["$authentication"]
 allow-lan: true
 mode: Rule
 log-level: info
-ipv6: true
+ipv6: $support_v6
 external-controller: :$db_port
 external-ui: ui
 secret: $secret
