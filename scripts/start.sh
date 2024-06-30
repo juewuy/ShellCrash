@@ -199,7 +199,7 @@ getlanip() { #获取局域网host地址
 	[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
 	host_ipv6="fe80::/10 fd00::/8 $host_ipv6"
 	#获取本机出口IP地址
-	local_ipv4=$(ip route 2>&1 | grep 'src' | grep -Ev 'utun|iot|docker' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} $' | sed 's/.*src //g')
+	local_ipv4=$(ip route 2>&1 | grep -Ev 'utun|iot|docker|linkdown' | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
 	[ -z "$local_ipv4" ] && local_ipv4=$(ip route 2>&1 | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
 	#保留地址
 	reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
@@ -347,7 +347,7 @@ modify_yaml() { #修饰clash配置文件
 	[ "$ipv6_dns" = "已开启" ] && dns_v6='true' || dns_v6='false'
 	external="external-controller: 0.0.0.0:$db_port"
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
-		[ "$crashcore" = 'meta' ] && tun_meta=', device: utun, auto-route: false'
+		[ "$crashcore" = 'meta' ] && tun_meta=', device: utun, auto-route: false, auto-detect-interface: false'
 		tun="tun: {enable: true, stack: system$tun_meta}"
 	else
 		tun='tun: {enable: false}'
