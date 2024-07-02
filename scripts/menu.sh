@@ -682,6 +682,8 @@ setipv6(){ #ipv6设置
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num		
 	case $num in
+	0)
+	;;
 	1)
 		if [ "$ipv6_redir" = "未开启" ]; then 
 			ipv6_support=已开启
@@ -959,6 +961,8 @@ setboot(){ #启动相关设置
 	read -p "请输入对应数字 > " num
 	echo -----------------------------------------------
 	case "$num" in
+	0)
+	;;
 	1)	
 		if [ "$autostart" = "enable" ]; then
 			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash > /dev/null 2>&1 && cd - >/dev/null
@@ -1511,6 +1515,8 @@ advanced_set(){ #进阶设置
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	case "$num" in
+	0)
+	;;
 	3)
 		setfirewall
 		advanced_set	
