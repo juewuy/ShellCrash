@@ -98,6 +98,8 @@ setrules(){ #自定义规则
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
+	0)
+	;;
 	1)
 		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN"
 		rule_group="DIRECT#REJECT$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
@@ -208,6 +210,8 @@ EOF
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
+	0)
+	;;
 	1)
 		group_type="select url-test fallback load-balance"
 		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
@@ -284,6 +288,8 @@ setproxies(){ #自定义clash节点
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
+	0)
+	;;
 	1)
 		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
 		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
@@ -743,6 +749,8 @@ override(){ #配置文件覆写
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case "$num" in
+	0)
+	;;
 	1)
 		if [ -n "$(pidof CrashCore)" ];then
 			echo -----------------------------------------------
@@ -1025,6 +1033,8 @@ set_core_config(){ #配置文件功能
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case "$num" in
+	0)
+	;;
 	1)
 		if [ -n "$Url" ];then
 			echo -----------------------------------------------
@@ -1483,6 +1493,8 @@ setcore(){ #内核选择菜单
 	echo 0 返回上级菜单 
 	read -p "请输入对应数字 > " num
 	case "$num" in
+	0)
+	;;
 	1)
 		crashcore=clash
 		custcorelink=''
