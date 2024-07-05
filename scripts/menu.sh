@@ -723,16 +723,27 @@ setipv6(){ #ipv6设置
 	esac
 }
 setfirewall(){ #防火墙设置
-	set_cust_host_ipv4(){		
+	set_cust_host_ipv4(){
+		[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="未开启"
+
 		echo -----------------------------------------------
-		echo -e "当前已自动设置透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ' && echo ) \033[0m"
+		echo -e "当前默认透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ' && echo ) \033[0m"
 		echo -e "当前已添加的自定义网段为:\033[36m$cust_host_ipv4\033[0m"
-		echo -----------------------------------------------	
-		echo -e "\033[33m自定义网段不会覆盖自动获取的网段地址，无需重复添加\033[0m"
+		echo -----------------------------------------------
 		echo -e " 1 移除所有自定义网段"
+		echo -e " 2 使用自定义网段覆盖默认网段	\033[36m$replace_default_host_ipv4\033[0m"
 		echo -e " 0 返回上级菜单"
-		read -p "请输入需要额外添加的网段 > " text
+		read -p "请输入对应的序号或需要额外添加的网段 > " text
 		case $text in
+		2)
+			if [ "$replace_default_host_ipv4" == "未禁用" ]; then
+				replace_default_host_ipv4="已禁用"
+			else
+				replace_default_host_ipv4="未禁用"
+			fi
+			setconfig replace_default_host_ipv4 "$replace_default_host_ipv4"
+			set_cust_host_ipv4
+		;;
 		1)
 			unset cust_host_ipv4
 			setconfig cust_host_ipv4
