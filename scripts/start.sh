@@ -194,7 +194,11 @@ getlanip() { #获取局域网host地址
 		sleep 1 && i=$((i + 1))
 	done
 	#添加自定义ipv4局域网网段
-	host_ipv4="$host_ipv4$cust_host_ipv4"
+	if [ "$replace_default_host_ipv4" == "未禁用" ]; then
+		host_ipv4="$cust_host_ipv4"
+	else
+		host_ipv4="$host_ipv4$cust_host_ipv4"
+	fi
 	#缺省配置
 	[ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
 	host_ipv6="fe80::/10 fd00::/8 $host_ipv6"
