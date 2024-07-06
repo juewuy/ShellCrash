@@ -186,7 +186,7 @@ mark_time() { #时间戳
 getlanip() { #获取局域网host地址
 	i=1
 	while [ "$i" -le "20" ]; do
-		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'brd' | grep -Ev 'iot|peer' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g') #ipv4局域网网段
+		host_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'brd' | grep -Ev 'utun|iot|peer' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g') #ipv4局域网网段
 		[ "$ipv6_redir" = "已开启" ] && host_ipv6=$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g') #ipv6公网地址段
 		[ -f "$TMPDIR"/ShellCrash.log ] && break
 		[ -n "$host_ipv4" -a "$ipv6_redir" != "已开启" ] && break
@@ -1114,8 +1114,8 @@ start_iptables() { #iptables配置总入口
 			set_cn_ip='-m set ! --match-set cn_ip dst'
 			set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		}
-		iptables -I FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT >/dev/null 2>&1
-		ip6tables -I FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT >/dev/null 2>&1
+		iptables -I INPUT -p udp --dport 443 $set_cn_ip -j REJECT >/dev/null 2>&1
+		ip6tables -I INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT >/dev/null 2>&1
 	}
 }
 start_nft_route() { #nftables-route通用工具
@@ -1376,7 +1376,6 @@ stop_firewall() { #还原防火墙配置
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		iptables -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
-		iptables -D FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT 2>/dev/null
 		#公网访问
 		for ip in $host_ipv4 $local_ipv4 $reserve_ipv4; do
 			iptables -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2>/dev/null
@@ -1420,7 +1419,6 @@ stop_firewall() { #还原防火墙配置
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		ip6tables -D INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT 2>/dev/null
-		ip6tables -D FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT 2>/dev/null
 		#公网访问
 		ip6tables -D INPUT -p tcp --dport $mix_port -j REJECT 2>/dev/null
 		ip6tables -D INPUT -p tcp --dport $mix_port -j ACCEPT 2>/dev/null

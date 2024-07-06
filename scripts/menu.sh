@@ -724,7 +724,7 @@ setipv6(){ #ipv6设置
 }
 setfirewall(){ #防火墙设置
 	set_cust_host_ipv4(){
-		[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="未开启"
+		[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="未启用"
 
 		echo -----------------------------------------------
 		echo -e "当前默认透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ' && echo ) \033[0m"
@@ -736,10 +736,10 @@ setfirewall(){ #防火墙设置
 		read -p "请输入对应的序号或需要额外添加的网段 > " text
 		case $text in
 		2)
-			if [ "$replace_default_host_ipv4" == "未禁用" ]; then
-				replace_default_host_ipv4="已禁用"
+			if [ "$replace_default_host_ipv4" == "未启用" ]; then
+				replace_default_host_ipv4="已启用"
 			else
-				replace_default_host_ipv4="未禁用"
+				replace_default_host_ipv4="未启用"
 			fi
 			setconfig replace_default_host_ipv4 "$replace_default_host_ipv4"
 			set_cust_host_ipv4
