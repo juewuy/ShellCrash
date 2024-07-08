@@ -291,8 +291,26 @@ get_core_config() { #下载内核配置文件
 	#获取在线config文件
 	core_config_new="$TMPDIR"/${target}_config.${format}
 	rm -rf ${core_config_new}
-	$0 webget "$core_config_new" "$Https"
+	if [ "$disoverride" = "1" ]; then
+		if [ -x "$custom_update_config_script" ]; then
+			core_check
+			"$custom_update_config_script" "$core_config_new" "$Https" "$TMPDIR" "$TMPDIR"/CrashCore
+		else
+			echo -----------------------------------------------
+			logger "未设定自定义配置文件的更新脚本，无法更新！" 31
+			echo -----------------------------------------------
+			exit 1
+		fi
+	else
+		$0 webget "$core_config_new" "$Https"
+	fi
 	if [ "$?" = "1" ]; then
+		if [ "$disoverride" = "1" ]; then
+			echo -----------------------------------------------
+			logger "更新自定义配置文件失败！" 31
+			echo -----------------------------------------------
+			exit 1
+		fi
 		if [ -z "$url_type" ]; then
 			echo -----------------------------------------------
 			logger "配置文件获取失败！" 31
