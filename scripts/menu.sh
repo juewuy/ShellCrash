@@ -75,7 +75,7 @@ ckstatus(){
 	PID=$(pidof CrashCore | awk '{print $NF}')
 	if [ -n "$PID" ];then
 		run="\033[32m正在运行（$redir_mod）\033[0m"
-		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk '{print $2,$3}'`
+		VmRSS=`cat /proc/$PID/status|grep -w VmRSS|awk 'unit="MB"{print $2/1000, unit}'`
 		#获取运行时长
 		touch ${TMPDIR}/crash_start_time #用于延迟启动的校验
 		start_time=$(cat ${TMPDIR}/crash_start_time)
