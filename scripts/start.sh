@@ -572,10 +572,11 @@ EOF
 {
   "dns": { 
 	"servers": [
-	  { "tag": "hosts_local", "address": "local", "detour": "DIRECT" }
+	  { "tag": "hosts_local", "address": "local", "strategy": "ipv4_only", "detour": "DIRECT" }
 	],
     "rules": [
 	  { 
+	    "query_type": [ "A", "AAAA" ],
 	    "domain": [$hosts_domain], 
 		"server": "hosts_local" 
 	  }
