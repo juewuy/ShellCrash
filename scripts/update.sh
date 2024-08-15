@@ -1021,7 +1021,7 @@ set_core_config(){ #配置文件功能
 	if [ -f "$CRASHDIR"/v2b_api.sh ];then
 		echo -e " 2 登录\033[33m获取订阅(推荐！)\033[0m"
 	else
-		echo -e " 2 在线\033[33m获取完配置文件\033[0m"
+		echo -e " 2 在线\033[33m获取完整配置文件\033[0m"
 	fi
 	echo -e " 3 本地\033[32m生成providers配置文件\033[0m"	
 	echo -e " 4 本地\033[33m上传完整配置文件\033[0m"
