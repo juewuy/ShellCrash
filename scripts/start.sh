@@ -599,10 +599,10 @@ EOF
 		global_dns=dns_fakeip
 		fake_ip_filter_domain=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|\*|\+|Mijia' | sed '/^\s*$/d' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
   		fake_ip_filter_suffix=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -v '.\*' | grep -E '\*|\+' | sed 's/^[*+]\.//' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-  		fake_ip_filter_regex=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '.\*' | sed 's/^*/.\*/' | sed 's/^+/.\+/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+  		fake_ip_filter_regex=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '.\*' | sed 's/\./\\\\./g' | sed 's/\*/.\*/' | sed 's/^+/.\+/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
   		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
-    		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
+    	[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
 	}
 	[ "$dns_mod" = "mix" ] && {
 		global_dns=dns_fakeip
@@ -711,6 +711,7 @@ EOF
       "listen": "::",
       "listen_port": $mix_port,
 	  $userpass
+	  "domain_strategy":"prefer_ipv4",
       "sniff": false
     }, {
       "type": "direct",
@@ -722,6 +723,7 @@ EOF
       "tag": "redirect-in",
       "listen": "::",
       "listen_port": $redir_port,
+	  "domain_strategy":"prefer_ipv4",
       "sniff": true,
       "sniff_override_destination": $sniffer
     }, {
@@ -729,6 +731,7 @@ EOF
       "tag": "tproxy-in",
       "listen": "::",
       "listen_port": $tproxy_port,
+	  "domain_strategy":"prefer_ipv4",
       "sniff": true,
       "sniff_override_destination": $sniffer
     }
@@ -746,6 +749,7 @@ EOF
       "inet4_address": "172.19.0.1/30",
       "auto_route": false,
       "stack": "system",
+	  "domain_strategy":"prefer_ipv4",
       "sniff": true,
       "sniff_override_destination": $sniffer
     }
@@ -901,6 +905,9 @@ start_ipt_route() { #iptables-route通用工具
 	}
 	#创建新的shellcrash链表
 	$1 -t $2 -N $4
+	#过滤dns
+	$1 -t $2 -A $4 -p tcp --dport 53 -j RETURN
+	$1 -t $2 -A $4 -p udp --dport 53 -j RETURN
 	#防回环
 	$1 -t $2 -A $4 -m mark --mark $routing_mark -j RETURN
 	[ "$3" = 'OUTPUT' ] && for gid in 453 7890; do
@@ -1126,6 +1133,9 @@ start_nft_route() { #nftables-route通用工具
 	[ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
 	#添加新链
 	nft add chain inet shellcrash $1 { type $3 hook $2 priority $4 \; }
+	#过滤dns
+	nft add rule inet shellcrash $1 tcp dport 53 return
+	nft add rule inet shellcrash $1 udp dport 53 return
 	#防回环
 	nft add rule inet shellcrash $1 meta mark $routing_mark return
 	nft add rule inet shellcrash $1 meta skgid 7890 return
@@ -1650,11 +1660,6 @@ bfstart() { #启动前
 	routing_mark=$((fwmark + 2))
 	#启动前等待
 	[ ! -f "$TMPDIR"/crash_start_time ] && {
-		#延迟启动
-		[ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
-			logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
-			sleep $start_delay
-		}
 		#检测网络连接
 		network_check
 	}
@@ -1712,6 +1717,11 @@ bfstart() { #启动前
 }
 afstart() { #启动后
 	[ -z "$firewall_area" ] && firewall_area=1
+	#延迟启动
+	[ -n "$start_delay" ] && [ "$start_delay" -gt 0 ] && {
+	logger "ShellCrash将延迟$start_delay秒启动" 31 pushoff
+	sleep $start_delay
+	}
 	#设置循环检测面板端口以判定服务启动是否成功
 	i=1
 	while [ -z "$test" -a "$i" -lt 10 ]; do
