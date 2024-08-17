@@ -1830,6 +1830,9 @@ start)
 	else
 		bfstart && start_old
 	fi
+        if [ "$2" = "infinity" ]; then #增加容器自启方式，请将CMD设置为"$CRASHDIR"/start.sh start infinity
+                sleep infinity
+        fi
 	;;
 stop)
 	logger ShellCrash服务即将关闭……
