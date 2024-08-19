@@ -572,7 +572,7 @@ EOF
 {
   "dns": { 
 	"servers": [
-	  { "tag": "hosts_local", "address": "local", "strategy": "ipv4_only", "detour": "DIRECT" }
+	  { "tag": "hosts_local", "address": "local", "strategy": "prefer_ipv4", "detour": "DIRECT" }
 	],
     "rules": [
 	  { 
