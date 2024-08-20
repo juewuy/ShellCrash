@@ -1484,7 +1484,7 @@ setcore(){ #内核选择菜单
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
 	echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://sing-boxp.dustinwin.top\033[0m"
 	echo -----------------------------------------------
 	echo -e "5 \033[36m自定义内核\033[0m	$custcore"
 	echo -----------------------------------------------
