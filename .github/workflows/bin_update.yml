@@ -119,7 +119,7 @@ jobs:
         curl -kfSL -o geodata/geosite_cn.db https://github.com/SagerNet/sing-geosite/releases/latest/download/geosite-cn.db
         curl -kfSL -o geodata/srs_geoip_cn.srs https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs
         curl -kfSL -o geodata/srs_geosite_cn.srs https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs
-        mv -f ./ca-bundle.crt ./fix/ca-certificates.crt
+        mv -f ../ca-bundle.crt ./fix/ca-certificates.crt
         sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d')/" version #修改版本号
         echo 数据库及根证书文件更新完成！
 
