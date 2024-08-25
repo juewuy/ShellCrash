@@ -1104,8 +1104,9 @@ setboot(){ #启动相关设置
 
 }
 set_firewall_area(){
+	[ -z "$vm_redir" ] && vm_redir='未开启'
 	echo -----------------------------------------------
-	echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请使用1或3！"
+	echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请单独启用6！"
 	echo -e "\033[33m如你使用了第三方DNS如smartdns等，请勿启用本机代理或使用shellcrash用户执行！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m仅劫持局域网流量\033[0m"
@@ -1113,9 +1114,13 @@ set_firewall_area(){
 	echo -e " 3 \033[32m劫持局域网+本机流量\033[0m"
 	echo -e " 4 不配置流量劫持(纯净模式)\033[0m"
 	#echo -e " 5 \033[33m转发局域网流量到旁路由设备\033[0m"
+	echo -e " 6 劫持容器/虚拟机流量： 	\033[36m$vm_redir\033[0m"
+	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num	
 	case $num in
+	0)
+	;;
 	[1-4]) 
 		[ $firewall_area -ge 4 ] && {
 			redir_mod=Redir模式
@@ -1144,6 +1149,45 @@ set_firewall_area(){
 			redir_mod=TCP旁路转发
 			setconfig redir_mod $redir_mod
 		}
+	;;
+	6) 
+		if [ -n "$vm_ipv4" ];then
+			vm_des='当前劫持'
+		else
+			vm_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'brd' | grep -E 'docker|podman|virbr|vnet|ovs|vmbr|veth|vmnic|vboxnet|lxcbr|xenbr|vEthernet' | sed 's/.*inet.//g' | sed 's/ br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ')
+			vm_des='当前获取到'
+		fi
+		echo -----------------------------------------------
+		echo -e "$vm_des的容器/虚拟机网段为：\033[32m$vm_ipv4\033[0m"
+		echo -e "如未包含容器网段，请先运行容器再运行脚本或者手动设置网段"
+		echo -----------------------------------------------
+		echo -e " 1 \033[32m启用劫持并使用默认网段\033[0m"
+		echo -e " 2 \033[36m启用劫持并自定义网段\033[0m"
+		echo -e " 3 \033[31m禁用劫持\033[0m"
+		echo -e " 0 返回上级菜单"
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num	
+		case $num in
+		1)
+			vm_redir=已开启
+		;;
+		2)
+			echo -e "多个网段请用空格连接，可运行容器后使用【ip route】命令查看网段地址"
+			echo -e "示例：\033[32m10.88.0.0/16 172.17.0.0/16\033[0m"
+			read -p "请输入自定义网段 > " text
+			[ -n "$text" ] &&  vm_ipv4=$text
+			vm_redir=已开启
+		;;
+		3)
+			vm_redir=未开启
+			unset vm_ipv4
+		;;
+		*)
+		;;
+		esac
+		setconfig vm_redir $vm_redir
+		setconfig vm_ipv4 "\'$vm_ipv4\'"
+		set_firewall_area		
 	;;
 	*) errornum ;;
 	esac

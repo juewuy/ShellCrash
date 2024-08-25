@@ -2472,7 +2472,7 @@ testcommand(){
 		if [ "$firewall_mod" = "nftables" ];then
 			nft list table inet shellcrash
 		else
-			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 ] && {
+			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 -o "$vm_redir" = "已开启" ] && {
 				echo ----------------Redir+DNS---------------------
 				iptables -t nat -L PREROUTING --line-numbers
 				iptables -t nat -L shellcrash_dns --line-numbers
@@ -2508,6 +2508,11 @@ testcommand(){
 						ip6tables -t mangle -L shellcrashv6_mark --line-numbers
 					}
 				}
+			}
+			[ "$vm_redir" = "已开启" ] && {
+						echo -------------vm-Redir-------------------
+						iptables -t nat -L shellcrash_vm --line-numbers
+						iptables -t nat -L shellcrash_vm_dns --line-numbers
 			}
 		fi
 		exit;
