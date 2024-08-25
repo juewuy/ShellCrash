@@ -393,7 +393,7 @@ EOF
 		}
 	}
 	#域名嗅探配置
-	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}}}"
+	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}, quic: {ports: [443, 8443]}}}"
 	[ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" -o "$sniffer" = "已启用" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0,sniff-tls-sni: true}"
 	#生成set.yaml
 	cat >"$TMPDIR"/set.yaml <<EOF
@@ -1262,7 +1262,7 @@ start_nftables() { #nftables配置总入口
 		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -100
 		[ "$local_proxy" = true ] && start_nft_route output output nat -100
 	}
-	[ "$redir_mod" = "Tproxy模式" ] && modprobe nft_tproxy >/dev/null 2>&1 && {
+	[ "$redir_mod" = "Tproxy模式" ] && modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy && {
 		JUMP="meta l4proto {tcp, udp} mark set $fwmark tproxy to :$tproxy_port" #跳转劫持的具体命令
 		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting filter -150
 		[ "$local_proxy" = true ] && {

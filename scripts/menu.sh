@@ -1259,7 +1259,7 @@ set_redir_mod(){ #代理模式设置
 				sleep 1					
 			fi	
 		elif [ "$firewall_mod" = "nftables" ] ;then
-			if modprobe nft_tproxy >/dev/null 2>&1;then
+			if modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy;then
 				redir_mod=Tproxy模式
 				set_redir_config
 			else
