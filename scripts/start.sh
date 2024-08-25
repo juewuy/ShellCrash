@@ -1277,7 +1277,7 @@ start_nftables() { #nftables配置总入口
 			nft list chain inet fw4 forward >/dev/null 2>&1 || nft add chain inet fw4 forward { type filter hook forward priority filter \; } 2>/dev/null
 			nft list chain inet fw4 input >/dev/null 2>&1 || nft add chain inet fw4 input { type filter hook input priority filter \; } 2>/dev/null
 			nft list chain inet fw4 forward | grep -q 'oifname "utun" accept' || nft insert rule inet fw4 forward oifname "utun" accept
-			nft list chain inet fw4 input | grep -q 'oifname "utun" accept' || nft insert rule inet fw4 input iifname "utun" accept
+			nft list chain inet fw4 input | grep -q 'iifname "utun" accept' || nft insert rule inet fw4 input iifname "utun" accept
 		}
 		[ "$local_proxy" = true ] && start_nft_route output output route -150
 	}
