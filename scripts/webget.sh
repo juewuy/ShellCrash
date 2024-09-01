@@ -2474,45 +2474,45 @@ testcommand(){
 		else
 			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 -o "$vm_redir" = "已开启" ] && {
 				echo ----------------Redir+DNS---------------------
-				iptables -t nat -L PREROUTING --line-numbers
-				iptables -t nat -L shellcrash_dns --line-numbers
-				[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && iptables -t nat -L shellcrash --line-numbers
+				iptables -w -t nat -L PREROUTING --line-numbers
+				iptables -w -t nat -L shellcrash_dns --line-numbers
+				[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && iptables -w -t nat -L shellcrash --line-numbers
 				[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
 					echo ----------------Tun/Tproxy-------------------
-					iptables -t mangle -L PREROUTING --line-numbers
-					iptables -t mangle -L shellcrash_mark --line-numbers
+					iptables -w -t mangle -L PREROUTING --line-numbers
+					iptables -w -t mangle -L shellcrash_mark --line-numbers
 				}
 			}
 			[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && {
 				echo -------------OUTPUT-Redir+DNS----------------
-				iptables -t nat -L OUTPUT --line-numbers
-				iptables -t nat -L shellcrash_dns_out --line-numbers
-				[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && iptables -t nat -L shellcrash_out --line-numbers
+				iptables -w -t nat -L OUTPUT --line-numbers
+				iptables -w -t nat -L shellcrash_dns_out --line-numbers
+				[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && iptables -w -t nat -L shellcrash_out --line-numbers
 				[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
 					echo ------------OUTPUT-Tun/Tproxy---------------
-					iptables -t mangle -L OUTPUT --line-numbers
-					iptables -t mangle -L shellcrash_mark_out --line-numbers
+					iptables -w -t mangle -L OUTPUT --line-numbers
+					iptables -w -t mangle -L shellcrash_mark_out --line-numbers
 				}
 			}
 			[ "$ipv6_redir" = "已开启" ] && {
 				[ "$firewall_area" = 1 -o "$firewall_area" = 3 ] && {
-					ip6tables -t nat -L >/dev/null 2>&1 && {
+					ip6tables -w -t nat -L >/dev/null 2>&1 && {
 						echo -------------IPV6-Redir+DNS-------------------
-						ip6tables -t nat -L PREROUTING --line-numbers
-						ip6tables -t nat -L shellcrashv6_dns --line-numbers
-						[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && ip6tables -t nat -L shellcrashv6 --line-numbers
+						ip6tables -w -t nat -L PREROUTING --line-numbers
+						ip6tables -w -t nat -L shellcrashv6_dns --line-numbers
+						[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && ip6tables -w -t nat -L shellcrashv6 --line-numbers
 					}
 					[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
 						echo -------------IPV6-Tun/Tproxy------------------
-						ip6tables -t mangle -L PREROUTING --line-numbers
-						ip6tables -t mangle -L shellcrashv6_mark --line-numbers
+						ip6tables -w -t mangle -L PREROUTING --line-numbers
+						ip6tables -w -t mangle -L shellcrashv6_mark --line-numbers
 					}
 				}
 			}
 			[ "$vm_redir" = "已开启" ] && {
 						echo -------------vm-Redir-------------------
-						iptables -t nat -L shellcrash_vm --line-numbers
-						iptables -t nat -L shellcrash_vm_dns --line-numbers
+						iptables -w -t nat -L shellcrash_vm --line-numbers
+						iptables -w -t nat -L shellcrash_vm_dns --line-numbers
 			}
 		fi
 		exit;

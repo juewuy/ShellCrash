@@ -194,7 +194,7 @@ getlanip() { #获取局域网host地址
 		sleep 1 && i=$((i + 1))
 	done
 	#添加自定义ipv4局域网网段
-	if [ "$replace_default_host_ipv4" == "未禁用" ]; then
+	if [ "$replace_default_host_ipv4" == "已启用" ]; then
 		host_ipv4="$cust_host_ipv4"
 	else
 		host_ipv4="$host_ipv4$cust_host_ipv4"
@@ -901,43 +901,43 @@ start_ipt_route() { #iptables-route通用工具
 		[ "$3" = 'OUTPUT' ] && HOST_IP="::1 $host_ipv6"
 	}
 	#创建新的shellcrash链表
-	$1 -t $2 -N $4
+	$1 -w -t $2 -N $4
 	#过滤dns
-	$1 -t $2 -A $4 -p tcp --dport 53 -j RETURN
-	$1 -t $2 -A $4 -p udp --dport 53 -j RETURN
+	$1 -w -t $2 -A $4 -p tcp --dport 53 -j RETURN
+	$1 -w -t $2 -A $4 -p udp --dport 53 -j RETURN
 	#防回环
-	$1 -t $2 -A $4 -m mark --mark $routing_mark -j RETURN
+	$1 -w -t $2 -A $4 -m mark --mark $routing_mark -j RETURN
 	[ "$3" = 'OUTPUT' ] && for gid in 453 7890; do
-		$1 -t $2 -A $4 -m owner --gid-owner $gid -j RETURN
+		$1 -w -t $2 -A $4 -m owner --gid-owner $gid -j RETURN
 	done
-	[ "$firewall_area" = 5 ] && $1 -t $2 -A $4 -s $bypass_host -j RETURN
+	[ "$firewall_area" = 5 ] && $1 -w -t $2 -A $4 -s $bypass_host -j RETURN
 	#跳过目标保留地址及目标本机网段
 	for ip in $HOST_IP $RESERVED_IP; do
-		$1 -t $2 -A $4 -d $ip -j RETURN
+		$1 -w -t $2 -A $4 -d $ip -j RETURN
 	done
 	#绕过CN_IP
-	[ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f "$BINDIR"/cn_ip.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
-	[ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && [ -f "$BINDIR"/cn_ipv6.txt ] && $1 -t $2 -A $4 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+	[ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f "$BINDIR"/cn_ip.txt ] && $1 -w -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+	[ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && [ -f "$BINDIR"/cn_ipv6.txt ] && $1 -w -t $2 -A $4 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 	#局域网mac地址黑名单过滤
 	[ "$3" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
-			$1 -t $2 -A $4 -m mac --mac-source $mac -j RETURN
+			$1 -w -t $2 -A $4 -m mac --mac-source $mac -j RETURN
 		done
 	}
 	#tcp&udp分别进代理链
 	proxy_set() {
 		if [ "$3" = 'PREROUTING' ] && [ "$4" != 'shellcrash_vm' ] && [ "$macfilter_type" = "白名单" ] && [ -s "$CRASHDIR"/configs/mac ];then
 			for mac in $(cat "$CRASHDIR"/configs/mac); do
-				$1 -t $2 -A $4 -p $5 -m mac --mac-source $mac -j $JUMP
+				$1 -w -t $2 -A $4 -p $5 -m mac --mac-source $mac -j $JUMP
 			done
 		else
 			for ip in $HOST_IP; do #仅限指定网段流量
-				$1 -t $2 -A $4 -p $5 -s $ip -j $JUMP
+				$1 -w -t $2 -A $4 -p $5 -s $ip -j $JUMP
 			done
 		fi
 		#将所在链指定流量指向shellcrash表
-		$1 -t $2 -I $3 -p $5 $ports -j $4
-		[ "$dns_mod" != "redir_host" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 -t $2 -I $3 -p $5 -d 198.18.0.0/16 -j $4
+		$1 -w -t $2 -I $3 -p $5 $ports -j $4
+		[ "$dns_mod" != "redir_host" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 -w -t $2 -I $3 -p $5 -d 198.18.0.0/16 -j $4
 	}
 	[ "$5" = "tcp" -o "$5" = "all" ] && proxy_set $1 $2 $3 $4 tcp
 	[ "$5" = "udp" -o "$5" = "all" ] && proxy_set $1 $2 $3 $4 udp
@@ -951,66 +951,66 @@ start_ipt_dns() { #iptables-dns通用工具
 		[ "$3" = 'shellcrash_vm_dns' ] && HOST_IP="$vm_ipv4"
 	}
 	[ "$1" = 'ip6tables' ] && HOST_IP=$host_ipv6
-	$1 -t nat -N $3
+	$1 -w -t nat -N $3
 	#防回环
-	$1 -t nat -A $3 -m mark --mark $routing_mark -j RETURN
+	$1 -w -t nat -A $3 -m mark --mark $routing_mark -j RETURN
 	[ "$2" = 'OUTPUT' ] && for gid in 453 7890; do
-		$1 -t nat -A $3 -m owner --gid-owner $gid -j RETURN
+		$1 -w -t nat -A $3 -m owner --gid-owner $gid -j RETURN
 	done
 	[ "$firewall_area" = 5 ] && {
-		$1 -t nat -A $3 -p tcp -s $bypass_host -j RETURN
-		$1 -t nat -A $3 -p udp -s $bypass_host -j RETURN
+		$1 -w -t nat -A $3 -p tcp -s $bypass_host -j RETURN
+		$1 -w -t nat -A $3 -p udp -s $bypass_host -j RETURN
 	}
 	#局域网mac地址黑名单过滤
 	[ "$2" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
-			$1 -t nat -A $3 -m mac --mac-source $mac -j RETURN
+			$1 -w -t nat -A $3 -m mac --mac-source $mac -j RETURN
 		done
 	}
 	if [ "$2" = 'PREROUTING' ] && [ "$3" != 'shellcrash_vm_dns' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" = "白名单" ]; then
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
-			$1 -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
-			$1 -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
+			$1 -w -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
+			$1 -w -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
 		done
 	else
 		for ip in $HOST_IP; do #仅限指定网段流量
-			$1 -t nat -A $3 -p tcp -s $ip -j REDIRECT --to-ports $dns_port
-			$1 -t nat -A $3 -p udp -s $ip -j REDIRECT --to-ports $dns_port
+			$1 -w -t nat -A $3 -p tcp -s $ip -j REDIRECT --to-ports $dns_port
+			$1 -w -t nat -A $3 -p udp -s $ip -j REDIRECT --to-ports $dns_port
 		done
 	fi
 	[ "$1" = 'ip6tables' ] && {
-		$1 -t nat -A $3 -p tcp -j RETURN
-		$1 -t nat -A $3 -p udp -j RETURN
+		$1 -w -t nat -A $3 -p tcp -j RETURN
+		$1 -w -t nat -A $3 -p udp -j RETURN
 	}
-	$1 -t nat -I $2 -p tcp --dport 53 -j $3
-	$1 -t nat -I $2 -p udp --dport 53 -j $3
+	$1 -w -t nat -I $2 -p tcp --dport 53 -j $3
+	$1 -w -t nat -I $2 -p udp --dport 53 -j $3
 }
 start_ipt_wan() { #iptables公网防火墙
 	#获取局域网host地址
 	getlanip
 	if [ "$public_support" = "已开启" ]; then
-		iptables -I INPUT -p tcp --dport $db_port -j ACCEPT
-		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $db_port -j ACCEPT
+		iptables -w -I INPUT -p tcp --dport $db_port -j ACCEPT
+		ckcmd ip6tables && ip6tables -w -I INPUT -p tcp --dport $db_port -j ACCEPT
 	else
 		#仅允许非公网设备访问面板
 		for ip in $reserve_ipv4; do
-			iptables -A INPUT -p tcp -s $ip --dport $db_port -j ACCEPT
+			iptables -w -A INPUT -p tcp -s $ip --dport $db_port -j ACCEPT
 		done
-		iptables -A INPUT -p tcp --dport $db_port -j REJECT
-		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $db_port -j REJECT
+		iptables -w -A INPUT -p tcp --dport $db_port -j REJECT
+		ckcmd ip6tables && ip6tables -w -A INPUT -p tcp --dport $db_port -j REJECT
 	fi
 	if [ "$public_mixport" = "已开启" ]; then
-		iptables -I INPUT -p tcp --dport $mix_port -j ACCEPT
-		ckcmd ip6tables && ip6tables -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		iptables -w -I INPUT -p tcp --dport $mix_port -j ACCEPT
+		ckcmd ip6tables && ip6tables -w -I INPUT -p tcp --dport $mix_port -j ACCEPT
 	else
 		#仅允许局域网设备访问混合端口
 		for ip in $reserve_ipv4; do
-			iptables -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
+			iptables -w -A INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT
 		done
-		iptables -A INPUT -p tcp --dport $mix_port -j REJECT
-		ckcmd ip6tables && ip6tables -A INPUT -p tcp --dport $mix_port -j REJECT
+		iptables -w -A INPUT -p tcp --dport $mix_port -j REJECT
+		ckcmd ip6tables && ip6tables -w -A INPUT -p tcp --dport $mix_port -j REJECT
 	fi
-	iptables -I INPUT -p tcp -d 127.0.0.1 -j ACCEPT #本机请求全放行
+	iptables -w -I INPUT -p tcp -d 127.0.0.1 -j ACCEPT #本机请求全放行
 }
 start_iptables() { #iptables配置总入口
 	#启动公网访问防火墙
@@ -1021,7 +1021,7 @@ start_iptables() { #iptables配置总入口
 		[ "$lan_proxy" = true ] && {
 			start_ipt_route iptables nat PREROUTING shellcrash tcp #ipv4-局域网tcp转发
 			[ "$ipv6_redir" = "已开启" ] && {
-				if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
+				if ip6tables -w -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
 					start_ipt_route ip6tables nat PREROUTING shellcrashv6 tcp #ipv6-局域网tcp转发
 				else
 					logger "当前设备内核缺少ip6tables_REDIRECT模块支持，已放弃启动相关规则！" 31
@@ -1031,7 +1031,7 @@ start_iptables() { #iptables配置总入口
 		[ "$local_proxy" = true ] && {
 			start_ipt_route iptables nat OUTPUT shellcrash_out tcp #ipv4-本机tcp转发
 			[ "$ipv6_redir" = "已开启" ] && {
-				if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
+				if ip6tables -w -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
 					start_ipt_route ip6tables nat OUTPUT shellcrashv6_out tcp #ipv6-本机tcp转发
 				else
 					logger "当前设备内核缺少ip6tables_REDIRECT模块支持，已放弃启动相关规则！" 31
@@ -1041,14 +1041,14 @@ start_iptables() { #iptables配置总入口
 	}
 	[ "$redir_mod" = "Tproxy模式" ] && {
 		JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
-		if iptables -j TPROXY -h 2>/dev/null | grep -q '\--on-port'; then
+		if iptables -w -j TPROXY -h 2>/dev/null | grep -q '\--on-port'; then
 			[ "$lan_proxy" = true ] && start_ipt_route iptables mangle PREROUTING shellcrash_mark all
 			[ "$local_proxy" = true ] && {
 				if [ -n "$(grep -E '^MARK$' /proc/net/ip_tables_targets)" ]; then
 					JUMP="MARK --set-mark $fwmark" #跳转劫持的具体命令
 					start_ipt_route iptables mangle OUTPUT shellcrash_mark_out all
-					iptables -t mangle -A PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port
-					iptables -t mangle -A PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port
+					iptables -w -t mangle -A PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port
+					iptables -w -t mangle -A PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port
 				else
 					logger "当前设备内核可能缺少xt_mark模块支持，已放弃启动本机代理相关规则！" 31
 				fi
@@ -1057,15 +1057,15 @@ start_iptables() { #iptables配置总入口
 			logger "当前设备内核可能缺少kmod_ipt_tproxy模块支持，已放弃启动相关规则！" 31
 		fi
 		[ "$ipv6_redir" = "已开启" ] &&  {
-			if ip6tables -j TPROXY -h 2>/dev/null | grep -q '\--on-port'; then
+			if ip6tables -w -j TPROXY -h 2>/dev/null | grep -q '\--on-port'; then
 				JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
 				[ "$lan_proxy" = true ] && start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark all
 				[ "$local_proxy" = true ] && {
 					if [ -n "$(grep -E '^MARK$' /proc/net/ip6_tables_targets)" ]; then
 						JUMP="MARK --set-mark $fwmark" #跳转劫持的具体命令
 						start_ipt_route ip6tables mangle OUTPUT shellcrashv6_mark_out all
-						ip6tables -t mangle -A PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port
-						ip6tables -t mangle -A PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port
+						ip6tables -w -t mangle -A PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port
+						ip6tables -w -t mangle -A PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port
 					else
 						logger "当前设备内核可能缺少xt_mark模块支持，已放弃启动本机代理相关规则！" 31
 					fi
@@ -1080,9 +1080,9 @@ start_iptables() { #iptables配置总入口
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "T&U旁路转发" ] && protocol=all
 		[ "$redir_mod" = "混合模式" ] && protocol=udp
 		[ "$redir_mod" = "TCP旁路转发" ] && protocol=tcp
-		if iptables -j MARK -h 2>/dev/null | grep -q '\--set-mark'; then
+		if iptables -w -j MARK -h 2>/dev/null | grep -q '\--set-mark'; then
 			[ "$lan_proxy" = true ] && {
-				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && iptables -I FORWARD -o utun -j ACCEPT
+				[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && iptables -w -I FORWARD -o utun -j ACCEPT
 				start_ipt_route iptables mangle PREROUTING shellcrash_mark $protocol
 			}
 			[ "$local_proxy" = true ] && start_ipt_route iptables mangle OUTPUT shellcrash_mark_out $protocol
@@ -1090,9 +1090,9 @@ start_iptables() { #iptables配置总入口
 			logger "当前设备内核可能缺少x_mark模块支持，已放弃启动相关规则！" 31
 		fi
 		[ "$ipv6_redir" = "已开启" ] && [ "$crashcore" != clashpre ] && {
-			if ip6tables -j MARK -h 2>/dev/null | grep -q '\--set-mark'; then
+			if ip6tables -w -j MARK -h 2>/dev/null | grep -q '\--set-mark'; then
 				[ "$lan_proxy" = true ] && {
-					[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && ip6tables -I FORWARD -o utun -j ACCEPT
+					[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && ip6tables -w -I FORWARD -o utun -j ACCEPT
 					start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark $protocol
 				}
 				[ "$local_proxy" = true ] && start_ipt_route ip6tables mangle OUTPUT shellcrashv6_mark_out $protocol
@@ -1110,10 +1110,10 @@ start_iptables() { #iptables配置总入口
 	[ "$dns_no" != "已禁用" -a "$dns_redir" != "已开启" -a "$firewall_area" -le 3 ] && {
 		[ "$lan_proxy" = true ] && {
 			start_ipt_dns iptables PREROUTING shellcrash_dns #ipv4-局域网dns转发
-			if ip6tables -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
+			if ip6tables -w -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
 				start_ipt_dns ip6tables PREROUTING shellcrashv6_dns #ipv6-局域网dns转发
 			else
-				ip6tables -I INPUT -p udp --dport 53 -j REJECT
+				ip6tables -w -I INPUT -p udp --dport 53 -j REJECT
 			fi
 		}
 		[ "$local_proxy" = true ] && start_ipt_dns iptables OUTPUT shellcrash_dns_out #ipv4-本机dns转发
@@ -1124,8 +1124,8 @@ start_iptables() { #iptables配置总入口
 			set_cn_ip='-m set ! --match-set cn_ip dst'
 			set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		}
-		iptables -I INPUT -p udp --dport 443 $set_cn_ip -j REJECT >/dev/null 2>&1
-		ip6tables -I INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT >/dev/null 2>&1
+		iptables -w -I INPUT -p udp --dport 443 $set_cn_ip -j REJECT >/dev/null 2>&1
+		ip6tables -w -I INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT >/dev/null 2>&1
 	}
 }
 start_nft_route() { #nftables-route通用工具
@@ -1360,16 +1360,7 @@ stop_firewall() { #还原防火墙配置
 	#获取局域网host地址
 	getlanip
 	#重置iptables相关规则
-	ckcmd iptables -w && {
-		#清理shellcrash自建表
-		for table in shellcrash_dns shellcrash shellcrash_out shellcrash_dns_out shellcrash_vm shellcrash_vm_dns; do
-			iptables -w -t nat -F $table 2>/dev/null
-			iptables -w -t nat -X $table 2>/dev/null
-		done
-		for table in shellcrash_mark shellcrash_mark_out; do
-			iptables -w -t mangle -F $table 2>/dev/null
-			iptables -w -t mangle -X $table 2>/dev/null
-		done
+	ckcmd iptables && {
 		#dns
 		iptables -w -t nat -D PREROUTING -p tcp --dport 53 -j shellcrash_dns 2>/dev/null
 		iptables -w -t nat -D PREROUTING -p udp --dport 53 -j shellcrash_dns 2>/dev/null
@@ -1412,20 +1403,18 @@ stop_firewall() { #还原防火墙配置
 		iptables -w -D INPUT -p tcp --dport $mix_port -j ACCEPT 2>/dev/null
 		iptables -w -D INPUT -p tcp --dport $db_port -j REJECT 2>/dev/null
 		iptables -w -D INPUT -p tcp --dport $db_port -j ACCEPT 2>/dev/null
+		#清理shellcrash自建表
+		for table in shellcrash_dns shellcrash shellcrash_out shellcrash_dns_out shellcrash_vm shellcrash_vm_dns; do
+			iptables -w -t nat -F $table 2>/dev/null
+			iptables -w -t nat -X $table 2>/dev/null
+		done
+		for table in shellcrash_mark shellcrash_mark_out; do
+			iptables -w -t mangle -F $table 2>/dev/null
+			iptables -w -t mangle -X $table 2>/dev/null
+		done
 	}
 	#重置ipv6规则
-	ckcmd ip6tables -w && {
-		#清理shellcrash自建表
-		for table in shellcrashv6_dns shellcrashv6 shellcrashv6_out; do
-			ip6tables -w -t nat -F $table 2>/dev/null
-			ip6tables -w -t nat -X $table 2>/dev/null
-		done
-		for table in shellcrashv6_mark shellcrashv6_mark_out; do
-			ip6tables -w -t mangle -F $table 2>/dev/null
-			ip6tables -w -t mangle -X $table 2>/dev/null
-		done
-		ip6tables -w -t mangle -F shellcrashv6_mark 2>/dev/null
-		ip6tables -w -t mangle -X shellcrashv6_mark 2>/dev/null
+	ckcmd ip6tables && {
 		#dns
 		ip6tables -w -t nat -D PREROUTING -p tcp --dport 53 -j shellcrashv6_dns 2>/dev/null
 		ip6tables -w -t nat -D PREROUTING -p udp --dport 53 -j shellcrashv6_dns 2>/dev/null
@@ -1450,6 +1439,17 @@ stop_firewall() { #还原防火墙配置
 		ip6tables -w -D INPUT -p tcp --dport $mix_port -j ACCEPT 2>/dev/null
 		ip6tables -w -D INPUT -p tcp --dport $db_port -j REJECT 2>/dev/null
 		ip6tables -w -D INPUT -p tcp --dport $db_port -j ACCEPT 2>/dev/null
+		#清理shellcrash自建表
+		for table in shellcrashv6_dns shellcrashv6 shellcrashv6_out; do
+			ip6tables -w -t nat -F $table 2>/dev/null
+			ip6tables -w -t nat -X $table 2>/dev/null
+		done
+		for table in shellcrashv6_mark shellcrashv6_mark_out; do
+			ip6tables -w -t mangle -F $table 2>/dev/null
+			ip6tables -w -t mangle -X $table 2>/dev/null
+		done
+		ip6tables -w -t mangle -F shellcrashv6_mark 2>/dev/null
+		ip6tables -w -t mangle -X shellcrashv6_mark 2>/dev/null
 	}
 	#清理ipset规则
 	ipset destroy cn_ip >/dev/null 2>&1
