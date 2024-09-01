@@ -919,16 +919,26 @@ start_ipt_route() { #iptables-route通用工具
 	[ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f "$BINDIR"/cn_ip.txt ] && $1 -w -t $2 -A $4 -m set --match-set cn_ip dst -j RETURN 2>/dev/null
 	[ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ipv6_route" = "已开启" ] && [ -f "$BINDIR"/cn_ipv6.txt ] && $1 -w -t $2 -A $4 -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
 	#局域网mac地址黑名单过滤
-	[ "$3" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
+	[ "$3" = 'PREROUTING' ] && [ "$macfilter_type" != "白名单" ] && {
+		[ -s "$CRASHDIR"/configs/mac ] && \
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
 			$1 -w -t $2 -A $4 -m mac --mac-source $mac -j RETURN
+		done
+		[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] && \
+		for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
+			$1 -w -t $2 -A $4 -s $ip -j RETURN
 		done
 	}
 	#tcp&udp分别进代理链
 	proxy_set() {
-		if [ "$3" = 'PREROUTING' ] && [ "$4" != 'shellcrash_vm' ] && [ "$macfilter_type" = "白名单" ] && [ -s "$CRASHDIR"/configs/mac ];then
+		if [ "$3" = 'PREROUTING' ] && [ "$4" != 'shellcrash_vm' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat $CRASHDIR/configs/mac $CRASHDIR/configs/ip_filter 2>/dev/null)" ];then
+			[ -s "$CRASHDIR"/configs/mac ] && \
 			for mac in $(cat "$CRASHDIR"/configs/mac); do
 				$1 -w -t $2 -A $4 -p $5 -m mac --mac-source $mac -j $JUMP
+			done
+			[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] && \
+			for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
+				$1 -w -t $2 -A $4 -p $5 -s $ip -j $JUMP
 			done
 		else
 			for ip in $HOST_IP; do #仅限指定网段流量
@@ -962,16 +972,27 @@ start_ipt_dns() { #iptables-dns通用工具
 		$1 -w -t nat -A $3 -p udp -s $bypass_host -j RETURN
 	}
 	#局域网mac地址黑名单过滤
-	[ "$2" = 'PREROUTING' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" != "白名单" ] && {
+	[ "$2" = 'PREROUTING' ] && [ "$macfilter_type" != "白名单" ] && {
+		[ -s "$CRASHDIR"/configs/mac ] && \
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
 			$1 -w -t nat -A $3 -m mac --mac-source $mac -j RETURN
 		done
+		[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] && \
+		for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
+			$1 -w -t nat -A $3 -s $ip -j RETURN
+		done
 	}
-	if [ "$2" = 'PREROUTING' ] && [ "$3" != 'shellcrash_vm_dns' ] && [ -s "$CRASHDIR"/configs/mac ] && [ "$macfilter_type" = "白名单" ]; then
+	if [ "$2" = 'PREROUTING' ] && [ "$3" != 'shellcrash_vm_dns' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat $CRASHDIR/configs/mac $CRASHDIR/configs/ip_filter 2>/dev/null)" ];then
+		[ -s "$CRASHDIR"/configs/mac ] && \
 		for mac in $(cat "$CRASHDIR"/configs/mac); do
 			$1 -w -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
 			$1 -w -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
 		done
+		[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] && \
+		for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
+			$1 -w -t nat -A $3 -p tcp -s $ip -j REDIRECT --to-ports $dns_port
+			$1 -w -t nat -A $3 -p udp -s $ip -j REDIRECT --to-ports $dns_port
+		done		
 	else
 		for ip in $HOST_IP; do #仅限指定网段流量
 			$1 -w -t nat -A $3 -p tcp -s $ip -j REDIRECT --to-ports $dns_port
@@ -1145,17 +1166,30 @@ start_nft_route() { #nftables-route通用工具
 	nft add rule inet shellcrash $1 meta skgid 7890 return
 	#nft add rule inet shellcrash $1 ip saddr 198.18.0.0/16 return
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip saddr $bypass_host return
-	#过滤局域网设备
-	[ "$1" = 'prerouting' ] && [ -s "$CRASHDIR"/configs/mac ] && {
-		MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
-		if [ "$macfilter_type" = "黑名单" ]; then
-			nft add rule inet shellcrash $1 ether saddr {$MAC} return
-		else
-			nft add rule inet shellcrash $1 ether saddr != {$MAC} return
-		fi
-	}
 	nft add rule inet shellcrash $1 ip daddr {$RESERVED_IP} return #过滤保留地址
-	nft add rule inet shellcrash $1 ip saddr != {$HOST_IP} return  #仅代理本机局域网网段流量
+	#过滤局域网设备
+	if [ "$1" = 'prerouting' ] && [ "$macfilter_type" != "白名单" ];then
+		[ -s "$CRASHDIR"/configs/mac ] && {
+		MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
+		nft add rule inet shellcrash $1 ether saddr {$MAC} return
+		}
+		[ -s "$CRASHDIR"/configs/ip_filter ] && {
+		FL_IP=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/ip_filter)
+		nft add rule inet shellcrash $1 ip saddr {$FL_IP} return
+		}
+		nft add rule inet shellcrash $1 ip saddr != {$HOST_IP} return  #仅代理本机局域网网段流量
+	fi
+	if [ "$1" = 'prerouting' ] && [ "$macfilter_type" = "白名单" ];then
+		[ -s "$CRASHDIR"/configs/mac ] && MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
+		[ -s "$CRASHDIR"/configs/ip_filter ] && FL_IP=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/ip_filter)
+		if [ -n "$MAC" ] && [ -n "$FL_IP" ];then
+			nft add rule inet shellcrash $1 ether saddr != {$MAC} ip saddr != {$FL_IP} return
+		elif [ -n "$MAC" ];then
+			nft add rule inet shellcrash $1 ether saddr != {$MAC} return
+		elif [ -n "$FL_IP" ];then
+			nft add rule inet shellcrash $1 ip saddr != {$FL_IP} return
+		fi
+	fi
 	#绕过CN-IP
 	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f "$BINDIR"/cn_ip.txt ] && {
 		CN_IP=$(awk '{printf "%s, ",$1}' "$BINDIR"/cn_ip.txt)
