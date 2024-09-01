@@ -107,7 +107,7 @@ ckstatus(){
 	#检查新手引导
 	if [ -z "$userguide" ];then
 		setconfig userguide 1
-		source ${CRASHDIR}/update.sh && userguide
+		source ${CRASHDIR}/webget.sh && userguide
 	fi
 	#检查执行权限
 	[ ! -x ${CRASHDIR}/start.sh ] && chmod +x ${CRASHDIR}/start.sh
@@ -122,7 +122,7 @@ ckstatus(){
 				core_v=$($file -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 				[ -z "$core_v" ] && core_v=$($file version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')
 				if [ -n "$core_v" ];then
-					source ${CRASHDIR}/update.sh && setcoretype && \
+					source ${CRASHDIR}/webget.sh && setcoretype && \
 					mv -f $file ${TMPDIR}/CrashCore && \
 					tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore && \
 					echo -e "\033[32m内核加载完成！\033[0m " && \
@@ -188,7 +188,7 @@ start_core(){
 		echo -e "\033[33m没有找到${crashcore}配置文件，尝试生成providers配置文件！\033[0m"
 		[ "$crashcore" = singboxp ] && coretype=singbox
 		[ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
-		source ${CRASHDIR}/update.sh && gen_${coretype}_providers
+		source ${CRASHDIR}/webget.sh && gen_${coretype}_providers
 	elif [ -s $core_config -o -n "$Url" -o -n "$Https" ];then
 		${CRASHDIR}/start.sh start
 		#设置循环检测以判定服务启动是否成功
@@ -205,7 +205,7 @@ start_core(){
 		[ -n "$test" -o -n "$(pidof CrashCore)" ] && startover
 	else
 		echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"
-		source ${CRASHDIR}/update.sh && set_core_config
+		source ${CRASHDIR}/webget.sh && set_core_config
 	fi
 }
 start_service(){
@@ -1813,10 +1813,10 @@ tools(){
 		i=
 		
 	elif [ "$num" = 1 ]; then
-		source ${CRASHDIR}/update.sh && testcommand  
+		source ${CRASHDIR}/webget.sh && testcommand  
 		
 	elif [ "$num" = 2 ]; then
-		source ${CRASHDIR}/update.sh && userguide
+		source ${CRASHDIR}/webget.sh && userguide
 		
 	elif [ "$num" = 3 ]; then
 		log_pusher
@@ -1952,7 +1952,7 @@ main_menu(){
 		main_menu
     
 	elif [ "$num" = 6 ]; then
-		source ${CRASHDIR}/update.sh && set_core_config
+		source ${CRASHDIR}/webget.sh && set_core_config
 		main_menu
 		
 	elif [ "$num" = 7 ]; then
@@ -1970,7 +1970,7 @@ main_menu(){
 
 	elif [ "$num" = 9 ]; then
 		checkcfg=$(cat $CFG_PATH)
-		source ${CRASHDIR}/update.sh && update
+		source ${CRASHDIR}/webget.sh && update
 		if [ -n "$PID" ];then
 			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
