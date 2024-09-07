@@ -1924,8 +1924,11 @@ restart)
 	$0 start
 	;;
 daemon)
-	[ ! -f $TMPDIR/crash_start_time ] && sleep 20
-	$0 start
+	if [ -f $TMPDIR/crash_start_time ];then
+		$0 start
+	else
+		sleep 60 && touch $TMPDIR/crash_start_time
+	fi
 	;;
 debug)
 	[ -n "$(pidof CrashCore)" ] && $0 stop >/dev/null #禁止多实例
