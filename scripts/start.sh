@@ -1156,6 +1156,8 @@ start_iptables() { #iptables配置总入口
 		}
 		$iptable -I INPUT -p udp --dport 443 $set_cn_ip -j REJECT >/dev/null 2>&1
 		$ip6table -I INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT >/dev/null 2>&1
+		$iptable -I FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT >/dev/null 2>&1
+		$ip6table -I FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT >/dev/null 2>&1
 	}
 }
 start_nft_route() { #nftables-route通用工具
@@ -1436,6 +1438,7 @@ stop_firewall() { #还原防火墙配置
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		$iptable -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
+		$iptable -D FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT 2>/dev/null
 		#公网访问
 		for ip in $host_ipv4 $local_ipv4 $reserve_ipv4; do
 			$iptable -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2>/dev/null
@@ -1473,10 +1476,10 @@ stop_firewall() { #还原防火墙配置
 		$ip6table -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
 		#tun
 		$ip6table -D FORWARD -o utun -j ACCEPT 2>/dev/null
-		$ip6table -D FORWARD -p udp --dport 443 -o utun -j REJECT >/dev/null 2>&1
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		$ip6table -D INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT 2>/dev/null
+		$ip6table -D FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT 2>/dev/null
 		#公网访问
 		$ip6table -D INPUT -p tcp --dport $mix_port -j REJECT 2>/dev/null
 		$ip6table -D INPUT -p tcp --dport $mix_port -j ACCEPT 2>/dev/null
