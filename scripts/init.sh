@@ -206,9 +206,9 @@ else
 fi
 setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 #设置防火墙执行模式
-[ -z "$(grep firewall_mod $CRASHDIR/configs/ShellClash.cfg 2>/dev/null)" ] && {
+grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 	iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
-	nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
+	nft add table inet test4532 2>/dev/null && firewall_mod=nftables && nft delete table inet test4532
 	setconfig firewall_mod $firewall_mod
 }
 #设置更新地址

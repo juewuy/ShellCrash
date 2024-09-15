@@ -31,7 +31,7 @@ getconfig() { #读取配置及全局变量
 	[ -z "$sniffer" ] && sniffer=已开启
 	#是否代理常用端口
 	[ -z "$common_ports" ] && common_ports=已开启
-	[ -z "$multiport" ] && multiport='22,53,80,123,143,194,443,465,587,853,993,995,5222,8080,8443'
+	[ -z "$multiport" ] && multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	#内核配置文件
 	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
@@ -1008,7 +1008,7 @@ start_ipt_dns() { #iptables-dns通用工具
 			$1 $w -t nat -A $3 -p udp -s $ip -j REDIRECT --to-ports $dns_port
 		done
 	fi
-	[ "$1" = 'ip6tables' ] && {
+	[ "$1" = 'ip6tables' ] && { #屏蔽外部请求
 		$1 $w -t nat -A $3 -p tcp -j RETURN
 		$1 $w -t nat -A $3 -p udp -j RETURN
 	}
@@ -1154,8 +1154,14 @@ start_iptables() { #iptables配置总入口
 			set_cn_ip='-m set ! --match-set cn_ip dst'
 			set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		}
-		$iptable -I INPUT -p udp --dport 443 $set_cn_ip -j REJECT >/dev/null 2>&1
-		$ip6table -I INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT >/dev/null 2>&1
+		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
+			$iptable -I FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT >/dev/null 2>&1
+			$ip6table -I FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT >/dev/null 2>&1
+		}
+		[ "$redir_mod" = "Tproxy模式" ] && {
+			$iptable -I INPUT -p udp --dport 443 $set_cn_ip -j REJECT >/dev/null 2>&1
+			$ip6table -I INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT >/dev/null 2>&1
+		}
 	}
 }
 start_nft_route() { #nftables-route通用工具
@@ -1254,7 +1260,7 @@ start_nft_dns() { #nftables-dns
 	nft add rule inet shellcrash "$1"_dns meta skgid { 453, 7890 } return
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash "$1"_dns ip saddr $bypass_host return
 	nft add rule inet shellcrash "$1"_dns ip saddr != {$HOST_IP} return #屏蔽外部请求
-	[ "$1" = 'prerouting' ] && nft add rule inet shellcrash "$1"_dns ip6 saddr != {$HOST_IP6} return #屏蔽外部请求
+	[ "$1" = 'prerouting' ] && nft add rule inet shellcrash "$1"_dns ip6 saddr != {$HOST_IP6} reject #屏蔽外部请求
 	#过滤局域网设备
 	[ "$1" = 'prerouting' ] && [ -s "$CRASHDIR"/configs/mac ] && {
 		MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
@@ -1341,11 +1347,18 @@ start_nftables() { #nftables配置总入口
 		start_nft_route prerouting_vm prerouting nat -100
 	}
 	#屏蔽QUIC
-	[ "$quic_rj" = '已启用' -a "$lan_proxy" = true -a "$redir_mod" != "Redir模式" ] && {
-		nft add chain inet shellcrash quic_rj { type filter hook input priority 0 \; }
-		[ -n "$CN_IP" ] && nft add rule inet shellcrash quic_rj ip daddr {$CN_IP} return
-		[ -n "$CN_IP6" ] && nft add rule inet shellcrash quic_rj ip6 daddr {$CN_IP6} return
-		nft add rule inet shellcrash quic_rj udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
+	[ "$quic_rj" = '已启用' -a "$lan_proxy" = true && {
+		[ "$redir_mod" = "Tproxy模式" ] && {
+			nft add chain inet shellcrash quic_rj { type filter hook input priority 0 \; }
+			[ -n "$CN_IP" ] && nft add rule inet shellcrash quic_rj ip daddr {$CN_IP} return
+			[ -n "$CN_IP6" ] && nft add rule inet shellcrash quic_rj ip6 daddr {$CN_IP6} return
+			nft add rule inet shellcrash quic_rj udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
+		}
+		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
+			nft insert rule inet fw4 forward oifname "utun" udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
+			[ -n "$CN_IP" ] && nft insert rule inet fw4 forward oifname "utun" ip daddr {$CN_IP} return
+			[ -n "$CN_IP6" ] && nft insert rule inet fw4 forward oifname "utun" ip6 daddr {$CN_IP6} return
+		}
 	}
 }
 start_firewall() { #路由规则总入口
@@ -1436,6 +1449,7 @@ stop_firewall() { #还原防火墙配置
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 		$iptable -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
+		$iptable -D FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT 2>/dev/null
 		#公网访问
 		for ip in $host_ipv4 $local_ipv4 $reserve_ipv4; do
 			$iptable -D INPUT -p tcp -s $ip --dport $mix_port -j ACCEPT 2>/dev/null
@@ -1477,6 +1491,7 @@ stop_firewall() { #还原防火墙配置
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		$ip6table -D INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT 2>/dev/null
+		$ip6table -D FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT 2>/dev/null
 		#公网访问
 		$ip6table -D INPUT -p tcp --dport $mix_port -j REJECT 2>/dev/null
 		$ip6table -D INPUT -p tcp --dport $mix_port -j ACCEPT 2>/dev/null
