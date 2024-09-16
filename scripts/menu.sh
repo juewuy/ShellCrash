@@ -1313,7 +1313,7 @@ set_redir_mod(){ #代理模式设置
 					redir_mod=Tproxy模式
 					set_redir_config
 				}
-			elif [ -n "$(grep -E '^TPROXY$' /proc/net/ip_tables_targets)" ] ;then
+			elif grep -qE '^TPROXY$' /proc/net/ip_tables_targets || modprobe xt_TPROXY >/dev/null 2>&1;then
 				redir_mod=Tproxy模式
 				set_redir_config
 			else

@@ -44,8 +44,8 @@ getconfig() { #读取配置及全局变量
 		core_config="$CRASHDIR"/yamls/config.yaml
 	fi
 	#检查$iptable命令可用性
-	iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
-	ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
+	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
+	ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
 }
 setconfig() { #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -1070,6 +1070,7 @@ start_iptables() { #iptables配置总入口
 		}
 	}
 	[ "$redir_mod" = "Tproxy模式" ] && {
+		modprobe xt_TPROXY >/dev/null 2>&1
 		JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
 		if $iptable -j TPROXY -h 2>/dev/null | grep -q '\--on-port'; then
 			[ "$lan_proxy" = true ] && start_ipt_route iptables mangle PREROUTING shellcrash_mark all
@@ -1487,11 +1488,10 @@ stop_firewall() { #还原防火墙配置
 		$ip6table -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
 		#tun
 		$ip6table -D FORWARD -o utun -j ACCEPT 2>/dev/null
-		$ip6table -D FORWARD -p udp --dport 443 -o utun -j REJECT >/dev/null 2>&1
 		#屏蔽QUIC
 		[ "$dns_mod" != "fake-ip" -a "$cn_ipv6_route" = "已开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 		$ip6table -D INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT 2>/dev/null
-		$ip6table -D FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT 2>/dev/null
+		$ip6table -D FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT 2>/dev/null
 		#公网访问
 		$ip6table -D INPUT -p tcp --dport $mix_port -j REJECT 2>/dev/null
 		$ip6table -D INPUT -p tcp --dport $mix_port -j ACCEPT 2>/dev/null

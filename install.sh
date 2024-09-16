@@ -62,7 +62,7 @@ gettar(){
 		mkdir -p $CRASHDIR > /dev/null
 		tar -zxf '/tmp/ShellCrash.tar.gz' -C $CRASHDIR/ || tar -zxf '/tmp/ShellCrash.tar.gz' --no-same-owner -C $CRASHDIR/
 		if [ -f $CRASHDIR/init.sh ];then
-			source $CRASHDIR/init.sh >/dev/null
+			. $CRASHDIR/init.sh >/dev/null
 		else
 			rm -rf /tmp/ShellCrash.tar.gz
 			$echo "\033[33m文件解压失败！\033[0m"
@@ -80,6 +80,16 @@ setdir(){
 		if [ -z "$dir" ];then
 			$echo "\033[31m输入错误！请重新设置！\033[0m"
 			set_usb_dir
+		fi
+	}
+	set_asus_dir(){
+		echo -e "请选择U盘目录"
+		du -hL /tmp/mnt | awk '{print " "NR" "$2"  "$1}'
+		read -p "请输入相应数字 > " num
+		dir=$(du -hL /tmp/mnt | awk '{print $2}' | sed -n "$num"p)
+		if [ ! -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ];then
+			echo -e "\033[31m未找到下载大师自启文件：$dir/asusware.arm/etc/init.d/S50downloadmaster，请检查设置！\033[0m"
+			set_asus_dir
 		fi
 	}
 	set_cust_dir(){
@@ -123,6 +133,7 @@ if [ -n "$systype" ];then
 		$echo "\033[33m检测到当前设备为华硕固件，请选择安装方式\033[0m"	
 		$echo " 1 基于USB设备安装(限23年9月之前固件，须插入\033[31m任意\033[0mUSB设备)"
 		$echo " 2 基于自启脚本安装(仅支持梅林及部分官改固件)"
+		$echo " 3 基于下载大师安装(支持最新固件，限ARM设备，须插入U盘或移动硬盘)"
 		$echo " 0 退出安装"
 		echo -----------------------------------------------
 		read -p "请输入相应数字 > " num
@@ -131,11 +142,17 @@ if [ -n "$systype" ];then
 			read -p "将脚本安装到USB存储/系统闪存？(1/0) > " res
 			[ "$res" = "1" ] && set_usb_dir || dir=/jffs
 			usb_status=1
-			;;
+		;;
 		2)
 			$echo "如无法正常开机启动，请重新使用USB方式安装！"
 			sleep 2
-			dir=/jffs ;;
+			dir=/jffs 
+		;;
+		3)
+			echo -e "请先在路由器网页后台安装下载大师，之后选择外置存储所在目录！"
+			sleep 2
+			set_asus_dir
+		;;
 		*)
 			exit 1 ;;
 		esac
