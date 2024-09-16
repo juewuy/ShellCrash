@@ -7,8 +7,8 @@ proxy-groups:
   - {name: 🤖 人工智能, type: select, proxies: [🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🚀 节点选择, 🚀 手动切换]}
   - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
   - {name: 🎮 游戏平台, type: select, proxies: [🎯 本机直连, 👍 高级节点, 🚀 节点选择]}
-  - {name: Ⓜ️ 微软服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
-  - {name: 📢 谷歌服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 🪟 微软服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
+  - {name: 🇬 谷歌服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 🍎 苹果服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 📈 网络测试, type: select, proxies: [🎯 本机直连, {providers_tags}, 🚀 手动切换]}
   - {name: 🎯 本机直连, type: select, proxies: [DIRECT]}
@@ -20,84 +20,84 @@ proxy-groups:
   - {name: 🇯🇵 日本节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)日本|jp|japan"}
   - {name: 🇸🇬 新加坡节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)新|sg|singapore"}
   - {name: 🇺🇸 美国节点, type: url-test, tolerance: 100, lazy: true, use: [{providers_tags}], filter: "(?i)美|us|unitedstates|united states"}
-  
+
 rule-providers:
   ads:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/ads.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/ads.yaml"
     path: ./providers/ads.yaml
     interval: 86400
   ai:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/ai.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/ai.yaml"
     path: ./providers/ai.yaml
     interval: 86400
   private:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/private.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/private.yaml"
     path: ./providers/private.yaml
     interval: 86400
   microsoft-cn:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/microsoft-cn.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/microsoft-cn.yaml"
     path: ./providers/microsoft-cn.yaml
     interval: 86400
   apple-cn:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/apple-cn.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/apple-cn.yaml"
     path: ./providers/apple-cn.yaml
     interval: 86400
   google-cn:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/google-cn.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/google-cn.yaml"
     path: ./providers/google-cn.yaml
     interval: 86400
   games-cn:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/games-cn.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/games-cn.yaml"
     path: ./providers/games-cn.yaml
     interval: 86400
   networktest:
     type: http
     behavior: classical
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/networktest.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/networktest.yaml"
     path: ./providers/networktest.yaml
     interval: 86400
   proxy:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/proxy.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/proxy.yaml"
     path: ./providers/proxy.yaml
     interval: 86400
   cn:
     type: http
     behavior: domain
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/cn.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/cn.yaml"
     path: ./providers/cn.yaml
     interval: 86400
   telegramip:
     type: http
     behavior: ipcidr
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/telegramip.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/telegramip.yaml"
     path: ./providers/telegramip.yaml
     interval: 86400
   privateip:
     type: http
     behavior: ipcidr
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/privateip.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/privateip.yaml"
     path: ./providers/privateip.yaml
     interval: 86400
   cnip:
     type: http
     behavior: ipcidr
-    url: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash/cnip.yaml"
+    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/cnip.yaml"
     path: ./providers/cnip.yaml
     interval: 86400
 
@@ -105,9 +105,9 @@ rules:
   - RULE-SET,ads,🛑 广告拦截
   - RULE-SET,private,🎯 全球直连
   - RULE-SET,ai,🤖 人工智能
-  - RULE-SET,microsoft-cn,Ⓜ️ 微软服务
+  - RULE-SET,microsoft-cn,🪟 微软服务
   - RULE-SET,apple-cn,🍎 苹果服务
-  - RULE-SET,google-cn,📢 谷歌服务
+  - RULE-SET,google-cn,🇬 谷歌服务
   - RULE-SET,games-cn,🎮 游戏平台
   - RULE-SET,networktest,📈 网络测试
   - RULE-SET,proxy,🚀 节点选择

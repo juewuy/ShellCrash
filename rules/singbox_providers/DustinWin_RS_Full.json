@@ -7,8 +7,8 @@
     { "tag": "📲 电报消息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇰🇷 韩国节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
     { "tag": "🤖 人工智能", "type": "selector", "outbounds": [ "🇯🇵 日本节点", "🇺🇸 美国节点", "🇸🇬 新加坡节点", "🇰🇷 韩国节点", "🚀 节点选择" ] },
     { "tag": "🎮 游戏平台", "type": "selector", "outbounds": [ "🎯 本机直连", "🚀 节点选择" ] },
-    { "tag": "Ⓜ️ 微软服务", "type": "selector", "outbounds": [ "🎯 本机直连", "🚀 节点选择" ] },
-    { "tag": "📢 谷歌服务", "type": "selector", "outbounds": [ "🎯 本机直连", "🚀 节点选择" ] },
+    { "tag": "🪟 微软服务", "type": "selector", "outbounds": [ "🎯 本机直连", "🚀 节点选择" ] },
+    { "tag": "🇬 谷歌服务", "type": "selector", "outbounds": [ "🎯 本机直连", "🚀 节点选择" ] },
     { "tag": "🍎 苹果服务", "type": "selector", "outbounds": [ "🎯 本机直连", "🚀 节点选择" ] },
     { "tag": "📈 网络测试", "type": "selector", "outbounds": [ "🎯 本机直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇰🇷 韩国节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", {providers_tags}, "🚀 手动切换" ] },
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "🎯 本机直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇰🇷 韩国节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", {providers_tags}, "🚀 手动切换" ] },
@@ -30,10 +30,10 @@
       { "clash_mode": "Global", "outbound": "GLOBAL" },
       { "clash_mode": "Direct", "outbound": "🎯 本机直连" },
       { "rule_set": "private", "outbound": "🎯 全球直连" },
-	  { "rule_set": "ai", "outbound": "🤖 人工智能" },
-      { "rule_set": "microsoft-cn", "outbound": "Ⓜ️ 微软服务" },
+      { "rule_set": "ai", "outbound": "🤖 人工智能" },
+      { "rule_set": "microsoft-cn", "outbound": "🪟 微软服务" },
       { "rule_set": "apple-cn", "outbound": "🍎 苹果服务" },
-      { "rule_set": "google-cn", "outbound": "📢 谷歌服务" },
+      { "rule_set": "google-cn", "outbound": "🇬 谷歌服务" },
       { "rule_set": "games-cn", "outbound": "🎮 游戏平台" },
       { "rule_set": "networktest", "outbound": "📈 网络测试" },
       { "rule_set": "proxy", "outbound": "🚀 节点选择" },
@@ -46,77 +46,77 @@
         "tag": "private",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/private.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "ai",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/ai.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "microsoft-cn",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/microsoft-cn.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "apple-cn",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/apple-cn.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "google-cn",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/google-cn.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "games-cn",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/games-cn.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "networktest",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/networktest.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "proxy",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/proxy.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "cn",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/cn.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "telegramip",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/telegramip.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs",
         "download_detour": "🎯 本机直连"
       },
       {
         "tag": "cnip",
         "type": "remote",
         "format": "binary",
-        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box/cnip.srs",
+        "url": "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs",
         "download_detour": "🎯 本机直连"
       }
     ],
