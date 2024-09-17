@@ -1348,7 +1348,7 @@ start_nftables() { #nftables配置总入口
 		start_nft_route prerouting_vm prerouting nat -100
 	}
 	#屏蔽QUIC
-	[ "$quic_rj" = '已启用' -a "$lan_proxy" = true && {
+	[ "$quic_rj" = '已启用' -a "$lan_proxy" = true ] && {
 		[ "$redir_mod" = "Tproxy模式" ] && {
 			nft add chain inet shellcrash quic_rj { type filter hook input priority 0 \; }
 			[ -n "$CN_IP" ] && nft add rule inet shellcrash quic_rj ip daddr {$CN_IP} return
