@@ -609,7 +609,7 @@ setdns(){ #DNS设置
 	elif [ "$num" = 4 ]; then
 		echo -----------------------------------------------
 		openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
-		if [ -s "$openssldir/certs/ca-certificates.crt" -o "/etc/ssl/certs/ca-certificates.crt" ];then
+		if [ -s "$openssldir/certs/ca-certificates.crt" -o -s "/etc/ssl/certs/ca-certificates.crt" ];then
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
 			dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
 			setconfig dns_nameserver \'"$dns_nameserver"\'
