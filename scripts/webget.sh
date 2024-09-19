@@ -1943,10 +1943,13 @@ getcrt(){ #下载根证书文件
 	fi
 }
 setcrt(){
-	openssldir=$(openssl version -a 2>&1 | grep OPENSSLDIR | awk -F "\"" '{print $2}')
-	[ -z "$openssldir" ] && openssldir=/etc/ssl
+	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
+	if [ -d "$openssldir/certs/" ];then
+ 		crtdir="$openssldir/certs/ca-certificates.crt"
+   	else
+    		crtdir="/etc/ssl/certs/ca-certificates.crt"
+ 	fi
 	if [ -n "$openssldir" ];then
-		crtdir="$openssldir/certs/ca-certificates.crt"
 		echo -----------------------------------------------
 		echo -e "\033[36m安装/更新本地根证书文件(ca-certificates.crt)\033[0m"
 		echo -e "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
@@ -2273,8 +2276,8 @@ userguide(){
 		}
 	fi
 	#检测及下载根证书
-	openssldir=$(openssl version -a 2>&1 | grep OPENSSLDIR | awk -F "\"" '{print $2}')
-	[ -z "$openssldir" ] && openssldir=/etc/ssl
+	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
+	[ ! -d "$openssldir/certs" ] && openssldir=/etc/ssl
 	if [ -d $openssldir/certs -a ! -f $openssldir/certs/ca-certificates.crt ];then
 		echo -----------------------------------------------
 		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
