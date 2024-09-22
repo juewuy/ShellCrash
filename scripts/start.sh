@@ -916,7 +916,7 @@ start_ipt_route() { #iptables-route通用工具
 		$1 $w -t $2 -A $4 -m owner --gid-owner $gid -j RETURN
 	done
 	[ "$firewall_area" = 5 ] && $1 $w -t $2 -A $4 -s $bypass_host -j RETURN
-	[ -z "$ports" ] && $1 $w -t $2 -A $4 -m multiport --dports "$mix_port,$redir_port,$tproxy_port" -j RETURN
+	[ -z "$ports" ] && $1 $w -t $2 -A $4 -p tcp -m multiport --dports "$mix_port,$redir_port,$tproxy_port" -j RETURN
 	#跳过目标保留地址及目标本机网段
 	for ip in $HOST_IP $RESERVED_IP; do
 		$1 $w -t $2 -A $4 -d $ip -j RETURN
