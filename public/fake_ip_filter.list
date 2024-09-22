@@ -113,9 +113,9 @@ swdownload.apple.com
 swcdn.apple.com
 swdist.apple.com
 #Google
-lens.l.google.com
-stun.l.google.com
-na.b.g-tun.com
++.l.google.com
++.g-tun.com
++.googleapis.com
 #Netflix
 +.nflxvideo.net
 #FinalFantasy XIV Worldwide Server & CN Server
@@ -148,6 +148,8 @@ static.adtidy.org
 +.n0808.com
 #T-mobile and Ultra Mobile wifi calling
 +.3gppnetwork.org
++.ls.apple.com
++.ondemandconnectivity.com
 #UU Plugin
 +.uu.163.com
 ps.res.netease.com
