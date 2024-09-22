@@ -1480,7 +1480,7 @@ setcore(){ #内核选择菜单
 	echo -e " >>\033[32m$singbox_v  	\033[33m不支持providers\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo -e "3 \033[43;30m  Meta  \033[0m：	\033[32m多功能，支持全面\033[0m"
-	echo -e " >>\033[32m$meta_v   	\033[33m内存占用较高\033[0m"
+	echo -e " >>\033[32m$meta_v   	\033[33m占用略高，GeoSite可能不兼容华硕固件\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
 	echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
@@ -1506,6 +1506,10 @@ setcore(){ #内核选择菜单
 		getcore
 	;;
 	3)
+		[ -d "/jffs" ] && {
+			echo -e "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
+			sleep 3
+		}
 		crashcore=meta
 		custcorelink=''
 		getcore

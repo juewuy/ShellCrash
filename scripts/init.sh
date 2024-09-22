@@ -66,8 +66,8 @@ if [ -n "$systype" ];then
 	[ "$systype" = "asusrouter" ] && {
 		echo -e "\033[33m检测到当前设备为华硕固件，请选择安装方式\033[0m"	
 		echo -e " 1 基于USB设备安装(限23年9月之前固件，须插入\033[31m任意\033[0mUSB设备)"
-		echo -e " 2 基于自启脚本安装(仅支持梅林及部分官改固件)"
-		echo -e " 3 基于下载大师安装(支持最新固件，限ARM设备，须插入U盘或移动硬盘)"
+		echo -e " 2 基于自启脚本安装(仅支持梅林及部分非koolshare官改固件)"
+		echo -e " 3 基于U盘+下载大师安装(支持所有固件，限ARM设备，须插入U盘或移动硬盘)"
 		echo -e " 0 退出安装"
 		echo -----------------------------------------------
 		read -p "请输入相应数字 > " num
@@ -83,7 +83,7 @@ if [ -n "$systype" ];then
 			dir=/jffs 
 		;;
 		3)
-			echo -e "请先在路由器网页后台安装下载大师，之后选择外置存储所在目录！"
+			echo -e "请先在路由器网页后台安装下载大师并启用，之后选择外置存储所在目录！"
 			sleep 2
 			set_asus_dir
 		;;
@@ -226,7 +226,7 @@ setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 #设置防火墙执行模式
 grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 	iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
-	nft add table inet test4532 2>/dev/null && firewall_mod=nftables && nft delete table inet test4532
+	nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
 	setconfig firewall_mod $firewall_mod
 }
 #设置更新地址
@@ -298,7 +298,7 @@ fi
 	nvram commit
 }
 #华硕下载大师启动额外设置
-[ -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ] && \
+[ -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ] && [ -z "$(grep 'ShellCrash' $dir/asusware.arm/etc/init.d/S50downloadmaster)" ] && \
 	sed -i "/^PATH=/a\\$CRASHDIR/start.sh init #ShellCrash初始化脚本" "$dir/asusware.arm/etc/init.d/S50downloadmaster"
 #删除临时文件
 rm -rf /tmp/*rash*gz
