@@ -242,6 +242,8 @@ setversion() {
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot   #NETGEAR设备
 
+[ -z "$USER" ] && USER=$(whoami)                        #获取当前用户
+
 #检查root权限
 if [ "$USER" != "root" -a -z "$systype" ]; then
 	echo 当前用户:$USER
@@ -249,6 +251,16 @@ if [ "$USER" != "root" -a -z "$systype" ]; then
 	echo -----------------------------------------------
 	read -p "仍要安装？可能会产生未知错误！(1/0) > " res
 	[ "$res" != "1" ] && exit 1
+fi
+
+if [ "$(cat /proc/1/comm)" = "sh" ] ||
+	[ "$(cat /proc/1/comm)" = "bash" ] ||
+	[ "$(cat /proc/1/comm)" = "ash" ] ||
+	[ "$(cat /proc/1/comm)" = "$(basename $0)" ]; then
+	dir=/etc
+	CRASHDIR=$dir/ShellCrash
+	install
+	exit 0
 fi
 
 if [ -n "$(echo $url | grep master)" ]; then
