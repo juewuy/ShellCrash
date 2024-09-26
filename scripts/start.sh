@@ -1897,11 +1897,17 @@ getconfig #读取配置及全局变量
 case "$1" in
 
 start)
-	[ -n "$(pidof CrashCore)" ] && $0 stop #禁止多实例
-	stop_firewall                          #清理路由策略
+	[ -z "$2" -a $2 = "init" ] && bfstart && exit 0 #下载核心
+	[ -n "$(pidof CrashCore)" ] && $0 stop          #禁止多实例
+	stop_firewall                                   #清理路由策略
 	#使用不同方式启动服务
 	if [ "$firewall_area" = "5" ]; then #主旁转发
 		start_firewall
+	elif [ "$(cat /proc/1/comm)" = "sh" ] ||
+		[ "$(cat /proc/1/comm)" = "bash" ] ||
+		[ "$(cat /proc/1/comm)" = "ash" ] ||
+		[ "$(cat /proc/1/comm)" = "$(basename $0)" ]; then #判断是否为为容器内运行
+		bfstart && $COMMAND
 	elif [ "$start_old" = "已开启" ]; then
 		bfstart && start_old
 	elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then

@@ -2114,6 +2114,9 @@ case "$1" in
 -u)
 	uninstall
 	;;
+-l) #导入配置
+	source ${CRASHDIR}/webget.sh && set_core_config_link $2
+	;;
 *)
 	$0 -h
 	;;

@@ -887,6 +887,7 @@ gen_link_ele(){ #在线生成节点筛选
 	setconfig include \'$include\'
 }
 get_core_config(){ #调用工具下载
+	[ -z "$1" -a "$1" = "-s" ] && ${CRASHDIR}/start.sh start init && exit 0
 	${CRASHDIR}/start.sh get_core_config
 	if [ "$?" = 0 ];then
 		if [ "$inuserguide" != 1 ];then
@@ -981,7 +982,7 @@ set_core_config_link(){ #直接导入配置
 	echo -----------------------------------------------
 	echo -e "\033[33m0 返回上级菜单\033[0m"
 	echo -----------------------------------------------
-	read -p "请输入完整链接 > " link
+	[ -z "$1" ] && read -p "请输入完整链接 > " link || link=$1
 	test=$(echo $link | grep -iE "tp.*://" )
 	link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
 	link=`echo ${link//\&/\\\&}`   #处理分隔符
@@ -989,14 +990,14 @@ set_core_config_link(){ #直接导入配置
 		echo -----------------------------------------------
 		echo -e 请检查输入的链接是否正确：
 		echo -e "\033[4;32m$link\033[0m"
-		read -p "确认导入配置文件？原配置文件将被备份![1/0] > " res
+		[ -z "$1" ] && read -p "确认导入配置文件？原配置文件将被备份![1/0] > " res || res=1
 			if [ "$res" = '1' ]; then
 				#将用户链接写入配置
 				sed -i '/Url=*/'d $CFG_PATH
 				setconfig Https \'$link\'
 				setconfig Url
 				#获取在线yaml文件
-				get_core_config
+				[ -z "$1" ] && get_core_config || get_core_config -s
 			else
 				set_core_config_link
 			fi
@@ -2547,6 +2548,8 @@ testcommand(){
 }
 
 case "$1" in
+	-l)
+	;;
 	*)
 		$1
 	;;
