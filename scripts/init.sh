@@ -211,13 +211,22 @@ for file in start.sh task.sh menu.sh; do
 done
 setconfig versionsh_l $version
 #生成用于执行systemd及procd服务的变量文件
-[ ! -f ${CRASHDIR}/configs/command.env ] && {
-	[ -z "$TMPDIR" ] && TMPDIR='/tmp/ShellCrash' 
+if [ ! -f ${CRASHDIR}/configs/command.env ]; then
+	[ -z "$TMPDIR" ] && TMPDIR='/tmp/ShellCrash'
 	[ -z "$BINDIR" ] && BINDIR=${CRASHDIR}
 	touch ${CRASHDIR}/configs/command.env
 	setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
 	setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env
-}
+else
+	# 保存当前的 TMPDIR 和 BINDIR
+	current_tmpdir=$TMPDIR
+	current_bindir=$BINDIR
+	# 读取 command.env 中的 TMPDIR 和 BINDIR
+	. ${CRASHDIR}/configs/command.env
+	# 检查 TMPDIR 和 BINDIR 是否一致
+	[ -n "$current_tmpdir" ] && [ "$current_tmpdir" != "$TMPDIR" ] && setconfig TMPDIR ${current_tmpdir} ${CRASHDIR}/configs/command.env
+	[ -n "$current_bindir" ] && [ "$current_bindir" != "$BINDIR" ] && setconfig BINDIR ${current_bindir} ${CRASHDIR}/configs/command.env
+fi
 if [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ]; then
 	COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 else
