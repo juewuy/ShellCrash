@@ -439,6 +439,10 @@ EOF
 	fi
 	#分割配置文件
 	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
+    # v3 yq
+    { cat $core_config | yq | yq -y > $TMPDIR/merged.yaml && mv $TMPDIR/merged.yaml $core_config; } >&/dev/null
+    # v4 yq
+    [ "${PIPESTATUS[*]}" == "0 0 0" ] || { cat $core_config | yq -o json | yq -o yaml > $TMPDIR/merged.yaml && mv $TMPDIR/merged.yaml $core_config; } >&/dev/null
 	for char in $yaml_char; do
 		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $core_config >"$TMPDIR"/${char}.yaml
 	done
