@@ -1897,7 +1897,7 @@ getconfig #读取配置及全局变量
 case "$1" in
 
 start)
-	[ -z "$2" -a $2 = "init" ] && bfstart && exit 0 #下载核心
+	[ -n "$2" -a $2 = "init" ] && bfstart && exit 0 #下载核心
 	[ -n "$(pidof CrashCore)" ] && $0 stop          #禁止多实例
 	stop_firewall                                   #清理路由策略
 	#使用不同方式启动服务

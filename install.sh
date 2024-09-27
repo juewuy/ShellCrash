@@ -1,7 +1,7 @@
 #! /bin/bash
 # Copyright (C) Juewuy
 
-[ -z "$url" ] && url="https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master"
+[ -z "$url" ] && url="https://fastly.jsdelivr.net/gh/jimorsm/ShellCrash@dev"
 type bash &>/dev/null && shtype=bash || shtype=sh
 echo='echo -e'
 [ -n "$(echo -e | grep e)" ] && {
@@ -259,6 +259,7 @@ if [ "$(cat /proc/1/comm)" = "sh" ] ||
 	[ "$(cat /proc/1/comm)" = "$(basename $0)" ]; then
 	dir=/etc
 	CRASHDIR=$dir/ShellCrash
+	[ -n "$1" -a "$1" = "-d" ] && [ -n "$2" ] && CRASHDIR=$2 && TMPDIR=$2
 	install
 	exit 0
 fi

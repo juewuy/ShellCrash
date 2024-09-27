@@ -212,8 +212,8 @@ done
 setconfig versionsh_l $version
 #生成用于执行systemd及procd服务的变量文件
 [ ! -f ${CRASHDIR}/configs/command.env ] && {
-	TMPDIR='/tmp/ShellCrash'
-	BINDIR=${CRASHDIR}
+	[ -z "$TMPDIR" ] && TMPDIR='/tmp/ShellCrash' 
+	[ -z "$BINDIR" ] && BINDIR=${CRASHDIR}
 	touch ${CRASHDIR}/configs/command.env
 	setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
 	setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env
