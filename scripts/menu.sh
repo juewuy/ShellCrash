@@ -193,6 +193,7 @@ start_core() {
 		[ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
 		source ${CRASHDIR}/webget.sh && gen_${coretype}_providers
 	elif [ -s $core_config -o -n "$Url" -o -n "$Https" ]; then
+		[ -n $1 -a $1 = 'download_only' ] && ${CRASHDIR}/start.sh bfstart && return 0
 		${CRASHDIR}/start.sh start
 		#设置循环检测以判定服务启动是否成功
 		i=1
@@ -2115,7 +2116,15 @@ case "$1" in
 	uninstall
 	;;
 -l) #导入配置
-	source ${CRASHDIR}/webget.sh && set_core_config_link $2
+	# 导入工具
+	source ${CRASHDIR}/webget.sh
+	# 验证订阅连接并写入配置文件
+	set_core_config_link $2
+	# 从订阅下载内核配置文件
+	inuserguide=1
+	get_core_config
+	# 下载内核可执行程序
+	start_core download_only
 	;;
 *)
 	$0 -h

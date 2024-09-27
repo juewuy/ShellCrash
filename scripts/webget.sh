@@ -887,7 +887,6 @@ gen_link_ele(){ #在线生成节点筛选
 	setconfig include \'$include\'
 }
 get_core_config(){ #调用工具下载
-	[ -n "$1" -a "$1" = "-s" ] && ${CRASHDIR}/start.sh start init && exit 0
 	${CRASHDIR}/start.sh get_core_config
 	if [ "$?" = 0 ];then
 		if [ "$inuserguide" != 1 ];then
@@ -997,7 +996,7 @@ set_core_config_link(){ #直接导入配置
 				setconfig Https \'$link\'
 				setconfig Url
 				#获取在线yaml文件
-				[ -z "$1" ] && get_core_config || get_core_config -s
+				[ -z "$1" ] && get_core_config || return 0
 			else
 				set_core_config_link
 			fi

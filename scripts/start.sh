@@ -1401,7 +1401,7 @@ start_firewall() { #路由规则总入口
 	[ "$firewall_mod" = 'iptables' ] && start_iptables
 	[ "$firewall_mod" = 'nftables' ] && start_nftables
 	#修复部分虚拟机dns查询失败的问题
-	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && {
+	[ -z $1 ] && [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && {
 		line=$(grep -n 'nameserver' /etc/resolv.conf | awk -F: 'FNR==1{print $1}')
 		sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf
 	}
@@ -1537,7 +1537,7 @@ stop_firewall() { #还原防火墙配置
 	#还原防火墙文件
 	[ -s /etc/init.d/firewall.bak ] && mv -f /etc/init.d/firewall.bak /etc/init.d/firewall
 	#others
-	sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf
+	[ -z $1 ] && sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf
 }
 #启动相关
 web_save() { #最小化保存面板节点选择
@@ -1897,16 +1897,18 @@ getconfig #读取配置及全局变量
 case "$1" in
 
 start)
-	[ -n "$2" -a $2 = "init" ] && bfstart && exit 0 #下载核心
-	[ -n "$(pidof CrashCore)" ] && $0 stop          #禁止多实例
-	stop_firewall                                   #清理路由策略
-	#使用不同方式启动服务
-	if [ "$firewall_area" = "5" ]; then #主旁转发
-		start_firewall
-	elif [ "$(cat /proc/1/comm)" = "sh" ] ||
+	if [ "$(cat /proc/1/comm)" = "sh" ] ||
 		[ "$(cat /proc/1/comm)" = "bash" ] ||
 		[ "$(cat /proc/1/comm)" = "ash" ] ||
 		[ "$(cat /proc/1/comm)" = "$(basename $0)" ]; then #判断是否为为容器内运行
+		container_mode=true
+	fi
+	[ -n "$(pidof CrashCore)" ] && $0 stop                                   #禁止多实例
+	[ -z $container_mode ] && stop_firewall || stop_firewall skip_nameserver #清理路由策略
+	#使用不同方式启动服务
+	if [ "$firewall_area" = "5" ]; then #主旁转发
+		[ -z $container_mode ] && stop_firewall || start_firewall skip_nameserver
+	elif [ -n $container_mode ]; then #容器内直接前台启动
 		bfstart && $COMMAND
 	elif [ "$start_old" = "已开启" ]; then
 		bfstart && start_old
