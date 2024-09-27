@@ -1909,7 +1909,7 @@ start)
 	if [ "$firewall_area" = "5" ]; then #主旁转发
 		[ -z $container_mode ] && stop_firewall || start_firewall skip_nameserver
 	elif [ -n $container_mode ]; then #容器内直接前台启动
-		bfstart && $COMMAND
+		bfstart && exec $COMMAND
 	elif [ "$start_old" = "已开启" ]; then
 		bfstart && start_old
 	elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
