@@ -272,7 +272,7 @@ fi
 #在允许的情况下创建/usr/bin/crash文件
 touch /usr/bin/crash 2>/dev/null && {
 	cat >/usr/bin/crash <<EOF
-#/bin/$shtype
+#!/bin/$shtype
 $CRASHDIR/menu.sh \$1 \$2 \$3 \$4 \$5
 EOF
 	chmod +x /usr/bin/crash
