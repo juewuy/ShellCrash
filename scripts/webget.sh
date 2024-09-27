@@ -887,7 +887,7 @@ gen_link_ele(){ #在线生成节点筛选
 	setconfig include \'$include\'
 }
 get_core_config(){ #调用工具下载
-	[ -z "$1" -a "$1" = "-s" ] && ${CRASHDIR}/start.sh start init && exit 0
+	[ -n "$1" -a "$1" = "-s" ] && ${CRASHDIR}/start.sh start init && exit 0
 	${CRASHDIR}/start.sh get_core_config
 	if [ "$?" = 0 ];then
 		if [ "$inuserguide" != 1 ];then
