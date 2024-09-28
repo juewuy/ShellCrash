@@ -1262,11 +1262,11 @@ start_nft_dns() { #nftables-dns
 	#防回环
 	nft add rule inet shellcrash "$1"_dns meta mark $routing_mark return
 	nft add rule inet shellcrash "$1"_dns meta skgid { 453, 7890 } return
+	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash "$1"_dns ip saddr $bypass_host return
+	nft add rule inet shellcrash "$1"_dns ip saddr != {$HOST_IP} return #屏蔽外部请求
 	#避免其他端口流量被拦截
 	nft add rule inet shellcrash "$1"_dns udp dport != $DEFAULT_DNS_PORT return
 	nft add rule inet shellcrash "$1"_dns tcp dport != $DEFAULT_DNS_PORT return
-	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash "$1"_dns ip saddr $bypass_host return
-	nft add rule inet shellcrash "$1"_dns ip saddr != {$HOST_IP} return #屏蔽外部请求
 	[ "$1" = 'prerouting' ] && nft add rule inet shellcrash "$1"_dns ip6 saddr != {$HOST_IP6} reject #屏蔽外部请求
 	#过滤局域网设备
 	[ "$1" = 'prerouting' ] && [ -s "$CRASHDIR"/configs/mac ] && {
