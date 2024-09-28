@@ -1255,12 +1255,16 @@ start_nft_route() { #nftables-route通用工具
 start_nft_dns() { #nftables-dns
 	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
 	HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
+	DEFAULT_DNS_PORT=53
 	[ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
 	[ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
 	nft add chain inet shellcrash "$1"_dns { type nat hook $2 priority -100 \; }
 	#防回环
 	nft add rule inet shellcrash "$1"_dns meta mark $routing_mark return
 	nft add rule inet shellcrash "$1"_dns meta skgid { 453, 7890 } return
+	#避免其他端口流量被拦截
+	nft add rule inet shellcrash "$1"_dns udp dport != $DEFAULT_DNS_PORT accept
+	nft add rule inet shellcrash "$1"_dns tcp dport != $DEFAULT_DNS_PORT accept
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash "$1"_dns ip saddr $bypass_host return
 	nft add rule inet shellcrash "$1"_dns ip saddr != {$HOST_IP} return #屏蔽外部请求
 	[ "$1" = 'prerouting' ] && nft add rule inet shellcrash "$1"_dns ip6 saddr != {$HOST_IP6} reject #屏蔽外部请求
@@ -1273,8 +1277,8 @@ start_nft_dns() { #nftables-dns
 			nft add rule inet shellcrash "$1"_dns ether saddr != {$MAC} return
 		fi
 	}
-	nft add rule inet shellcrash "$1"_dns udp dport 53 redirect to ${dns_port}
-	nft add rule inet shellcrash "$1"_dns tcp dport 53 redirect to ${dns_port}
+	nft add rule inet shellcrash "$1"_dns udp dport $DEFAULT_DNS_PORT redirect to ${dns_port}
+	nft add rule inet shellcrash "$1"_dns tcp dport $DEFAULT_DNS_PORT redirect to ${dns_port}
 }
 start_nft_wan() { #nftables公网防火墙
 	#获取局域网host地址
