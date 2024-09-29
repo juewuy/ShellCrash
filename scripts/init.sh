@@ -271,7 +271,7 @@ EOF
 [ -n "$initdir" ] && {
 	sed -i '/ShellCrash初始化/'d $initdir
 	touch $initdir
-	echo "$CRASHDIR/start.sh init #ShellCrash初始化脚本" >> $initdir
+	echo "$CRASHDIR/start.sh init & #ShellCrash初始化脚本" >> $initdir
 	chmod a+rx $initdir 2>/dev/null
 	setconfig initdir $initdir
 }
@@ -293,13 +293,13 @@ else
 fi
 #华硕USB启动额外设置
 [ "$usb_status" = "1" ]	&& {
-	echo "$CRASHDIR/start.sh init #ShellCrash初始化脚本" > ${CRASHDIR}/asus_usb_mount.sh
+	echo "$CRASHDIR/start.sh init & #ShellCrash初始化脚本" > ${CRASHDIR}/asus_usb_mount.sh
 	nvram set script_usbmount="$CRASHDIR/asus_usb_mount.sh"
 	nvram commit
 }
 #华硕下载大师启动额外设置
 [ -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ] && [ -z "$(grep 'ShellCrash' $dir/asusware.arm/etc/init.d/S50downloadmaster)" ] && \
-	sed -i "/^PATH=/a\\$CRASHDIR/start.sh init #ShellCrash初始化脚本" "$dir/asusware.arm/etc/init.d/S50downloadmaster"
+	sed -i "/^PATH=/a\\$CRASHDIR/start.sh init & #ShellCrash初始化脚本" "$dir/asusware.arm/etc/init.d/S50downloadmaster"
 #删除临时文件
 rm -rf /tmp/*rash*gz
 rm -rf /tmp/SC_tmp
