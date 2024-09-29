@@ -209,20 +209,16 @@ getlanip() { #获取局域网host地址
 	local_ipv4=$(ip route 2>&1 | grep -Ev 'utun|iot|docker|linkdown' | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
 	[ -z "$local_ipv4" ] && local_ipv4=$(ip route 2>&1 | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
 	#保留地址
-	reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
-	reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fc00::/7 fe80::/10 ff00::/8"
+	[ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
+	[ -z "$reserve_ipv6" ] && reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fc00::/7 fe80::/10 ff00::/8"
 }
 #配置文件相关
 check_clash_config() { #检查clash配置文件
 	#检测节点或providers
-	if [ -z "$(cat $core_config_new | grep -E 'server|proxy-providers' | grep -v 'nameserver' | head -n 1)" ]; then
+	if [ -z "$(cat $core_config_new | grep -E 'password:|proxy-providers:' | grep -v 'nameserver' | head -n 1)" ]; then
 		echo -----------------------------------------------
-		logger "获取到了配置文件，但似乎并不包含正确的节点信息！" 31
-		echo -----------------------------------------------
-		sed -n '1,30p' $core_config_new
-		echo -----------------------------------------------
-		echo -e "\033[33m请检查如上配置文件信息:\033[0m"
-		echo -----------------------------------------------
+		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
+		echo "请尝试使用其他生成方式！"
 		exit 1
 	fi
 	#检测旧格式
@@ -252,9 +248,10 @@ check_clash_config() { #检查clash配置文件
 }
 check_singbox_config() { #检查singbox配置文件
 	#检测节点或providers
-	if [ -z "$(cat $core_config_new | grep -Eo 'server|outbound_providers')" ]; then
+	if [ -z "$(cat $core_config_new | grep -Eo '"password"|outbound_providers')" ]; then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
+		echo "请尝试使用其他生成方式！"
 		exit 1
 	fi
 	#检测并去除无效策略组
@@ -303,11 +300,11 @@ get_core_config() { #下载内核配置文件
 			echo -----------------------------------------------
 			exit 1
 		else
-			if [ "$retry" = 3 ]; then
+			if [ "$retry" -ge 4 ]; then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
 				echo -e "\033[32m也可用浏览器下载以上链接后，使用WinSCP手动上传到/tmp目录后执行crash命令本地导入！\033[0m"
 				exit 1
-			elif [ "$retry" = 2 ]; then
+			elif [ "$retry" = 3 ]; then
 				retry=4
 				logger "配置文件获取失败！将尝试使用http协议备用服务器获取！" 31
 				echo -e "\033[32m如担心数据安全，请在3s内使用【Ctrl+c】退出！\033[0m"
@@ -318,7 +315,7 @@ get_core_config() { #下载内核配置文件
 				retry=$((retry + 1))
 				logger "配置文件获取失败！" 31
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在重试第$retry次/共3次！" 33
+				logger "正在重试第$retry次/共4次！" 33
 				if [ "$server_link" -ge 4 ]; then
 					server_link=0
 				fi
@@ -1145,6 +1142,7 @@ start_iptables() { #iptables配置总入口
 			if $ip6table -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
 				start_ipt_dns ip6tables PREROUTING shellcrashv6_dns #ipv6-局域网dns转发
 			else
+				$ip6table -I INPUT -p tcp --dport 53 -j REJECT
 				$ip6table -I INPUT -p udp --dport 53 -j REJECT
 			fi
 		}
@@ -1178,6 +1176,8 @@ start_nft_route() { #nftables-route通用工具
 	#过滤dns
 	nft add rule inet shellcrash $1 tcp dport 53 return
 	nft add rule inet shellcrash $1 udp dport 53 return
+	#过滤常用端口
+	[ -n "$PORTS" ] && nft add rule inet shellcrash $1 tcp dport != {$PORTS} ip daddr != {198.18.0.0/16} return
 	#防回环
 	nft add rule inet shellcrash $1 meta mark $routing_mark return
 	nft add rule inet shellcrash $1 meta skgid 7890 return
@@ -1213,7 +1213,6 @@ start_nft_route() { #nftables-route通用工具
 		CN_IP=$(awk '{printf "%s, ",$1}' "$BINDIR"/cn_ip.txt)
 		[ -n "$CN_IP" ] && nft add rule inet shellcrash $1 ip daddr {$CN_IP} return
 	}
-	[ -n "$PORTS" ] && nft add rule inet shellcrash $1 tcp dport != {$PORTS} ip daddr != {198.18.0.0/16} return #过滤常用端口
 	#局域网ipv6支持
 	if [ "$ipv6_redir" = "已开启" -a "$1" = 'prerouting' -a "$firewall_area" != 5 ]; then
 		RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
@@ -1258,6 +1257,9 @@ start_nft_dns() { #nftables-dns
 	[ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
 	[ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
 	nft add chain inet shellcrash "$1"_dns { type nat hook $2 priority -100 \; }
+	#过滤非dns请求
+	nft add rule inet shellcrash "$1"_dns udp dport != 53 return
+	nft add rule inet shellcrash "$1"_dns tcp dport != 53 return
 	#防回环
 	nft add rule inet shellcrash "$1"_dns meta mark $routing_mark return
 	nft add rule inet shellcrash "$1"_dns meta skgid { 453, 7890 } return
@@ -1392,7 +1394,7 @@ start_firewall() { #路由规则总入口
 		[ "$redir_mod" != "Redir模式" ] && ip -6 rule add fwmark $fwmark table $((table + 1)) 2>/dev/null
 	}
 	#判断代理用途
-	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -n "$(grep '0:7890' /etc/passwd)" ] && local_proxy=true
+	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && local_proxy=true
 	[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 ] && lan_proxy=true
 	#防火墙配置
 	[ "$firewall_mod" = 'iptables' ] && start_iptables
@@ -1481,6 +1483,7 @@ stop_firewall() { #还原防火墙配置
 		#redir
 		$ip6table -t nat -D PREROUTING -p tcp $ports -j shellcrashv6 2>/dev/null
 		$ip6table -t nat -D OUTPUT -p tcp $ports -j shellcrashv6_out 2>/dev/null
+		$ip6table -D INPUT -p tcp --dport 53 -j REJECT 2>/dev/null
 		$ip6table -D INPUT -p udp --dport 53 -j REJECT 2>/dev/null
 		#mark
 		$ip6table -t mangle -D PREROUTING -p tcp $ports -j shellcrashv6_mark 2>/dev/null
@@ -1700,9 +1703,11 @@ clash_check() { #clash启动前检查
 	#检测是否存在高级版规则或者tun模式
 	if [ "$crashcore" = "clash" ]; then
 		[ -n "$(cat $core_config | grep -aiE '^script:|proxy-providers|rule-providers|rule-set')" ] ||
-			[ "$redir_mod" = "混合模式" ] ||
+			[ "$redir_mod" = "混合模式" ] || 
 			[ "$redir_mod" = "Tun模式" ] && core_exchange meta '当前内核不支持的配置'
 	fi
+	[ "$crashcore" = "clash" ] && [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep '0:7890' /etc/passwd)" ] && \
+		core_exchange meta '当前内核不支持非root用户启用本机代理'
 	core_check
 	#预下载GeoIP数据库
 	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'geoip')" ] && ckgeo Country.mmdb cn_mini.mmdb
@@ -1989,7 +1994,7 @@ init)
 	echo "alias crash=\"$CRASHDIR/menu.sh\"" >>$profile
 	echo "alias clash=\"$CRASHDIR/menu.sh\"" >>$profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
-	[ -f "$CRASHDIR"/.dis_startup ] && cronset "保守模式守护进程" || $0 start
+	[ -f "$CRASHDIR"/.dis_startup ] && cronset "保守模式守护进程" || $0 start 
 	;;
 webget)
 	#设置临时代理

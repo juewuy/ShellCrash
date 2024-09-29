@@ -771,6 +771,7 @@ setfirewall(){ #防火墙设置
 	echo -e " 1 公网访问Dashboard面板:	\033[36m$public_support\033[0m"
 	echo -e " 2 公网访问Socks/Http代理:	\033[36m$public_mixport\033[0m"
 	echo -e " 3 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"	
+	echo -e " 4 自定义保留地址ipv4网段:	需要以保留地址为访问目标的环境"	
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num		
 	case $num in
@@ -801,6 +802,20 @@ setfirewall(){ #防火墙设置
 	;;
 	3)
 		set_cust_host_ipv4
+		setfirewall
+	;;
+	4)
+		[ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
+		echo -e "当前网段：\033[36m$reserve_ipv4\033[0m"
+		echo -e "\033[33m地址必须是空格分隔，错误的设置可能导致网络回环或启动报错，请务必谨慎！\033[0m"
+		read -p "请输入 > " reserve_ipv4
+		if [ -n "$reserve_ipv4" ];then
+			echo -e "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
+			setconfig reserve_ipv4 "\'$reserve_ipv4\'"
+		else
+			echo -e "\033[31m操作已取消！\033[0m"
+		fi
+		sleep 1
 		setfirewall
 	;;
 	*)
@@ -1164,7 +1179,7 @@ setboot(){ #启动相关设置
 	esac	
 
 }
-set_firewall_area(){
+set_firewall_area(){ #防火墙模式设置
 	[ -z "$vm_redir" ] && vm_redir='未开启'
 	echo -----------------------------------------------
 	echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请单独启用6！"
