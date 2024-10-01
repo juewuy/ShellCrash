@@ -215,14 +215,19 @@ getlanip() { #获取局域网host地址
 #配置文件相关
 check_clash_config() { #检查clash配置文件
 	#检测节点或providers
-	if [ -z "$(cat $core_config_new | grep -E 'password:|proxy-providers:' | grep -v 'nameserver' | head -n 1)" ]; then
+	sed -n "/^proxies:/,/^[a-z]/ { /^[a-z]/d; p; }" "$core_config_new" >"$TMPDIR"/proxies.yaml
+	if ! grep -q 'server:' "$TMPDIR"/proxies.yaml && ! grep -q 'proxy-providers:' "$core_config_new"; then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
+		cat "$TMPDIR"/proxies.yaml
+		sleep 1
+		echo -----------------------------------------------
 		echo "请尝试使用其他生成方式！"
 		exit 1
 	fi
+	rm -rf "$TMPDIR"/proxies.yaml
 	#检测旧格式
-	if cat $core_config_new | grep 'Proxy Group:' >/dev/null; then
+	if cat "$core_config_new" | grep 'Proxy Group:' >/dev/null; then
 		echo -----------------------------------------------
 		logger "已经停止对旧格式配置文件的支持！！！" 31
 		echo -e "请使用新格式或者使用【在线生成配置文件】功能！"
@@ -230,7 +235,7 @@ check_clash_config() { #检查clash配置文件
 		exit 1
 	fi
 	#检测不支持的加密协议
-	if cat $core_config_new | grep 'cipher: chacha20,' >/dev/null; then
+	if cat "$core_config_new" | grep 'cipher: chacha20,' >/dev/null; then
 		echo -----------------------------------------------
 		logger "已停止支持chacha20加密，请更换更安全的节点加密协议！" 31
 		echo -----------------------------------------------
@@ -238,17 +243,17 @@ check_clash_config() { #检查clash配置文件
 	fi
 	#检测并去除无效策略组
 	[ -n "$url_type" ] && ckcmd xargs && {
-		cat $core_config_new | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' >"$TMPDIR"/clash_proxies_$USER
+		cat "$core_config_new" | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' >"$TMPDIR"/clash_proxies_$USER
 		while read line; do
-			sed -i "/- $line/d" $core_config_new
-			sed -i "/- name: $line/,/- DIRECT/d" $core_config_new
+			sed -i "/- $line/d" "$core_config_new"
+			sed -i "/- name: $line/,/- DIRECT/d" "$core_config_new"
 		done <"$TMPDIR"/clash_proxies_$USER
 		rm -rf "$TMPDIR"/clash_proxies_$USER
 	}
 }
 check_singbox_config() { #检查singbox配置文件
 	#检测节点或providers
-	if [ -z "$(cat $core_config_new | grep -Eo '"password"|outbound_providers')" ]; then
+	if ! grep -qE '"(socks|http|shadowsocks(r)?|vmess|trojan|wireguard|hysteria(2)?|vless|shadowtls|tuic|ssh|tor|outbound_providers)"' "$core_config_new"; then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		echo "请尝试使用其他生成方式！"
@@ -274,7 +279,7 @@ get_core_config() { #下载内核配置文件
 	[ -z "$server_link" ] || [ $server_link -gt $(grep -aE '^4' "$CRASHDIR"/configs/servers.list | wc -l) ] && server_link=1
 	Server=$(grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
 	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ "$retry" = 3 ] && Server=$(grep -aE '^497' "$CRASHDIR"/configs/servers.list | awk '{print $3}')
+	[ "$retry" = 4 ] && Server=$(grep -aE '^497' "$CRASHDIR"/configs/servers.list | awk '{print $3}')
 	Config=$(grep -aE '^5' "$CRASHDIR"/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ]; then
@@ -1717,7 +1722,7 @@ clash_check() { #clash启动前检查
 }
 singbox_check() { #singbox启动前检查
 	#检测PuerNya专属功能
-	[ "$crashcore" != "singboxp" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE 'shadowsocksr|providers')" ] && core_exchange singboxp 'PuerNya内核专属功能'
+	[ "$crashcore" != "singboxp" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"outbound_providers"')" ] && core_exchange singboxp 'PuerNya内核专属功能'
 	core_check
 	#预下载geoip-cn.srs数据库
 	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
