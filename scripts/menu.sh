@@ -1378,13 +1378,23 @@ set_redir_mod(){ #代理模式设置
 			else
 				echo -e "\033[31m当前设备未安装nftables或者nftables版本过低(<1.0.2),无法切换！\033[0m" 
 			fi
-		else
+		elif [ "$firewall_mod" = 'nftables' ];then
 			if ckcmd iptables;then
 				firewall_mod=iptables
 				redir_mod=Redir模式
 				setconfig redir_mod $redir_mod
 			else
 				echo -e "\033[31m当前设备未安装iptables,无法切换！\033[0m" 
+			fi
+		else
+			iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
+			nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
+			if [ -n "$firewall_mod" ];then
+				redir_mod=Redir模式
+				setconfig redir_mod $redir_mod
+				setconfig firewall_mod $firewall_mod
+			else
+				echo -e "\033[31m检测不到可用的防火墙应用(iptables/nftables),无法切换！\033[0m" 
 			fi
 		fi
 		sleep 1

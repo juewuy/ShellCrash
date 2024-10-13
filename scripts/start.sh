@@ -620,7 +620,7 @@ EOF
 		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ]; then
 			direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
 			#生成add_rule_set.json
-			[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '\"tag\" *: *\"geosite-cn\"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
+			[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"geosite-cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
 	"rule_set": [
@@ -1135,7 +1135,7 @@ start_iptables() { #iptables配置总入口
 			fi
 		}
 	}
-	[ "$vm_redir" = "已开启" ] && {
+	[ "$vm_redir" = "已开启" ] && [ -n "$$vm_ipv4" ] && {
 		JUMP="REDIRECT --to-ports $redir_port" #跳转劫持的具体命令
 		start_ipt_dns iptables PREROUTING shellcrash_vm_dns #ipv4-局域网dns转发
 		start_ipt_route iptables nat PREROUTING shellcrash_vm tcp #ipv4-局域网tcp转发
@@ -1147,8 +1147,8 @@ start_iptables() { #iptables配置总入口
 			if $ip6table -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
 				start_ipt_dns ip6tables PREROUTING shellcrashv6_dns #ipv6-局域网dns转发
 			else
-				$ip6table -I INPUT -p tcp --dport 53 -j REJECT
-				$ip6table -I INPUT -p udp --dport 53 -j REJECT
+				$ip6table -I INPUT -p tcp --dport 53 -j REJECT >/dev/null 2>&1
+				$ip6table -I INPUT -p udp --dport 53 -j REJECT >/dev/null 2>&1
 			fi
 		}
 		[ "$local_proxy" = true ] && start_ipt_dns iptables OUTPUT shellcrash_dns_out #ipv4-本机dns转发
@@ -1351,7 +1351,7 @@ start_nftables() { #nftables配置总入口
 		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting filter -150
 		[ "$local_proxy" = true ] && start_nft_route output output route -150
 	}
-	[ "$vm_redir" = "已开启" ] && {
+	[ "$vm_redir" = "已开启" ] && [ -n "$$vm_ipv4" ] && {
 		start_nft_dns prerouting_vm prerouting
 		JUMP="meta l4proto tcp redirect to $redir_port" #跳转劫持的具体命令
 		start_nft_route prerouting_vm prerouting nat -100
@@ -1839,9 +1839,9 @@ afstart() { #启动后
 		[ -s "$CRASHDIR"/task/afstart ] && { . "$CRASHDIR"/task/afstart; } &
 		[ -s "$CRASHDIR"/task/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
 			#注入防火墙
-			line=$(grep -En "fw3 restart" /etc/init.d/firewall | cut -d ":" -f 1)
+			line=$(grep -En "fw.* restart" /etc/init.d/firewall | cut -d ":" -f 1)
 			sed -i.bak "${line}a\\. "$CRASHDIR"/task/affirewall" /etc/init.d/firewall
-			line=$(grep -En "fw3 .* start" /etc/init.d/firewall | cut -d ":" -f 1)
+			line=$(grep -En "fw.* start" /etc/init.d/firewall | cut -d ":" -f 1)
 			sed -i "${line}a\\. "$CRASHDIR"/task/affirewall" /etc/init.d/firewall
 		} &
 	else
