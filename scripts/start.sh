@@ -210,7 +210,7 @@ getlanip() { #获取局域网host地址
 	[ -z "$local_ipv4" ] && local_ipv4=$(ip route 2>&1 | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
 	#保留地址
 	[ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
-	[ -z "$reserve_ipv6" ] && reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fc00::/7 fe80::/10 ff00::/8"
+	[ -z "$reserve_ipv6" ] && reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fe80::/10 ff00::/8"
 }
 #配置文件相关
 check_clash_config() { #检查clash配置文件
@@ -669,7 +669,7 @@ EOF
 	  $direct_dns
 	  { "query_type": [ "A", "AAAA" ], "server": "dns_fakeip", "rewrite_ttl": 1 }
 	],
-    "final": "dns_direct",
+    "final": "dns_proxy",
     "independent_cache": true,
     "reverse_mapping": true,
     "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/16" }
@@ -1191,28 +1191,32 @@ start_nft_route() { #nftables-route通用工具
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip saddr $bypass_host return
 	nft add rule inet shellcrash $1 ip daddr {$RESERVED_IP} return #过滤保留地址
 	#过滤局域网设备
-	if [ "$1" = 'prerouting' ] && [ "$macfilter_type" != "白名单" ];then
-		[ -s "$CRASHDIR"/configs/mac ] && {
-		MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
-		nft add rule inet shellcrash $1 ether saddr {$MAC} return
+	[ "$1" = 'prerouting' ] && {
+		[ "$macfilter_type" != "白名单" ] && {
+			[ -s "$CRASHDIR"/configs/mac ] && {
+				MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
+				nft add rule inet shellcrash $1 ether saddr {$MAC} return
+			}
+			[ -s "$CRASHDIR"/configs/ip_filter ] && {
+				FL_IP=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/ip_filter)
+				nft add rule inet shellcrash $1 ip saddr {$FL_IP} return
+			}
+			nft add rule inet shellcrash $1 ip saddr != {$HOST_IP} return  #仅代理本机局域网网段流量
 		}
-		[ -s "$CRASHDIR"/configs/ip_filter ] && {
-		FL_IP=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/ip_filter)
-		nft add rule inet shellcrash $1 ip saddr {$FL_IP} return
+		[ "$macfilter_type" = "白名单" ] && {
+			[ -s "$CRASHDIR"/configs/mac ] && MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
+			[ -s "$CRASHDIR"/configs/ip_filter ] && FL_IP=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/ip_filter)
+			if [ -n "$MAC" ] && [ -n "$FL_IP" ];then
+				nft add rule inet shellcrash $1 ether saddr != {$MAC} ip saddr != {$FL_IP} return
+			elif [ -n "$MAC" ];then
+				nft add rule inet shellcrash $1 ether saddr != {$MAC} return
+			elif [ -n "$FL_IP" ];then
+				nft add rule inet shellcrash $1 ip saddr != {$FL_IP} return
+			else
+				nft add rule inet shellcrash $1 ip saddr != {$HOST_IP} return  #仅代理本机局域网网段流量
+			fi
 		}
-		nft add rule inet shellcrash $1 ip saddr != {$HOST_IP} return  #仅代理本机局域网网段流量
-	fi
-	if [ "$1" = 'prerouting' ] && [ "$macfilter_type" = "白名单" ];then
-		[ -s "$CRASHDIR"/configs/mac ] && MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
-		[ -s "$CRASHDIR"/configs/ip_filter ] && FL_IP=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/ip_filter)
-		if [ -n "$MAC" ] && [ -n "$FL_IP" ];then
-			nft add rule inet shellcrash $1 ether saddr != {$MAC} ip saddr != {$FL_IP} return
-		elif [ -n "$MAC" ];then
-			nft add rule inet shellcrash $1 ether saddr != {$MAC} return
-		elif [ -n "$FL_IP" ];then
-			nft add rule inet shellcrash $1 ip saddr != {$FL_IP} return
-		fi
-	fi
+	}
 	#绕过CN-IP
 	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f "$BINDIR"/cn_ip.txt ] && {
 		CN_IP=$(awk '{printf "%s, ",$1}' "$BINDIR"/cn_ip.txt)
@@ -1496,6 +1500,8 @@ stop_firewall() { #还原防火墙配置
 		$ip6table -t mangle -D OUTPUT -p tcp $ports -j shellcrashv6_mark_out 2>/dev/null
 		$ip6table -t mangle -D OUTPUT -p udp $ports -j shellcrashv6_mark_out 2>/dev/null
 		$ip6table -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
+		$ip6table -t mangle -D PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port 2>/dev/null
+		$ip6table -t mangle -D PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port 2>/dev/null
 		#tun
 		$ip6table -D FORWARD -o utun -j ACCEPT 2>/dev/null
 		#屏蔽QUIC
