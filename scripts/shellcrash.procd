@@ -11,14 +11,14 @@ CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
 source ${CRASHDIR}/configs/command.env #加载启动命令和启动目录
 
 start_service() {
-	if [ -n "$(cat $CRASHDIR/configs/ShellCrash.cfg | grep 'firewall_area=5')" ];then
+	if [ -n "$(cat $CRASHDIR/configs/ShellCrash.cfg | grep 'firewall_area=5')" ]; then
 		$CRASHDIR/start.sh start_firewall #主旁转发
 	else
 		#本机代理用户
 		[ -n "$(grep 'shellcrash:x:0:7890' /etc/passwd)" ] && USER=shellcrash || USER=root
 		#检测必须文件
 		$CRASHDIR/start.sh bfstart
-		if [ "$?" = "0" ];then
+		if [ "$?" = "0" ]; then
 			#使用procd创建clash后台进程
 			procd_open_instance
 			procd_set_param user $USER
@@ -32,8 +32,8 @@ start_service() {
 		fi
 	fi
 }
-stop_service(){
+stop_service() {
 	procd_close_instance
-	$CRASHDIR/start.sh stop_firewall 
+	$CRASHDIR/start.sh stop_firewall
 	$CRASHDIR/start.sh unset_proxy
 }

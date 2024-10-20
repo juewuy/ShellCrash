@@ -7,10 +7,10 @@ tmp_dir=/tmp/ddns_$USER
 [ ! -f "$ddns_dir" -o ! -d "/etc/ddns" ] && echo -e "本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！" && exit 1
 echo -----------------------------------------------
 echo -e "\033[30;46m欢迎使用ShellDDNS！\033[0m"
-echo -e "TG群：\033[36;4mhttps://t.me/clashfm\033[0m"
+echo -e "TG群：\033[36;4mhttps://t.me/ShellCrash\033[0m"
 
-add_ddns(){
-	cat >> $ddns_dir << EOF
+add_ddns() {
+	cat >>$ddns_dir <<EOF
 config service '$service'
 	option enabled '1'
 	option force_unit 'hours'
@@ -31,7 +31,7 @@ EOF
 	sleep 3
 	echo 服务已经添加！
 }
-set_ddns(){
+set_ddns() {
 	echo -----------------------------------------------
 	read -p "请输入你的域名 > " str
 	[ -z "$str" ] && domain=$domain || domain=$str
@@ -58,7 +58,7 @@ set_ddns(){
 	[ "$res" = 1 ] && add_ddns || set_ddns
 }
 
-set_service(){
+set_service() {
 	services_dir=/etc/ddns/$services
 	echo -----------------------------------------------
 	echo -e "\033[32m请选择服务提供商\033[0m"
@@ -78,7 +78,7 @@ set_service(){
 	fi
 }
 
-network_type(){
+network_type() {
 	echo -----------------------------------------------
 	echo -e "\033[32m请选择网络模式\033[0m"
 	echo -e " 1 \033[36mIPV4\033[0m"
@@ -86,11 +86,11 @@ network_type(){
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		i=
-	elif [ "$num" = 1 ];then
+	elif [ "$num" = 1 ]; then
 		use_ipv6=0
 		services=services
 		set_service
-	elif [ "$num" = 2 ];then
+	elif [ "$num" = 2 ]; then
 		use_ipv6=1
 		services=services_ipv6
 		set_service
@@ -101,13 +101,13 @@ network_type(){
 	fi
 }
 
-rev_service(){
+rev_service() {
 	enabled=$(uci show ddns.$service | grep 'enabled' | awk -F "\'" '{print $2}')
 	[ "$enabled" = 1 ] && enabled_b="停用" || enabled_b="启用"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m立即更新\033[0m"
 	echo -e " 2 编辑当前服务\033[0m"
-	echo -e " 3 $enabled_b当前服务"	
+	echo -e " 3 $enabled_b当前服务"
 	echo -e " 4 移除当前服务"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -133,21 +133,21 @@ rev_service(){
 	fi
 }
 
-load_ddns(){
+load_ddns() {
 	nr=0
-	cat $ddns_dir | grep 'config service' | awk '{print $3}' | sed "s/\'//g" > $tmp_dir
+	cat $ddns_dir | grep 'config service' | awk '{print $3}' | sed "s/\'//g" >$tmp_dir
 	echo -----------------------------------------------
 	echo -e "列表      域名       启用     IP地址"
 	echo -----------------------------------------------
-	for service in $(cat $tmp_dir) ;do
-		echo $service >> $tmp_dir
-		nr=$((nr+1))
+	for service in $(cat $tmp_dir); do
+		echo $service >>$tmp_dir
+		nr=$((nr + 1))
 		enabled=$(uci show ddns.$service | grep 'enabled' | awk -F "\'" '{print $2}')
 		domain=$(uci show ddns.$service | grep 'domain' | awk -F "\'" '{print $2}')
 		local_ip=$(cat /var/log/ddns/$service.log | grep 'Local IP' | tail -1 | awk -F "\'" '{print $2}')
 		echo -e " $nr   $domain  $enabled   $local_ip"
 	done
-	echo -e " $((nr+1))   添加DDNS服务"
+	echo -e " $((nr + 1))   添加DDNS服务"
 	echo -e " 0   退出"
 	echo -----------------------------------------------
 	read -p "请输入对应序号 > " num
@@ -165,7 +165,5 @@ load_ddns(){
 	fi
 }
 
-
 load_ddns
 rm -rf $tmp_dir
-
