@@ -808,12 +808,14 @@ setfirewall(){ #防火墙设置
 		[ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
 		echo -e "当前网段：\033[36m$reserve_ipv4\033[0m"
 		echo -e "\033[33m地址必须是空格分隔，错误的设置可能导致网络回环或启动报错，请务必谨慎！\033[0m"
-		read -p "请输入 > " reserve_ipv4
-		if [ -n "$reserve_ipv4" ];then
+		read -p "请输入 > " text
+		if [ -n "$(echo $text |grep -E "(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/(3[0-2]|[1-2]?[0-9]))( +|$)+"
+)" ];then
+			reserve_ipv4="$text"
 			echo -e "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
 			setconfig reserve_ipv4 "\'$reserve_ipv4\'"
 		else
-			echo -e "\033[31m操作已取消！\033[0m"
+			echo -e "\033[31m输入有误，操作已取消！\033[0m"
 		fi
 		sleep 1
 		setfirewall

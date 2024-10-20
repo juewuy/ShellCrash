@@ -1325,7 +1325,7 @@ start_nftables() { #nftables配置总入口
 		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -100
 		[ "$local_proxy" = true ] && start_nft_route output output nat -100
 	}
-	[ "$redir_mod" = "Tproxy模式" ] && modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy && {
+	[ "$redir_mod" = "Tproxy模式" ] && ( modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy ) && {
 		JUMP="meta l4proto {tcp, udp} mark set $fwmark tproxy to :$tproxy_port" #跳转劫持的具体命令
 		[ "$lan_proxy" = true ] && start_nft_route prerouting prerouting filter -150
 		[ "$local_proxy" = true ] && {

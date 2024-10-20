@@ -61,8 +61,8 @@ gettar(){
 		echo 开始解压文件！
 		mkdir -p $CRASHDIR > /dev/null
 		tar -zxf '/tmp/ShellCrash.tar.gz' -C $CRASHDIR/ || tar -zxf '/tmp/ShellCrash.tar.gz' --no-same-owner -C $CRASHDIR/
-		if [ -f $CRASHDIR/init.sh ];then
-			. $CRASHDIR/init.sh >/dev/null
+		if [ -s $CRASHDIR/init.sh ];then
+			. $CRASHDIR/init.sh >/dev/null || $echo "\033[33m初始化失败，请尝试本地安装！\033[0m"
 		else
 			rm -rf /tmp/ShellCrash.tar.gz
 			$echo "\033[33m文件解压失败！\033[0m"
@@ -203,8 +203,8 @@ echo -----------------------------------------------
 gettar
 echo -----------------------------------------------
 echo ShellCrash 已经安装成功!
-[ "$profile" = "~/.bashrc" ] && echo "请执行【source ~/.bashrc &> /dev/null】命令以加载环境变量！"
-[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && echo "请执行【source ~/.zshrc &> /dev/null】命令以加载环境变量！"
+[ "$profile" = "~/.bashrc" ] && echo "请执行【. ~/.bashrc &> /dev/null】命令以加载环境变量！"
+[ -n "$(ls -l /bin/sh|grep -oE 'zsh')" ] && echo "请执行【. ~/.zshrc &> /dev/null】命令以加载环境变量！"
 echo -----------------------------------------------
 $echo "\033[33m输入\033[30;47m crash \033[0;33m命令即可管理！！！\033[0m"
 echo -----------------------------------------------
