@@ -1504,7 +1504,7 @@ normal_set() { #基础设置
 	[ -z "$cn_ip_route" ] && cn_ip_route=未开启
 	[ -z "$local_proxy" ] && local_proxy=未开启
 	[ -z "$quic_rj" ] && quic_rj=未开启
-	[ -z "$(cat ${CRASHDIR}/configs/mac)" ] && mac_return=未开启 || mac_return=已启用
+	[ -z "$(cat ${CRASHDIR}/configs/mac ${CRASHDIR}/configs/ip_filter 2>/dev/null)" ] && mac_return=未开启 || mac_return=已启用
 	#
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"

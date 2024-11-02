@@ -793,6 +793,7 @@ EOF
 	[ -n "$(grep -Ev ^# "$CRASHDIR"/yamls/rules.yaml 2>/dev/null)" ] && {
 		cat "$CRASHDIR"/yamls/rules.yaml |
 			sed '/#.*/d' |
+			sed 's/,no-resolve//g' |
 			grep -oE '\-.*,.*,.*' |
 			sed 's/- DOMAIN-SUFFIX,/{ "domain_suffix": [ "/g' |
 			sed 's/- DOMAIN-KEYWORD,/{ "domain_keyword": [ "/g' |

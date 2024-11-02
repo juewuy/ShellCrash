@@ -65,7 +65,7 @@ setrules(){ #自定义规则
 	}
 	del_rule_type(){
 		echo -e "输入对应数字即可移除相应规则:"
-		sed -i '/^ *$/d' $YAMLSDIR/rules.yaml
+		sed -i '/^ *$/d; /^#/d' $YAMLSDIR/rules.yaml
 		cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
 		echo -----------------------------------------------	
 		echo -e " 0 返回上级菜单"
@@ -74,9 +74,8 @@ setrules(){ #自定义规则
 		0)	;;
 		'')	;;
 		*)
-			text=$(cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | sed -n "$num p" | awk '{print $2}')
-			if [ -n "$text" ];then	
-				sed -i "/$text/d" $YAMLSDIR/rules.yaml
+			if [ "$num" -le "$(wc -l < $YAMLSDIR/rules.yaml)" ];then	
+				sed -i "${num}d" $YAMLSDIR/rules.yaml
 				sleep 1
 				del_rule_type
 			else
