@@ -233,6 +233,7 @@ log_pusher() { #日志菜单
 	[ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
 	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
 	[ -n "$push_PP" ] && stat_PP=32m已启用 || stat_PP=33m未启用
+	[ -n "$push_SC" ] && stat_SC=32m已启用 || stat_SC=33m未启用
 	[ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
 	[ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	echo -----------------------------------------------
@@ -242,9 +243,10 @@ log_pusher() { #日志菜单
 	echo -e " 4 Bark推送-IOS	——\033[$stat_bark\033[0m"
 	echo -e " 5 Passover推送	——\033[$stat_Po\033[0m"
 	echo -e " 6 PushPlus推送	——\033[$stat_PP\033[0m"
-	echo -e " 7 推送任务日志	——\033[$stat_task\033[0m"
-	echo -e " 8 设置设备名称	——\033[$device_s\033[0m"
-	echo -e " 9 清空日志文件"
+	echo -e " 7 SynoChat推送	——\033[$stat_SC\033[0m"
+	echo -e " 8 推送任务日志	——\033[$stat_task\033[0m"
+	echo -e " 9 设置设备名称	——\033[$device_s\033[0m"
+	echo -e " 10 清空日志文件"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	case $num in
@@ -418,18 +420,56 @@ log_pusher() { #日志菜单
 		log_pusher
 		;;
 	7)
+		echo -----------------------------------------------
+		if [ -n "$push_SC" ]; then
+			read -p "确认关闭SynoChat日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_SC=
+				push_SC_URL=
+				push_SC_TOKEN=
+				push_SC_USERID=
+				setconfig push_SC
+				setconfig push_SC_URL
+				setconfig push_SC_TOKEN
+				setconfig push_SC_USERID
+			}
+		else
+			echo -----------------------------------------------
+			read -p "请输入你的Synology DSM主页地址,示例：https://test.myds.me > " URL
+			echo -----------------------------------------------
+			read -p "请输入你的Synology Chat Token > " TOKEN
+			echo -----------------------------------------------
+			echo -e '请通过"你的群晖地址/webapi/entry.cgi?api=SYNO.Chat.External&method=user_list&version=2&token=你的TOKEN，获取USER_ID"'
+			echo -----------------------------------------------
+			read -p "请输入你的User_ID > " USERID
+			if [ -n "$URL" ] && [ -n "$TOKEN" ] && [ -n "$USERID" ];then
+				setconfig push_Chat_URL $URL
+				setconfig push_Chat_TOKEN $TOKEN
+				setconfig push_Chat_USERID $USERID
+				${CRASHDIR}/start.sh logger "已完成SynoChat日志推送设置！" 32
+			else
+				echo -e "\033[31m输入错误，请重新输入！\033[0m"
+				setconfig push_Chat_URL
+				setconfig push_Chat_TOKEN
+				setconfig push_Chat_USERID
+			fi
+			sleep 1
+		fi
+		log_pusher
+	;;
+	8)
 		[ "$task_push" = 1 ] && task_push='' || task_push=1
 		setconfig task_push $task_push
 		sleep 1
 		log_pusher
 		;;
-	8)
+	9)
 		read -p "请输入本设备自定义推送名称 > " device_name
 		setconfig device_name $device_name
 		sleep 1
 		log_pusher
 		;;
-	9)
+	10)
 		echo -e "\033[33m运行日志及任务日志均已清空！\033[0m"
 		rm -rf ${TMPDIR}/ShellCrash.log
 		sleep 1

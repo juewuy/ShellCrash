@@ -128,6 +128,11 @@ logger() { #日志工具
 			content="{\"token\":\"${push_PP}\",\"title\":\"ShellCrash日志推送\",\"content\":\"$log_text\"}"
 			webpush "$url" "$content" &
 		}
+		[ -n "$push_SC" ] && {
+			if curl --version >/dev/null 2>&1;then 
+				curl -X POST "${push_Chat_URL}/webapi/entry.cgi?api=SYNO.Chat.External&method=chatbot&version=2&token=${push_Chat_TOKEN}" -H 'content-Type: application/json' -d "payload={\"text\":\"${log_text}\", \"user_ids\":[${push_Chat_USERID}]}" >/dev/null 2>&1							 
+			fi
+		}
 	} &
 }
 croncmd() { #定时任务工具
