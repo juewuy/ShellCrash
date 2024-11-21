@@ -1482,15 +1482,16 @@ fake_ip_filter() {
 	case $input in
 	0) ;;
 	'') ;;
-	[0-99])
-		sed -i "${input}d" ${CRASHDIR}/configs/fake_ip_filter 2>/dev/null
-		echo -e "\033[32m移除成功！\033[0m"
-		fake_ip_filter
-		;;
 	*)
-		echo -e "你输入的地址是：\033[32m$input\033[0m"
-		read -p "确认添加？(1/0) > " res
-		[ "$res" = 1 ] && echo $input >>${CRASHDIR}/configs/fake_ip_filter
+		if [ $input -ge 1 ] 2>/dev/null;then
+			sed -i "${input}d" ${CRASHDIR}/configs/fake_ip_filter 2>/dev/null
+			echo -e "\033[32m移除成功！\033[0m"
+		else
+			echo -e "你输入的地址是：\033[32m$input\033[0m"
+			read -p "确认添加？(1/0) > " res
+			[ "$res" = 1 ] && echo $input >>${CRASHDIR}/configs/fake_ip_filter
+		fi
+		sleep 1
 		fake_ip_filter
 		;;
 	esac
