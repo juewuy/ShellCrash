@@ -1422,7 +1422,7 @@ set_dns_mod() { #DNS设置
 	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
 		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
 		echo -e "                   依赖geosite-cn.(db/srs)数据库"
-	elif [ "$crashcore" = meta ]; then
+	elif [ "$crashcore" = meta  -o "$crashcore" = clash]; then
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   需搭配加密DNS使用"
 	fi
