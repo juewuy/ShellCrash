@@ -384,8 +384,9 @@ dns:
   fake-ip-range: 198.18.0.1/16
   fake-ip-filter:
 EOF
-		if [ "$dns_mod" = "fake-ip" ]; then
+		if [ "$dns_mod" != "redir_host" ]; then
 			cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
+			[ "$dns_mod" = "mix" ] && echo '    - "geosite:CN"' >>"$TMPDIR"/dns.yaml
 		else
 			echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
 		fi
@@ -1190,7 +1191,10 @@ start_nft_route() { #nftables-route通用工具
 	nft add rule inet shellcrash $1 tcp dport 53 return
 	nft add rule inet shellcrash $1 udp dport 53 return
 	#过滤常用端口
-	[ -n "$PORTS" ] && nft add rule inet shellcrash $1 tcp dport != {$PORTS} ip daddr != {198.18.0.0/16} ip6 daddr != {fc00::/16} return
+	[ -n "$PORTS" ] && {
+		nft add rule inet shellcrash $1 ip daddr != {198.18.0.0/16} tcp dport != {$PORTS} return
+		nft add rule inet shellcrash $1 ip6 daddr != {fc00::/16} tcp dport != {$PORTS} return
+	}
 	#防回环
 	nft add rule inet shellcrash $1 meta mark $routing_mark return
 	nft add rule inet shellcrash $1 meta skgid 7890 return
@@ -1499,14 +1503,20 @@ stop_firewall() { #还原防火墙配置
 		$ip6table -t nat -D PREROUTING -p udp --dport 53 -j shellcrashv6_dns 2>/dev/null
 		#redir
 		$ip6table -t nat -D PREROUTING -p tcp $ports -j shellcrashv6 2>/dev/null
+		$ip6table -t nat -D PREROUTING -p tcp -d fc00::/16 -j shellcrashv6 2>/dev/null
 		$ip6table -t nat -D OUTPUT -p tcp $ports -j shellcrashv6_out 2>/dev/null
+		$ip6table -t nat -D OUTPUT -p tcp -d fc00::/16 -j shellcrashv6_out 2>/dev/null
 		$ip6table -D INPUT -p tcp --dport 53 -j REJECT 2>/dev/null
 		$ip6table -D INPUT -p udp --dport 53 -j REJECT 2>/dev/null
 		#mark
 		$ip6table -t mangle -D PREROUTING -p tcp $ports -j shellcrashv6_mark 2>/dev/null
 		$ip6table -t mangle -D PREROUTING -p udp $ports -j shellcrashv6_mark 2>/dev/null
+		$ip6table -t mangle -D PREROUTING -p tcp -d fc00::/16 -j shellcrashv6_mark 2>/dev/null
+		$ip6table -t mangle -D PREROUTING -p udp -d fc00::/16 -j shellcrashv6_mark 2>/dev/null
 		$ip6table -t mangle -D OUTPUT -p tcp $ports -j shellcrashv6_mark_out 2>/dev/null
 		$ip6table -t mangle -D OUTPUT -p udp $ports -j shellcrashv6_mark_out 2>/dev/null
+		$ip6table -t mangle -D OUTPUT -p tcp -d fc00::/16 -j shellcrashv6_mark_out 2>/dev/null
+		$ip6table -t mangle -D OUTPUT -p udp -d fc00::/16 -j shellcrashv6_mark_out 2>/dev/null
 		$ip6table -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
 		$ip6table -t mangle -D PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port 2>/dev/null
 		$ip6table -t mangle -D PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port 2>/dev/null
@@ -1751,7 +1761,7 @@ singbox_check() { #singbox启动前检查
 network_check() { #检查是否联网
 	for host in 223.5.5.5 114.114.114.114 1.2.4.8 dns.alidns.com doh.pub doh.360.cn; do
 		ping -c 3 $host >/dev/null 2>&1 && return 0
-		sleep 2
+		sleep 5
 	done
 	logger "当前设备无法连接网络，已停止启动！" 33
 	exit 1

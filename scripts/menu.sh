@@ -558,7 +558,7 @@ setport() { #端口设置
 		setport
 	fi
 }
-setdns() { #DNS设置
+setdns() { #DNS详细设置
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$hosts_opt" ] && hosts_opt=已启用
@@ -1412,19 +1412,18 @@ set_redir_mod() { #代理模式设置
 		;;
 	esac
 }
-set_dns_mod() { #DNS设置
+set_dns_mod() { #DNS模式设置
 	echo -----------------------------------------------
 	echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
 	echo -e "                   不支持绕过CN-IP功能"
-	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
-		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
-		echo -e "                   依赖geosite-cn.(db/srs)数据库"
-	elif [ "$crashcore" = meta ]; then
+	if [ "$crashcore" = singbox ] || [ "$crashcore" = singboxp ] || [ "$crashcore" = meta ]; then
 		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 		echo -e "                   需搭配加密DNS使用"
+		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
+		echo -e "                   依赖geosite.dat/geosite-cn.srs数据库"
 	fi
 	echo -e " 4 \033[36mDNS进阶设置\033[0m"
 	echo " 0 返回上级菜单"
