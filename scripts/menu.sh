@@ -561,7 +561,7 @@ setport() { #端口设置
 setdns() { #DNS设置
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
-	[ -z "$hosts_opt" ] && hosts_opt=已开启
+	[ -z "$hosts_opt" ] && hosts_opt=已启用
 	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$dns_no" ] && dns_no=未禁用
 	echo -----------------------------------------------
