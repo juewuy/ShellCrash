@@ -1443,7 +1443,7 @@ set_dns_mod() { #DNS模式设置
 		echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		;;
 	3)
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
+		if [ "$crashcore" = singbox ] || [ "$crashcore" = singboxp ] || [ "$crashcore" = meta ]; then
 			dns_mod=mix
 			setconfig dns_mod $dns_mod
 			echo -----------------------------------------------
