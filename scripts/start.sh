@@ -1769,7 +1769,7 @@ network_check() { #检查是否联网
 bfstart() { #启动前
 	routing_mark=$((fwmark + 2))
 	#检测网络连接
-	[ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && network_check
+	[ "$network_check" != "已禁用" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && network_check
 	[ ! -d "$BINDIR"/ui ] && mkdir -p "$BINDIR"/ui
 	[ -z "$crashcore" ] && crashcore=clash
 	#执行条件任务
