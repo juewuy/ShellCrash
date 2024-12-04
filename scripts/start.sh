@@ -639,7 +639,7 @@ EOF
 }
 EOF
 		else
-			direct_dns="{ \"geosite\": \"geolocation-cn\", \"server\": \"dns_direct\" },"
+			direct_dns="{ \"geosite\": \"cn\", \"server\": \"dns_direct\" },"
 		fi
 	}
 	cat >"$TMPDIR"/jsons/dns.json <<EOF
