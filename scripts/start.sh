@@ -386,7 +386,7 @@ dns:
 EOF
 		if [ "$dns_mod" != "redir_host" ]; then
 			cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
-			[ "$dns_mod" = "mix" ] && echo '    - "geosite:CN"' >>"$TMPDIR"/dns.yaml
+			[ "$dns_mod" = "mix" ] && echo '    - "rule-set:geosite-cn"' >>"$TMPDIR"/dns.yaml #插入cn过滤规则
 		else
 			echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
 		fi
@@ -517,6 +517,14 @@ EOF
 		cat "$TMPDIR"/rules.yaml >>"$TMPDIR"/rules.add
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
+	#mix模式生成rule-providers
+	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn' "$TMPDIR"/rule-providers.yaml && cat >>"$TMPDIR"/rule-providers.yaml <<EOF
+  geosite-cn:
+    type: file
+    behavior: domain
+    format: mrs
+    path: geosite-cn.mrs
+EOF
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
 	#合并文件
@@ -1742,6 +1750,8 @@ clash_check() { #clash启动前检查
 	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'geoip')" ] && ckgeo Country.mmdb cn_mini.mmdb
 	#预下载GeoSite数据库
 	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'geosite')" ] && ckgeo GeoSite.dat geosite.dat
+	#预下载geosite-cn.mrs数据库
+	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.mrs mrs_geosite_cn.mrs
 	return 0
 }
 singbox_check() { #singbox启动前检查

@@ -1687,15 +1687,15 @@ setgeo(){ #数据库选择菜单
 		echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
 	}
 	[ -z "$(echo "$crashcore" | grep sing)" ] && {
-		echo -e " 3 Clash全球版GeoIP数据库(约6mb)	\033[33m$Country_v\033[0m"
-		echo -e " 4 Clash精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
-		echo -e " 5 Meta完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
+		echo -e " 3 Clash精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
+		echo -e " 4 Meta完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
+		echo -e " 5 geosite-cn.mrs数据库(DNS分流,约0.5mb)	\033[33m$mrs_geosite_cn_v\033[0m"
 	}
 	[ -n "$(echo "$crashcore" | grep sing)" ] && {
 		echo -e " 6 SingBox精简版GeoIP_cn数据库(约0.3mb)	\033[33m$geoip_cn_v\033[0m"
 		echo -e " 7 SingBox精简版GeoSite数据库(约0.8mb)	\033[33m$geosite_cn_v\033[0m"
-		echo -e " 8 Rule_Set_geoip_cn数据库(约0.1mb)	\033[33m$srs_geoip_cn_v\033[0m"
-		echo -e " 9 Rule_Set_geosite_cn数据库(约0.1mb)	\033[33m$srs_geosite_cn_v\033[0m"
+		echo -e " 8 geoip-cn.srs数据库(约0.1mb)	\033[33m$srs_geoip_cn_v\033[0m"
+		echo -e " 9 geosite-cn.srs数据库(DNS分流,约0.5mb)	\033[33m$srs_geosite_cn_v\033[0m"
 	}
 	echo -----------------------------------------------
 	echo -e " a \033[32m自定义数据库文件\033[0m"
@@ -1719,20 +1719,20 @@ setgeo(){ #数据库选择菜单
 		setgeo
 	;;
 	3)
-		geotype=Country.mmdb
-		geoname=Country.mmdb
-		getgeo
-		setgeo
-	;;
-	4)
 		geotype=cn_mini.mmdb
 		geoname=Country.mmdb
 		getgeo
 		setgeo
 	;;
-	5)
+	4)
 		geotype=geosite.dat
 		geoname=GeoSite.dat
+		getgeo
+		setgeo
+	;;
+	5)
+		geotype=mrs_geosite_cn.mrs
+		geoname=geosite-cn.mrs
 		getgeo
 		setgeo
 	;;
