@@ -1245,22 +1245,25 @@ switch_core(){ #clash与singbox内核切换
 	#singbox和clash内核切换时提示是否保留文件
 	[ "$core_new" != "$core_old" ] && {
 		[ "$dns_mod" = "redir_host" ] && [ "$core_old" = "clash" ] && setconfig dns_mod mix #singbox自动切换dns
-		[ "$dns_mod" = "mix" ] && [ "$core_old" = "singbox" ] && setconfig dns_mod fake-ip #singbox自动切换dns
+		[ "$dns_mod" = "mix" ] && [ "$crashcore" = 'clash' -o "$crashcore" = 'clashpre' ] && setconfig dns_mod fake-ip #singbox自动切换dns
 		echo -e "\033[33m已从$core_old内核切换至$core_new内核\033[0m"
 		echo -e "\033[33m二者Geo数据库及yaml/json配置文件不通用\033[0m"
 		read -p "是否保留相关数据库文件？(1/0) > " res
-		[ "$res" = '0' ] && [ "$core_old" = "clash" ] && {
-			 rm -rf ${CRASHDIR}/Country.mmdb
-			 rm -rf ${CRASHDIR}/GeoSite.dat
-			 setconfig Country_v
-			 setconfig cn_mini_v
-			 setconfig geosite_v
-		}
-		[ "$res" = '0' ] && [ "$core_old" = "singbox" ] && {
-			 rm -rf ${CRASHDIR}/geoip.db
-			 rm -rf ${CRASHDIR}/geosite.db
-			 setconfig geoip_cn_v
-			 setconfig geosite_cn_v
+		[ "$res" = '0' ] && {
+			[ "$core_old" = "clash" ] && {
+				geodate='Country.mmdb GeoSite.dat geosite-cn.mrs'
+				geodate_v='Country_v cn_mini_v geosite_v mrs_geosite_cn_v'
+			}
+			[ "$core_old" = "singbox" ] && {
+				geodate='geoip.db geosite.db geoip-cn.srs geosite-cn.srs'
+				geodate_v='geoip_cn_v geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v'
+			}
+			for text in ${geodate} ;do
+				rm -rf ${CRASHDIR}/"$text"
+			done
+			for text in ${geodate_v} ;do
+				setconfig "$text"
+			done
 		}
 	}
 	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
@@ -1771,10 +1774,10 @@ setgeo(){ #数据库选择菜单
 		echo -----------------------------------------------
 		read -p "确认清理？[1/0] > " res
 		[ "$res" = '1' ] && {
-			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db ;do
+			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geosite_cn.mrs geoip.db geosite.db geoip-cn.srs geosite-cn.srs;do
 				rm -rf $CRASHDIR/$file
 			done
-			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v ;do
+			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v ;do
 				setconfig $var
 			done
 			rm -rf $CRASHDIR/*.srs

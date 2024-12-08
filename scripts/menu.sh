@@ -1436,10 +1436,10 @@ set_dns_mod() { #DNS模式设置
 	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
-	echo -e "                   不支持绕过CN-IP功能"
+	echo -e "                   不支持CN-IP绕过功能"
+	echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
+	echo -e "                   需搭配加密DNS使用"
 	if [ "$crashcore" = singbox ] || [ "$crashcore" = singboxp ] || [ "$crashcore" = meta ]; then
-		echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
-		echo -e "                   需搭配加密DNS使用"
 		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
 		echo -e "                   依赖geosite.dat/geosite-cn.srs数据库"
 	fi
