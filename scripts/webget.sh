@@ -2232,6 +2232,7 @@ userguide(){
 			#设置运行模式
 			redir_mod="Redir模式"
 			setconfig redir_mod "$redir_mod"
+			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && setconfig crashcore "clash"
 			#自动识别IPV6
 			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {
 				setconfig ipv6_redir 已开启
@@ -2255,7 +2256,7 @@ userguide(){
 			fi
 		elif [ "$num" = 2 ];then
 			setconfig redir_mod "Redir模式"
-			setconfig crashcore "clash"
+			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && setconfig crashcore "clash"
 			setconfig common_ports "未开启"
 			setconfig firewall_area '2'
 			

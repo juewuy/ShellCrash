@@ -1788,7 +1788,7 @@ bfstart() { #启动前
 	#检测网络连接
 	[ "$network_check" != "已禁用" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && network_check
 	[ ! -d "$BINDIR"/ui ] && mkdir -p "$BINDIR"/ui
-	[ -z "$crashcore" ] && crashcore=clash
+	[ -z "$crashcore" ] && crashcore=meta
 	#执行条件任务
 	[ -s "$CRASHDIR"/task/bfstart ] && . "$CRASHDIR"/task/bfstart
 	#检查内核配置文件
