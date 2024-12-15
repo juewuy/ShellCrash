@@ -49,6 +49,15 @@ getconfig() { #读取配置及全局变量
 	#检查$iptable命令可用性
 	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
 	ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
+	#默认dns
+	[ -z "$dns_nameserver" ] && {
+		if [ -n "$(pidof dnsmasq)" ];then
+			dns_nameserver='127.0.0.1'
+		else
+			dns_nameserver='114.114.114.114, 223.5.5.5'
+		fi
+	}
+	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 }
 setconfig() { #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -359,8 +368,6 @@ get_core_config() { #下载内核配置文件
 }
 modify_yaml() { #修饰clash配置文件
 	##########需要变更的配置###########
-	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
-	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	[ -z "$skip_cert" ] && skip_cert=已开启
 	[ "$ipv6_dns" = "已开启" ] && dns_v6='true' || dns_v6='false'
 	external="external-controller: 0.0.0.0:$db_port"
