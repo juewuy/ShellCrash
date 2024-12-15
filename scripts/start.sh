@@ -524,7 +524,8 @@ EOF
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
 	#mix模式生成rule-providers
-	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn' "$TMPDIR"/rule-providers.yaml && cat >>"$TMPDIR"/rule-providers.yaml <<EOF
+	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q 'rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && \
+	cat >>"$TMPDIR"/rule-providers.yaml <<EOF
   geosite-cn:
     type: file
     behavior: domain
