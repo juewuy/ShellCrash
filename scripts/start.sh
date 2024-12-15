@@ -225,7 +225,7 @@ getlanip() { #获取局域网host地址
 check_clash_config() { #检查clash配置文件
 	#检测节点或providers
 	sed -n "/^proxies:/,/^[a-z]/ { /^[a-z]/d; p; }" "$core_config_new" >"$TMPDIR"/proxies.yaml
-	if ! grep -Eq 'server:|server":' "$TMPDIR"/proxies.yaml && ! grep -q 'proxy-providers:' "$core_config_new"; then
+	if ! grep -Eq 'server:|server":|server'\'':' "$TMPDIR"/proxies.yaml && ! grep -q 'proxy-providers:' "$core_config_new"; then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		cat "$TMPDIR"/proxies.yaml
