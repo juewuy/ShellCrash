@@ -129,10 +129,10 @@ logger() { #日志工具
 			webpush "$url" "$content" &
 		}
 		[ -n "$push_SynoChat" ] && {
-			# url="${push_ChatURL}"
-			# content="payload={\"text\":\"${log_text}\", \"user_ids\":[${push_ChatUSERID}]}"
-			# webpush "$url" "$content" &
-			curl -X POST "${push_ChatURL}/webapi/entry.cgi?api=SYNO.Chat.External&method=chatbot&version=2&token=${push_ChatTOKEN}" -H 'content-Type: application/json' -d "payload={\"text\":\"${log_text}\", \"user_ids\":[${push_ChatUSERID}]}" >/dev/null 2>&1
+			url="${push_ChatURL}/webapi/entry.cgi?api=SYNO.Chat.External&method=chatbot&version=2&token=${push_ChatTOKEN}"
+			content="payload={\"text\":\"${log_text}\", \"user_ids\":[${push_ChatUSERID}]}"
+			webpush "$url" "$content" &
+			#curl -X POST "${push_ChatURL}/webapi/entry.cgi?api=SYNO.Chat.External&method=chatbot&version=2&token=${push_ChatTOKEN}" -H 'content-Type: application/json' -d "payload={\"text\":\"${log_text}\", \"user_ids\":[${push_ChatUSERID}]}" >/dev/null 2>&1
 		}
 	} &
 }

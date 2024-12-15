@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/sh
 # Copyright (C) Juewuy
 
 CRASHDIR=$(
@@ -237,20 +237,21 @@ log_pusher() { #日志菜单
 	[ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
 	[ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	echo -----------------------------------------------
-	echo -e " 1 查看\033[36m运行日志\033[0m"
-	echo -e " 2 Telegram推送	——\033[$stat_TG\033[0m"
-	echo -e " 3 PushDeer推送	——\033[$stat_Deer\033[0m"
-	echo -e " 4 Bark推送-IOS	——\033[$stat_bark\033[0m"
-	echo -e " 5 Passover推送	——\033[$stat_Po\033[0m"
-	echo -e " 6 PushPlus推送	——\033[$stat_PP\033[0m"
-	echo -e " 7 SynoChat推送	——\033[$stat_SynoChat\033[0m"
-	echo -e " 8 推送任务日志	——\033[$stat_task\033[0m"
-	echo -e " 9 设置设备名称	——\033[$device_s\033[0m"
-	echo -e " 10 清空日志文件"
+	echo -e " 1 Telegram推送	——\033[$stat_TG\033[0m"
+	echo -e " 2 PushDeer推送	——\033[$stat_Deer\033[0m"
+	echo -e " 3 Bark推送-IOS	——\033[$stat_bark\033[0m"
+	echo -e " 4 Passover推送	——\033[$stat_Po\033[0m"
+	echo -e " 5 PushPlus推送	——\033[$stat_PP\033[0m"
+	echo -e " 6 SynoChat推送	——\033[$stat_SynoChat\033[0m"
+	echo -----------------------------------------------
+	echo -e " a 查看\033[36m运行日志\033[0m"
+	echo -e " b 推送任务日志	——\033[$stat_task\033[0m"
+	echo -e " c 设置设备名称	——\033[$device_s\033[0m"
+	echo -e " d 清空日志文件"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	case $num in
-	1)
+	a)
 		if [ -s ${TMPDIR}/ShellCrash.log ]; then
 			echo -----------------------------------------------
 			cat ${TMPDIR}/ShellCrash.log
@@ -260,7 +261,7 @@ log_pusher() { #日志菜单
 		fi
 		sleep 1
 		;;
-	2)
+	1)
 		echo -----------------------------------------------
 		if [ -n "$push_TG" ]; then
 			read -p "确认关闭TG日志推送？(1/0) > " res
@@ -302,7 +303,7 @@ log_pusher() { #日志菜单
 		fi
 		log_pusher
 		;;
-	3)
+	2)
 		echo -----------------------------------------------
 		if [ -n "$push_Deer" ]; then
 			read -p "确认关闭PushDeer日志推送？(1/0) > " res
@@ -329,7 +330,7 @@ log_pusher() { #日志菜单
 		fi
 		log_pusher
 		;;
-	4)
+	3)
 		echo -----------------------------------------------
 		if [ -n "$push_bark" ]; then
 			read -p "确认关闭Bark日志推送？(1/0) > " res
@@ -356,7 +357,7 @@ log_pusher() { #日志菜单
 		fi
 		log_pusher
 		;;
-	5)
+	4)
 		echo -----------------------------------------------
 		if [ -n "$push_Po" ]; then
 			read -p "确认关闭Pushover日志推送？(1/0) > " res
@@ -395,7 +396,7 @@ log_pusher() { #日志菜单
 		sleep 1
 		log_pusher
 		;;
-	6)
+	5)
 		echo -----------------------------------------------
 		if [ -n "$push_PP" ]; then
 			read -p "确认关闭PushPlus日志推送？(1/0) > " res
@@ -419,7 +420,7 @@ log_pusher() { #日志菜单
 		sleep 1
 		log_pusher
 		;;
-	7)
+	6)
 		echo -----------------------------------------------
 		if [ -n "$push_SynoChat" ]; then
 			read -p "确认关闭SynoChat日志推送？(1/0) > " res
@@ -455,19 +456,19 @@ log_pusher() { #日志菜单
 		sleep 1
 		log_pusher
 		;;
-	8)
+	b)
 		[ "$task_push" = 1 ] && task_push='' || task_push=1
 		setconfig task_push $task_push
 		sleep 1
 		log_pusher
 		;;
-	9)
+	c)
 		read -p "请输入本设备自定义推送名称 > " device_name
 		setconfig device_name $device_name
 		sleep 1
 		log_pusher
 		;;
-	10)
+	d)
 		echo -e "\033[33m运行日志及任务日志均已清空！\033[0m"
 		rm -rf ${TMPDIR}/ShellCrash.log
 		sleep 1
