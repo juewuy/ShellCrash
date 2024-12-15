@@ -4,7 +4,7 @@
 102#$CRASHDIR/start.sh stop#停止clash服务
 103#$CRASHDIR/start.sh restart#重启clash服务
 104#$CRASHDIR/start.sh update_config#更新订阅并重启服务
-105#$CRASHDIR/start.sh hotupdate#热更新订阅(不推荐)
+105#$CRASHDIR/start.sh hotupdate#热更新订阅-不推荐
 106#$CRASHDIR/start.sh web_save#自动保存面板配置
 107#$CRASHDIR/task/task.sh ntp#自动同步ntp时间
 
@@ -13,6 +13,6 @@
 113#$CRASHDIR/task/task.sh update_mmdb#自动更新数据库文件
 
 121#$CRASHDIR/task/task.sh reset_firewall#重设透明路由防火墙
-122#sleep 70 && touch /etc/banner && reboot#重启路由设备(慎用)
+122#sleep 70 && touch /etc/banner && reboot#重启路由设备-慎用
 
 
