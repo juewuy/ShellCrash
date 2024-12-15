@@ -138,13 +138,15 @@ update_mmdb(){ #自动更新数据库
 			fi
 		fi
 	}
-	[ -n "${Country_v}" -a -s $CRASHDIR/Country.mmdb ] && getgeo Country.mmdb Country.mmdb
 	[ -n "${cn_mini_v}" -a -s $CRASHDIR/Country.mmdb ] && getgeo Country.mmdb cn_mini.mmdb
 	[ -n "${china_ip_list_v}" -a -s $CRASHDIR/cn_ip.txt ] && getgeo cn_ip.txt china_ip_list.txt
 	[ -n "${china_ipv6_list_v}" -a -s $CRASHDIR/cn_ipv6.txt ] && getgeo cn_ipv6.txt china_ipv6_list.txt
 	[ -n "${geosite_v}" -a -s $CRASHDIR/GeoSite.dat ] && getgeo GeoSite.dat geosite.dat
 	[ -n "${geoip_cn_v}" -a -s $CRASHDIR/geoip.db ] && getgeo geoip.db geoip_cn.db
 	[ -n "${geosite_cn_v}" -a -s $CRASHDIR/geosite.db ] && getgeo geosite.db geosite_cn.db
+	[ -n "${mrs_geosite_cn_v}" -a -s $CRASHDIR/geosite-cn.mrs ] && getgeo geosite-cn.mrs mrs_geosite_cn.mrs
+	[ -n "${srs_geoip_cn_v}" -a -s $CRASHDIR/geoip-cn.srs ] && getgeo geoip-cn.srs srs_geoip_cn.srs
+	[ -n "${srs_geosite_cn_v}" -a -s $CRASHDIR/geosite-cn.srs ] && getgeo geosite-cn.srs srs_geosite_cn.srs
 	return 0
 }
 reset_firewall(){ #重设透明路由防火墙
