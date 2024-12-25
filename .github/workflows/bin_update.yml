@@ -1,12 +1,12 @@
 name: bin_update
 
-on: 
+on:
 #   release:
 #       types: [published]
 #   push:
 #       tags:
 #       - 'v*'
-#   branches: 
+#   branches:
 #       - master
     schedule:
         - cron: 0 10 * * 5
@@ -19,20 +19,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    
+
     - name: Checkout ShellCrash
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
       with:
         repository: juewuy/ShellCrash
         fetch-depth: 1
-        
+
     - name: Apt Update
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo apt-get update
         sudo apt-get -y install unzip curl git tar
-        
+
     - name: Update Dashboard
       run: |
         mkdir -p bin/dashboard
@@ -43,11 +43,13 @@ jobs:
         echo 下载Meta面板
         curl -kfSL -o meta_db.zip  https://github.com/MetaCubeX/Razord-meta/archive/gh-pages.zip
         echo 下载yacd面板
-        curl -kfSL -o yacd.zip  https://github.com/haishanh/yacd/archive/gh-pages.zip 
+        curl -kfSL -o yacd.zip  https://github.com/haishanh/yacd/archive/gh-pages.zip
         echo 下载meta魔改yacd面板
         curl -kfSL -o meta_yacd.zip  https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip
         echo 下载meta-xd面板
         curl -kfSL -o meta_xd.zip  https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
+        echo 下载zashboard面板
+        curl -kfSL -o zashboard.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip
         echo 解压缩
         # unzip -o clashdb.zip > /dev/null
         unzip -o yacd.zip > /dev/null
@@ -62,7 +64,7 @@ jobs:
         tar -zcvf yacd.tar.gz * > /dev/null
         mv -f yacd.tar.gz ../
         cd ..
-        
+
         echo 解压缩meta
         unzip -o meta_db.zip > /dev/null
         unzip -o meta_yacd.zip > /dev/null
@@ -77,7 +79,7 @@ jobs:
         tar -zcvf meta_yacd.tar.gz * > /dev/null
         mv -f meta_yacd.tar.gz ../
         cd ..
-        
+
         echo 解压缩meta-xd
         unzip -o meta_xd.zip > /dev/null
         cd metacubexd-gh-pages
@@ -85,18 +87,29 @@ jobs:
         find -name '*.ttf' | xargs  rm -rf
         tar -zcvf meta_xd.tar.gz * > /dev/null
         mv -f meta_xd.tar.gz ../
-        
-        cd ..       
+        cd ..
+
+        echo 解压缩zashboard
+        unzip -o zashboard.zip > /dev/null
+        cd dist
+        echo 删除字体文件
+        find -name '*.ttf' | xargs  rm -rf
+        tar -zcvf zashboard.tar.gz * > /dev/null
+        mv -f zashboard.tar.gz ../
+
+        cd ..
         rm -rf clashdb.zip
         rm -rf yacd.zip
         rm -rf meta_db.zip
         rm -rf meta_yacd.zip
         rm -rf meta_xd.zip
+        rm -rf zashboard.zip
         rm -rf clash-dashboard-gh-pages
         rm -rf yacd-gh-pages
         rm -rf Razord-meta-gh-pages
         rm -rf Yacd-meta-gh-pages
         rm -rf metacubexd-gh-pages
+        rm -rf dist
         echo 面板更新完成！
 
     - name: Update certificate
@@ -129,7 +142,7 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
         git add . && git commit -m "自动更新最新Dashboard、地址库、根证书" || exit 0
         git push
-        
+
     - name: Cleanup Workflow
       uses: Mattraks/delete-workflow-runs@main
       with:
