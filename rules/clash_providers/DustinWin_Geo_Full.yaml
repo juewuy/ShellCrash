@@ -4,8 +4,8 @@ proxy-groups:
   - {name: 🐟 漏网之鱼, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📺 省流节点, 👍 高级节点, {providers_tags}, 🚀 手动切换, 🎯 本机直连]}
   - {name: 🎯 全球直连, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 🤖 人工智能, type: select, proxies: [🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🚀 节点选择, 🚀 手动切换]}
-  - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
-  - {name: 🎮 游戏平台, type: select, proxies: [🎯 本机直连, 👍 高级节点, 🚀 节点选择]}
+  - {name: 📲 电报信息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, {providers_tags}, 🚀 手动切换]}
+  - {name: 🎮 游戏服务, type: select, proxies: [🎯 本机直连, 👍 高级节点, 🚀 节点选择]}
   - {name: 🪟 微软服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 🇬 谷歌服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
   - {name: 🍎 苹果服务, type: select, proxies: [🎯 本机直连, 🚀 节点选择]}
@@ -26,11 +26,11 @@ rules:
   - GEOSITE,microsoft@cn,🪟 微软服务
   - GEOSITE,apple-cn,🍎 苹果服务
   - GEOSITE,google-cn,🇬 谷歌服务
-  - GEOSITE,category-games@cn,🎮 游戏平台
+  - GEOSITE,category-games@cn,🎮 游戏服务
   - GEOSITE,speedtest,📈 网络测试
   - GEOSITE,geolocation-!cn,🚀 节点选择
   - GEOSITE,cn,🎯 全球直连
-  - GEOIP,telegram,📲 电报消息
+  - GEOIP,telegram,📲 电报信息,no-resolve
   - GEOIP,private,🎯 全球直连,no-resolve
   - GEOIP,cn,🎯 全球直连
   - MATCH,🐟 漏网之鱼
