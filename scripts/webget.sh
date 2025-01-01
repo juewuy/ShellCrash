@@ -1822,7 +1822,7 @@ getdb(){ #下载Dashboard文件
 		#写入配置文件
 		setconfig hostdir \'$hostdir\'
 		echo -----------------------------------------------
-		echo -e "\033[32m面板安装成功！\033[0m"
+		echo -e "\033[32m面板安装成功！\033[36m如未生效，请使用【Ctrl+F5】强制刷新浏览器！！！\033[0m"
 		rm -rf ${TMPDIR}/clashdb.tar.gz
 	fi
 	sleep 1

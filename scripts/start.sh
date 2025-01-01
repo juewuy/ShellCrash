@@ -1664,7 +1664,7 @@ makehtml() { #生成面板跳转文件
         <a href="https://board.zash.run.place" style="font-size: 24px;">zashboard面板<br></a>
         <a href="https://yacd.metacubex.one" style="font-size: 24px;">Meta YACD面板(推荐)<br></a>
         <a href="https://yacd.haishan.me" style="font-size: 24px;">Clash YACD面板<br></a>
-        <a style="font-size: 21px;"><br>如已安装，请刷新此页面！<br></a>
+        <a style="font-size: 21px;"><br>如已安装，请使用Ctrl+F5强制刷新此页面！<br></a>
     </div>
 </body>
 </html
