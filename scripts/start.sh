@@ -767,6 +767,7 @@ EOF
 }
 EOF
 	if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
+		[ "ipv6_redir" = '已开启' ] && ipv6_address='"fdfe:dcba:9876::1/126",'
 		cat >>"$TMPDIR"/jsons/tun.json <<EOF
 {
   "inbounds": [
@@ -775,8 +776,8 @@ EOF
       "tag": "tun-in",
       "interface_name": "utun",
       "address": [
-        "172.72.0.1/30",
-        "fdfe:dcba:9876::1/126"
+        $ipv6_address
+        "172.72.0.1/30"
       ],
       "auto_route": false,
       "stack": "system",

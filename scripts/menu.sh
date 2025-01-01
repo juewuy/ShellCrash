@@ -1617,8 +1617,13 @@ normal_set() { #基础设置
 	elif [ "$num" = 4 ]; then
 		set_common_ports() {
 			if [ "$common_ports" = "未开启" ]; then
-				echo -e "\033[33m已设为仅代理【$multiport】等常用端口！！\033[0m"
+				echo -e "\033[33m当前代理端口为：【$multiport】\033[0m"
 				echo -e "\033[31m注意，fake-ip模式下，非常用端口的域名连接将不受影响！！\033[0m"
+				read -p "是否修改默认端口？(1/0) > " res
+				[ "$res" = "1" ] && {
+					read -p "请输入自定义端口,注意用小写逗号分隔 > " text
+					[ -n "$text" ] && setconfig multiport $text && echo -e "\033[33m已设为代理【$multiport】端口！！\033[0m"
+				}
 				common_ports=已开启
 				sleep 1
 			else
