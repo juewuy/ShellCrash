@@ -84,6 +84,9 @@ setrules(){ #自定义规则
 		;;
 		esac
 	}
+	get_rule_group(){
+		"$CRASHDIR"/start.sh get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector|URLTest|LoadBalance"' | grep -aoE '"name":.*"now":".*",' | awk -F '"' '{print "#"$4}' | tr -d '\n'
+	}
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
 	echo -e "如需批量操作，请手动编辑：\033[36m $YAMLSDIR/rules.yaml\033[0m"
@@ -101,7 +104,7 @@ setrules(){ #自定义规则
 	;;
 	1)
 		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN"
-		rule_group="DIRECT#REJECT$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/- name: /#/g' | tr -d '\n')"
+		rule_group="DIRECT#REJECT$(get_rule_group)"
 		set_rule_type
 		setrules
 	;;
