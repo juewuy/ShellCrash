@@ -1646,7 +1646,7 @@ setcustgeo(){ #下载自定义数据库文件
 	;;
 	2)
 		project=DustinWin/ruleset_geodata
-		api_tag=clash
+		api_tag=mihomo
 		checkcustgeo
 		setcustgeo
 	;;
