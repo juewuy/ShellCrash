@@ -398,7 +398,7 @@ dns:
   fake-ip-filter:
 EOF
 		if [ "$dns_mod" != "redir_host" ]; then
-			cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep '\.' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
+			cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep -v '#' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
 			[ "$dns_mod" = "mix" ] && echo '    - "rule-set:geosite-cn"' >>"$TMPDIR"/dns.yaml #插入cn过滤规则
 		else
 			echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
@@ -411,11 +411,11 @@ EOF
 EOF
 		[ -s "$CRASHDIR"/configs/fallback_filter.list ] && {
 			echo "    domain:" >>"$TMPDIR"/dns.yaml
-			cat "$CRASHDIR"/configs/fallback_filter.list | grep '\.' | sed "s/^/      - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
+			cat "$CRASHDIR"/configs/fallback_filter.list | grep -v '#' | sed "s/^/      - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
 		}
 	}
 	#域名嗅探配置
-	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {tls: {ports: [443, 8443]}, http: {ports: [80, 8080-8880]}, quic: {ports: [443, 8443]}}}"
+	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {http: {ports: [80, 8080-8880], override-destination: true}, tls: {ports: [443, 8443]}, quic: {ports: [443, 8443]}}}"
 	[ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" -o "$sniffer" = "已启用" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0,sniff-tls-sni: true}"
 	#生成set.yaml
 	cat >"$TMPDIR"/set.yaml <<EOF
@@ -441,8 +441,8 @@ EOF
 		#NTP劫持
 		cat >>"$TMPDIR"/hosts.yaml <<EOF
 hosts:
-   'time.android.com': 203.107.6.88
-   'time.facebook.com': 203.107.6.88
+  'time.android.com': 203.107.6.88
+  'time.facebook.com': 203.107.6.88
 EOF
 		#加载本机hosts
 		sys_hosts=/etc/hosts
@@ -533,11 +533,11 @@ EOF
 	#mix模式生成rule-providers
 	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q 'rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && \
 	cat >>"$TMPDIR"/rule-providers.yaml <<EOF
-  geosite-cn:
-    type: file
-    behavior: domain
-    format: mrs
-    path: geosite-cn.mrs
+geosite-cn:
+  type: file
+  behavior: domain
+  format: mrs
+  path: geosite-cn.mrs
 EOF
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
@@ -602,15 +602,15 @@ EOF
 			cat >"$TMPDIR"/jsons/add_hosts.json <<EOF
 {
   "dns": {
-	"servers": [
-	  { "tag": "hosts_local", "address": "local", "detour": "DIRECT" }
-	],
+    "servers": [
+      { "tag": "hosts_local", "address": "local", "detour": "DIRECT" }
+    ],
     "rules": [
-	  {
-	    "domain": [$hosts_domain],
-		"server": "hosts_local"
-	  }
-	]
+      {
+        "domain": [$hosts_domain],
+        "server": "hosts_local"
+      }
+    ]
   }
 }
 EOF
@@ -643,20 +643,20 @@ EOF
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
-		if [ -z "$(echo "$core_v" | grep -E '^1\.7.*')" ]; then
+		if [ -z "$(echo "$core_v" | grep -E '(^1\.(8|[89]\d*|\d{2,})\.\d+$)|(^(2|[2-9]\d*|\d{2,})\.([0-9]\d*|\d{2,})\.\d+$)')" ]; then
 			direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
 			#生成add_rule_set.json
 			[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"geosite-cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
-	"rule_set": [
+    "rule_set": [
       {
         "tag": "geosite-cn",
         "type": "local",
         "format": "binary",
         "path": "geosite-cn.srs"
       }
-	]
+    ]
   }
 }
 EOF
@@ -668,33 +668,34 @@ EOF
 {
   "dns": {
     "servers": [
-	  {
+      {
         "tag": "dns_proxy",
         "address": "$dns_proxy",
         "strategy": "$strategy",
         "address_resolver": "dns_resolver"
-      }, {
+      },
+      {
         "tag": "dns_direct",
         "address": "$dns_direct",
         "strategy": "$strategy",
         "address_resolver": "dns_resolver",
         "detour": "DIRECT"
       },
-	  { "tag": "dns_fakeip", "address": "fakeip" },
-	  { "tag": "dns_resolver", "address": "223.5.5.5", "detour": "DIRECT" },
-	  { "tag": "block", "address": "rcode://success" },
-	  { "tag": "local", "address": "local", "detour": "DIRECT" }
-	],
+      { "tag": "dns_fakeip", "address": "fakeip" },
+      { "tag": "dns_resolver", "address": "223.5.5.5", "detour": "DIRECT" },
+      { "tag": "block", "address": "rcode://success" },
+      { "tag": "local", "address": "local", "detour": "DIRECT" }
+    ],
     "rules": [
-	  { "outbound": ["any"], "server": "dns_direct" },
-	  { "clash_mode": "Global", "server": "$global_dns", "rewrite_ttl": 1 },
+      { "outbound": ["any"], "server": "dns_direct" },
+      { "clash_mode": "Global", "server": "$global_dns", "rewrite_ttl": 1 },
       { "clash_mode": "Direct", "server": "dns_direct" },
-	  $fake_ip_filter_domain
-	  $fake_ip_filter_suffix
-	  $fake_ip_filter_regex
-	  $direct_dns
-	  { "query_type": [ "A", "AAAA" ], "server": "dns_fakeip", "rewrite_ttl": 1 }
-	],
+      $fake_ip_filter_domain
+      $fake_ip_filter_suffix
+      $fake_ip_filter_regex
+      $direct_dns
+      { "query_type": [ "A", "AAAA" ], "server": "dns_fakeip", "rewrite_ttl": 1 }
+    ],
     "final": "dns_proxy",
     "independent_cache": true,
     "reverse_mapping": true,
@@ -707,9 +708,9 @@ EOF
 {
   "route": {
     "rules": [
-	{ "inbound": "dns-in", "outbound": "dns-out" }
-	],
-	"default_mark": $routing_mark
+      { "inbound": "dns-in", "outbound": "dns-out" }
+    ],
+  "default_mark": $routing_mark
   }
 }
 EOF
@@ -741,21 +742,24 @@ EOF
       "tag": "mixed-in",
       "listen": "::",
       "listen_port": $mix_port,
-	  $userpass
+      $userpass
       "sniff": false
-    }, {
+    },
+    {
       "type": "direct",
       "tag": "dns-in",
       "listen": "::",
       "listen_port": $dns_port
-    }, {
+    },
+    {
       "type": "redirect",
       "tag": "redirect-in",
       "listen": "::",
       "listen_port": $redir_port,
       "sniff": true,
       "sniff_override_destination": $sniffer
-    }, {
+    },
+    {
       "type": "tproxy",
       "tag": "tproxy-in",
       "listen": "::",
@@ -798,8 +802,8 @@ EOF
 {
   "outbounds": [
     $add_direct
-	$add_reject
-	$add_dnsout
+    $add_reject
+    $add_dnsout
   ]
 }
 EOF
