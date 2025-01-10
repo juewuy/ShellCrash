@@ -132,7 +132,7 @@ jobs:
         curl -kfSL -o geodata/geosite_cn.db https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box/geosite-lite.db
         curl -kfSL -o geodata/srs_geoip_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cnip.srs
         curl -kfSL -o geodata/srs_geosite_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cn.srs
-        curl -kfSL -o geodata/mrs_geosite_cn.mrs https://github.com/DustinWin/ruleset_geodata/releases/download/clash-ruleset/cn.mrs
+        curl -kfSL -o geodata/mrs_geosite_cn.mrs https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs
         mv -f ../ca-bundle.crt ./fix/ca-certificates.crt
         sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d')/" version #修改版本号
         echo 数据库及根证书文件更新完成！
