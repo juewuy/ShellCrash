@@ -453,7 +453,7 @@ EOF
 				hosts_ip=$(echo $line | awk '{print $1}') &&
 				hosts_domain=$(echo $line | awk '{print $2}') &&
 				[ -z "$(cat "$TMPDIR"/hosts.yaml | grep -oE "$hosts_domain")" ] &&
-				echo "   '$hosts_domain': $hosts_ip" >>"$TMPDIR"/hosts.yaml
+				echo "  '$hosts_domain': $hosts_ip" >>"$TMPDIR"/hosts.yaml
 		done <$sys_hosts
 	fi
 	#分割配置文件
@@ -533,11 +533,11 @@ EOF
 	#mix模式生成rule-providers
 	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q 'rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && \
 	cat >>"$TMPDIR"/rule-providers.yaml <<EOF
-geosite-cn:
-  type: file
-  behavior: domain
-  format: mrs
-  path: geosite-cn.mrs
+  geosite-cn:
+    type: file
+    behavior: domain
+    format: mrs
+    path: geosite-cn.mrs
 EOF
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
@@ -1217,17 +1217,17 @@ start_nft_route() { #nftables-route通用工具
 	#过滤dns
 	nft add rule inet shellcrash $1 tcp dport 53 return
 	nft add rule inet shellcrash $1 udp dport 53 return
+	#防回环
+	nft add rule inet shellcrash $1 meta mark $routing_mark return
+	nft add rule inet shellcrash $1 meta skgid 7890 return
+	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip saddr $bypass_host return
+	[ -z "$ports" ] && nft add rule inet shellcrash $1 tcp dport {"$mix_port, $redir_port, $tproxy_port"} return
 	#过滤常用端口
 	[ -n "$PORTS" ] && {
 		nft add rule inet shellcrash $1 ip daddr != {198.18.0.0/16} tcp dport != {$PORTS} return
 		nft add rule inet shellcrash $1 ip6 daddr != {fc00::/16} tcp dport != {$PORTS} return
 	}
-	#防回环
-	nft add rule inet shellcrash $1 meta mark $routing_mark return
-	nft add rule inet shellcrash $1 meta skgid 7890 return
-	[ -z "$ports" ] && nft add rule inet shellcrash $1 tcp dport {"$mix_port, $redir_port, $tproxy_port"} return
 	#nft add rule inet shellcrash $1 ip saddr 198.18.0.0/16 return
-	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash $1 ip saddr $bypass_host return
 	nft add rule inet shellcrash $1 ip daddr {$RESERVED_IP} return #过滤保留地址
 	#过滤局域网设备
 	[ "$1" = 'prerouting' ] && {
@@ -1313,7 +1313,7 @@ start_nft_dns() { #nftables-dns
 	nft add rule inet shellcrash "$1"_dns meta skgid { 453, 7890 } return
 	[ "$firewall_area" = 5 ] && nft add rule inet shellcrash "$1"_dns ip saddr $bypass_host return
 	nft add rule inet shellcrash "$1"_dns ip saddr != {$HOST_IP} return                              #屏蔽外部请求
-	[ "$1" = 'prerouting' ] && nft add rule inet shellcrash "$1"_dns ip6 saddr != {$HOST_IP6} reject #屏蔽外部请求
+	[ "$1" = 'prerouting' ] && nft add rule inet shellcrash "$1"_dns ip6 saddr != {$HOST_IP6} return #屏蔽外部请求
 	#过滤局域网设备
 	[ "$1" = 'prerouting' ] && [ -s "$CRASHDIR"/configs/mac ] && {
 		MAC=$(awk '{printf "%s, ",$1}' "$CRASHDIR"/configs/mac)
@@ -1766,15 +1766,10 @@ clash_check() { #clash启动前检查
 	[ "$crashcore" = "clash" ] && [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep '0:7890' /etc/passwd)" ] &&
 		core_exchange meta '当前内核不支持非root用户启用本机代理'
 	core_check
-	#预下载GeoIP数据库
-	#排除others.yaml（可能是rule-providers的url里有“geoip”关键词）
-	[ -n "$(grep -oEi 'geoip' "$CRASHDIR"/yamls/*.yaml | grep -v 'others.yaml')" ] && ckgeo Country.mmdb cn_mini.mmdb
-	#预下载GeoSite数据库
-	#geodata-mode默认为false，只有geodata-mode: true才会需要GeoSite
-	if [ -n "$(grep -oEi 'geosite' "$CRASHDIR"/yamls/*.yaml | grep -v 'others.yaml')" ] && \
-		[ -n "$(grep -E 'geodata-mode: true' "$CRASHDIR"/yamls/*.yaml)" ]; then
-		ckgeo GeoSite.dat geosite.dat
-	fi
+	#预下载GeoIP数据库并排除存在自定义数据库链接的情况
+	[ -n "$(grep -oEi 'geoip' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geoip:|mmdb:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo Country.mmdb cn_mini.mmdb
+	#预下载GeoSite数据库并排除存在自定义数据库链接的情况
+	[ -n "$(grep -oEi 'geosite' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo GeoSite.dat geosite.dat
 	#预下载geosite-cn.mrs数据库
 	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.mrs mrs_geosite_cn.mrs
 	return 0
