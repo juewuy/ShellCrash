@@ -1767,9 +1767,14 @@ clash_check() { #clash启动前检查
 		core_exchange meta '当前内核不支持非root用户启用本机代理'
 	core_check
 	#预下载GeoIP数据库
-	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'geoip')" ] && ckgeo Country.mmdb cn_mini.mmdb
+	#排除others.yaml（可能是rule-providers的url里有“geoip”关键词）
+	[ -n "$(grep -oEi 'geoip' "$CRASHDIR"/yamls/*.yaml | grep -v 'others.yaml')" ] && ckgeo Country.mmdb cn_mini.mmdb
 	#预下载GeoSite数据库
-	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'geosite')" ] && ckgeo GeoSite.dat geosite.dat
+	#geodata-mode默认为false，只有geodata-mode: true才会需要GeoSite
+	if [ -n "$(grep -oEi 'geosite' "$CRASHDIR"/yamls/*.yaml | grep -v 'others.yaml')" ] && \
+		[ -n "$(grep -E 'geodata-mode: true' "$CRASHDIR"/yamls/*.yaml)" ]; then
+		ckgeo GeoSite.dat geosite.dat
+	fi
 	#预下载geosite-cn.mrs数据库
 	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.mrs mrs_geosite_cn.mrs
 	return 0
