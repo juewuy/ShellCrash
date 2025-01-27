@@ -103,7 +103,7 @@ setrules(){ #自定义规则
 	0)
 	;;
 	1)
-		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN"
+		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN PROCESS-NAME"
 		rule_group="DIRECT#REJECT$(get_rule_group)"
 		set_rule_type
 		setrules
@@ -1484,7 +1484,7 @@ setcore(){ #内核选择菜单
 	echo -e "2 \033[43;30m SingBox \033[0m：	\033[32m支持全面占用低\033[0m"
 	echo -e " >>\033[32m$singbox_v  	\033[33m不支持providers\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
-	echo -e "3 \033[43;30m  Meta  \033[0m：	\033[32m多功能，支持全面\033[0m"
+	echo -e "3 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
 	echo -e " >>\033[32m$meta_v   	\033[33m占用略高，GeoSite可能不兼容华硕固件\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
@@ -2273,8 +2273,8 @@ userguide(){
 				} && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！" || echo "开启失败！请自行谷歌查找当前设备的开启方法！"
 			fi
 			#禁止docker启用的net.bridge.bridge-nf-call-iptables
-			sysctl -w net.bridge.bridge-nf-call-iptables=0
-			sysctl -w net.bridge.bridge-nf-call-ip6tables=0
+			sysctl -w net.bridge.bridge-nf-call-iptables=0 > /dev/null 2>&1
+			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 > /dev/null 2>&1
 		elif [ "$num" = 2 ];then
 			setconfig redir_mod "Redir模式"
 			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && setconfig crashcore "clash"

@@ -240,7 +240,7 @@ check_clash_config() { #检查clash配置文件
 		cat "$TMPDIR"/proxies.yaml
 		sleep 1
 		echo -----------------------------------------------
-		echo "请尝试使用其他生成方式！"
+		echo "请尝试使用6-2或者6-3的方式生成配置文件！"
 		exit 1
 	fi
 	rm -rf "$TMPDIR"/proxies.yaml
@@ -274,7 +274,7 @@ check_singbox_config() { #检查singbox配置文件
 	if ! grep -qE '"(socks|http|shadowsocks(r)?|vmess|trojan|wireguard|hysteria(2)?|vless|shadowtls|tuic|ssh|tor|outbound_providers)"' "$core_config_new"; then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
-		echo "请尝试使用其他生成方式！"
+		echo "请尝试使用6-2或者6-3的方式生成配置文件！"
 		exit 1
 	fi
 	#检测并去除无效策略组
@@ -380,7 +380,7 @@ modify_yaml() { #修饰clash配置文件
 	exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
 	#Meta内核专属配置
 	[ "$crashcore" = 'meta' ] && {
-		[ "$redir_mod" != "纯净模式" ] && find_process='find-process-mode: "off"'
+		[ "$redir_mod" != "纯净模式" ] && [ -z "$(grep 'PROCESS' "$CRASHDIR"/yamls/*.yaml)" ] && find_process='find-process-mode: "off"'
 	}
 	#dns配置
 	[ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
@@ -399,7 +399,14 @@ dns:
 EOF
 		if [ "$dns_mod" != "redir_host" ]; then
 			cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep -v '#' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
-			[ "$dns_mod" = "mix" ] && echo '    - "rule-set:geosite-cn"' >>"$TMPDIR"/dns.yaml #插入cn过滤规则
+			[ "$dns_mod" = "mix" ] && {
+				#插入过滤规则
+				cat >>"$TMPDIR"/dns.yaml <<EOF
+    - "rule-set:geosite-cn"
+  nameserver-policy: 
+    "+.googleapis.cn": [$dns_fallback]
+EOF
+			}
 		else
 			echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
 		fi
@@ -836,6 +843,7 @@ EOF
 			sed 's/- GEOSITE,/{ "geosite": [ "/g' |
 			sed 's/- IP-CIDR6,/{ "ip_cidr": [ "/g' |
 			sed 's/- DOMAIN,/{ "domain": [ "/g' |
+			sed 's/- PROCESS-NAME,/{ "process_name": [ "/g' |
 			sed 's/,/" ], "outbound": "/g' |
 			sed 's/$/" },/g' |
 			sed '1i\{ "route": { "rules": [ ' |
@@ -1448,9 +1456,9 @@ start_firewall() { #路由规则总入口
 	[ "$firewall_mod" = 'iptables' ] && start_iptables
 	[ "$firewall_mod" = 'nftables' ] && start_nftables
 	#修复部分虚拟机dns查询失败的问题
-	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && {
+	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && [ -w /etc/resolv.conf ] && {
 		line=$(grep -n 'nameserver' /etc/resolv.conf | awk -F: 'FNR==1{print $1}')
-		sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf
+		sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf 2>/dev/null
 	}
 	#openwrt使用dnsmasq转发DNS
 	if [ "$dns_redir" = "已开启" -a "$firewall_area" -le 3 -a "$dns_no" != "已禁用" ]; then

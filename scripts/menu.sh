@@ -95,7 +95,7 @@ ckstatus() {
 		#检测系统端口占用
 		checkport
 	fi
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && corename=SingBox || corename=Clash
+	corename=$(echo $crashcore | sed 's/singbox/SingBox/' | sed 's/clash/Clash/' | sed 's/meta/Mihomo/')
 	[ "$firewall_area" = 5 ] && corename='转发'
 	[ -f ${TMPDIR}/debug.log -o -f ${CRASHDIR}/debug.log -a -n "$PID" ] && auto="\033[33m并处于debug状态！\033[0m"
 	#输出状态
