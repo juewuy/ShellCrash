@@ -98,7 +98,7 @@ setdir() {
 		df -h | awk '{print $6,$4}' | sed 1d
 		echo '路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！'
 		read -p "请输入自定义路径 > " dir
-		if [ "$(dir_avail $dir)" = 0 ]; then
+		if [ "$(dir_avail $dir)" = 0 ] || [ -n "$(echo $dir |grep -E 'tmp|opt|sys')" ]; then
 			$echo "\033[31m路径错误！请重新设置！\033[0m"
 			set_cust_dir
 		fi
