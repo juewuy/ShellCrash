@@ -12,9 +12,10 @@
     { "tag": "🇨🇳 直连域名", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
     { "tag": "🇨🇳 直连 IP", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
     { "tag": "🧱 代理域名", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 全球直连" ] },
-    { "tag": "📲 电报信息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
+    { "tag": "📲 电报消息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
     { "tag": "🔒 私有网络", "type": "selector", "outbounds": [ "🎯 全球直连" ] },
-    { "tag": "🛑 广告拦截", "type": "selector", "outbounds": [ "REJECT", "🎯 全球直连" ] },
+    { "tag": "🛑 广告域名", "type": "selector", "outbounds": [ "🔴 全球拦截", "🎯 全球直连" ] },
+    { "tag": "🔴 全球拦截", "type": "selector", "outbounds": [ "REJECT" ] },
     { "tag": "🎯 全球直连", "type": "selector", "outbounds": [ "DIRECT" ] },
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "DIRECT", "REJECT", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👍 高级节点", "📺 省流节点", {providers_tags} ] },
     { "tag": "dns-out", "type": "dns" },
@@ -32,7 +33,7 @@
       { "clash_mode": [ "Direct" ], "outbound": "DIRECT" },
       { "clash_mode": [ "Global" ], "outbound": "GLOBAL" },
       { "rule_set": [ "private" ], "outbound": "🔒 私有网络" },
-      { "rule_set": [ "ads" ], "outbound": "🛑 广告拦截" },
+      { "rule_set": [ "ads" ], "outbound": "🛑 广告域名" },
       { "rule_set": [ "microsoft-cn" ], "outbound": "🪟 微软服务" },
       { "rule_set": [ "apple-cn" ], "outbound": "🍎 苹果服务" },
       { "rule_set": [ "google-cn" ], "outbound": "🇬 谷歌服务" },
@@ -40,8 +41,9 @@
       { "rule_set": [ "ai" ], "outbound": "🤖 人工智能" },
       { "rule_set": [ "networktest" ], "outbound": "📈 网络测试" },
       { "rule_set": [ "proxy" ], "outbound": "🧱 代理域名" },
+      { "rule_set": [ "tld-cn" ], "outbound": "🇨🇳 直连域名" },
       { "rule_set": [ "cn" ], "outbound": "🇨🇳 直连域名" },
-      { "rule_set": [ "telegramip" ], "outbound": "📲 电报信息", "skip_resolve": true },
+      { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息", "skip_resolve": true },
       { "rule_set": [ "privateip" ], "outbound": "🔒 私有网络", "skip_resolve": true },
       { "rule_set": [ "cnip" ], "outbound": "🇨🇳 直连 IP" }
     ],
@@ -108,6 +110,13 @@
         "format": "binary",
         "path": "./proxy.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible/proxy.srs"
+      },
+      {
+        "tag": "tld-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/tld-cn.srs",
+        "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/tld-cn.srs"
       },
       {
         "tag": "cn",

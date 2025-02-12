@@ -6,7 +6,7 @@
     { "tag": "🤖 人工智能", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
     { "tag": "🇨🇳 直连 IP", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
     { "tag": "🧱 代理域名", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 全球直连" ] },
-    { "tag": "📲 电报信息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
+    { "tag": "📲 电报消息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
     { "tag": "🔒 私有网络", "type": "selector", "outbounds": [ "🎯 全球直连" ] },
     { "tag": "🎯 全球直连", "type": "selector", "outbounds": [ "DIRECT" ] },
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "DIRECT", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👍 高级节点", "📺 省流节点", {providers_tags} ] },
@@ -26,8 +26,9 @@
       { "clash_mode": [ "Global" ], "outbound": "GLOBAL" },
       { "rule_set": [ "private" ], "outbound": "🔒 私有网络" },
       { "rule_set": [ "ai" ], "outbound": "🤖 人工智能" },
+      { "rule_set": [ "tld-proxy" ], "outbound": "🧱 代理域名" },
       { "rule_set": [ "proxy" ], "outbound": "🧱 代理域名" },
-      { "rule_set": [ "telegramip" ], "outbound": "📲 电报信息", "skip_resolve": true },
+      { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息", "skip_resolve": true },
       { "rule_set": [ "privateip" ], "outbound": "🔒 私有网络", "skip_resolve": true },
       { "rule_set": [ "cnip" ], "outbound": "🇨🇳 直连 IP" }
     ],
@@ -45,6 +46,13 @@
         "format": "binary",
         "path": "./ai.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible/ai.srs"
+      },
+      {
+        "tag": "tld-proxy",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/tld-proxy.srs",
+        "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/tld-proxy.srs"
       },
       {
         "tag": "proxy",
