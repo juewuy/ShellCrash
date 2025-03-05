@@ -1,24 +1,25 @@
 //DustinWin-ruleset全分组规则
 {
   "outbounds": [
-    { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👍 高级节点", "📺 省流节点", {providers_tags}, "🎯 全球直连" ] },
-    { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👍 高级节点", "📺 省流节点", {providers_tags}, "🎯 全球直连" ] },
-    { "tag": "📈 网络测试", "type": "selector", "outbounds": [ "🎯 全球直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👍 高级节点", {providers_tags} ] },
+    { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "📈 网络测试", "type": "selector", "outbounds": [ "🎯 全球直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", {providers_tags} ] },
     { "tag": "🤖 人工智能", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
-    { "tag": "🎮 游戏服务", "type": "selector", "outbounds": [ "🎯 全球直连", "👍 高级节点", "🚀 节点选择" ] },
+    { "tag": "📥 Trackerslist", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
+    { "tag": "🎮 游戏服务", "type": "selector", "outbounds": [ "🎯 全球直连", "👑 高级节点", "🚀 节点选择" ] },
     { "tag": "🪟 微软服务", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
     { "tag": "🇬 谷歌服务", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
     { "tag": "🍎 苹果服务", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
-    { "tag": "🇨🇳 直连域名", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
-    { "tag": "🇨🇳 直连 IP", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
+    { "tag": "🛡️ 直连域名", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
+    { "tag": "🀄️ 直连 IP", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
     { "tag": "🧱 代理域名", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 全球直连" ] },
     { "tag": "📲 电报消息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
-    { "tag": "🔒 私有网络", "type": "selector", "outbounds": [ "🎯 全球直连" ] },
+    { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags}, "🎯 全球直连" ] },
     { "tag": "🎯 全球直连", "type": "selector", "outbounds": [ "DIRECT" ] },
-    { "tag": "GLOBAL", "type": "selector", "outbounds": [ "DIRECT", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👍 高级节点", "📺 省流节点", {providers_tags} ] },
+    { "tag": "GLOBAL", "type": "selector", "outbounds": [ "DIRECT", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
     { "tag": "dns-out", "type": "dns" },
-    { "tag": "👍 高级节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" ] },
-    { "tag": "📺 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "0.[1-5]|低倍率|省流|大流量" ] },
+
+    { "tag": "👑 高级节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" ] },
+    { "tag": "📉 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "0.[1-5]|低倍率|省流|大流量" ] },
     { "tag": "🇭🇰 香港节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇭🇰|港|hk|hongkong|hong kong)" ] },
     { "tag": "🇹🇼 台湾节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇹🇼|台|tw|taiwan|tai wan)" ] },
     { "tag": "🇯🇵 日本节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇯🇵|日|jp|japan)" ] },
@@ -30,7 +31,8 @@
       { "protocol": [ "dns" ], "outbound": "dns-out" },
       { "clash_mode": [ "Direct" ], "outbound": "DIRECT" },
       { "clash_mode": [ "Global" ], "outbound": "GLOBAL" },
-      { "rule_set": [ "private" ], "outbound": "🔒 私有网络" },
+      { "rule_set": [ "private" ], "outbound": "🎯 全球直连" },
+      { "rule_set": [ "trackerslist" ], "outbound": "📥 Trackerslist" },
       { "rule_set": [ "microsoft-cn" ], "outbound": "🪟 微软服务" },
       { "rule_set": [ "apple-cn" ], "outbound": "🍎 苹果服务" },
       { "rule_set": [ "google-cn" ], "outbound": "🇬 谷歌服务" },
@@ -38,11 +40,11 @@
       { "rule_set": [ "ai" ], "outbound": "🤖 人工智能" },
       { "rule_set": [ "networktest" ], "outbound": "📈 网络测试" },
       { "rule_set": [ "proxy" ], "outbound": "🧱 代理域名" },
-      { "rule_set": [ "tld-cn" ], "outbound": "🇨🇳 直连域名" },
-      { "rule_set": [ "cn" ], "outbound": "🇨🇳 直连域名" },
-      { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息", "skip_resolve": true },
-      { "rule_set": [ "privateip" ], "outbound": "🔒 私有网络", "skip_resolve": true },
-      { "rule_set": [ "cnip" ], "outbound": "🇨🇳 直连 IP" }
+      { "rule_set": [ "tld-cn" ], "outbound": "🛡️ 直连域名" },
+      { "rule_set": [ "cn" ], "outbound": "🛡️ 直连域名" },
+      { "rule_set": [ "privateip" ], "outbound": "🎯 全球直连", "skip_resolve": true },
+      { "rule_set": [ "cnip" ], "outbound": "🀄️ 直连 IP" },
+      { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息", "skip_resolve": true }
     ],
     "rule_set": [
       {
@@ -51,6 +53,13 @@
         "format": "binary",
         "path": "./private.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible-compatible/private.srs"
+      },
+      {
+        "tag": "trackerslist",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/trackerslist.srs",
+        "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible/trackerslist.srs"
       },
       {
         "tag": "microsoft-cn",
@@ -116,13 +125,6 @@
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible-compatible/cn.srs"
       },
       {
-        "tag": "telegramip",
-        "type": "remote",
-        "format": "binary",
-        "path": "./telegramip.srs",
-        "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible-compatible/telegramip.srs"
-      },
-      {
         "tag": "privateip",
         "type": "remote",
         "format": "binary",
@@ -135,6 +137,13 @@
         "format": "binary",
         "path": "./cnip.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible-compatible/cnip.srs"
+      },
+      {
+        "tag": "telegramip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./telegramip.srs",
+        "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible-compatible/telegramip.srs"
       }
     ],
     "final": "🐟 漏网之鱼"
