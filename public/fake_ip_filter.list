@@ -7,6 +7,7 @@
 *.test
 *.local
 *.home.arpa
+*.direct
 #放行NTP服务
 time.*.com
 time.*.gov
@@ -68,8 +69,8 @@ music.migu.cn
 #QQ登录
 localhost.ptlogin2.qq.com
 localhost.sec.qq.com
-+.qq.com
-+.tencent.com
+#微信登录
+localhost.*.weixin.qq.com
 #Game
 #Steam
 +.steamcontent.com
@@ -85,6 +86,7 @@ xbox.*.*.microsoft.com
 xbox.*.microsoft.com
 xnotify.xboxlive.com
 #Wotgame
++.battle.net
 +.battlenet.com.cn
 +.wotgame.cn
 +.wggames.cn
@@ -128,7 +130,7 @@ ff.dorado.sdo.com
 *.mcdn.bilivideo.cn
 #Disney Plus
 +.media.dssott.com
-#shark007 Codecs 
+#shark007 Codecs
 shark007.net
 #Mijia
 Mijia Cloud

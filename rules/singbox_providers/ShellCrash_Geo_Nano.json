@@ -1,4 +1,4 @@
-//ShellCrash-geoip极简规则
+//ShellCrash-GeoIP极简规则
 {
   "outbounds": [
     { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ {providers_tags} ], "use_all_providers": true },
