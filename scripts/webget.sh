@@ -2316,7 +2316,8 @@ userguide(){
 	#设置加密DNS
 	if [ -s $openssldir/certs/ca-certificates.crt ];then
 		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
-		dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
+		#dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
+		dns_fallback=$dns_nameserver
 		setconfig dns_nameserver \'"$dns_nameserver"\'
 		setconfig dns_fallback \'"$dns_fallback"\'
 	fi
