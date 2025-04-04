@@ -2,7 +2,7 @@
 {
   "outbounds": [
     { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ {providers_tags} ], "use_all_providers": true },
-    { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 全球直连" ] },
+    { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", {providers_tags}, "🎯 全球直连" ], "use_all_providers": true },
     { "tag": "🎯 全球直连", "type": "selector", "outbounds": [ "DIRECT" ] },
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "DIRECT", {providers_tags} ], "use_all_providers": true },
     { "tag": "dns-out", "type": "dns" }

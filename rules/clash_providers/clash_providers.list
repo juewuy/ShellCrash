@@ -1,6 +1,11 @@
 ShellCrash-GeoIP极简规则 ShellCrash_Geo_Nano.yaml
+DustinWin-GeoSite轻量规则 DustinWin_Geo_Light.yaml
 DustinWin-ruleset轻量规则 DustinWin_RS_Light.yaml
 DustinWin-GeoSite全分组规则 DustinWin_Geo_Full.yaml
 DustinWin-ruleset全分组规则 DustinWin_RS_Full.yaml
-DustinWin-GeoSite去广告规则 DustinWin_Geo_Ads.yaml
-DustinWin-ruleset去广告规则 DustinWin_RS_Ads.yaml
+DustinWin-GeoSite去广告规则 DustinWin_Geo_NoAds.yaml
+DustinWin-ruleset去广告规则 DustinWin_RS_NoAds.yaml
+DustinWin-GeoSite去媒体规则 DustinWin_Geo_NoMedia.yaml
+DustinWin-ruleset去媒体规则 DustinWin_RS_NoMedia.yaml
+DustinWin-GeoSite去广告和媒体规则 DustinWin_Geo_NoAdsMedia.yaml
+DustinWin-ruleset去广告和媒体规则 DustinWin_RS_NoAdsMedia.yaml
