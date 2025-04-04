@@ -1,8 +1,8 @@
 #ShellCrash-GeoIP极简规则
 proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all-providers: true}
-  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 全球直连]}
-  - {name: 🎯 全球直连, type: select, proxies: [DIRECT]}
+  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, {providers_tags}, 🎯 全球直连]}
+  - {name: 🎯 全球直连, type: select, proxies: [DIRECT], hidden: true}
 rules:
   - GEOIP,cn,🎯 全球直连
   - MATCH,🐟 漏网之鱼
