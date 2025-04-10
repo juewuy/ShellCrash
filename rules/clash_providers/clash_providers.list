@@ -5,7 +5,7 @@ DustinWin-GeoSite全分组规则 DustinWin_Geo_Full.yaml
 DustinWin-ruleset全分组规则 DustinWin_RS_Full.yaml
 DustinWin-GeoSite去广告规则 DustinWin_Geo_NoAds.yaml
 DustinWin-ruleset去广告规则 DustinWin_RS_NoAds.yaml
-DustinWin-GeoSite去媒体规则 DustinWin_Geo_NoMedia.yaml
-DustinWin-ruleset去媒体规则 DustinWin_RS_NoMedia.yaml
-DustinWin-GeoSite去广告和媒体规则 DustinWin_Geo_NoAdsMedia.yaml
-DustinWin-ruleset去广告和媒体规则 DustinWin_RS_NoAdsMedia.yaml
+DustinWin-GeoSite精简规则 DustinWin_Geo_Lite.yaml
+DustinWin-ruleset精简规则 DustinWin_RS_Lite.yaml
+DustinWin-GeoSite去广告精简规则 DustinWin_Geo_Lite_NoAds.yaml
+DustinWin-ruleset去广告精简规则 DustinWin_RS_Lite_NoAds.yaml

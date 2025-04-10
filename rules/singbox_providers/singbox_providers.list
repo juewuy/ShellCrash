@@ -5,7 +5,7 @@ DustinWin-GeoSite全分组规则 DustinWin_Geo_Full.json
 DustinWin-ruleset全分组规则 DustinWin_RS_Full.json
 DustinWin-GeoSite去广告规则 DustinWin_Geo_NoAds.json
 DustinWin-ruleset去广告规则 DustinWin_RS_NoAds.json
-DustinWin-GeoSite去媒体规则 DustinWin_Geo_NoMedia.json
-DustinWin-ruleset去媒体规则 DustinWin_RS_NoMedia.json
-DustinWin-GeoSite去广告和媒体规则 DustinWin_Geo_NoAdsMedia.json
-DustinWin-ruleset去广告和媒体规则 DustinWin_RS_NoAdsMedia.json
+DustinWin-GeoSite精简规则 DustinWin_Geo_Lite.json
+DustinWin-ruleset精简规则 DustinWin_RS_Lite.json
+DustinWin-GeoSite去广告精简规则 DustinWin_Geo_Lite_NoAds.json
+DustinWin-ruleset去广告精简规则 DustinWin_RS_Lite_NoAds.json
