@@ -43,7 +43,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./tld-proxy.srs",
-        "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/tld-proxy.srs"
+        "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible/tld-proxy.srs"
       },
       {
         "tag": "proxy",
