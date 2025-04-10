@@ -1,4 +1,4 @@
-#DustinWin-ruleset去媒体规则
+#DustinWin-ruleset精简规则
 proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 📈 网络测试, type: select, proxies: [🎯 全球直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
