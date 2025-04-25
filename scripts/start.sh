@@ -261,7 +261,7 @@ check_clash_config() { #检查clash配置文件
 	fi
 	#检测并去除无效策略组
 	[ -n "$url_type" ] && ckcmd xargs && {
-		cat "$core_config_new" | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | awk -F '#' '{print $1}' >"$TMPDIR"/clash_proxies_$USER
+		cat "$core_config_new" | sed '/^rules:/,$d' | grep -A 15 "\- name:" | xargs | sed 's/- name: /\n/g' | sed 's/ type: .*proxies: /#/g' | sed 's/- //g' | grep -E '#DIRECT $|#DIRECT$' | grep -Ev '全球直连|direct|Direct' | awk -F '#' '{print $1}' >"$TMPDIR"/clash_proxies_$USER
 		while read line; do
 			sed -i "/- $line/d" "$core_config_new"
 			sed -i "/- name: $line/,/- DIRECT/d" "$core_config_new"

@@ -290,11 +290,16 @@ log_pusher() { #日志菜单
 					chat=$(wget -Y on -q -O - $url_tg | tail -n -1)
 				fi
 				[ -n "$chat" ] && chat_ID=$(echo $chat | grep -oE '"id":.*,"is_bot":false' | sed s'/"id"://'g | sed s'/,"is_bot":false//'g)
+				[ -z "$chat_ID" ] && {
+					echo -e "\033[31m无法获取对话ID，请确认使用的不是已经被绑定的机器人，或手动输入ChatID！\033[0m"
+					echo -e "通常访问 $url_tg 即可看到ChatID，也可以尝试其他方法\033[0m"
+					read -p "请手动输入ChatID > " chat_ID
+				}
 				if [ -n "$chat_ID" ]; then
 					push_TG=$TOKEN
 					setconfig push_TG $TOKEN
 					setconfig chat_ID $chat_ID
-					${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32
+					${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32	
 				else
 					echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
 				fi
@@ -653,7 +658,8 @@ setdns() { #DNS详细设置
 		openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
 		if [ -s "$openssldir/certs/ca-certificates.crt" -o -s "/etc/ssl/certs/ca-certificates.crt" ]; then
 			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
-			dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
+			#dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
+			dns_fallback=$dns_nameserver
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			setconfig dns_fallback \'"$dns_fallback"\'
 			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"
