@@ -1822,11 +1822,23 @@ bfstart() { #启动前
 			exit 1
 		fi
 	fi
-	#检查dashboard文件
-	if [ -f "$CRASHDIR"/ui/CNAME -a ! -f "$BINDIR"/ui/CNAME ]; then
-		cp -rf "$CRASHDIR"/ui "$BINDIR"
+    # 检查dashboard文件
+	if [ -s "$CRASHDIR/ui/index.html" ]; then
+		logger "检测到 $CRASHDIR/ui 面板存在。" 33
+		if [ ! -s "$BINDIR/ui/index.html" ]; then
+			logger "目标文件夹 $BINDIR/ui 面板不存在，正在安装面板。" 33
+			mkdir -p "$BINDIR/ui"
+			cp -rf "$CRASHDIR/ui/"* "$BINDIR/ui/"
+			logger "面板已成功安装到 $BINDIR/ui。" 32
+		else
+			logger "目标文件夹 $BINDIR/ui 已存在面板" 32
+		fi
 	fi
-	[ ! -s "$BINDIR"/ui/index.html ] && makehtml #如没有面板则创建跳转界面
+	# 如果都没有ui文件夹，则生成跳转界面
+	if [ ! -s "$BINDIR/ui/index.html" ]; then
+		logger "未找到面板文件，生成跳转界面！" 33
+		makehtml
+	fi
 	catpac                                       #生成pac文件
 	#内核及内核配置文件检查
 	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
