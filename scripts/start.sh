@@ -463,11 +463,15 @@ EOF
 				echo "  '$hosts_domain': $hosts_ip" >>"$TMPDIR"/hosts.yaml
 		done <$sys_hosts
 	fi
-	#分割配置文件
-	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
+	#分割配置文件-支持锚点配置文件
+	yaml_char='proxies proxy-groups proxy-providers rules rule-anchor rule-providers'
 	for char in $yaml_char; do
 		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $core_config >"$TMPDIR"/${char}.yaml
 	done
+
+	#支持锚点配置文件
+        sed -n "/^[a-z].*&/p" $core_config > "$TMPDIR"/anchor.yaml
+	
 	#跳过本地tls证书验证
 	[ "$skip_cert" = "已开启" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' "$TMPDIR"/proxies.yaml ||
 		sed -i 's/skip-cert-verify: true/skip-cert-verify: false/' "$TMPDIR"/proxies.yaml
@@ -560,6 +564,7 @@ EOF
 	[ -s "$TMPDIR"/dns.yaml ] && yaml_dns="$TMPDIR"/dns.yaml
 	[ -s "$TMPDIR"/hosts.yaml ] && yaml_hosts="$TMPDIR"/hosts.yaml
 	[ -s "$CRASHDIR"/yamls/others.yaml ] && yaml_others="$CRASHDIR"/yamls/others.yaml
+        [ -s "$TMPDIR"/anchor.yaml ] && yaml_anchor="$TMPDIR"/anchor.yaml
 	yaml_add=
 	for char in $yaml_char; do #将额外配置文件合并
 		[ -s "$TMPDIR"/${char}.yaml ] && {
@@ -568,7 +573,7 @@ EOF
 		}
 	done
 	#合并完整配置文件
-	cut -c 1- "$TMPDIR"/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add >"$TMPDIR"/config.yaml
+	cut -c 1- $yaml_anchor "$TMPDIR"/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add >"$TMPDIR"/config.yaml
 	#测试自定义配置文件
 	"$TMPDIR"/CrashCore -t -d "$BINDIR" -f "$TMPDIR"/config.yaml >/dev/null
 	if [ "$?" != 0 ]; then
@@ -579,7 +584,7 @@ EOF
 		sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" "$TMPDIR"/proxy-groups.yaml
 		mv -f "$TMPDIR"/set_bak.yaml "$TMPDIR"/set.yaml >/dev/null 2>&1
 		#合并基础配置文件
-		cut -c 1- "$TMPDIR"/set.yaml $yaml_dns $yaml_add >"$TMPDIR"/config.yaml
+		cut -c 1- $yaml_anchor "$TMPDIR"/set.yaml $yaml_dns $yaml_add >"$TMPDIR"/config.yaml
 		sed -i "/#自定义/d" "$TMPDIR"/config.yaml
 	fi
 	#建立软连接
