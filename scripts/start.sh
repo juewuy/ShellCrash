@@ -464,7 +464,7 @@ EOF
 		done <$sys_hosts
 	fi
 	#分割配置文件-支持锚点配置文件
-	yaml_char='proxies proxy-groups proxy-providers rules rule-anchor rule-providers'
+	yaml_char='proxies proxy-anchor proxy-groups proxy-providers rules rule-anchor rule-providers'
 	for char in $yaml_char; do
 		sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $core_config >"$TMPDIR"/${char}.yaml
 	done
