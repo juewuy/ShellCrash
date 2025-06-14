@@ -564,7 +564,7 @@ EOF
 	[ -s "$TMPDIR"/dns.yaml ] && yaml_dns="$TMPDIR"/dns.yaml
 	[ -s "$TMPDIR"/hosts.yaml ] && yaml_hosts="$TMPDIR"/hosts.yaml
 	[ -s "$CRASHDIR"/yamls/others.yaml ] && yaml_others="$CRASHDIR"/yamls/others.yaml
-        [ -s "$TMPDIR"/anchor.yaml ] && yaml_anchor="$TMPDIR"/anchor.yaml
+	[ -s "$TMPDIR"/anchor.yaml ] && yaml_anchor="$TMPDIR"/anchor.yaml
 	yaml_add=
 	for char in $yaml_char; do #将额外配置文件合并
 		[ -s "$TMPDIR"/${char}.yaml ] && {
@@ -593,6 +593,7 @@ EOF
 	for char in $yaml_char set set_bak dns hosts; do
 		rm -f "$TMPDIR"/${char}.yaml
 	done
+	[ -s $yaml_anchor ] && rm -f $yaml_anchor
 }
 modify_json() { #修饰singbox配置文件
 	#生成log.json
