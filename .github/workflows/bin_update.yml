@@ -49,7 +49,7 @@ jobs:
         echo 下载meta-xd面板
         curl -kfSL -o meta_xd.zip  https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
         echo 下载zashboard面板
-        curl -kfSL -o zashboard.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip
+        curl -kfSL -o zashboard.zip https://github.com/Zephyruso/zashboard/archive/gh-pages.zip
         echo 解压缩
         # unzip -o clashdb.zip > /dev/null
         unzip -o yacd.zip > /dev/null
