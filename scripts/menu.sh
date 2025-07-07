@@ -1825,23 +1825,31 @@ autoSSH() {
 uninstall() {
 	read -p "确认卸载ShellCrash？(警告：该操作不可逆！)[1/0] > " res
 	if [ "$res" = '1' ]; then
+		#停止服务
 		${CRASHDIR}/start.sh stop 2>/dev/null
 		${CRASHDIR}/start.sh cronset "clash服务" 2>/dev/null
 		${CRASHDIR}/start.sh cronset "订阅链接" 2>/dev/null
 		${CRASHDIR}/start.sh cronset "ShellCrash初始化" 2>/dev/null
 		${CRASHDIR}/start.sh cronset "task.sh" 2>/dev/null
-		read -p "是否保留脚本配置及订阅文件？[1/0] > " res
-		if [ "$res" = '1' ]; then
-			mv -f ${CRASHDIR}/configs /tmp/ShellCrash
-			mv -f ${CRASHDIR}/yamls /tmp/ShellCrash
-			mv -f ${CRASHDIR}/jsons /tmp/ShellCrash
-			rm -rf ${CRASHDIR}/*
-			mv -f /tmp/ShellCrash/configs ${CRASHDIR}
-			mv -f /tmp/ShellCrash/yamls ${CRASHDIR}
-			mv -f /tmp/ShellCrash/jsons ${CRASHDIR}
+		#移除安装目录
+		if [ -n "${CRASHDIR}" ] && [ "${CRASHDIR}" != '/' ];then
+			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
+			if [ "$res" = '1' ]; then
+				mv -f ${CRASHDIR}/configs /tmp/ShellCrash
+				mv -f ${CRASHDIR}/yamls /tmp/ShellCrash
+				mv -f ${CRASHDIR}/jsons /tmp/ShellCrash
+				rm -rf ${CRASHDIR}/*
+				mv -f /tmp/ShellCrash/configs ${CRASHDIR}
+				mv -f /tmp/ShellCrash/yamls ${CRASHDIR}
+				mv -f /tmp/ShellCrash/jsons ${CRASHDIR}
+			else
+				rm -rf ${CRASHDIR}
+			fi
 		else
-			rm -rf ${CRASHDIR}
+			echo -e "\033[31m环境变量配置有误，请尝试手动移除安装目录！\033[0m"
+			sleep 1
 		fi
+		#移除其他内容
 		[ -w ~/.bashrc ] && profile=~/.bashrc
 		[ -w /etc/profile ] && profile=/etc/profile
 		sed -i '/alias clash=*/'d $profile
@@ -1871,8 +1879,9 @@ uninstall() {
 		echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
 		echo -----------------------------------------------
 		exit
+	else
+		echo -e "\033[31m操作已取消！\033[0m"
 	fi
-	echo -e "\033[31m操作已取消！\033[0m"
 }
 tools() {
 	ssh_tools() {
