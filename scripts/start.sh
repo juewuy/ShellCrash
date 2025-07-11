@@ -394,7 +394,7 @@ dns:
     - 114.114.114.114
     - 223.5.5.5
   enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
+  fake-ip-range: 28.0.0.1/8
   fake-ip-filter:
 EOF
 		if [ "$dns_mod" != "redir_host" ]; then
@@ -403,7 +403,7 @@ EOF
 				#插入过滤规则
 				cat >>"$TMPDIR"/dns.yaml <<EOF
     - "rule-set:geosite-cn"
-  nameserver-policy: 
+  nameserver-policy:
     "+.googleapis.cn": [$dns_fallback]
 EOF
 			}
@@ -706,7 +706,7 @@ EOF
     "final": "dns_proxy",
     "independent_cache": true,
     "reverse_mapping": true,
-    "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/16", "inet6_range": "fc00::/16" }
+    "fakeip": { "enabled": true, "inet4_range": "28.0.0.1/8", "inet6_range": "fc00::/16" }
   }
 }
 EOF
@@ -998,7 +998,7 @@ start_ipt_route() { #iptables-route通用工具
 		fi
 		#将所在链指定流量指向shellcrash表
 		$1 $w -t $2 -I $3 -p $5 $ports -j $4
-		[ "$dns_mod" != "redir_host" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 $w -t $2 -I $3 -p $5 -d 198.18.0.0/16 -j $4
+		[ "$dns_mod" != "redir_host" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 $w -t $2 -I $3 -p $5 -d 28.0.0.1/8 -j $4
 		[ "$dns_mod" != "redir_host" ] && [ "$common_ports" = "已开启" ] && [ "$1" = ip6tables ] && $1 $w -t $2 -I $3 -p $5 -d fc00::/16 -j $4
 	}
 	[ "$5" = "tcp" -o "$5" = "all" ] && proxy_set $1 $2 $3 $4 tcp
@@ -1232,10 +1232,10 @@ start_nft_route() { #nftables-route通用工具
 	[ -z "$ports" ] && nft add rule inet shellcrash $1 tcp dport {"$mix_port, $redir_port, $tproxy_port"} return
 	#过滤常用端口
 	[ -n "$PORTS" ] && {
-		nft add rule inet shellcrash $1 ip daddr != {198.18.0.0/16} tcp dport != {$PORTS} return
+		nft add rule inet shellcrash $1 ip daddr != {28.0.0.1/8} tcp dport != {$PORTS} return
 		nft add rule inet shellcrash $1 ip6 daddr != {fc00::/16} tcp dport != {$PORTS} return
 	}
-	#nft add rule inet shellcrash $1 ip saddr 198.18.0.0/16 return
+	#nft add rule inet shellcrash $1 ip saddr 28.0.0.1/8 return
 	nft add rule inet shellcrash $1 ip daddr {$RESERVED_IP} return #过滤保留地址
 	#过滤局域网设备
 	[ "$1" = 'prerouting' ] && {
@@ -1485,24 +1485,24 @@ stop_firewall() { #还原防火墙配置
 		$iptable -t nat -D OUTPUT -p tcp --dport 53 -j shellcrash_dns_out 2>/dev/null
 		#redir
 		$iptable -t nat -D PREROUTING -p tcp $ports -j shellcrash 2>/dev/null
-		$iptable -t nat -D PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash 2>/dev/null
+		$iptable -t nat -D PREROUTING -p tcp -d 28.0.0.1/8 -j shellcrash 2>/dev/null
 		$iptable -t nat -D OUTPUT -p tcp $ports -j shellcrash_out 2>/dev/null
-		$iptable -t nat -D OUTPUT -p tcp -d 198.18.0.0/16 -j shellcrash_out 2>/dev/null
+		$iptable -t nat -D OUTPUT -p tcp -d 28.0.0.1/8 -j shellcrash_out 2>/dev/null
 		#vm_dns
 		$iptable -t nat -D PREROUTING -p tcp --dport 53 -j shellcrash_vm_dns 2>/dev/null
 		$iptable -t nat -D PREROUTING -p udp --dport 53 -j shellcrash_vm_dns 2>/dev/null
 		#vm_redir
 		$iptable -t nat -D PREROUTING -p tcp $ports -j shellcrash_vm 2>/dev/null
-		$iptable -t nat -D PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash_vm 2>/dev/null
+		$iptable -t nat -D PREROUTING -p tcp -d 28.0.0.1/8 -j shellcrash_vm 2>/dev/null
 		#TPROXY&tun
 		$iptable -t mangle -D PREROUTING -p tcp $ports -j shellcrash_mark 2>/dev/null
 		$iptable -t mangle -D PREROUTING -p udp $ports -j shellcrash_mark 2>/dev/null
-		$iptable -t mangle -D PREROUTING -p tcp -d 198.18.0.0/16 -j shellcrash_mark 2>/dev/null
-		$iptable -t mangle -D PREROUTING -p udp -d 198.18.0.0/16 -j shellcrash_mark 2>/dev/null
+		$iptable -t mangle -D PREROUTING -p tcp -d 28.0.0.1/8 -j shellcrash_mark 2>/dev/null
+		$iptable -t mangle -D PREROUTING -p udp -d 28.0.0.1/8 -j shellcrash_mark 2>/dev/null
 		$iptable -t mangle -D OUTPUT -p tcp $ports -j shellcrash_mark_out 2>/dev/null
 		$iptable -t mangle -D OUTPUT -p udp $ports -j shellcrash_mark_out 2>/dev/null
-		$iptable -t mangle -D OUTPUT -p tcp -d 198.18.0.0/16 -j shellcrash_mark_out 2>/dev/null
-		$iptable -t mangle -D OUTPUT -p udp -d 198.18.0.0/16 -j shellcrash_mark_out 2>/dev/null
+		$iptable -t mangle -D OUTPUT -p tcp -d 28.0.0.1/8 -j shellcrash_mark_out 2>/dev/null
+		$iptable -t mangle -D OUTPUT -p udp -d 28.0.0.1/8 -j shellcrash_mark_out 2>/dev/null
 		$iptable -t mangle -D PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port 2>/dev/null
 		$iptable -t mangle -D PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port 2>/dev/null
 		#tun
