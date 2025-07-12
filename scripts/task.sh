@@ -12,7 +12,7 @@ source $CFG_PATH >/dev/null 2>&1
 setconfig(){
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath=$CFG_PATH || configpath=$3
-	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
+	[ -n "$(grep "\b${1}=" $configpath)" ] && sed -i "s#\b${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >> $configpath
 }
 ckcmd(){ #检查命令是否存在
 	command -v sh >/dev/null 2>&1 && command -v $1 >/dev/null 2>&1 || type $1 >/dev/null 2>&1
