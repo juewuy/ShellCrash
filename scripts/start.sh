@@ -788,7 +788,7 @@ EOF
       "interface_name": "utun",
       "address": [
         $ipv6_address
-        "172.72.0.1/30"
+        "172.18.0.1/30"
       ],
       "auto_route": false,
       "stack": "system",
