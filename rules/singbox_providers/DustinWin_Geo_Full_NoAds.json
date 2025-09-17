@@ -1,9 +1,9 @@
-//DustinWin-GeoSite去广告规则
+//DustinWin-GeoSite无广告规则
 {
   "outbounds": [
     { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
     { "tag": "📈 网络测试", "type": "selector", "outbounds": [ "🎯 全球直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
-    { "tag": "🤖 人工智能", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
+    { "tag": "🤖 AI 平台", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
     { "tag": "📋 Trackerslist", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
     { "tag": "🎮 游戏服务", "type": "selector", "outbounds": [ "🎯 全球直连", "👑 高级节点", "🚀 节点选择" ] },
     { "tag": "🪟 微软服务", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
@@ -20,12 +20,12 @@
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "DIRECT", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
     { "tag": "dns-out", "type": "dns" },
 
-    { "tag": "👑 高级节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" ] },
+    { "tag": "👑 高级节点", "type": "urltest", "use_all_providers": true, "includes": [ "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" ] },
     { "tag": "📉 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "0\\.[1-5]|低倍率|省流|大流量" ] },
-    { "tag": "🇭🇰 香港节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇭🇰|港|hk|hongkong|hong kong)" ] },
-    { "tag": "🇹🇼 台湾节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇹🇼|台|tw|taiwan|tai wan)" ] },
-    { "tag": "🇯🇵 日本节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇯🇵|日|jp|japan)" ] },
-    { "tag": "🇸🇬 新加坡节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇸🇬|新|sg|singapore)" ] },
+    { "tag": "🇭🇰 香港节点", "type": "urltest", "use_all_providers": true, "includes": [ "(?i)(🇭🇰|港|hk|hongkong|hong kong)" ] },
+    { "tag": "🇹🇼 台湾节点", "type": "urltest", "use_all_providers": true, "includes": [ "(?i)(🇹🇼|台|tw|taiwan|tai wan)" ] },
+    { "tag": "🇯🇵 日本节点", "type": "urltest", "use_all_providers": true, "includes": [ "(?i)(🇯🇵|日|jp|japan)" ] },
+    { "tag": "🇸🇬 新加坡节点", "type": "urltest", "use_all_providers": true, "includes": [ "(?i)(🇸🇬|新|sg|singapore)" ] },
     { "tag": "🇺🇸 美国节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "includes": [ "(?i)(🇺🇸|美|us|unitedstates|united states)" ] }
   ],
   "route": {
@@ -41,7 +41,7 @@
       { "geosite": [ "games-cn" ], "outbound": "🎮 游戏服务" },
       { "geosite": [ "media" ], "outbound": "🌍 国外媒体" },
       { "geosite": [ "games" ], "outbound": "🎮 游戏平台" },
-      { "geosite": [ "ai" ], "outbound": "🤖 人工智能" },
+      { "geosite": [ "ai" ], "outbound": "🤖 AI 平台" },
       { "geosite": [ "networktest" ], "outbound": "📈 网络测试" },
       { "geosite": [ "proxy" ], "outbound": "🧱 代理域名" },
       { "geosite": [ "cn" ], "outbound": "🛡️ 直连域名" },
