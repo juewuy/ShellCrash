@@ -1,4 +1,5 @@
 #LAN
+*
 *.lan
 *.localdomain
 *.example
@@ -78,8 +79,6 @@ localhost.*.weixin.qq.com
 +.srv.nintendo.net
 *.n.n.srv.nintendo.net
 +.cdn.nintendo.net
-#Sony PlayStation
-+.stun.playstation.net
 #Microsoft Xbox
 xbox.*.*.microsoft.com
 *.*.xboxlive.com
@@ -95,8 +94,6 @@ xnotify.xboxlive.com
 #Golang
 proxy.golang.org
 #STUN
-stun.*.*
-stun.*.*.*
 +.stun.*.*
 +.stun.*.*.*
 +.stun.*.*.*.*
@@ -116,7 +113,6 @@ swcdn.apple.com
 swdist.apple.com
 #Google
 lens.l.google.com
-stun.l.google.com
 na.b.g-tun.com
 #Netflix
 +.nflxvideo.net
@@ -153,6 +149,8 @@ static.adtidy.org
 #UU Plugin
 +.uu.163.com
 ps.res.netease.com
+#Wifi Calling
++.pub.3gppnetwork.org
 #向日葵远程控制
 +.oray.com
 +.orayimg.com
