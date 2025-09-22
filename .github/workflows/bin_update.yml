@@ -130,8 +130,8 @@ jobs:
         curl -kfSL -o geodata/geosite.dat https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geosite.dat
         curl -kfSL -o geodata/geoip_cn.db https://github.com/lyc8503/sing-box-rules/releases/latest/download/geoip-cn.db
         curl -kfSL -o geodata/geosite_cn.db https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-geodata/geosite-lite.db
-        curl -kfSL -o geodata/srs_geoip_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible/cnip.srs
-        curl -kfSL -o geodata/srs_geosite_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset-compatible/cn.srs
+        curl -kfSL -o geodata/srs_geoip_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cnip.srs
+        curl -kfSL -o geodata/srs_geosite_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cn.srs
         curl -kfSL -o geodata/mrs_geosite_cn.mrs https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs
         mv -f ../ca-bundle.crt ./fix/ca-certificates.crt
         sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d')/" version #修改版本号
