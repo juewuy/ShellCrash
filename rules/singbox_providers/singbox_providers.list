@@ -3,9 +3,9 @@ DustinWin-GeoSite轻量规则 DustinWin_Geo_Light.json
 DustinWin-ruleset轻量规则 DustinWin_RS_Light.json
 DustinWin-GeoSite全分组规则 DustinWin_Geo_Full.json
 DustinWin-ruleset全分组规则 DustinWin_RS_Full.json
-DustinWin-GeoSite去广告规则 DustinWin_Geo_NoAds.json
-DustinWin-ruleset去广告规则 DustinWin_RS_NoAds.json
+DustinWin-GeoSite无广告全分组规则 DustinWin_Geo_Full_NoAds.json
+DustinWin-ruleset无广告全分组规则 DustinWin_RS_Full_NoAds.json
 DustinWin-GeoSite精简规则 DustinWin_Geo_Lite.json
 DustinWin-ruleset精简规则 DustinWin_RS_Lite.json
-DustinWin-GeoSite去广告精简规则 DustinWin_Geo_Lite_NoAds.json
-DustinWin-ruleset去广告精简规则 DustinWin_RS_Lite_NoAds.json
+DustinWin-GeoSite无广告精简规则 DustinWin_Geo_Lite_NoAds.json
+DustinWin-ruleset无广告精简规则 DustinWin_RS_Lite_NoAds.json
