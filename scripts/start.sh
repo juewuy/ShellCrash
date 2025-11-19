@@ -893,8 +893,7 @@ EOF
 		}
 	done
 	#测试自定义配置文件
-	error=$("$TMPDIR"/CrashCore check -D "$BINDIR" -C "$TMPDIR"/jsons 2>&1)
-	if [ -n "$error" ]; then
+	if ! error=$("$TMPDIR"/CrashCore check -D "$BINDIR" -C "$TMPDIR"/jsons 2>&1); then
 		echo $error
 		error_file=$(echo $error | grep -Eo 'cust.*\.json' | sed 's/cust_//g')
 		[ "$error_file" = 'add_rules.json' ] && error_file="$CRASHDIR"/yamls/rules.yaml自定义规则 || error_file="$CRASHDIR"/jsons/$error_file
