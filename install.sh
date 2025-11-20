@@ -84,9 +84,9 @@ setdir() {
 	}
 	set_asus_dir() {
 		echo -e "请选择U盘目录"
-		du -hL /tmp/mnt | awk '{print " "NR" "$2"  "$1}'
+		du -hL /tmp/mnt | awk -F/ 'NF<=4' | awk '{print " "NR" "$2"  "$1}'
 		read -p "请输入相应数字 > " num
-		dir=$(du -hL /tmp/mnt | awk '{print $2}' | sed -n "$num"p)
+		dir=$(du -hL /tmp/mnt | awk -F/ 'NF<=4' | awk '{print $2}' | sed -n "$num"p)
 		if [ ! -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ]; then
 			echo -e "\033[31m未找到下载大师自启文件：$dir/asusware.arm/etc/init.d/S50downloadmaster，请检查设置！\033[0m"
 			set_asus_dir
