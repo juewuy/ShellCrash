@@ -539,22 +539,24 @@ setproviders(){ #自定义providers
 		[ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
 	fi
 	echo -----------------------------------------------
-	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers提供者\033[0m"
-	echo -e "\033[36m支持在线及本地的Yaml格式配置导入\033[0m"
-	echo -e "\033[33msingboxp内核暂不支持跳过证书验证功能\033[0m"
+	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers服务商\033[0m"
+	echo -e "\033[33m支持在线及本地的Yaml格式配置导入\033[0m"
+	echo -e "\033[36msingboxp内核暂不支持跳过证书验证功能\033[0m"
 	[ -s $CRASHDIR/configs/providers.cfg ] && {
 		echo -----------------------------------------------
-		echo -e "\033[36m输入对应数字可管理providers提供者\033[0m"
+		echo -e "\033[36m输入对应数字可管理providers服务商\033[0m"
 		cat $CRASHDIR/configs/providers.cfg | awk -F "#" '{print " "NR" "$1" "$2}'
 	}
+	echo -e " d \033[31m清空\033[0mproviders服务商列表"
+	echo -e " e \033[33m清理\033[0mproviders目录文件"
 	echo -----------------------------------------------
-	echo -e " a \033[36m添加\033[0mproviders提供者"
-	echo -e " b \033[32m生成\033[0m基于providers的配置文件"
-	echo -e " c 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
-	echo -e " d \033[31m清空\033[0mproviders列表"
-	echo -e " e \033[33m清理\033[0mproviders目录"
+	echo -e "\033[36m按照a-b-c的顺序即可完成配置生成\033[0m"
+	echo -e " a \033[36m添加\033[0mproviders服务商/节点"
+	echo -e " b 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
+	echo -e " c \033[32m生成\033[0m基于providers的配置文件"
+	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
+	read -p "请输入对应字母或数字 > " num
 	case $num in
 	0)
 	;;
@@ -565,10 +567,10 @@ setproviders(){ #自定义providers
 			errornum
 		else
 			echo -----------------------------------------------
-			echo -e " 1 修改代理提供者：\033[36m$provider_name\033[0m"
+			echo -e " 1 修改代理服务商：\033[36m$provider_name\033[0m"
 			echo -e " 2 修改链接地址：\033[32m$provider_url\033[0m"
-			echo -e " 3 生成\033[33m仅包含此提供者\033[0m的配置文件"
-			echo -e " 4 \033[31m移除此提供者\033[0m"
+			echo -e " 3 生成\033[33m仅包含此服务商\033[0m的配置文件"
+			echo -e " 4 \033[31m移除此服务商\033[0m"
 			echo -----------------------------------------------
 			echo -e " 0 返回上级菜单"
 			read -p "请选择需要执行的操作 > " num
@@ -576,7 +578,7 @@ setproviders(){ #自定义providers
 			0)
 			;;
 			1)
-				read -p "请输入代理提供者的名称或者代称(如有多个提供者不可重复) > " name
+				read -p "请输入代理服务商的名称或者代称(如有多个服务商不可重复) > " name
 				if [ -n "$name" ] && [ -z "$(grep "$name" $CRASHDIR/configs/providers.cfg)" ];then
 					sed -i "s|$provider_name $provider_url|$name $provider_url|" $CRASHDIR/configs/providers.cfg
 				else
@@ -613,10 +615,10 @@ setproviders(){ #自定义providers
 		echo -----------------------------------------------
 		read -p "请输入providers订阅地址或本地相对路径 > " link
 		[ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
-			read -p "请输入代理提供者的名称或者代号(不可重复) > " name
+			read -p "请输入代理服务商的名称或者代号(不可重复) > " name
 			[ -n "$name" ] && [ -z "$(grep "name" $CRASHDIR/configs/providers.cfg)" ] && {
 				echo -----------------------------------------------
-				echo -e "代理提供者：\033[36m$name\033[0m"
+				echo -e "代理服务商：\033[36m$name\033[0m"
 				echo -e "链接地址/路径：\033[32m$link\033[0m"
 				read -p "确认添加？(1/0) > " res
 					[ "$res" = 1 ] && {
@@ -629,7 +631,7 @@ setproviders(){ #自定义providers
 		sleep 1
 		setproviders
 	;;
-	b)
+	c)
 		echo -----------------------------------------------
 		if [ -s $CRASHDIR/configs/providers.cfg ];then
 			echo -e "\033[33msingboxp与mihomo内核的providers配置文件不互通！\033[0m"
@@ -639,12 +641,12 @@ setproviders(){ #自定义providers
 				gen_${coretype}_providers
 			}
 		else
-			echo -e "\033[31m你还未添加providers提供者，请先添加！\033[0m"
+			echo -e "\033[31m你还未添加providers服务商，请先添加！\033[0m"
 			sleep 1
 		fi
 		setproviders
 	;;
-	c)
+	b)
 		echo -----------------------------------------------
 		echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
 		echo -e "\033[33m请选择在线模版：\033[0m"
@@ -680,7 +682,7 @@ setproviders(){ #自定义providers
 		setproviders
 	;;
 	d)
-		read -p "确认清空全部providers提供者？(1/0) > " res
+		read -p "确认清空全部providers服务商？(1/0) > " res
 		[ "$res" = "1" ] && rm -rf $CRASHDIR/configs/providers.cfg
 		setproviders
 	;;
@@ -976,10 +978,8 @@ set_core_config_link(){ #直接导入配置
 	echo -----------------------------------------------
 	echo -e "\033[32m仅限导入完整的配置文件链接！！！\033[0m"
 	echo -----------------------------------------------
-	echo -e "\033[33m有流媒体需求，请使用\033[32m6-1在线生成配置文件功能！！！\033[0m"
-	echo -e "\033[33m如不了解机制，请使用\033[32m6-1在线生成配置文件功能！！！\033[0m"
-	echo -e "\033[33m如遇任何问题，请使用\033[32m6-1在线生成配置文件功能！！！\033[0m"
-	echo -e "\033[31m此功能可能会导致部分节点无法连接或者规则覆盖不完整！！！\033[0m"
+	echo -e "注意：\033[31m此功能不兼容“跳过证书验证”功能，部分老旧\n设备可能出现x509报错导致节点不通\033[0m"
+	echo -e "你也可以搭配在线订阅转换网站或者自建SubStore使用"
 	echo -----------------------------------------------
 	echo -e "\033[33m0 返回上级菜单\033[0m"
 	echo -----------------------------------------------
@@ -1031,6 +1031,7 @@ set_core_config(){ #配置文件功能
 	echo -e " 6 \033[32m自定义\033[0m配置文件"
 	echo -e " 7 \033[33m更新\033[0m配置文件"
 	echo -e " 8 \033[36m还原\033[0m配置文件"
+	echo -e " 9 自定义浏览器UA  \033[32m$user_agent\033[0m"
 	echo -----------------------------------------------
 	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
@@ -1059,21 +1060,7 @@ set_core_config(){ #配置文件功能
 			. "$CRASHDIR"/v2b_api.sh
 			set_core_config
 		else
-			echo -----------------------------------------------
-			echo -e "\033[33m此功能可能会导致一些bug！！！\033[0m"
-			echo -e "强烈建议你使用\033[32m在线生成配置文件功能！\033[0m"
-			echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
-			echo -----------------------------------------------
-			sleep 1
-			read -p "我确认遇到问题可以自行解决[1/0] > " res
-			if [ "$res" = '1' ]; then
-				set_core_config_link
-			else
-				echo -----------------------------------------------
-				echo -e "\033[32m正在跳转……\033[0m"
-				sleep 1
-				gen_core_config_link
-			fi
+			set_core_config_link
 		fi
 	;;
 	3)
@@ -1148,8 +1135,38 @@ set_core_config(){ #配置文件功能
 			fi
 		fi
 	;;
+	9)
+		echo -----------------------------------------------
+		echo -e "\033[36m如果6-1或者6-2无法正确获取配置文件时可以尝试使用\033[0m"
+		echo -e " 1 \033[32mclash.meta\033[0m"
+		echo -e " 2 \033[33mclash\033[0m"
+		echo -e " 3 \033[32msing-box\033[0m"
+		echo -e " 0 \033[33m不使用自定义UA\033[0m"
+		echo -----------------------------------------------
+		read -p "请输入对应数字 > " num
+		case "$num" in
+		0)
+			user_agent=''
+		;;
+		1)
+			user_agent='clash.meta'
+		;;
+		2)
+			user_agent='clash'
+		;;
+		3)
+			user_agent='sing-box'
+		;;
+		*)
+			errornum
+		;;
+		esac
+		[ "$num" -le 3 ] && setconfig user_agent "$user_agent"
+		set_core_config		
+	;;
 	*)
 		errornum
+	;;
 	esac
 }
 #下载更新相关
