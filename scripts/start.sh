@@ -2076,7 +2076,7 @@ webget)
 	#参数【$4】代表输出显示，【$5】不启用重定向
 	#参数【$6】代表验证证书，【$7】使用自定义UA
 	[ -n "$7" ] && agent="--user-agent \"$7\""
-	if curl1 --version >/dev/null 2>&1; then
+	if curl --version >/dev/null 2>&1; then
 		[ "$4" = "echooff" ] && progress='-s' || progress='-#'
 		[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 		[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
