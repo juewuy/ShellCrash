@@ -314,7 +314,7 @@ get_core_config() { #下载内核配置文件
 	#获取在线config文件
 	core_config_new="$TMPDIR"/${target}_config.${format}
 	rm -rf ${core_config_new}
-	$0 webget "$core_config_new" "$Https"
+	$0 webget "$core_config_new" "$Https" echoon rediron skipceron "$user_agent"
 	if [ "$?" = "1" ]; then
 		if [ -z "$url_type" ]; then
 			echo -----------------------------------------------
@@ -1879,7 +1879,7 @@ afstart() { #启动后
 		i=$((i + 1))
 	done
 	if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
-		rm -rf "$TMPDIR"/CrashCore                                           #删除缓存目录内核文件
+		[ "$start_old" = "已开启" ] && rm -rf "$TMPDIR"/CrashCore            #删除缓存目录内核文件
 		start_firewall                                                       #配置防火墙流量劫持
 		mark_time                                                            #标记启动时间
 		[ -s "$CRASHDIR"/configs/web_save ] && web_restore >/dev/null 2>&1 & #后台还原面板配置
@@ -2073,12 +2073,14 @@ webget)
 		url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@#')
 	fi
 	#参数【$2】代表下载目录，【$3】代表在线地址
-	#参数【$4】代表输出显示，【$4】不启用重定向
-	#参数【$6】代表验证证书
-	if curl --version >/dev/null 2>&1; then
+	#参数【$4】代表输出显示，【$5】不启用重定向
+	#参数【$6】代表验证证书，【$7】使用自定义UA
+	[ -n "$7" ] && agent="--user-agent \"$7\""
+	if curl1 --version >/dev/null 2>&1; then
 		[ "$4" = "echooff" ] && progress='-s' || progress='-#'
 		[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 		[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
+		[ -n "$7" ] && agent="--user-agent \"$7\""
 		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
 		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
 	else
@@ -2086,6 +2088,7 @@ webget)
 			[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 			[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 			[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+			[ -n "$7" ] && agent="--user-agent=\"$7\""
 			timeout='--timeout=5'
 		fi
 		[ "$4" = "echoon" ] && progress=''
