@@ -1,7 +1,7 @@
 ##
 ## Bundle of CA Root Certificates
 ##
-## Certificate data from Mozilla as of: Fri Nov 14 10:05:31 2025 GMT
+## Certificate data from Mozilla as of: Fri Nov 21 10:05:14 2025 GMT
 ##
 ## Find updated versions here: https://curl.se/docs/caextract.html
 ##
@@ -15,7 +15,7 @@
 ## an Apache+mod_ssl webserver for SSL client authentication.
 ## Just configure this file as the SSLCACertificateFile.
 ##
-## Conversion done with mk-ca-bundle.pl version 1.29.
+## Conversion done with mk-ca-bundle.pl version 1.30.
 ## SHA256: 039132bff5179ce57cec5803ba59fe37abe6d0297aeb538c5af27847f0702517
 ##
 
