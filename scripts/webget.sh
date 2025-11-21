@@ -1138,10 +1138,9 @@ set_core_config(){ #配置文件功能
 	9)
 		echo -----------------------------------------------
 		echo -e "\033[36m如果6-1或者6-2无法正确获取配置文件时可以尝试使用\033[0m"
-		echo -e " 1 \033[32mclash.meta\033[0m"
-		echo -e " 2 \033[33mclash\033[0m"
-		echo -e " 3 \033[32msing-box\033[0m"
-		echo -e " 0 \033[33m不使用自定义UA\033[0m"
+		echo -e " 1 使用自动UA" 
+		echo -e " 2 不使用UA"
+		echo -e " 3 使用自定义UA：\033[32m$user_agent\033[0m"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
 		case "$num" in
@@ -1149,13 +1148,14 @@ set_core_config(){ #配置文件功能
 			user_agent=''
 		;;
 		1)
-			user_agent='clash.meta'
+			user_agent='auto'
 		;;
 		2)
-			user_agent='clash'
+			user_agent='none'
 		;;
 		3)
-			user_agent='sing-box'
+			read -p "请输入自定义UA > " text
+			[ -n "$text" ] && user_agent="$text"
 		;;
 		*)
 			errornum

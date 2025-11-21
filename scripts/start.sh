@@ -58,6 +58,17 @@ getconfig() { #读取配置及全局变量
 		fi
 	}
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	#自动生成ua
+	[ -z "$user_agent" -o "$user_agent" = "auto" ] && {
+		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+			user_agent="sing-box/$core_v"
+		elif [ "$crashcore" = meta ];then
+			user_agent="mihomo/$core_v"
+		else
+			user_agent="clash"
+		fi
+	}
+	[ "$user_agent" = "none" ] && unset user_agent
 }
 setconfig() { #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
@@ -296,14 +307,13 @@ get_core_config() { #下载内核配置文件
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] || [ $server_link -gt $(grep -aE '^4' "$CRASHDIR"/configs/servers.list | wc -l) ] && server_link=1
 	Server=$(grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ -n "$(echo $Url | grep -oE 'vless:|hysteria:')" ] && Server=$(grep -aE '^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	[ "$retry" = 4 ] && Server=$(grep -aE '^497' "$CRASHDIR"/configs/servers.list | awk '{print $3}')
+	Server_ua=$(grep -aE '^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $4}')
 	Config=$(grep -aE '^5' "$CRASHDIR"/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $3}')
 	#如果传来的是Url链接则合成Https链接，否则直接使用Https链接
 	if [ -z "$Https" ]; then
 		#Urlencord转码处理保留字符
 		Url=$(echo $Url | sed 's/;/\%3B/g; s|/|\%2F|g; s/?/\%3F/g; s/:/\%3A/g; s/@/\%40/g; s/=/\%3D/g; s/&/\%26/g')
-		Https="${Server}/sub?target=${target}&insert=true&new_name=true&scv=true&udp=true&exclude=${exclude}&include=${include}&url=${Url}&config=${Config}"
+		Https="${Server}/sub?target=${target}&${Server_ua}=${user_agent}&insert=true&new_name=true&scv=true&udp=true&exclude=${exclude}&include=${include}&url=${Url}&config=${Config}"
 		url_type=true
 	fi
 	#输出
@@ -323,22 +333,15 @@ get_core_config() { #下载内核配置文件
 			echo -----------------------------------------------
 			exit 1
 		else
-			if [ "$retry" -ge 4 ]; then
+			if [ "$retry" -ge 3 ]; then
 				logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
 				echo -e "\033[32m也可用浏览器下载以上链接后，使用WinSCP手动上传到/tmp目录后执行crash命令本地导入！\033[0m"
 				exit 1
-			elif [ "$retry" = 3 ]; then
-				retry=4
-				logger "配置文件获取失败！将尝试使用http协议备用服务器获取！" 31
-				echo -e "\033[32m如担心数据安全，请在3s内使用【Ctrl+c】退出！\033[0m"
-				sleep 3
-				Https=""
-				get_core_config
 			else
 				retry=$((retry + 1))
 				logger "配置文件获取失败！" 31
 				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在重试第$retry次/共4次！" 33
+				logger "正在重试第$retry次/共3次！" 33
 				if [ "$server_link" -ge 4 ]; then
 					server_link=0
 				fi
