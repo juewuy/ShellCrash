@@ -4,7 +4,7 @@
 ddns_dir=/etc/config/ddns
 tmp_dir=/tmp/ddns_$USER
 
-[ ! -f "$ddns_dir" -o ! -d "/etc/ddns" ] && echo -e "本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！" && exit 1
+[ ! -f "$ddns_dir" ] && echo -e "本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！" && exit 1
 echo -----------------------------------------------
 echo -e "\033[30;46m欢迎使用ShellDDNS！\033[0m"
 echo -e "TG群：\033[36;4mhttps://t.me/ShellCrash\033[0m"
@@ -135,15 +135,15 @@ rev_service() {
 
 load_ddns() {
 	nr=0
-	cat $ddns_dir | grep 'config service' | awk '{print $3}' | sed "s/\'//g" >$tmp_dir
+	cat $ddns_dir | grep 'config service' | awk '{print $3}' | sed "s/\'//g" | sed "s/\"//g" >$tmp_dir
 	echo -----------------------------------------------
 	echo -e "列表      域名       启用     IP地址"
 	echo -----------------------------------------------
 	for service in $(cat $tmp_dir); do
-		echo $service >>$tmp_dir
+		#echo $service >>$tmp_dir
 		nr=$((nr + 1))
-		enabled=$(uci show ddns.$service | grep 'enabled' | awk -F "\'" '{print $2}')
-		domain=$(uci show ddns.$service | grep 'domain' | awk -F "\'" '{print $2}')
+		enabled=$(uci show ddns.$service 2>/dev/null | grep 'enabled' | awk -F "\'" '{print $2}')
+		domain=$(uci show ddns.$service 2>/dev/null | grep 'domain' | awk -F "\'" '{print $2}')
 		local_ip=$(cat /var/log/ddns/$service.log | grep 'Local IP' | tail -1 | awk -F "\'" '{print $2}')
 		echo -e " $nr   $domain  $enabled   $local_ip"
 	done

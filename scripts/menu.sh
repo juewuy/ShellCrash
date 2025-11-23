@@ -1965,7 +1965,7 @@ tools() {
 	[ -f /etc/firewall.user ] && echo -e " 4 \033[32m配置\033[0m外网访问SSH"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
 	[ -f ${CRASHDIR}/misnap_init.sh ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
-	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 7 配置\033[32mDDNS服务\033[0m(需下载相关脚本)"
+	[ -f /etc/config/ddns ] && echo -e " 7 配置\033[32mDDNS服务\033[0m(需下载相关脚本)"
 	[ -f ${CRASHDIR}/misnap_init.sh ] && echo -e " 8 小米设备Tun模块修复 ———— \033[$mi_tunfix \033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单"
