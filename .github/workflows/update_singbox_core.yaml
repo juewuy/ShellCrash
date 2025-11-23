@@ -83,9 +83,9 @@ jobs:
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
             if [ "$REPO" = 'PuerNya/sing-box' ];then
-                echo tags=with_quic,with_shadowsocksr,with_ech,with_utls,with_reality_server,with_clash_api >> $GITHUB_OUTPUT
+                echo tags=with_quic,with_shadowsocksr,with_clash_api >> $GITHUB_OUTPUT
             else
-                echo tags=with_quic,with_ech,with_utls,with_reality_server,with_clash_api >> $GITHUB_OUTPUT
+                echo tags=with_quic,with_clash_api >> $GITHUB_OUTPUT
             fi
           else
             echo tags=$TAGS >> $GITHUB_OUTPUT
@@ -209,6 +209,7 @@ jobs:
         run: |
           [ "${{ inputs.tag1 }}" = SagerNet/sing-box ] && crashcore='singbox'
           [ "${{ inputs.tag1 }}" = PuerNya/sing-box ] && crashcore='singboxp'
+          [ "${{ inputs.tag1 }}" = reF1nd/sing-box ] && crashcore='singboxr'
           mkdir -p ./bin/${crashcore}
           rm -fr ./bin/${crashcore}/*
           mv -f ./tmp/singbox-linux-*.tar.gz ./bin/${crashcore}/
