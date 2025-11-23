@@ -541,14 +541,11 @@ EOF
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
 	#mix模式生成rule-providers
-	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q 'rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && \
-	cat >>"$TMPDIR"/rule-providers.yaml <<EOF
-  geosite-cn:
-    type: file
-    behavior: domain
-    format: mrs
-    path: geosite-cn.mrs
-EOF
+	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q 'rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
+		[ -z "$space" ] && space='  '
+		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
+}
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
 	#合并文件
