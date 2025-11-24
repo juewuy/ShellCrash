@@ -12,7 +12,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
         with:
-          repository: PuerNya/sing-box
+          repository: reF1nd/sing-box
           ref: building
           fetch-depth: 0   
       - name: Check version
@@ -20,7 +20,7 @@ jobs:
           git remote add sekai https://github.com/SagerNet/sing-box.git
           git fetch --tags sekai
           version_new=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
-          version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_PuerNya/version)    
+          version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_reF1nd/version)    
           if [ "$version_old" != "$version_new" ];then
             echo a=$version_old >> $GITHUB_ENV
             echo b=$version_new >> $GITHUB_ENV
@@ -35,9 +35,9 @@ jobs:
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
-      tag1: PuerNya/sing-box
+      tag1: reF1nd/sing-box
       tag2: building
-      tag3: singbox_core_PuerNya
+      tag3: singbox_core_reF1nd
       tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_clash_api,with_gvisor
     secrets: inherit
 
