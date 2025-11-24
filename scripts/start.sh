@@ -714,10 +714,11 @@ EOF
 	cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {
-    "rules": [
-      { "inbound": "dns-in", "outbound": "dns-out" }
-    ],
-  "default_mark": $routing_mark
+	"default_domain_resolver": {
+		"server": "dns_direct",
+		"strategy": "prefer_ipv4"
+	},
+    "default_mark": $routing_mark
   }
 }
 EOF
@@ -930,17 +931,28 @@ EOF
   "dns": {
     "servers": [
       {
-        "tag": "hosts_local",
-        "type": "local"
+        "type": "hosts",
+        "tag": "hosts",
+        "path": [
+          "/etc/hosts",
+          "$HOME/.hosts"
+        ],
+        "predefined": {
+          "localhost": [
+            "127.0.0.1",
+            "::1"
+          ],
+          "time.android.com": "203.107.6.88",
+          "time.facebook.com": "203.107.6.88"
+        }
       }
-    ],
+	],
     "rules": [
       {
-        "domain": [$hosts_domain],
-        "server": "hosts_local"
+        "ip_accept_any": true,
+        "server": "hosts"
       }
-    ]
-  }
+	]}
 }
 EOF
 		}
@@ -1030,7 +1042,6 @@ EOF
     ],
 
     "rules": [
-      { "outbound": ["any"], "server": "dns_direct" },
 
       { "clash_mode": "Global", "server": "$global_dns" },
       { "clash_mode": "Direct", "server": "dns_direct" },
@@ -1052,7 +1063,18 @@ EOF
   }
 }
 EOF
-
+	#生成add_route.json
+	cat >"$TMPDIR"/jsons/add_route.json <<EOF
+{
+  "route": {
+	"default_domain_resolver": {
+		"server": "dns_direct",
+		"strategy": "prefer_ipv4"
+	},
+    "default_mark": $routing_mark
+  }
+}
+EOF
 	#生成ntp.json
 	# cat > "$TMPDIR"/jsons/ntp.json <<EOF
 	# {
@@ -1134,15 +1156,12 @@ EOF
 	#生成add_outbounds.json
 	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"DIRECT"')" ] && add_direct='{ "tag": "DIRECT", "type": "direct" }'
 	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"REJECT"')" ] && add_reject='{ "tag": "REJECT", "type": "block" }'
-	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"dns-out"')" ] && add_dnsout='{ "tag": "dns-out", "type": "dns" }'
 	[ -n "$add_direct" -a -n "$add_reject" ] && add_direct="${add_direct},"
-	[ -n "$add_reject" -a -n "$add_dnsout" ] && add_reject="${add_reject},"
-	[ -n "$add_direct" -o -n "$add_reject" -o -n "$add_dnsout" ] && cat >"$TMPDIR"/jsons/add_outbounds.json <<EOF
+	[ -n "$add_direct" -o -n "$add_reject" ] && cat >"$TMPDIR"/jsons/add_outbounds.json <<EOF
 {
   "outbounds": [
     $add_direct
     $add_reject
-    $add_dnsout
   ]
 }
 EOF
