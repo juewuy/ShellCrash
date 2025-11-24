@@ -116,17 +116,16 @@ ckstatus() {
 	[ ! -x ${CRASHDIR}/start.sh ] && chmod +x ${CRASHDIR}/start.sh
 	#检查/tmp内核文件
 	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -Ev ".*(gz|zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box|^clash.meta.*'); do
-		file=/tmp/$file
-		chmod +x $file
-		echo -e "发现可用的内核文件： \033[36m$file\033[0m "
+		chmod +x /tmp/$file
+		echo -e "发现可用的内核文件： \033[36m/tmp/$file\033[0m "
 		read -p "是否加载(会停止当前服务)？(1/0) > " res
 		[ "$res" = 1 ] && {
 			${CRASHDIR}/start.sh stop
-			core_v=$($file -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
-			[ -z "$core_v" ] && core_v=$($file version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')
+			core_v=$(/tmp/$file -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
+			[ -z "$core_v" ] && core_v=$(/tmp/$file version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')
 			if [ -n "$core_v" ]; then
 				source ${CRASHDIR}/webget.sh && setcoretype &&
-					mv -f $file ${TMPDIR}/CrashCore &&
+					mv -f /tmp/$file ${TMPDIR}/CrashCore &&
 					tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore &&
 					echo -e "\033[32m内核加载完成！\033[0m " &&
 					setconfig crashcore $crashcore &&
@@ -135,7 +134,7 @@ ckstatus() {
 				sleep 1
 			else
 				echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
-				rm -rf $file
+				rm -rf /tmp/$file
 				echo -e "\033[33m内核文件已移除，请认真检查后重新上传！\033[0m"
 				sleep 2
 			fi
@@ -144,14 +143,14 @@ ckstatus() {
 	done
 	#检查/tmp配置文件
 	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -iE '.yaml$|.yml$|config.json$'); do
-		file=/tmp/$file
-		echo -e "发现内核配置文件： \033[36m$file\033[0m "
+		tmp_file=/tmp/$file
+		echo -e "发现内核配置文件： \033[36m/tmp/$file\033[0m "
 		read -p "是否加载为$crashcore的配置文件？(1/0) > " res
 		[ "$res" = 1 ] && {
-			if [ -n "$(echo $file | grep -iE '.json$')" ]; then
-				mv -f $file ${CRASHDIR}/jsons/config.json
+			if [ -n "$(echo /tmp/$file | grep -iE '.json$')" ]; then
+				mv -f /tmp/$file ${CRASHDIR}/jsons/config.json
 			else
-				mv -f $file ${CRASHDIR}/yamls/config.yaml
+				mv -f /tmp/$file ${CRASHDIR}/yamls/config.yaml
 			fi
 			echo -e "\033[32m配置文件加载完成！\033[0m "
 			sleep 1
@@ -1965,7 +1964,7 @@ tools() {
 	[ -f /etc/firewall.user ] && echo -e " 4 \033[32m配置\033[0m外网访问SSH"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
 	[ -f ${CRASHDIR}/misnap_init.sh ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
-	[ -f /etc/config/ddns -a -d "/etc/ddns" ] && echo -e " 7 配置\033[32mDDNS服务\033[0m(需下载相关脚本)"
+	[ -f /etc/config/ddns ] && echo -e " 7 配置\033[32mDDNS服务\033[0m(需下载相关脚本)"
 	[ -f ${CRASHDIR}/misnap_init.sh ] && echo -e " 8 小米设备Tun模块修复 ———— \033[$mi_tunfix \033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单"

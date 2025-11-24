@@ -82,10 +82,10 @@ jobs:
           [ -z "$version" ] &&  version=${{ inputs.tag2 }}
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
-            if [ "$REPO" = 'PuerNya/sing-box' ];then
-                echo tags=with_quic,with_shadowsocksr,with_clash_api >> $GITHUB_OUTPUT
+            if [ "$REPO" = 'SagerNet/sing-box' ];then
+                echo tags=with_quic,with_utls,with_clash_api >> $GITHUB_OUTPUT
             else
-                echo tags=with_quic,with_clash_api >> $GITHUB_OUTPUT
+                echo tags=with_quic,with_utls,with_clash_api,with_shadowsocksr >> $GITHUB_OUTPUT
             fi
           else
             echo tags=$TAGS >> $GITHUB_OUTPUT

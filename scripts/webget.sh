@@ -1054,6 +1054,7 @@ set_core_config(){ #配置文件功能
 			fi
 		fi
 		gen_core_config_link
+		set_core_config
 	;;
 	2)
 		if [ -f "$CRASHDIR"/v2b_api.sh ];then
@@ -1062,6 +1063,7 @@ set_core_config(){ #配置文件功能
 		else
 			set_core_config_link
 		fi
+		set_core_config
 	;;
 	3)
 		if [ "$crashcore" = meta -o "$crashcore" = clashpre ];then
@@ -1094,6 +1096,7 @@ set_core_config(){ #配置文件功能
 			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
+		set_core_config
 	;;
 	7)
 		if [ -z "$Url" -a -z "$Https" ];then
@@ -1498,15 +1501,15 @@ setcore(){ #内核选择菜单
 	echo -e "1 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
 	echo -e " >>\033[32m$clash_v  	\033[33m不支持Tun、Rule-set等\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
-	echo -e "2 \033[43;30m SingBox \033[0m：	\033[32m支持全面占用低\033[0m"
-	echo -e " >>\033[32m$singbox_v  	\033[33m不支持providers\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
+	#echo -e "2 \033[43;30m SingBox \033[0m：	\033[32m支持全面占用低\033[0m"
+	#echo -e " >>\033[32m$singbox_v  	\033[33m不支持providers\033[0m"
+	#echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
 	echo -e "3 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
 	echo -e " >>\033[32m$meta_v   	\033[33m占用略高，GeoSite可能不兼容华硕固件\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
-	echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
-	echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://sing-boxp.dustinwin.top\033[0m"
+	#echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
+	#echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
+	#echo -e "  说明文档：	\033[36;4mhttps://sing-boxp.dustinwin.top\033[0m"
 	echo -----------------------------------------------
 	echo -e "5 \033[36m自定义内核\033[0m	$custcore"
 	echo -----------------------------------------------
@@ -1663,13 +1666,13 @@ setcustgeo(){ #下载自定义数据库文件
 	;;
 	2)
 		project=DustinWin/ruleset_geodata
-		api_tag=mihomo
+		api_tag=mihomo-geodata
 		checkcustgeo
 		setcustgeo
 	;;
 	3)
 		project=DustinWin/ruleset_geodata
-		api_tag=sing-box
+		api_tag=sing-box-geodata
 		checkcustgeo
 		setcustgeo
 	;;

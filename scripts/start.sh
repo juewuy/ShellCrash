@@ -61,9 +61,9 @@ getconfig() { #读取配置及全局变量
 	#自动生成ua
 	[ -z "$user_agent" -o "$user_agent" = "auto" ] && {
 		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
-			user_agent="sing-box/$core_v"
+			user_agent="sing-box/singbox/$core_v"
 		elif [ "$crashcore" = meta ];then
-			user_agent="mihomo/$core_v"
+			user_agent="clash.meta/mihomo/$core_v"
 		else
 			user_agent="clash"
 		fi
@@ -199,7 +199,7 @@ put_save() { #推送面板选择
 }
 get_bin() { #专用于项目内部文件的下载
 	. "$CRASHDIR"/configs/ShellCrash.cfg >/dev/null
-	[ -z "$update_url" ] && update_url=https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master
+	[ -z "$update_url" ] && update_url=https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master
 	if [ -n "$url_id" ]; then
 		[ -z "$release_type" ] && release_type=master
 		if [ "$url_id" = 101 -o "$url_id" = 104 ]; then
@@ -541,7 +541,7 @@ EOF
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
 	#mix模式生成rule-providers
-	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q 'rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
 		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
 		[ -z "$space" ] && space='  '
 		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
@@ -1757,7 +1757,7 @@ start_firewall() { #路由规则总入口
 	getlanip          #获取局域网host地址
 	#设置策略路由
 	[ "$firewall_area" != 4 ] && {
-		local table=100
+		local table=166
 		[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table 2>/dev/null
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
 			i=1
@@ -2401,7 +2401,7 @@ webget)
 		export all_proxy="http://${auth}127.0.0.1:$mix_port"
 		url=$(echo $3 | sed 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
 	else
-		url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@#')
+		url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@#')
 	fi
 	#参数【$2】代表下载目录，【$3】代表在线地址
 	#参数【$4】代表输出显示，【$5】不启用重定向

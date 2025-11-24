@@ -55,13 +55,11 @@
 
 ```shell
 sudo -i #切换到root用户，如果需要密码，请输入密码
-bash #如已处于bash环境可跳过
-export url='https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && bash /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && bash /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 或者
 ```shell
 sudo -i #切换到root用户，如果需要密码，请输入密码
-bash #如已处于bash环境可跳过
 export url='https://gh.jwsc.eu.org/master' && bash -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
@@ -74,7 +72,7 @@ export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' && sh -c
 或者
 ```shell
 #jsDelivrCDN源
-export url='https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 或者
 ```shell
@@ -91,7 +89,7 @@ export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' && wget 
 或者
 ```shell
 #jsDelivrCDN源
-export url='https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
 ```
 
 ~**老旧设备使用低版本wge安装**：<br>
@@ -117,7 +115,7 @@ docker exec -it ShellCrash sh
 apk add curl 
 apk add nftables
 #执行安装命令
-export url='https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
 ```
 
 
