@@ -1054,6 +1054,7 @@ set_core_config(){ #配置文件功能
 			fi
 		fi
 		gen_core_config_link
+		set_core_config
 	;;
 	2)
 		if [ -f "$CRASHDIR"/v2b_api.sh ];then
@@ -1062,6 +1063,7 @@ set_core_config(){ #配置文件功能
 		else
 			set_core_config_link
 		fi
+		set_core_config
 	;;
 	3)
 		if [ "$crashcore" = meta -o "$crashcore" = clashpre ];then
@@ -1094,6 +1096,7 @@ set_core_config(){ #配置文件功能
 			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
 		fi
+		set_core_config
 	;;
 	7)
 		if [ -z "$Url" -a -z "$Https" ];then
