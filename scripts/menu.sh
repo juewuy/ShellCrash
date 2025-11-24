@@ -460,6 +460,31 @@ log_pusher() { #日志菜单
 		sleep 1
 		log_pusher
 		;;
+	# 在menu.sh的case $num in代码块中添加
+	7)
+		echo -----------------------------------------------
+		if [ -n "$push_Gotify" ]; then
+			read -p "确认关闭Gotify日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_Gotify=
+				setconfig push_Gotify
+			}
+		else
+			echo -e "请先通过Gotify服务器获取推送URL"
+			echo -e "格式示例: https://gotify.example.com/message?token=你的应用令牌"
+			echo -----------------------------------------------
+			read -p "请输入你的Gotify推送URL > " url
+			if [ -n "$url" ]; then
+				push_Gotify=$url
+				setconfig push_Gotify "$url"
+				${CRASHDIR}/start.sh logger "已完成Gotify日志推送设置！" 32
+			else
+				echo -e "\033[31m输入错误，请重新输入！\033[0m"
+			fi
+		fi
+		sleep 1
+		log_pusher
+		;;
 	b)
 		[ "$task_push" = 1 ] && task_push='' || task_push=1
 		setconfig task_push $task_push

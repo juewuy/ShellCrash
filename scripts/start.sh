@@ -148,6 +148,12 @@ logger() { #日志工具
 			content="{\"token\":\"${push_PP}\",\"title\":\"ShellCrash日志推送\",\"content\":\"$log_text\"}"
 			webpush "$url" "$content" &
 		}
+		# 新增Gotify推送
+		[ -n "$push_Gotify" ] && {
+    			url="${push_Gotify}"
+    			content="{\"title\":\"ShellCrash日志推送\",\"message\":\"$log_text\",\"priority\":5}"
+    			webpush "$url" "$content" &
+		}
 		[ -n "$push_SynoChat" ] && {
 			url="${push_ChatURL}/webapi/entry.cgi?api=SYNO.Chat.External&method=chatbot&version=2&token=${push_ChatTOKEN}"
 			content="payload={\"text\":\"${log_text}\", \"user_ids\":[${push_ChatUSERID}]}"
