@@ -38,7 +38,7 @@ jobs:
       tag1: reF1nd/sing-box
       tag2: building
       tag3: singbox_core_reF1nd
-      tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_ech,with_utls,with_clash_api,with_gvisor
+      tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
     secrets: inherit
 
   cleanup:
