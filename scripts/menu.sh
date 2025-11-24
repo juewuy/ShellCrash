@@ -233,6 +233,7 @@ log_pusher() { #日志菜单
 	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
 	[ -n "$push_PP" ] && stat_PP=32m已启用 || stat_PP=33m未启用
 	[ -n "$push_SynoChat" ] && stat_SynoChat=32m已启用 || stat_SynoChat=33m未启用
+	[ -n "$push_Gotify" ] && stat_Gotify=32m已启用 || stat_Gotify=33m未启用
 	[ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
 	[ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	echo -----------------------------------------------
@@ -242,6 +243,7 @@ log_pusher() { #日志菜单
 	echo -e " 4 Passover推送	——\033[$stat_Po\033[0m"
 	echo -e " 5 PushPlus推送	——\033[$stat_PP\033[0m"
 	echo -e " 6 SynoChat推送	——\033[$stat_SynoChat\033[0m"
+	echo -e " 7 Gotify推送	——\033[$stat_Gotify\033[0m"
 	echo -----------------------------------------------
 	echo -e " a 查看\033[36m运行日志\033[0m"
 	echo -e " b 推送任务日志	——\033[$stat_task\033[0m"
