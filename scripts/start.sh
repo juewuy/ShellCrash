@@ -61,9 +61,9 @@ getconfig() { #读取配置及全局变量
 	#自动生成ua
 	[ -z "$user_agent" -o "$user_agent" = "auto" ] && {
 		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
-			user_agent="sing-box/$core_v"
+			user_agent="sing-box/singbox/$core_v"
 		elif [ "$crashcore" = meta ];then
-			user_agent="mihomo/$core_v"
+			user_agent="clash.meta/mihomo/$core_v"
 		else
 			user_agent="clash"
 		fi
@@ -541,7 +541,7 @@ EOF
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
 	#mix模式生成rule-providers
-	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q 'rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
 		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
 		[ -z "$space" ] && space='  '
 		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 

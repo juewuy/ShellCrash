@@ -1663,13 +1663,13 @@ setcustgeo(){ #下载自定义数据库文件
 	;;
 	2)
 		project=DustinWin/ruleset_geodata
-		api_tag=mihomo
+		api_tag=mihomo-geodata
 		checkcustgeo
 		setcustgeo
 	;;
 	3)
 		project=DustinWin/ruleset_geodata
-		api_tag=sing-box
+		api_tag=sing-box-geodata
 		checkcustgeo
 		setcustgeo
 	;;
