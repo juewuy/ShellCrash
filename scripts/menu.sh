@@ -1127,14 +1127,27 @@ setboot() { #启动相关设置
 	0) ;;
 	1)
 		if [ "$autostart" = "enable" ]; then
+			# 禁止自启动：删除各系统的启动项
 			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash >/dev/null 2>&1 && cd - >/dev/null
 			ckcmd systemctl && systemctl disable shellcrash.service >/dev/null 2>&1
+			# 新增：删除Alpine的启动脚本
+			[ -f "/sbin/openrc" ] && rm -f /etc/local.d/shellcrash.start
 			touch ${CRASHDIR}/.dis_startup
 			autostart=disable
 			echo -e "\033[33m已禁止ShellCrash开机启动！\033[0m"
 		elif [ "$autostart" = "disable" ]; then
+			# 允许自启动：配置各系统的启动项
 			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
 			ckcmd systemctl && systemctl enable shellcrash.service >/dev/null 2>&1
+			# 新增：配置Alpine的启动脚本
+			if [ -f "/sbin/openrc" ]; then
+				[ ! -f "/etc/local.d/shellcrash.start" ] && {
+					echo "#!/bin/sh" > /etc/local.d/shellcrash.start
+					echo "${CRASHDIR}/start.sh start &" >> /etc/local.d/shellcrash.start
+					chmod +x /etc/local.d/shellcrash.start
+				}
+				rc-update add local default >/dev/null 2>&1
+			fi
 			rm -rf ${CRASHDIR}/.dis_startup
 			autostart=enable
 			echo -e "\033[32m已设置ShellCrash开机启动！\033[0m"
