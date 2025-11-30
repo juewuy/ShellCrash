@@ -1203,6 +1203,8 @@ EOF
 		[ ! -s "$TMPDIR"/jsons/cust_add_rules.json ] && rm -rf "$TMPDIR"/jsons/cust_add_rules.json
 	}
 	#提取配置文件以获得outbounds.json,providers.json及route.json
+	sed -i 's/^.*"inbounds":/{"inbounds":/' $core_config #删除旧版不支持的内容
+	sed -i 's/,{[^{}]*"dns-out"[^{}]*}//g' $core_config
 	"$TMPDIR"/CrashCore format -c $core_config >"$TMPDIR"/format.json
 	echo '{' >"$TMPDIR"/jsons/outbounds.json
 	echo '{' >"$TMPDIR"/jsons/route.json
