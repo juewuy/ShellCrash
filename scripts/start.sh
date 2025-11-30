@@ -1071,7 +1071,10 @@ EOF
 		"server": "dns_direct",
 		"strategy": "prefer_ipv4"
 	},
-    "default_mark": $routing_mark
+    "default_mark": $routing_mark,
+	"rules": [
+      { "clash_mode": [ "Direct" ], "outbound": "DIRECT" },
+      { "clash_mode": [ "Global" ], "outbound": "GLOBAL" }]
   }
 }
 EOF

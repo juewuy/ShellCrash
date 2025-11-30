@@ -30,8 +30,6 @@
   ],
   "route": {
     "rules": [
-      { "clash_mode": [ "Direct" ], "outbound": "DIRECT" },
-      { "clash_mode": [ "Global" ], "outbound": "GLOBAL" },
       { "rule_set": [ "private" ], "outbound": "🎯 全球直连" },
       { "rule_set": [ "ads" ], "outbound": "🛑 广告域名" },
       { "rule_set": [ "trackerslist" ], "outbound": "📋 Trackerslist" },
