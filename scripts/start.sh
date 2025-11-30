@@ -282,7 +282,7 @@ check_clash_config() { #检查clash配置文件
 }
 check_singbox_config() { #检查singbox配置文件
 	#检测节点或providers
-	if ! grep -qE '"(socks|http|shadowsocks(r)?|vmess|trojan|wireguard|hysteria(2)?|vless|shadowtls|tuic|ssh|tor|outbound_providers)"' "$core_config_new"; then
+	if ! grep -qE '"(socks|http|shadowsocks(r)?|vmess|trojan|wireguard|hysteria(2)?|vless|shadowtls|tuic|ssh|tor|providers)"' "$core_config_new"; then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		echo "请尝试使用6-2或者6-3的方式生成配置文件！"
@@ -851,14 +851,14 @@ EOF
 			sed '$s/,$/ ] } }/' >"$TMPDIR"/jsons/cust_add_rules.json
 		[ ! -s "$TMPDIR"/jsons/cust_add_rules.json ] && rm -rf "$TMPDIR"/jsons/cust_add_rules.json
 	}
-	#提取配置文件以获得outbounds.json,outbound_providers.json及route.json
+	#提取配置文件以获得outbounds.json,providers.json及route.json
 	"$TMPDIR"/CrashCore format -c $core_config >"$TMPDIR"/format.json
 	echo '{' >"$TMPDIR"/jsons/outbounds.json
 	echo '{' >"$TMPDIR"/jsons/route.json
 	cat "$TMPDIR"/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbounds.json
 	[ "$crashcore" = "singboxp" ] && {
-		echo '{' >"$TMPDIR"/jsons/outbound_providers.json
-		cat "$TMPDIR"/format.json | sed -n '/"outbound_providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbound_providers.json
+		echo '{' >"$TMPDIR"/jsons/providers.json
+		cat "$TMPDIR"/format.json | sed -n '/"providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
 	}
 	cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
@@ -871,8 +871,8 @@ EOF
 	else
 		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json
 	fi
-	#判断可用并修饰outbounds&outbound_providers&route.json结尾
-	for file in outbounds outbound_providers route; do
+	#判断可用并修饰outbounds&providers&route.json结尾
+	for file in outbounds providers route; do
 		if [ -n "$(grep ${file} "$TMPDIR"/jsons/${file}.json 2>/dev/null)" ]; then
 			sed -i 's/^  },$/  }/; s/^  ],$/  ]/' "$TMPDIR"/jsons/${file}.json
 			echo '}' >>"$TMPDIR"/jsons/${file}.json
@@ -888,7 +888,7 @@ EOF
 			mv -f "$TMPDIR"/jsons/${char}.json "$TMPDIR"/jsons_base #如果重复则临时备份
 		}
 	done
-	for char in others inbounds outbounds outbound_providers route rule-set; do
+	for char in others inbounds outbounds providers route rule-set; do
 		[ -s "$CRASHDIR"/jsons/${char}.json ] && {
 			ln -sf "$CRASHDIR"/jsons/${char}.json "$TMPDIR"/jsons/cust_${char}.json
 		}
@@ -1201,14 +1201,14 @@ EOF
 			sed '$s/,$/ ] } }/' >"$TMPDIR"/jsons/cust_add_rules.json
 		[ ! -s "$TMPDIR"/jsons/cust_add_rules.json ] && rm -rf "$TMPDIR"/jsons/cust_add_rules.json
 	}
-	#提取配置文件以获得outbounds.json,outbound_providers.json及route.json
+	#提取配置文件以获得outbounds.json,providers.json及route.json
 	"$TMPDIR"/CrashCore format -c $core_config >"$TMPDIR"/format.json
 	echo '{' >"$TMPDIR"/jsons/outbounds.json
 	echo '{' >"$TMPDIR"/jsons/route.json
 	cat "$TMPDIR"/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbounds.json
 	[ "$crashcore" = "singboxp" ] && {
-		echo '{' >"$TMPDIR"/jsons/outbound_providers.json
-		cat "$TMPDIR"/format.json | sed -n '/"outbound_providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbound_providers.json
+		echo '{' >"$TMPDIR"/jsons/providers.json
+		cat "$TMPDIR"/format.json | sed -n '/^  "providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
 	}
 	cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
@@ -1221,8 +1221,8 @@ EOF
 	else
 		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json
 	fi
-	#判断可用并修饰outbounds&outbound_providers&route.json结尾
-	for file in outbounds outbound_providers route; do
+	#判断可用并修饰outbounds&providers&route.json结尾
+	for file in outbounds providers route; do
 		if [ -n "$(grep ${file} "$TMPDIR"/jsons/${file}.json 2>/dev/null)" ]; then
 			sed -i 's/^  },$/  }/; s/^  ],$/  ]/' "$TMPDIR"/jsons/${file}.json
 			echo '}' >>"$TMPDIR"/jsons/${file}.json
@@ -1238,7 +1238,7 @@ EOF
 			mv -f "$TMPDIR"/jsons/${char}.json "$TMPDIR"/jsons_base #如果重复则临时备份
 		}
 	done
-	for char in others inbounds outbounds outbound_providers route rule-set; do
+	for char in others inbounds outbounds providers route rule-set; do
 		[ -s "$CRASHDIR"/jsons/${char}.json ] && {
 			ln -sf "$CRASHDIR"/jsons/${char}.json "$TMPDIR"/jsons/cust_${char}.json
 		}
@@ -2134,7 +2134,7 @@ clash_check() { #clash启动前检查
 }
 singbox_check() { #singbox启动前检查
 	#检测PuerNya专属功能
-	[ "$crashcore" != "singboxp" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"outbound_providers"')" ] && core_exchange singboxp 'PuerNya内核专属功能'
+	[ "$crashcore" != "singboxp" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"providers"')" ] && core_exchange singboxp 'PuerNya内核专属功能'
 	core_check
 	#预下载geoip-cn.srs数据库
 	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs

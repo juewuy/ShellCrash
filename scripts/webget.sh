@@ -441,27 +441,34 @@ gen_singbox_providers(){ #生成singbox的providers配置文件
 	{
       "tag": "${1}",
       "type": "local",
-      "healthcheck_url": "https://www.gstatic.com/generate_204",
-      "healthcheck_interval": "10m",
-	  "path": "${2}"
-	},
+	  "path": "${2}",
 EOF
 		else
 			cat >> ${TMPDIR}/providers/providers.json <<EOF
 	{
       "tag": "${1}",
       "type": "remote",
-      "healthcheck_url": "https://www.gstatic.com/generate_204",
-      "healthcheck_interval": "10m",
-      "download_url": "${2}",
+      "url": "${2}",
       "path": "./providers/${1}.yaml",
-      "download_ua": "clash.meta",
-      "download_interval": "24h",
-      "download_detour": "DIRECT"
-	},
+      "user_agent": "clash.meta;mihomo",
+      "update_interval": "24h",
 EOF
 		fi
-
+		#通用部分生成
+		[ "$skip_cert" != "未开启" ] && override_tls='true' || override_tls='false'
+		cat >> ${TMPDIR}/providers/providers.json <<EOF
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204",
+        "interval": "10m",
+        "timeout": "3s"
+      },
+	  "override_tls": {
+		"enabled": $override_tls,
+		"insecure": $override_tls
+	  }
+	},
+EOF
 	}
 	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
 		provider_temp_file=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $2}')
@@ -485,7 +492,7 @@ EOF
 	#预创建文件并写入对应文件头
 	cat > ${TMPDIR}/providers/providers.json <<EOF
 {
-  "outbound_providers": [
+  "providers": [
 EOF
 	cat > ${TMPDIR}/providers/outbounds_add.json <<EOF
 {
@@ -495,7 +502,7 @@ EOF
 	if [ -n "$2" ];then
 		gen_singbox_providers_txt $1 $2
 		providers_tags=\"$1\"
-		echo '{ "tag": "'${1}'", "type": "urltest", "tolerance": 100, "providers": "'${1}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
+		echo '{ "tag": "'${1}'", "type": "urltest", "tolerance": 100, "providers": ["'${1}'"], "include": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
 	else
 		providers_tags=''
 		while read line;do
@@ -503,14 +510,14 @@ EOF
 			url=$(echo $line | awk '{print $2}')
 			providers_tags=$(echo "$providers_tags, \"$tag\"" | sed 's/^, //')
 			gen_singbox_providers_txt $tag $url
-			echo '{ "tag": "'${tag}'", "type": "urltest", "tolerance": 100, "providers": "'${tag}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
+			echo '{ "tag": "'${tag}'", "type": "urltest", "tolerance": 100, "providers": ["'${tag}'"], "include": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
 		done < ${CRASHDIR}/configs/providers.cfg
 	fi
 	#修复文件格式
 	sed -i '$s/},/}]}/' ${TMPDIR}/providers/outbounds_add.json
 	sed -i '$s/},/}]}/' ${TMPDIR}/providers/providers.json
 	#使用模版生成outbounds和rules模块
-	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
+	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" > ${TMPDIR}/providers/outbounds.json
 	rm -rf ${TMPDIR}/provider_temp_file
 	#调用内核测试
 	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
