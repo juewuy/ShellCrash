@@ -37,7 +37,7 @@ getconfig() { #读取配置及全局变量
 	[ -z "$multiport" ] && multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
 	[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
 	#内核配置文件
-	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
+	if echo "$crashcore" | grep -q 'singbox'; then
 		target=singbox
 		format=json
 		core_config="$CRASHDIR"/jsons/config.json
@@ -60,7 +60,7 @@ getconfig() { #读取配置及全局变量
 	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
 	#自动生成ua
 	[ -z "$user_agent" -o "$user_agent" = "auto" ] && {
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+		if echo "$crashcore" | grep -q 'singbox';then
 			user_agent="sing-box/singbox/$core_v"
 		elif [ "$crashcore" = meta ];then
 			user_agent="clash.meta/mihomo/$core_v"
@@ -353,7 +353,7 @@ get_core_config() { #下载内核配置文件
 		fi
 	else
 		Https=""
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
+		if echo "$crashcore" | grep -q 'singbox'; then
 			check_singbox_config
 		else
 			check_clash_config
@@ -741,7 +741,6 @@ EOF
 		userpass='"users": [{ "username": "'$username'", "password": "'$password'" }], '
 	}
 	[ "$sniffer" = "已启用" ] && sniffer=true || sniffer=false #域名嗅探配置
-	#[ "$crashcore" = singboxp ] && always_resolve_udp='"always_resolve_udp": true,'
 	cat >"$TMPDIR"/jsons/inbounds.json <<EOF
 {
   "inbounds": [
@@ -856,7 +855,7 @@ EOF
 	echo '{' >"$TMPDIR"/jsons/outbounds.json
 	echo '{' >"$TMPDIR"/jsons/route.json
 	cat "$TMPDIR"/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbounds.json
-	[ "$crashcore" = "singboxp" ] && {
+	[ "$crashcore" = "singboxr" ] && {
 		echo '{' >"$TMPDIR"/jsons/providers.json
 		cat "$TMPDIR"/format.json | sed -n '/"providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
 	}
@@ -1097,7 +1096,6 @@ EOF
 		userpass='"users": [{ "username": "'$username'", "password": "'$password'" }], '
 	}
 	[ "$sniffer" = "已启用" ] && sniffer=true || sniffer=false #域名嗅探配置
-	#[ "$crashcore" = singboxp ] && always_resolve_udp='"always_resolve_udp": true,'
 	cat >"$TMPDIR"/jsons/inbounds.json <<EOF
 {
   "inbounds": [
@@ -1209,7 +1207,7 @@ EOF
 	echo '{' >"$TMPDIR"/jsons/outbounds.json
 	echo '{' >"$TMPDIR"/jsons/route.json
 	cat "$TMPDIR"/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbounds.json
-	[ "$crashcore" = "singboxp" ] && {
+	[ "$crashcore" = "singboxr" ] && {
 		echo '{' >"$TMPDIR"/jsons/providers.json
 		cat "$TMPDIR"/format.json | sed -n '/^  "providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
 	}
@@ -2082,7 +2080,7 @@ core_check() { #检查及下载内核文件
 		#校验内核
 		tar_core "$TMPDIR"/CrashCore.tar.gz core_new
 		chmod +x "$TMPDIR"/core_new
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
+		if echo "$crashcore" | grep -q 'singbox'; then
 			core_v=$("$TMPDIR"/core_new version 2>/dev/null | grep version | awk '{print $3}')
 			COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 		else
@@ -2136,8 +2134,8 @@ clash_check() { #clash启动前检查
 	return 0
 }
 singbox_check() { #singbox启动前检查
-	#检测PuerNya专属功能
-	[ "$crashcore" != "singboxp" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"providers"')" ] && core_exchange singboxp 'PuerNya内核专属功能'
+	#检测singboxr专属功能
+	[ "$crashcore" != "singboxr" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"providers"')" ] && core_exchange singboxr 'singboxr内核专属功能'
 	core_check
 	#预下载geoip-cn.srs数据库
 	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
@@ -2182,7 +2180,7 @@ bfstart() { #启动前
 	[ ! -s "$BINDIR"/ui/index.html ] && makehtml #如没有面板则创建跳转界面
 	catpac                                       #生成pac文件
 	#内核及内核配置文件检查
-	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
+	if echo "$crashcore" | grep -q 'singbox'; then
 		singbox_check
 		[ -d "$TMPDIR"/jsons ] && rm -rf "$TMPDIR"/jsons/* || mkdir -p "$TMPDIR"/jsons #准备目录
 		[ "$disoverride" != "1" ] && modify_json2 || ln -sf $core_config "$TMPDIR"/jsons/config.json
@@ -2377,7 +2375,7 @@ debug)
 	stop_firewall >/dev/null                          #清理路由策略
 	bfstart
 	if [ -n "$2" ]; then
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
+		if echo "$crashcore" | grep -q 'singbox'; then
 			sed -i "s/\"level\": \"info\"/\"level\": \"$2\"/" "$TMPDIR"/jsons/log.json 2>/dev/null
 		else
 			sed -i "s/log-level: info/log-level: $2/" "$TMPDIR"/config.yaml
