@@ -233,6 +233,7 @@ log_pusher() { #日志菜单
 	[ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
 	[ -n "$push_PP" ] && stat_PP=32m已启用 || stat_PP=33m未启用
 	[ -n "$push_SynoChat" ] && stat_SynoChat=32m已启用 || stat_SynoChat=33m未启用
+	[ -n "$push_Gotify" ] && stat_Gotify=32m已启用 || stat_Gotify=33m未启用
 	[ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
 	[ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	echo -----------------------------------------------
@@ -242,6 +243,7 @@ log_pusher() { #日志菜单
 	echo -e " 4 Passover推送	——\033[$stat_Po\033[0m"
 	echo -e " 5 PushPlus推送	——\033[$stat_PP\033[0m"
 	echo -e " 6 SynoChat推送	——\033[$stat_SynoChat\033[0m"
+	echo -e " 7 Gotify推送	——\033[$stat_Gotify\033[0m"
 	echo -----------------------------------------------
 	echo -e " a 查看\033[36m运行日志\033[0m"
 	echo -e " b 推送任务日志	——\033[$stat_task\033[0m"
@@ -455,6 +457,31 @@ log_pusher() { #日志菜单
 				setconfig push_ChatUSERID
 				push_SynoChat=
 				setconfig push_SynoChat
+			fi
+		fi
+		sleep 1
+		log_pusher
+		;;
+	# 在menu.sh的case $num in代码块中添加
+	7)
+		echo -----------------------------------------------
+		if [ -n "$push_Gotify" ]; then
+			read -p "确认关闭Gotify日志推送？(1/0) > " res
+			[ "$res" = 1 ] && {
+				push_Gotify=
+				setconfig push_Gotify
+			}
+		else
+			echo -e "请先通过Gotify服务器获取推送URL"
+			echo -e "格式示例: https://gotify.example.com/message?token=你的应用令牌"
+			echo -----------------------------------------------
+			read -p "请输入你的Gotify推送URL > " url
+			if [ -n "$url" ]; then
+				push_Gotify=$url
+				setconfig push_Gotify "$url"
+				${CRASHDIR}/start.sh logger "已完成Gotify日志推送设置！" 32
+			else
+				echo -e "\033[31m输入错误，请重新输入！\033[0m"
 			fi
 		fi
 		sleep 1
