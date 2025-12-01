@@ -295,8 +295,10 @@ check_singbox_config() { #检查singbox配置文件
 		exit 1
 	fi
 	#删除不兼容的旧版内容
-	sed -i 's/^.*"inbounds":/{"inbounds":/' "$core_config_new"
-	sed -i 's/{[^{}]*"dns-out"[^{}]*}//g' "$core_config_new"
+	[ "$(wc -l < "$core_config_new")" -lt 3 ] && {
+		sed -i 's/^.*"inbounds":/{"inbounds":/' "$core_config_new"
+		sed -i 's/{[^{}]*"dns-out"[^{}]*}//g' "$core_config_new"
+	}
 	#检测并去除无效策略组
 	[ -n "$url_type" ] && {
 		#获得无效策略组名称
@@ -724,12 +726,8 @@ EOF
     ],
 
     "rules": [
-      { "action": "route", "server": "dns_fakeip", "strategy": "$strategy", "disable_cache": true, "rewrite_ttl": 1 },
-	  { "action": "route", "server": "dns_proxy", "strategy": "$strategy", "disable_cache": true },
-	  { "action": "route", "server": "dns_direct", "strategy": "$strategy", "disable_cache": true },
-	  
-      { "clash_mode": "Global", "server": "$global_dns" },
-      { "clash_mode": "Direct", "server": "dns_direct" },
+      { "clash_mode": "Global", "server": "$global_dns", "strategy": "$strategy", "disable_cache": true },
+      { "clash_mode": "Direct", "server": "dns_direct", "strategy": "$strategy", "disable_cache": true },
 	  
       { "domain_suffix": ["services.googleapis.cn"], "server": "dns_fakeip" },
       $fake_ip_filter_domain
@@ -737,10 +735,7 @@ EOF
       $fake_ip_filter_regex
       $direct_dns
 
-      {
-        "query_type": ["A", "AAAA"],
-        "server": "dns_fakeip"
-      }
+      { "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "$strategy", "disable_cache": true, "rewrite_ttl": 1 }
     ],
 	"strategy": "$strategy",
     "final": "dns_proxy",
@@ -751,7 +746,7 @@ EOF
 EOF
 	#生成add_route.json
 		#域名嗅探配置
-	[ "$sniffer" = "已启用" ] && sniffer_set='{ "inbound": [ "redirect-in", "dns-in", "tproxy-in", "tun-in" ], "action": "sniff", "timeout": "500ms" },' 
+	[ "$sniffer" = "已启用" ] && sniffer_set='{ "inbound": [ "redirect-in", "tproxy-in", "tun-in" ], "action": "sniff", "timeout": "500ms" },' 
 	cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {
@@ -761,6 +756,7 @@ EOF
 	},
     "default_mark": $routing_mark,
 	"rules": [
+	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
 	  $sniffer_set
       { "protocol": "dns", "action": "hijack-dns" },
       { "clash_mode": [ "Direct" ], "outbound": "DIRECT" },
@@ -781,6 +777,14 @@ EOF
 	# }
 	# }
 	# EOF
+	#生成certificate.json
+	cat >"$TMPDIR"/jsons/certificate.json <<EOF
+{
+  "certificate": {
+    "store": "mozilla"
+  }
+}
+EOF
 	#生成inbounds.json
 	[ -n "$authentication" ] && {
 		username=$(echo $authentication | awk -F ':' '{print $1}') #混合端口账号密码
@@ -902,9 +906,9 @@ EOF
 	sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' "$TMPDIR"/jsons/route.json
 	#跳过本地tls证书验证
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ]; then
-		sed -i 's/"insecure": false/"insecure": true/' "$TMPDIR"/jsons/outbounds.json
+		sed -i 's/"insecure": false/"insecure": true/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json
 	else
-		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json
+		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json
 	fi
 	#判断可用并修饰outbounds&providers&route.json结尾
 	for file in outbounds providers route; do
@@ -2042,6 +2046,9 @@ stop)
 		unset_proxy   #禁用本机代理
 	fi
 	PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
+	#清理缓存目录
+	rm -rf "$TMPDIR"/crash_start_time
+	rm -rf "$TMPDIR"/CrashCore.tar.gz
 	;;
 restart)
 	$0 stop

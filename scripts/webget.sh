@@ -464,7 +464,7 @@ EOF
         "timeout": "3s"
       },
 	  "override_tls": {
-		"enabled": $override_tls,
+		"enabled": true,
 		"insecure": $override_tls
 	  }
 	},
