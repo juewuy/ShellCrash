@@ -282,26 +282,29 @@ check_clash_config() { #检查clash配置文件
 }
 check_singbox_config() { #检查singbox配置文件
 	#检测节点或providers
-	if ! grep -qE '"(socks|http|shadowsocks(r)?|vmess|trojan|wireguard|hysteria(2)?|vless|shadowtls|tuic|ssh|tor|providers)"' "$core_config_new"; then
+	if ! grep -qE '"(socks|http|shadowsocks(r)?|vmess|trojan|wireguard|hysteria(2)?|vless|shadowtls|tuic|ssh|tor|providers|anytls|soduku)"' "$core_config_new"; then
 		echo -----------------------------------------------
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		echo "请尝试使用6-2或者6-3的方式生成配置文件！"
 		exit 1
 	fi
+	#删除不兼容的旧版内容
+	sed -i 's/^.*"inbounds":/{"inbounds":/' "$core_config_new"
+	sed -i 's/{[^{}]*"dns-out"[^{}]*}//g' "$core_config_new"
 	#检测并去除无效策略组
 	[ -n "$url_type" ] && {
 		#获得无效策略组名称
-		grep -oE '\{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\]' $core_config_new | sed -n 's/.*"tag":"\([^"]*\)".*/\1/p' >"$TMPDIR"/singbox_tags
+		grep -oE '\{"type":"urltest","tag":"[^"]*","outbounds":\["DIRECT"\]' "$core_config_new" | sed -n 's/.*"tag":"\([^"]*\)".*/\1/p' >"$TMPDIR"/singbox_tags
 		#删除策略组
-		sed -i 's/{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\]}//g; s/{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\],"url":"[^"]*","interval":"[^"]*","tolerance":[^}]*}//g' $core_config_new
+		sed -i 's/{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\]}//g; s/{"type":"[^"]*","tag":"[^"]*","outbounds":\["DIRECT"\],"url":"[^"]*","interval":"[^"]*","tolerance":[^}]*}//g' "$core_config_new"
 		#删除全部包含策略组名称的规则
 		while read line; do
-			sed -i "s/\"$line\"//g" $core_config_new
+			sed -i "s/\"$line\"//g" "$core_config_new"
 		done <"$TMPDIR"/singbox_tags
 		rm -rf "$TMPDIR"/singbox_tags
-		#删除多余逗号
-		sed -i 's/,\+/,/g; s/\[,/\[/g; s/,]/]/g' $core_config_new
 	}
+	#清理多余逗号
+	sed -i 's/,\+/,/g; s/\[,/\[/g; s/,]/]/g' "$core_config_new"
 }
 get_core_config() { #下载内核配置文件
 	[ -z "$rule_link" ] && rule_link=1
@@ -1203,8 +1206,6 @@ EOF
 		[ ! -s "$TMPDIR"/jsons/cust_add_rules.json ] && rm -rf "$TMPDIR"/jsons/cust_add_rules.json
 	}
 	#提取配置文件以获得outbounds.json,providers.json及route.json
-	sed -i 's/^.*"inbounds":/{"inbounds":/' $core_config #删除旧版不支持的内容
-	sed -i 's/,{[^{}]*"dns-out"[^{}]*}//g' $core_config
 	"$TMPDIR"/CrashCore format -c $core_config >"$TMPDIR"/format.json
 	echo '{' >"$TMPDIR"/jsons/outbounds.json
 	echo '{' >"$TMPDIR"/jsons/route.json

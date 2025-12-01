@@ -1503,7 +1503,7 @@ setcore(){ #内核选择菜单
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo -e "2 \033[43;30m SingBoxR \033[0m：	\033[32m支持全面\033[0m"
 	echo -e " >>\033[32m$singbox_v  	\033[33m使用reF1nd增强分支\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://github.com/reF1nd/sing-box/tree/reF1nd-main\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://sing-boxr.dustinwin.us.kg/zh/\033[0m"
 	#echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
 	#echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
 	#echo -e "  说明文档：	\033[36;4mhttps://sing-boxp.dustinwin.top\033[0m"
