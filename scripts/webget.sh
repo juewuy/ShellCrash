@@ -1281,15 +1281,15 @@ switch_core(){ #clash与singbox内核切换
 		read -p "是否保留相关数据库文件？(1/0) > " res
 		[ "$res" = '0' ] && {
 			[ "$core_old" = "clash" ] && {
-				geodate='Country.mmdb GeoSite.dat geosite-cn.mrs'
+				geodate='Country.mmdb GeoSite.dat ruleset/*.mrs ruleset/*.yaml ruleset/*.yml'
 				geodate_v='Country_v cn_mini_v geosite_v mrs_geosite_cn_v'
 			}
 			[ "$core_old" = "singbox" ] && {
-				geodate='geoip.db geosite.db geoip-cn.srs geosite-cn.srs'
+				geodate='geoip.db geosite.db ruleset/*.srs ruleset/*.json'
 				geodate_v='geoip_cn_v geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v'
 			}
 			for text in ${geodate} ;do
-				rm -rf ${CRASHDIR}/"$text"
+				rm -rf ${CRASHDIR}/${text}
 			done
 			for text in ${geodate_v} ;do
 				setconfig "$text"
@@ -1553,13 +1553,17 @@ getgeo(){ #下载Geo文件
 	#生成链接
 	echo -----------------------------------------------
 	echo 正在从服务器获取数据库文件…………
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/$geoname bin/geodata/$geotype
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/${geoname} bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo -----------------------------------------------
 		echo -e "\033[31m文件下载失败！\033[0m"
 		error_down
 	else
-		mv -f ${TMPDIR}/$geoname ${BINDIR}/$geoname
+		echo "$geoname" | grep -Eq '.mrs|.srs' && {
+			geofile='ruleset/'
+			[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
+		}
+		mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
 		echo -----------------------------------------------
 		echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
 		#全球版GeoIP和精简版CN-IP数据库不共存
@@ -1582,7 +1586,11 @@ setcustgeo(){ #下载自定义数据库文件
 			echo -e "\033[31m文件下载失败！\033[0m"
 			error_down
 		else
-			mv -f ${TMPDIR}/$geoname ${BINDIR}/$geoname
+			echo "$geoname" | grep -Eq '.mrs|.srs' && {
+				geofile='ruleset/'
+				[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
+			}
+			mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
 			echo -----------------------------------------------
 			echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
 		fi
@@ -1594,7 +1602,7 @@ setcustgeo(){ #下载自定义数据库文件
 			echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
 			${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
 			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|geosite.*\.db"$|geoip.*\.db"$' | sed 's/"//' > ${TMPDIR}/geo.list
+			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > ${TMPDIR}/geo.list
 			rm -rf ${TMPDIR}/github_api
 		}
 		if [ -s ${TMPDIR}/geo.list ];then
@@ -1612,8 +1620,7 @@ setcustgeo(){ #下载自定义数据库文件
 					geotype=$(sed -n "$num"p ${TMPDIR}/geo.list)
 					[ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
 					[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
-					[ -n "$(echo $geotype | grep -oiE 'geosite.*db')" ] && geoname=geosite.db
-					[ -n "$(echo $geotype | grep -oiE 'geoip.*db')" ] && geoname=geoip.db
+					[ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
 					custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
 					getcustgeo
 					checkcustgeo
@@ -1638,10 +1645,10 @@ setcustgeo(){ #下载自定义数据库文件
 	echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
 	echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (Clash及SingBox)"
-	echo -e " 2 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Clash)"
-	echo -e " 3 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限SingBox)"
-	echo -e " 4 \033[36;4mhttps://github.com/lyc8503/sing-box-rules\033[0m (仅限SingBox)"
+	echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (仅限Clash/Mihomo)"
+	echo -e " 2 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Clash/Mihomo)"
+	echo -e " 3 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限SingBox-srs)"
+	echo -e " 4 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Mihomo-mrs)"
 	echo -e " 5 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
 	echo -----------------------------------------------
 	echo -e " 9 \033[33m自定义数据库链接 \033[0m"
@@ -1664,13 +1671,13 @@ setcustgeo(){ #下载自定义数据库文件
 	;;
 	3)
 		project=DustinWin/ruleset_geodata
-		api_tag=sing-box-geodata
+		api_tag=sing-box-ruleset
 		checkcustgeo
 		setcustgeo
 	;;
 	4)
-		project=lyc8503/sing-box-rules
-		api_tag=latest
+		project=DustinWin/ruleset_geodata
+		api_tag=mihomo-ruleset
 		checkcustgeo
 		setcustgeo
 	;;
@@ -1710,10 +1717,8 @@ setgeo(){ #数据库选择菜单
 		echo -e " 5 geosite-cn.mrs数据库(DNS分流,约0.5mb)	\033[33m$mrs_geosite_cn_v\033[0m"
 	}
 	[ -n "$(echo "$crashcore" | grep sing)" ] && {
-		echo -e " 6 SingBox精简版GeoIP_cn数据库(约0.3mb)	\033[33m$geoip_cn_v\033[0m"
-		echo -e " 7 SingBox精简版GeoSite数据库(约0.8mb)	\033[33m$geosite_cn_v\033[0m"
-		echo -e " 8 geoip-cn.srs数据库(约0.1mb)	\033[33m$srs_geoip_cn_v\033[0m"
-		echo -e " 9 geosite-cn.srs数据库(DNS分流,约0.5mb)	\033[33m$srs_geosite_cn_v\033[0m"
+		echo -e " 6 geoip-cn.srs数据库(约0.1mb)	\033[33m$srs_geoip_cn_v\033[0m"
+		echo -e " 7 geosite-cn.srs数据库(DNS分流,约0.5mb)	\033[33m$srs_geosite_cn_v\033[0m"
 	}
 	echo -----------------------------------------------
 	echo -e " a \033[32m自定义数据库文件\033[0m"
@@ -1755,24 +1760,12 @@ setgeo(){ #数据库选择菜单
 		setgeo
 	;;
 	6)
-		geotype=geoip_cn.db
-		geoname=geoip.db
-		getgeo
-		setgeo
-	;;
-	7)
-		geotype=geosite_cn.db
-		geoname=geosite.db
-		getgeo
-		setgeo
-	;;
-	8)
 		geotype=srs_geoip_cn.srs
 		geoname=geoip-cn.srs
 		getgeo
 		setgeo
 	;;
-	9)
+	7)
 		geotype=srs_geosite_cn.srs
 		geoname=geosite-cn.srs
 		getgeo
@@ -1789,13 +1782,13 @@ setgeo(){ #数据库选择菜单
 		echo -----------------------------------------------
 		read -p "确认清理？[1/0] > " res
 		[ "$res" = '1' ] && {
-			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geosite_cn.mrs geoip.db geosite.db geoip-cn.srs geosite-cn.srs;do
+			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db;do
 				rm -rf $CRASHDIR/$file
 			done
 			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v ;do
 				setconfig $var
 			done
-			rm -rf $CRASHDIR/*.srs
+			rm -rf $CRASHDIR/ruleset/*
 			echo -e "\033[33m所有数据库文件均已清理！\033[0m"
 			sleep 1
 		}

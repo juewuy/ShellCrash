@@ -79,6 +79,7 @@ ckcmd() { #检查命令是否存在
 	command -v sh >/dev/null 2>&1 && command -v "$1" >/dev/null 2>&1 || type "$1" >/dev/null 2>&1
 }
 ckgeo() { #查找及下载Geo数据文件
+	[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
 	find --help 2>&1 | grep -q size && find_para=' -size +20' #find命令兼容
 	[ -z "$(find "$BINDIR"/"$1" "$find_para" 2>/dev/null)" ] && {
 		if [ -n "$(find "$CRASHDIR"/"$1" "$find_para" 2>/dev/null)" ]; then
@@ -86,7 +87,7 @@ ckgeo() { #查找及下载Geo数据文件
 		else
 			logger "未找到${1}文件，正在下载！" 33
 			get_bin "$BINDIR"/"$1" bin/geodata/"$2"
-			[ "$?" = "1" ] && rm -rf "${BINDIR:?}"/"${1}" && logger "${1}文件下载失败,已退出！请前往更新界面尝试手动下载！" 31 && exit 1
+			[ "$?" = "1" ] && rm -rf "${BINDIR}"/"${1}" && logger "${1}文件下载失败,已退出！请前往更新界面尝试手动下载！" 31 && exit 1
 			geo_v="$(echo "$2" | awk -F "." '{print $1}')_v"
 			setconfig "$geo_v" "$(date +"%Y%m%d")"
 		fi
@@ -556,7 +557,7 @@ EOF
 	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
 		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
 		[ -z "$space" ] && space='  '
-		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
+		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: ./ruleset/geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
 }
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
@@ -679,7 +680,7 @@ EOF
         "tag": "geosite-cn",
         "type": "local",
         "format": "binary",
-        "path": "geosite-cn.srs"
+        "path": "./ruleset/geosite-cn.srs"
       }
     ]
   }
@@ -729,7 +730,7 @@ EOF
       { "clash_mode": "Global", "server": "$global_dns", "strategy": "$strategy", "disable_cache": true },
       { "clash_mode": "Direct", "server": "dns_direct", "strategy": "$strategy", "disable_cache": true },
 	  
-      { "domain_suffix": ["services.googleapis.cn"], "server": "dns_fakeip" },
+      { "domain_suffix": ["services.googleapis.cn"], "server": "dns_fakeip", "strategy": "$strategy", "disable_cache": true, "rewrite_ttl": 1 },
       $fake_ip_filter_domain
       $fake_ip_filter_suffix
       $fake_ip_filter_regex
@@ -759,8 +760,8 @@ EOF
 	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
 	  $sniffer_set
       { "protocol": "dns", "action": "hijack-dns" },
-      { "clash_mode": [ "Direct" ], "outbound": "DIRECT" },
-      { "clash_mode": [ "Global" ], "outbound": "GLOBAL" }
+      { "clash_mode": "Direct" , "outbound": "DIRECT" },
+      { "clash_mode": "Global" , "outbound": "GLOBAL" }
 	]
   }
 }
@@ -906,9 +907,9 @@ EOF
 	sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' "$TMPDIR"/jsons/route.json
 	#跳过本地tls证书验证
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ]; then
-		sed -i 's/"insecure": false/"insecure": true/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json
+		sed -i 's/"insecure": false/"insecure": true/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json 2>/dev/null
 	else
-		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json
+		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json 2>/dev/null
 	fi
 	#判断可用并修饰outbounds&providers&route.json结尾
 	for file in outbounds providers route; do
@@ -1826,13 +1827,9 @@ singbox_check() { #singbox启动前检查
 	[ "$crashcore" != "singboxr" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"providers"')" ] && core_exchange singboxr 'singboxr内核专属功能'
 	core_check
 	#预下载geoip-cn.srs数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
+	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo ruleset/geoip-cn.srs srs_geoip_cn.srs
 	#预下载geosite-cn.srs数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.srs srs_geosite_cn.srs
-	#预下载GeoIP数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"geoip":')" ] && ckgeo geoip.db geoip_cn.db
-	#预下载GeoSite数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"geosite":')" ] && ckgeo geosite.db geosite_cn.db
+	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/geosite-cn.srs srs_geosite_cn.srs
 	return 0
 }
 network_check() { #检查是否联网
