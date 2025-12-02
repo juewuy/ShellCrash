@@ -128,8 +128,6 @@ jobs:
         curl -kfSL -o geodata/china_ip_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv4-List/release/cn.txt
         curl -kfSL -o geodata/china_ipv6_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv6-List/release/cn6.txt
         curl -kfSL -o geodata/geosite.dat https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-geodata/geosite-all.dat
-        curl -kfSL -o geodata/geoip_cn.db https://github.com/lyc8503/sing-box-rules/releases/latest/download/geoip-cn.db
-        curl -kfSL -o geodata/geosite_cn.db https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-geodata/geosite-lite.db
         curl -kfSL -o geodata/srs_geoip_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cnip.srs
         curl -kfSL -o geodata/srs_geosite_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cn.srs
         curl -kfSL -o geodata/mrs_geosite_cn.mrs https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs

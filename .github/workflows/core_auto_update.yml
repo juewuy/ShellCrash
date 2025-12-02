@@ -36,7 +36,7 @@ jobs:
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
       tag1: reF1nd/sing-box
-      tag2: building
+      tag2: reF1nd-dev
       tag3: singbox_core_reF1nd
       tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
     secrets: inherit
