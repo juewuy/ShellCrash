@@ -96,7 +96,7 @@ setrules(){ #自定义规则
 	echo -e " 1 新增自定义规则"
 	echo -e " 2 移除自定义规则"
 	echo -e " 3 清空规则列表"
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
+	echo "$crashcore" | grep -q 'singbox' || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
@@ -441,27 +441,34 @@ gen_singbox_providers(){ #生成singbox的providers配置文件
 	{
       "tag": "${1}",
       "type": "local",
-      "healthcheck_url": "https://www.gstatic.com/generate_204",
-      "healthcheck_interval": "10m",
-	  "path": "${2}"
-	},
+	  "path": "${2}",
 EOF
 		else
 			cat >> ${TMPDIR}/providers/providers.json <<EOF
 	{
       "tag": "${1}",
       "type": "remote",
-      "healthcheck_url": "https://www.gstatic.com/generate_204",
-      "healthcheck_interval": "10m",
-      "download_url": "${2}",
+      "url": "${2}",
       "path": "./providers/${1}.yaml",
-      "download_ua": "clash.meta",
-      "download_interval": "24h",
-      "download_detour": "DIRECT"
-	},
+      "user_agent": "clash.meta;mihomo",
+      "update_interval": "24h",
 EOF
 		fi
-
+		#通用部分生成
+		[ "$skip_cert" != "未开启" ] && override_tls='true' || override_tls='false'
+		cat >> ${TMPDIR}/providers/providers.json <<EOF
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204",
+        "interval": "10m",
+        "timeout": "3s"
+      },
+	  "override_tls": {
+		"enabled": true,
+		"insecure": $override_tls
+	  }
+	},
+EOF
 	}
 	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
 		provider_temp_file=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $2}')
@@ -485,7 +492,7 @@ EOF
 	#预创建文件并写入对应文件头
 	cat > ${TMPDIR}/providers/providers.json <<EOF
 {
-  "outbound_providers": [
+  "providers": [
 EOF
 	cat > ${TMPDIR}/providers/outbounds_add.json <<EOF
 {
@@ -495,7 +502,7 @@ EOF
 	if [ -n "$2" ];then
 		gen_singbox_providers_txt $1 $2
 		providers_tags=\"$1\"
-		echo '{ "tag": "'${1}'", "type": "urltest", "tolerance": 100, "providers": "'${1}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
+		echo '{ "tag": "'${1}'", "type": "urltest", "tolerance": 100, "providers": ["'${1}'"], "include": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
 	else
 		providers_tags=''
 		while read line;do
@@ -503,14 +510,14 @@ EOF
 			url=$(echo $line | awk '{print $2}')
 			providers_tags=$(echo "$providers_tags, \"$tag\"" | sed 's/^, //')
 			gen_singbox_providers_txt $tag $url
-			echo '{ "tag": "'${tag}'", "type": "urltest", "tolerance": 100, "providers": "'${tag}'", "includes": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
+			echo '{ "tag": "'${tag}'", "type": "urltest", "tolerance": 100, "providers": ["'${tag}'"], "include": ".*" },' >> ${TMPDIR}/providers/outbounds_add.json
 		done < ${CRASHDIR}/configs/providers.cfg
 	fi
 	#修复文件格式
 	sed -i '$s/},/}]}/' ${TMPDIR}/providers/outbounds_add.json
 	sed -i '$s/},/}]}/' ${TMPDIR}/providers/providers.json
 	#使用模版生成outbounds和rules模块
-	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" >> ${TMPDIR}/providers/outbounds.json
+	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" > ${TMPDIR}/providers/outbounds.json
 	rm -rf ${TMPDIR}/provider_temp_file
 	#调用内核测试
 	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
@@ -541,7 +548,6 @@ setproviders(){ #自定义providers
 	echo -----------------------------------------------
 	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers服务商\033[0m"
 	echo -e "\033[33m支持在线及本地的Yaml格式配置导入\033[0m"
-	echo -e "\033[36msingboxp内核暂不支持跳过证书验证功能\033[0m"
 	[ -s $CRASHDIR/configs/providers.cfg ] && {
 		echo -----------------------------------------------
 		echo -e "\033[36m输入对应数字可管理providers服务商\033[0m"
@@ -634,7 +640,7 @@ setproviders(){ #自定义providers
 	c)
 		echo -----------------------------------------------
 		if [ -s $CRASHDIR/configs/providers.cfg ];then
-			echo -e "\033[33msingboxp与mihomo内核的providers配置文件不互通！\033[0m"
+			echo -e "\033[33msingboxr与mihomo内核的providers配置文件不互通！\033[0m"
 			echo -----------------------------------------------
 			read -p "确认生成${coretype}配置文件？(1/0) > " res
 			[ "$res" = "1" ] && {
@@ -743,7 +749,7 @@ override(){ #配置文件覆写
 	echo -----------------------------------------------
 	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
 	echo -e " 2 管理\033[36m自定义规则\033[0m"
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] || {
+	echo "$crashcore" | grep -q 'singbox' || {
 		echo -e " 3 管理\033[33m自定义节点\033[0m"
 		echo -e " 4 管理\033[36m自定义策略组\033[0m"
 	}
@@ -782,7 +788,7 @@ override(){ #配置文件覆写
 		override
 	;;
 	5)
-		[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && set_singbox_adv || set_clash_adv
+		echo "$crashcore" | grep -q 'singbox' && set_singbox_adv || set_clash_adv
 		sleep 3
 		override
 	;;
@@ -980,6 +986,7 @@ set_core_config_link(){ #直接导入配置
 	echo -----------------------------------------------
 	echo -e "注意：\033[31m此功能不兼容“跳过证书验证”功能，部分老旧\n设备可能出现x509报错导致节点不通\033[0m"
 	echo -e "你也可以搭配在线订阅转换网站或者自建SubStore使用"
+	echo "$crashcore" | grep -q 'singbox' &&echo -e "singbox内核建议使用\033[32;4mhttps://subv.jwsc.eu.org/\033[0m转换"
 	echo -----------------------------------------------
 	echo -e "\033[33m0 返回上级菜单\033[0m"
 	echo -----------------------------------------------
@@ -1015,7 +1022,7 @@ set_core_config_link(){ #直接导入配置
 set_core_config(){ #配置文件功能
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
+	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
 	echo -----------------------------------------------
@@ -1069,7 +1076,7 @@ set_core_config(){ #配置文件功能
 		if [ "$crashcore" = meta -o "$crashcore" = clashpre ];then
 			coretype=clash
 			setproviders
-		elif [ "$crashcore" = singboxp ];then
+		elif [ "$crashcore" = singboxr ];then
 			coretype=singbox
 			setproviders
 		else
@@ -1247,22 +1254,22 @@ setcpucore(){ #手动设置内核架构
 	fi
 }
 setcoretype(){ #手动指定内核类型
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_old=singbox || core_old=clash
+	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
 	echo -e "\033[33m请确认该自定义内核的类型：\033[0m"
 	echo -e " 1 Clash基础内核"
 	echo -e " 2 Clash-Premium内核"
 	echo -e " 3 Clash-Meta内核"
 	echo -e " 4 Sing-Box内核"
-	echo -e " 5 Sing-Box-Puer内核"
+	echo -e " 5 Sing-Box-reF1nd内核"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 		2) crashcore=clashpre ;;
 		3) crashcore=meta ;;
 		4) crashcore=singbox ;;
-		5) crashcore=singboxp ;;
+		5) crashcore=singboxr ;;
 		*) crashcore=clash ;;
 	esac
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
+	echo "$crashcore" | grep -q 'singbox' && core_new=singbox || core_new=clash
 }
 switch_core(){ #clash与singbox内核切换
 	#singbox和clash内核切换时提示是否保留文件
@@ -1289,7 +1296,7 @@ switch_core(){ #clash与singbox内核切换
 			done
 		}
 	}
-	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+	if echo "$crashcore" | grep -q 'singbox';then
 		COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 	else
 		COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
@@ -1297,9 +1304,9 @@ switch_core(){ #clash与singbox内核切换
 	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
 }
 getcore(){ #下载内核文件
-	[ -z "$crashcore" ] && crashcore=singbox
+	[ -z "$crashcore" ] && crashcore=meta
 	[ -z "$cpucore" ] && getcpucore
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
+	echo "$crashcore" | grep -q 'singbox' && core_new=singbox || core_new=clash
 	#获取在线内核文件
 	echo -----------------------------------------------
 	echo 正在在线获取$crashcore核心文件……
@@ -1333,7 +1340,7 @@ getcore(){ #下载内核文件
 		[ -f ${TMPDIR}/core_new.gz ] && gunzip ${TMPDIR}/core_new.gz && rm -rf ${TMPDIR}/core_new.gz
 		chmod +x ${TMPDIR}/core_new
 		[ "$crashcore" = unknow ] && setcoretype
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+		if echo "$crashcore" | grep -q 'singbox';then
 			core_v=$(${TMPDIR}/core_new version 2>/dev/null | grep version | awk '{print $3}')
 		else
 			core_v=$(${TMPDIR}/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
@@ -1422,10 +1429,9 @@ setcustcore(){ #自定义内核
 	echo -e "\033[33m请选择需要使用的核心！\033[0m"
 	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本内核"
 	echo -e "2 \033[36mMetaCubeX/mihomo\033[32m@alpha\033[0m版本内核"
-	echo -e "3 \033[36myaling888/clash\033[32m@release\033[0m版本内核"
 	echo -e "4 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本内核"
-	echo -e "5 \033[36mPuerNya/sing-box\033[0m内核(with_gvisor,with_wireguard)"
-	echo -e "6 \033[36mSagerNet/sing-box\033[32m@1.7.8\033[0m版本内核(不支持rule-set)"
+	echo -e "5 \033[36mreF1nd/sing-box\033[0m内核(with_gvisor,with_wireguard)"
+	echo -e "6 Clash基础内核(已停止维护)"
 	echo -e "7 Premium-2023.08.17内核(已停止维护)"
 	echo -e "a \033[33m自定义内核链接 \033[0m"
 	echo -----------------------------------------------
@@ -1443,12 +1449,6 @@ setcustcore(){ #自定义内核
 		crashcore=meta
 		checkcustcore
 	;;
-	3)
-		project=yaling888/clash
-		api_tag=latest
-		crashcore=clashpre
-		checkcustcore
-	;;
 	4)
 		project=SagerNet/sing-box
 		api_tag=latest
@@ -1457,14 +1457,14 @@ setcustcore(){ #自定义内核
 	;;
 	5)
 		project=juewuy/ShellCrash
-		api_tag=singbox_core_PuerNya
-		crashcore=singboxp
+		api_tag=singbox_core_reF1nd
+		crashcore=singboxr
 		checkcustcore
 	;;
 	6)
-		project=SagerNet/sing-box
-		api_tag=v1.7.8
-		crashcore=singbox
+		project=juewuy/ShellCrash
+		api_tag=Clash_Dreamacro
+		crashcore=clash
 		checkcustcore
 	;;
 	7)
@@ -1488,7 +1488,7 @@ setcore(){ #内核选择菜单
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow"
 	[ ! -f ${CRASHDIR}/CrashCore.tar.gz ] && crashcore="未安装核心"
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_old=singbox || core_old=clash
+	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
 	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 	###
 	echo -----------------------------------------------
@@ -1498,15 +1498,12 @@ setcore(){ #内核选择菜单
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
 	echo -e "\033[36m如需本地上传，请将二进制文件上传至 /tmp 目录后重新运行crash命令\033[0m"
 	echo -----------------------------------------------
-	echo -e "1 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
-	echo -e " >>\033[32m$clash_v  	\033[33m不支持Tun、Rule-set等\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
-	#echo -e "2 \033[43;30m SingBox \033[0m：	\033[32m支持全面占用低\033[0m"
-	#echo -e " >>\033[32m$singbox_v  	\033[33m不支持providers\033[0m"
-	#echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
-	echo -e "3 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
+	echo -e "1 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
 	echo -e " >>\033[32m$meta_v   	\033[33m占用略高，GeoSite可能不兼容华硕固件\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
+	echo -e "2 \033[43;30m SingBoxR \033[0m：	\033[32m支持全面\033[0m"
+	echo -e " >>\033[32m$singboxr_v  	\033[33m使用reF1nd增强分支\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://sing-boxr.dustinwin.us.kg\033[0m"
 	#echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
 	#echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
 	#echo -e "  说明文档：	\033[36;4mhttps://sing-boxp.dustinwin.top\033[0m"
@@ -1521,21 +1518,16 @@ setcore(){ #内核选择菜单
 	0)
 	;;
 	1)
-		crashcore=clash
-		custcorelink=''
-		getcore
-	;;
-	2)
-		crashcore=singbox
-		custcorelink=''
-		getcore
-	;;
-	3)
 		[ -d "/jffs" ] && {
 			echo -e "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
 			sleep 3
 		}
 		crashcore=meta
+		custcorelink=''
+		getcore
+	;;
+	2)
+		crashcore=singboxr
 		custcorelink=''
 		getcore
 	;;
@@ -2226,8 +2218,10 @@ update(){
 		echo -e "感谢：\033[32msing-box项目 \033[0m作者\033[36m SagerNet\033[0m 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
 		echo -e "感谢：\033[32mMetaCubeX项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
 		echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
+		echo -e "感谢：\033[32mzashboard项目 \033[0m作者\033[36m Zephyruso\033[0m 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
 		echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
 		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m PuerNya\033[0m 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
+		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m reF1nd\033[0m 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
 		echo -e "感谢：\033[32mDustinWin相关项目 \033[0m作者\033[36m DustinWin\033[0m 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
 		echo -----------------------------------------------
 		echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
@@ -2410,7 +2404,7 @@ userguide(){
 }
 #测试菜单
 debug(){
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && config_tmp=$TMPDIR/jsons || config_tmp=$TMPDIR/config.yaml
+	echo "$crashcore" | grep -q 'singbox' && config_tmp=$TMPDIR/jsons || config_tmp=$TMPDIR/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m"
 	echo -e "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m"
@@ -2434,7 +2428,7 @@ debug(){
 	1)
 		$CRASHDIR/start.sh stop
 		$CRASHDIR/start.sh bfstart
-		if [ "$crashcore" = singbox -o "$crashcore" = singboxp ] ;then
+		if echo "$crashcore" | grep -q 'singbox' ;then
 			$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons &
 			{ sleep 4 ; kill $! >/dev/null 2>&1 & }
 			wait
@@ -2486,7 +2480,7 @@ debug(){
 	esac
 }
 testcommand(){
-	[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
+	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo -----------------------------------------------
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"

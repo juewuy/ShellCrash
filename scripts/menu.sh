@@ -95,7 +95,7 @@ ckstatus() {
 		#检测系统端口占用
 		checkport
 	fi
-	corename=$(echo $crashcore | sed 's/singbox/SingBox/' | sed 's/clash/Clash/' | sed 's/meta/Mihomo/')
+	corename=$(echo $crashcore | sed 's/singboxr/SingBoxR/' | sed 's/singbox/SingBox/' | sed 's/clash/Clash/' | sed 's/meta/Mihomo/')
 	[ "$firewall_area" = 5 ] && corename='转发'
 	[ -f ${TMPDIR}/debug.log -o -f ${CRASHDIR}/debug.log -a -n "$PID" ] && auto="\033[33m并处于debug状态！\033[0m"
 	#输出状态
@@ -180,7 +180,7 @@ startover() {
 	return 0
 }
 start_core() {
-	if [ "$crashcore" = singbox -o "$crashcore" = singboxp ]; then
+	if echo "$crashcore" | grep -q 'singbox'; then
 		core_config=${CRASHDIR}/jsons/config.json
 	else
 		core_config=${CRASHDIR}/yamls/config.yaml
@@ -188,7 +188,7 @@ start_core() {
 	echo -----------------------------------------------
 	if [ ! -s $core_config -a -s $CRASHDIR/configs/providers.cfg ]; then
 		echo -e "\033[33m没有找到${crashcore}配置文件，尝试生成providers配置文件！\033[0m"
-		[ "$crashcore" = singboxp ] && coretype=singbox
+		[ "$crashcore" = singboxr ] && coretype=singbox
 		[ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
 		source ${CRASHDIR}/webget.sh && gen_${coretype}_providers
 	elif [ -s $core_config -o -n "$Url" -o -n "$Https" ]; then
@@ -1523,7 +1523,7 @@ set_dns_mod() { #DNS模式设置
 	echo -e "                   不支持CN-IP绕过功能"
 	echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
 	echo -e "                   需搭配加密DNS使用"
-	if [ "$crashcore" = singbox ] || [ "$crashcore" = singboxp ] || [ "$crashcore" = meta ]; then
+	if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
 		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
 		echo -e "                   依赖geosite.dat/geosite-cn.srs数据库"
 	fi
@@ -1545,7 +1545,7 @@ set_dns_mod() { #DNS模式设置
 		echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
 		;;
 	3)
-		if [ "$crashcore" = singbox ] || [ "$crashcore" = singboxp ] || [ "$crashcore" = meta ]; then
+		if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
 			dns_mod=mix
 			setconfig dns_mod $dns_mod
 			echo -----------------------------------------------

@@ -32,7 +32,7 @@ update_core(){ #自动更新内核
 		logger "任务【自动更新内核】中止-未检测到版本更新"
 		exit 1
 	else
-		[ "$crashcore" = singbox -o "$crashcore" = singboxp ] && core_new=singbox || core_new=clash
+		echo "$crashcore" | grep -q 'singbox' && core_new=singbox || core_new=clash
 		if [ -n "$custcorelink" ];then
 			zip_type=$(echo $custcorelink | grep -oE 'tar.gz$')
 			[ -z "$zip_type" ] && zip_type=$(echo $custcorelink | grep -oE 'gz$')
@@ -60,7 +60,7 @@ update_core(){ #自动更新内核
 			[ -f ${TMPDIR}/core_new.gz ] && gunzip ${TMPDIR}/core_new.gz >/dev/null && rm -rf ${TMPDIR}/core_new.gz
 			chmod +x ${TMPDIR}/core_new
 			[ "$crashcore" = unknow ] && setcoretype
-			if [ "$crashcore" = singbox -o "$crashcore" = singboxp ];then
+			if echo "$crashcore" | grep -q 'singbox';then
 				core_v=$(${TMPDIR}/core_new version 2>/dev/null | grep version | awk '{print $3}')
 			else
 				core_v=$(${TMPDIR}/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
