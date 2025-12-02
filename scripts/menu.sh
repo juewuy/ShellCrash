@@ -1990,9 +1990,9 @@ tools() {
 	echo -e " 3 \033[36m日志及推送工具\033[0m"
 	[ -f /etc/firewall.user ] && echo -e " 4 \033[32m配置\033[0m外网访问SSH"
 	[ -x /usr/sbin/otapredownload ] && echo -e " 5 \033[33m$mi_update\033[0m小米系统自动更新"
-	[ -f ${CRASHDIR}/misnap_init.sh ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
+	[ "$systype" = "mi_snapshot" ] && echo -e " 6 小米设备软固化SSH ———— \033[$mi_autoSSH_type \033[0m"
 	[ -f /etc/config/ddns ] && echo -e " 7 配置\033[32mDDNS服务\033[0m(需下载相关脚本)"
-	[ -f ${CRASHDIR}/misnap_init.sh ] && echo -e " 8 小米设备Tun模块修复 ———— \033[$mi_tunfix \033[0m"
+	[ "$systype" = "mi_snapshot" ] && echo -e " 8 小米设备Tun模块修复 ———— \033[$mi_tunfix \033[0m"
 	echo -----------------------------------------------
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -2063,7 +2063,7 @@ tools() {
 				rm -rf ${CRASHDIR}/tools/tun.ko
 				echo -e "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
 			}
-		elif [ -z "$(modinfo tun)" ]; then
+		elif ckcmd modinfo && [ -z "$(modinfo tun)" ]; then
 			echo -e "\033[33m本功能需要修改系统文件，不保证没有任何风险！\033[0m"
 			echo -e "\033[33m本功能采集的Tun模块并不一定适用于你的设备！\033[0m"
 			sleep 1

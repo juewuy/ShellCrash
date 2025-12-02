@@ -2252,9 +2252,10 @@ userguide(){
 				else
 					redir_mod="Redir模式"
 				fi
-				setconfig crashcore "clash"
 			}
+			setconfig crashcore "mihomo"
 			setconfig redir_mod "$redir_mod"
+			setconfig dns_mod mix
 			#默认启用绕过CN-IP
 			setconfig cn_ip_route 已开启
 			#自动识别IPV6

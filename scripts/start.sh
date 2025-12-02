@@ -410,6 +410,7 @@ dns:
     - 223.5.5.5
   enhanced-mode: fake-ip
   fake-ip-range: 28.0.0.1/8
+  fake-ip-range6: fc00::/16
   fake-ip-filter:
 EOF
 		if [ "$dns_mod" != "redir_host" ]; then
@@ -710,8 +711,8 @@ EOF
       {
         "tag": "dns_fakeip",
         "type": "fakeip",
-        "inet4_range": "198.18.0.0/15",
-        "inet6_range": "fc00::/18"
+        "inet4_range": "28.0.0.1/8",
+        "inet6_range": "fc00::/16"
       },
 
       {
