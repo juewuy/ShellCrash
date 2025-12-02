@@ -1164,7 +1164,7 @@ set_core_config(){ #配置文件功能
 			user_agent='none'
 		;;
 		3)
-			read -p "请输入自定义UA > " text
+			read -p "请输入自定义UA(不要包含空格和特殊符号！) > " text
 			[ -n "$text" ] && user_agent="$text"
 		;;
 		*)
@@ -1509,6 +1509,7 @@ setcore(){ #内核选择菜单
 	#echo -e "  说明文档：	\033[36;4mhttps://sing-boxp.dustinwin.top\033[0m"
 	echo -----------------------------------------------
 	echo -e "5 \033[36m自定义内核\033[0m	$custcore"
+	echo -e "6 \033[32m更新当前内核\033[0m"
 	echo -----------------------------------------------
 	echo "9 手动指定处理器架构"
 	echo -----------------------------------------------
@@ -1539,6 +1540,9 @@ setcore(){ #内核选择菜单
 	5)
 		setcustcore
 		setcore
+	;;
+	6)
+		getcore
 	;;
 	9)
 		setcpucore
