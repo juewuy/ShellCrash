@@ -640,10 +640,16 @@ EOF
 EOF
 	fi
 	#生成dns.json
-	dns_direct=$(echo $dns_nameserver | awk -F ',' '{print $1}')
-	dns_proxy=$(echo $dns_fallback | awk -F ',' '{print $1}')
-	[ -z "$dns_direct" ] && dns_direct='223.5.5.5'
-	[ -z "$dns_proxy" ] && dns_proxy='1.0.0.1'
+	[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5'
+	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1'
+	dns_direct_1st=$(echo $dns_nameserver | awk -F ',' '{print $1}')
+	dns_direct=$(echo $dns_direct_1st | sed 's|.*://||' | sed 's|/.*||')
+	dns_direct_type=$(echo "$dns_direct_1st" | awk -F '://' '{print $1}')
+	[ "$dns_direct_type" = "$dns_direct" ] && dns_direct_type="udp"
+	dns_proxy_1st=$(echo $dns_fallback | awk -F ',' '{print $1}')
+	dns_proxy=$(echo $dns_proxy_1st | sed 's|.*://||' | sed 's|/.*||')
+	dns_proxy_type=$(echo "$dns_proxy_1st" | awk -F '://' '{print $1}')
+	[ "$dns_proxy_type" = "$dns_proxy" ] && dns_proxy_type="udp"
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
 	[ "$dns_mod" = "redir_host" ] && {
 		global_dns=dns_proxy
@@ -666,10 +672,9 @@ EOF
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
-		if [ -z "$(echo "$core_v" | grep -E '(^1\.(8|[89]\d*|\d{2,})\.\d+$)|(^(2|[2-9]\d*|\d{2,})\.([0-9]\d*|\d{2,})\.\d+$)')" ]; then
-			direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
-			#生成add_rule_set.json
-			[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"geosite-cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
+		direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
+		#生成add_rule_set.json
+		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"geosite-cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
     "rule_set": [
@@ -683,9 +688,6 @@ EOF
   }
 }
 EOF
-		else
-			direct_dns="{ \"geosite\": \"cn\", \"server\": \"dns_direct\" },"
-		fi
 	}
 	cat >"$TMPDIR"/jsons/dns.json <<EOF
 {
@@ -693,13 +695,13 @@ EOF
     "servers": [
       {
         "tag": "dns_proxy",
-        "type": "udp",
+        "type": "$dns_proxy_type",
         "server": "$dns_proxy",
         "domain_resolver": "dns_resolver"
       },
       {
         "tag": "dns_direct",
-        "type": "udp",
+        "type": "$dns_direct_type",
         "server": "$dns_direct",
         "domain_resolver": "dns_resolver"
       },
@@ -713,7 +715,7 @@ EOF
 
       {
         "tag": "dns_resolver",
-        "type": "udp",
+        "type": "https",
         "server": "223.5.5.5"
       },
 
