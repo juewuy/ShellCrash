@@ -1,7 +1,8 @@
 //DustinWin-ruleset无广告精简规则
 {
   "outbounds": [
-    { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", "🖐️ 手动选择", "DIRECT", {providers_tags} ] },
+    { "tag": "🖐️ 手动选择", "type": "selector", "use_all_providers": true },	
     { "tag": "📈 网络测试", "type": "selector", "outbounds": [ "🎯 全球直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
     { "tag": "🤖 AI 平台", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点" ] },
     { "tag": "📋 Trackerslist", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
@@ -45,91 +46,91 @@
         "tag": "private",
         "type": "remote",
         "format": "binary",
-        "path": "./private.srs",
+        "path": "./ruleset/private.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/private.srs"
       },
       {
         "tag": "trackerslist",
         "type": "remote",
         "format": "binary",
-        "path": "./trackerslist.srs",
+        "path": "./ruleset/trackerslist.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/trackerslist.srs"
       },
       {
         "tag": "microsoft-cn",
         "type": "remote",
         "format": "binary",
-        "path": "./microsoft-cn.srs",
+        "path": "./ruleset/microsoft-cn.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/microsoft-cn.srs"
       },
       {
         "tag": "apple-cn",
         "type": "remote",
         "format": "binary",
-        "path": "./apple-cn.srs",
+        "path": "./ruleset/apple-cn.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/apple-cn.srs"
       },
       {
         "tag": "google-cn",
         "type": "remote",
         "format": "binary",
-        "path": "./google-cn.srs",
+        "path": "./ruleset/google-cn.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/google-cn.srs"
       },
       {
         "tag": "games-cn",
         "type": "remote",
         "format": "binary",
-        "path": "./games-cn.srs",
+        "path": "./ruleset/games-cn.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/games-cn.srs"
       },
       {
         "tag": "ai",
         "type": "remote",
         "format": "binary",
-        "path": "./ai.srs",
+        "path": "./ruleset/ai.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/ai.srs"
       },
       {
         "tag": "networktest",
         "type": "remote",
         "format": "binary",
-        "path": "./networktest.srs",
+        "path": "./ruleset/networktest.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/networktest.srs"
       },
       {
         "tag": "proxy",
         "type": "remote",
         "format": "binary",
-        "path": "./proxy.srs",
+        "path": "./ruleset/proxy.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/proxy.srs"
       },
       {
         "tag": "cn",
         "type": "remote",
         "format": "binary",
-        "path": "./cn.srs",
+        "path": "./ruleset/cn.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cn-lite.srs"
       },
       {
         "tag": "privateip",
         "type": "remote",
         "format": "binary",
-        "path": "./privateip.srs",
+        "path": "./ruleset/privateip.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/privateip.srs"
       },
       {
         "tag": "cnip",
         "type": "remote",
         "format": "binary",
-        "path": "./cnip.srs",
+        "path": "./ruleset/cnip.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cnip.srs"
       },
       {
         "tag": "telegramip",
         "type": "remote",
         "format": "binary",
-        "path": "./telegramip.srs",
+        "path": "./ruleset/telegramip.srs",
         "url": "https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/telegramip.srs"
       }
     ],

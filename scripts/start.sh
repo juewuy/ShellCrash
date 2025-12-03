@@ -79,6 +79,7 @@ ckcmd() { #检查命令是否存在
 	command -v sh >/dev/null 2>&1 && command -v "$1" >/dev/null 2>&1 || type "$1" >/dev/null 2>&1
 }
 ckgeo() { #查找及下载Geo数据文件
+	[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
 	find --help 2>&1 | grep -q size && find_para=' -size +20' #find命令兼容
 	[ -z "$(find "$BINDIR"/"$1" "$find_para" 2>/dev/null)" ] && {
 		if [ -n "$(find "$CRASHDIR"/"$1" "$find_para" 2>/dev/null)" ]; then
@@ -86,7 +87,7 @@ ckgeo() { #查找及下载Geo数据文件
 		else
 			logger "未找到${1}文件，正在下载！" 33
 			get_bin "$BINDIR"/"$1" bin/geodata/"$2"
-			[ "$?" = "1" ] && rm -rf "${BINDIR:?}"/"${1}" && logger "${1}文件下载失败,已退出！请前往更新界面尝试手动下载！" 31 && exit 1
+			[ "$?" = "1" ] && rm -rf "${BINDIR}"/"${1}" && logger "${1}文件下载失败,已退出！请前往更新界面尝试手动下载！" 31 && exit 1
 			geo_v="$(echo "$2" | awk -F "." '{print $1}')_v"
 			setconfig "$geo_v" "$(date +"%Y%m%d")"
 		fi
@@ -398,6 +399,8 @@ modify_yaml() { #修饰clash配置文件
 	}
 	#dns配置
 	[ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
+		default_nameserver='223.5.5.5' 
+		[ "$crashcore" = 'meta' ] && default_nameserver='https://223.5.5.5/dns-query' 
 		cat >"$TMPDIR"/dns.yaml <<EOF
 dns:
   enable: true
@@ -405,10 +408,10 @@ dns:
   use-hosts: true
   ipv6: $dns_v6
   default-nameserver:
-    - 114.114.114.114
-    - 223.5.5.5
+    - $default_nameserver
   enhanced-mode: fake-ip
   fake-ip-range: 28.0.0.1/8
+  fake-ip-range6: fc00::/16
   fake-ip-filter:
 EOF
 		if [ "$dns_mod" != "redir_host" ]; then
@@ -417,8 +420,6 @@ EOF
 				#插入过滤规则
 				cat >>"$TMPDIR"/dns.yaml <<EOF
     - "rule-set:geosite-cn"
-  nameserver-policy:
-    "+.googleapis.cn": [$dns_fallback]
 EOF
 			}
 		else
@@ -426,14 +427,11 @@ EOF
 		fi
 		cat >>"$TMPDIR"/dns.yaml <<EOF
   nameserver: [$dns_nameserver]
-  fallback: [$dns_fallback]
-  fallback-filter:
-    geoip: true
 EOF
-		[ -s "$CRASHDIR"/configs/fallback_filter.list ] && {
-			echo "    domain:" >>"$TMPDIR"/dns.yaml
-			cat "$CRASHDIR"/configs/fallback_filter.list | grep -v '#' | sed "s/^/      - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
-		}
+		# [ -s "$CRASHDIR"/configs/fallback_filter.list ] && {
+			# echo "    domain:" >>"$TMPDIR"/dns.yaml
+			# cat "$CRASHDIR"/configs/fallback_filter.list | grep -v '#' | sed "s/^/      - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
+		# }
 	}
 	#域名嗅探配置
 	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {http: {ports: [80, 8080-8880], override-destination: true}, tls: {ports: [443, 8443]}, quic: {ports: [443, 8443]}}}"
@@ -556,7 +554,7 @@ EOF
 	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
 		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
 		[ -z "$space" ] && space='  '
-		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
+		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: ./ruleset/geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
 }
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
@@ -642,10 +640,16 @@ EOF
 EOF
 	fi
 	#生成dns.json
-	dns_direct=$(echo $dns_nameserver | awk -F ',' '{print $1}')
-	dns_proxy=$(echo $dns_fallback | awk -F ',' '{print $1}')
-	[ -z "$dns_direct" ] && dns_direct='223.5.5.5'
-	[ -z "$dns_proxy" ] && dns_proxy='1.0.0.1'
+	[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5'
+	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1'
+	dns_direct_1st=$(echo $dns_nameserver | awk -F ',' '{print $1}')
+	dns_direct=$(echo $dns_direct_1st | sed 's|.*://||' | sed 's|/.*||')
+	dns_direct_type=$(echo "$dns_direct_1st" | awk -F '://' '{print $1}')
+	[ "$dns_direct_type" = "$dns_direct" ] && dns_direct_type="udp"
+	dns_proxy_1st=$(echo $dns_fallback | awk -F ',' '{print $1}')
+	dns_proxy=$(echo $dns_proxy_1st | sed 's|.*://||' | sed 's|/.*||')
+	dns_proxy_type=$(echo "$dns_proxy_1st" | awk -F '://' '{print $1}')
+	[ "$dns_proxy_type" = "$dns_proxy" ] && dns_proxy_type="udp"
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
 	[ "$dns_mod" = "redir_host" ] && {
 		global_dns=dns_proxy
@@ -668,10 +672,9 @@ EOF
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
-		if [ -z "$(echo "$core_v" | grep -E '(^1\.(8|[89]\d*|\d{2,})\.\d+$)|(^(2|[2-9]\d*|\d{2,})\.([0-9]\d*|\d{2,})\.\d+$)')" ]; then
-			direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
-			#生成add_rule_set.json
-			[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"geosite-cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
+		direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
+		#生成add_rule_set.json
+		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"geosite-cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
     "rule_set": [
@@ -679,15 +682,12 @@ EOF
         "tag": "geosite-cn",
         "type": "local",
         "format": "binary",
-        "path": "geosite-cn.srs"
+        "path": "./ruleset/geosite-cn.srs"
       }
     ]
   }
 }
 EOF
-		else
-			direct_dns="{ \"geosite\": \"cn\", \"server\": \"dns_direct\" },"
-		fi
 	}
 	cat >"$TMPDIR"/jsons/dns.json <<EOF
 {
@@ -695,13 +695,13 @@ EOF
     "servers": [
       {
         "tag": "dns_proxy",
-        "type": "udp",
+        "type": "$dns_proxy_type",
         "server": "$dns_proxy",
         "domain_resolver": "dns_resolver"
       },
       {
         "tag": "dns_direct",
-        "type": "udp",
+        "type": "$dns_direct_type",
         "server": "$dns_direct",
         "domain_resolver": "dns_resolver"
       },
@@ -709,13 +709,13 @@ EOF
       {
         "tag": "dns_fakeip",
         "type": "fakeip",
-        "inet4_range": "198.18.0.0/15",
-        "inet6_range": "fc00::/18"
+        "inet4_range": "28.0.0.1/8",
+        "inet6_range": "fc00::/16"
       },
 
       {
         "tag": "dns_resolver",
-        "type": "udp",
+        "type": "https",
         "server": "223.5.5.5"
       },
 
@@ -729,7 +729,7 @@ EOF
       { "clash_mode": "Global", "server": "$global_dns", "strategy": "$strategy", "disable_cache": true },
       { "clash_mode": "Direct", "server": "dns_direct", "strategy": "$strategy", "disable_cache": true },
 	  
-      { "domain_suffix": ["services.googleapis.cn"], "server": "dns_fakeip" },
+      { "domain_suffix": ["services.googleapis.cn"], "server": "dns_fakeip", "strategy": "$strategy", "disable_cache": true, "rewrite_ttl": 1 },
       $fake_ip_filter_domain
       $fake_ip_filter_suffix
       $fake_ip_filter_regex
@@ -759,8 +759,8 @@ EOF
 	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
 	  $sniffer_set
       { "protocol": "dns", "action": "hijack-dns" },
-      { "clash_mode": [ "Direct" ], "outbound": "DIRECT" },
-      { "clash_mode": [ "Global" ], "outbound": "GLOBAL" }
+      { "clash_mode": "Direct" , "outbound": "DIRECT" },
+      { "clash_mode": "Global" , "outbound": "GLOBAL" }
 	]
   }
 }
@@ -906,9 +906,9 @@ EOF
 	sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' "$TMPDIR"/jsons/route.json
 	#跳过本地tls证书验证
 	if [ -z "$skip_cert" -o "$skip_cert" = "已开启" ]; then
-		sed -i 's/"insecure": false/"insecure": true/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json
+		sed -i 's/"insecure": false/"insecure": true/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json 2>/dev/null
 	else
-		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json
+		sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json 2>/dev/null
 	fi
 	#判断可用并修饰outbounds&providers&route.json结尾
 	for file in outbounds providers route; do
@@ -1465,7 +1465,7 @@ start_firewall() { #路由规则总入口
 	getlanip          #获取局域网host地址
 	#设置策略路由
 	[ "$firewall_area" != 4 ] && {
-		local table=166
+		[ -z "$table" ] && table=100
 		[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table 2>/dev/null
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
 			i=1
@@ -1628,10 +1628,10 @@ stop_firewall() { #还原防火墙配置
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
 	}
 	#清理路由规则
-	ip rule del fwmark $fwmark table 100 2>/dev/null
-	ip route flush table 100 2>/dev/null
-	ip -6 rule del fwmark $fwmark table 101 2>/dev/null
-	ip -6 route flush table 101 2>/dev/null
+	ip rule del fwmark $fwmark table $table 2>/dev/null
+	ip route flush table $table 2>/dev/null
+	ip -6 rule del fwmark $fwmark table $((table + 1)) 2>/dev/null
+	ip -6 route flush table $((table + 1)) 2>/dev/null
 	#重置nftables相关规则
 	ckcmd nft && {
 		nft flush table inet shellcrash >/dev/null 2>&1
@@ -1818,7 +1818,7 @@ clash_check() { #clash启动前检查
 	#预下载GeoSite数据库并排除存在自定义数据库链接的情况
 	[ -n "$(grep -oEi 'geosite' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo GeoSite.dat geosite.dat
 	#预下载geosite-cn.mrs数据库
-	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.mrs mrs_geosite_cn.mrs
+	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/geosite-cn.mrs mrs_geosite_cn.mrs
 	return 0
 }
 singbox_check() { #singbox启动前检查
@@ -1826,13 +1826,9 @@ singbox_check() { #singbox启动前检查
 	[ "$crashcore" != "singboxr" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"providers"')" ] && core_exchange singboxr 'singboxr内核专属功能'
 	core_check
 	#预下载geoip-cn.srs数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo geoip-cn.srs srs_geoip_cn.srs
+	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo ruleset/geoip-cn.srs srs_geoip_cn.srs
 	#预下载geosite-cn.srs数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.srs srs_geosite_cn.srs
-	#预下载GeoIP数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"geoip":')" ] && ckgeo geoip.db geoip_cn.db
-	#预下载GeoSite数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"geosite":')" ] && ckgeo geosite.db geosite_cn.db
+	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/geosite-cn.srs srs_geosite_cn.srs
 	return 0
 }
 network_check() { #检查是否联网

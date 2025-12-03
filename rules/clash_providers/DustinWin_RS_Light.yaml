@@ -21,7 +21,7 @@ rule-providers:
     type: http
     behavior: domain
     format: mrs
-    path: ./rules/private.mrs
+    path: ./ruleset/private.mrs
     url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/private.mrs"
     interval: 86400
 
@@ -29,7 +29,7 @@ rule-providers:
     type: http
     behavior: domain
     format: mrs
-    path: ./rules/tld-proxy.mrs
+    path: ./ruleset/tld-proxy.mrs
     url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/tld-proxy.mrs"
     interval: 86400
 
@@ -37,7 +37,7 @@ rule-providers:
     type: http
     behavior: domain
     format: mrs
-    path: ./rules/proxy.mrs
+    path: ./ruleset/proxy.mrs
     url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/proxy.mrs"
     interval: 86400
 
@@ -45,7 +45,7 @@ rule-providers:
     type: http
     behavior: ipcidr
     format: mrs
-    path: ./rules/privateip.mrs
+    path: ./ruleset/privateip.mrs
     url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/privateip.mrs"
     interval: 86400
 
@@ -53,7 +53,7 @@ rule-providers:
     type: http
     behavior: ipcidr
     format: mrs
-    path: ./rules/cnip.mrs
+    path: ./ruleset/cnip.mrs
     url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cnip.mrs"
     interval: 86400
 
@@ -61,7 +61,7 @@ rule-providers:
     type: http
     behavior: ipcidr
     format: mrs
-    path: ./rules/telegramip.mrs
+    path: ./ruleset/telegramip.mrs
     url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/telegramip.mrs"
     interval: 86400
 

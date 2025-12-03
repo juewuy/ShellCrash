@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.2beta7
+version=1.9.3alpha4fix
 
 setdir() {
 	dir_avail() {
@@ -244,7 +244,7 @@ fi
 setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
 #设置防火墙执行模式
 grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
-	iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
+	firewall_mod=iptables
 	nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
 	setconfig firewall_mod $firewall_mod
 }
@@ -327,6 +327,7 @@ mkdir -p ${CRASHDIR}/yamls
 mkdir -p ${CRASHDIR}/jsons
 mkdir -p ${CRASHDIR}/tools
 mkdir -p ${CRASHDIR}/task
+mkdir -p ${CRASHDIR}/ruleset
 for file in config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml others.yaml; do
 	mv -f ${CRASHDIR}/$file ${CRASHDIR}/yamls/$file 2>/dev/null
 done
@@ -339,6 +340,9 @@ mv -f ${CRASHDIR}/mark ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 #数据库改名
 mv -f ${CRASHDIR}/geosite.dat ${CRASHDIR}/GeoSite.dat 2>/dev/null
+#数据库移动
+mv -f ${CRASHDIR}/*.srs ${CRASHDIR}/ruleset/ 2>/dev/null
+mv -f ${CRASHDIR}/*.mrs ${CRASHDIR}/ruleset/ 2>/dev/null
 #内核改名
 mv -f ${CRASHDIR}/clash ${CRASHDIR}/CrashCore 2>/dev/null
 #内核压缩
@@ -354,6 +358,7 @@ userdel shellclash >/dev/null 2>&1
 sed -i '/shellclash/d' /etc/passwd
 sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash
+rm -rf ${CRASHDIR}/rules
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
 for file in CrashCore clash.sh getdate.sh shellcrash.rc core.new clashservice log shellcrash.service mark? mark.bak; do
 	rm -rf ${CRASHDIR}/$file
