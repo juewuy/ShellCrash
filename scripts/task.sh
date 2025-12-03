@@ -365,7 +365,7 @@ task_type(){ #任务条件选择菜单
 	7)
 		echo -----------------------------------------------
 		echo -e " 输入10即每隔10分钟运行一次，1440即每隔24小时运行一次"	
-		echo -e " 大于60分钟的数值将按小时取整"	
+		echo -e " 大于60分钟的数值将按小时取整,且按当前时区记时"	
 		read -p "想每隔多少分钟执行一次？（1-1440的整数） > " num
 		if [ "$num" -lt 60 ];then
 			min="$num"
@@ -373,7 +373,7 @@ task_type(){ #任务条件选择菜单
 			time_des="$min分钟"
 		else
 			hour="$((num / 60))"
-			cron_time="* */$hour * * *"
+			cron_time="0 */$hour * * *"
 			time_des="$hour小时"
 		fi
 		set_service running "$task_id" "运行时每$time_des$task_name" "$cron_time"
