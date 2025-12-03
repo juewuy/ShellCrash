@@ -399,6 +399,8 @@ modify_yaml() { #修饰clash配置文件
 	}
 	#dns配置
 	[ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
+		default_nameserver='223.5.5.5' 
+		[ "$crashcore" = 'meta' ] && default_nameserver='https://223.5.5.5/dns-query' 
 		cat >"$TMPDIR"/dns.yaml <<EOF
 dns:
   enable: true
@@ -406,8 +408,7 @@ dns:
   use-hosts: true
   ipv6: $dns_v6
   default-nameserver:
-    - 114.114.114.114
-    - 223.5.5.5
+    - $default_nameserver
   enhanced-mode: fake-ip
   fake-ip-range: 28.0.0.1/8
   fake-ip-range6: fc00::/16
@@ -419,8 +420,6 @@ EOF
 				#插入过滤规则
 				cat >>"$TMPDIR"/dns.yaml <<EOF
     - "rule-set:geosite-cn"
-  nameserver-policy:
-    "+.googleapis.cn": [$dns_fallback]
 EOF
 			}
 		else
@@ -428,14 +427,11 @@ EOF
 		fi
 		cat >>"$TMPDIR"/dns.yaml <<EOF
   nameserver: [$dns_nameserver]
-  fallback: [$dns_fallback]
-  fallback-filter:
-    geoip: true
 EOF
-		[ -s "$CRASHDIR"/configs/fallback_filter.list ] && {
-			echo "    domain:" >>"$TMPDIR"/dns.yaml
-			cat "$CRASHDIR"/configs/fallback_filter.list | grep -v '#' | sed "s/^/      - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
-		}
+		# [ -s "$CRASHDIR"/configs/fallback_filter.list ] && {
+			# echo "    domain:" >>"$TMPDIR"/dns.yaml
+			# cat "$CRASHDIR"/configs/fallback_filter.list | grep -v '#' | sed "s/^/      - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
+		# }
 	}
 	#域名嗅探配置
 	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {http: {ports: [80, 8080-8880], override-destination: true}, tls: {ports: [443, 8443]}, quic: {ports: [443, 8443]}}}"
@@ -1820,7 +1816,7 @@ clash_check() { #clash启动前检查
 	#预下载GeoSite数据库并排除存在自定义数据库链接的情况
 	[ -n "$(grep -oEi 'geosite' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo GeoSite.dat geosite.dat
 	#预下载geosite-cn.mrs数据库
-	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo geosite-cn.mrs mrs_geosite_cn.mrs
+	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/geosite-cn.mrs mrs_geosite_cn.mrs
 	return 0
 }
 singbox_check() { #singbox启动前检查
