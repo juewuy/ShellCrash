@@ -31,6 +31,7 @@ getconfig() { #读取配置及全局变量
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$fwmark" ] && fwmark=$redir_port
 	routing_mark=$((fwmark + 2))
+	[ -z "$table" ] && table=100
 	[ -z "$sniffer" ] && sniffer=已开启
 	#是否代理常用端口
 	[ -z "$common_ports" ] && common_ports=已开启
@@ -1465,7 +1466,6 @@ start_firewall() { #路由规则总入口
 	getlanip          #获取局域网host地址
 	#设置策略路由
 	[ "$firewall_area" != 4 ] && {
-		[ -z "$table" ] && table=100
 		[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table 2>/dev/null
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
 			i=1
@@ -1561,13 +1561,13 @@ stop_firewall() { #还原防火墙配置
 		$iptable -D INPUT -p tcp --dport $db_port -j REJECT 2>/dev/null
 		$iptable -D INPUT -p tcp --dport $db_port -j ACCEPT 2>/dev/null
 		#清理shellcrash自建表
-		for table in shellcrash_dns shellcrash shellcrash_out shellcrash_dns_out shellcrash_vm shellcrash_vm_dns; do
-			$iptable -t nat -F $table 2>/dev/null
-			$iptable -t nat -X $table 2>/dev/null
+		for words in shellcrash_dns shellcrash shellcrash_out shellcrash_dns_out shellcrash_vm shellcrash_vm_dns; do
+			$iptable -t nat -F $words 2>/dev/null
+			$iptable -t nat -X $words 2>/dev/null
 		done
-		for table in shellcrash_mark shellcrash_mark_out; do
-			$iptable -t mangle -F $table 2>/dev/null
-			$iptable -t mangle -X $table 2>/dev/null
+		for words in shellcrash_mark shellcrash_mark_out; do
+			$iptable -t mangle -F $words 2>/dev/null
+			$iptable -t mangle -X $words 2>/dev/null
 		done
 	}
 	#重置ipv6规则
@@ -1606,13 +1606,13 @@ stop_firewall() { #还原防火墙配置
 		$ip6table -D INPUT -p tcp --dport $db_port -j REJECT 2>/dev/null
 		$ip6table -D INPUT -p tcp --dport $db_port -j ACCEPT 2>/dev/null
 		#清理shellcrash自建表
-		for table in shellcrashv6_dns shellcrashv6 shellcrashv6_out; do
-			$ip6table -t nat -F $table 2>/dev/null
-			$ip6table -t nat -X $table 2>/dev/null
+		for words in shellcrashv6_dns shellcrashv6 shellcrashv6_out; do
+			$ip6table -t nat -F $words 2>/dev/null
+			$ip6table -t nat -X $words 2>/dev/null
 		done
-		for table in shellcrashv6_mark shellcrashv6_mark_out; do
-			$ip6table -t mangle -F $table 2>/dev/null
-			$ip6table -t mangle -X $table 2>/dev/null
+		for words in shellcrashv6_mark shellcrashv6_mark_out; do
+			$ip6table -t mangle -F $words 2>/dev/null
+			$ip6table -t mangle -X $words 2>/dev/null
 		done
 		$ip6table -t mangle -F shellcrashv6_mark 2>/dev/null
 		$ip6table -t mangle -X shellcrashv6_mark 2>/dev/null
@@ -2044,7 +2044,7 @@ stop)
 	PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
 	#清理缓存目录
 	rm -rf "$TMPDIR"/crash_start_time
-	rm -rf "$TMPDIR"/CrashCore.tar.gz
+	rm -rf "$TMPDIR"/CrashCore
 	;;
 restart)
 	$0 stop

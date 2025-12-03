@@ -1211,7 +1211,7 @@ setboot() { #启动相关设置
 		if [ "$mini_clash" = "未开启" ]; then
 			if [ "$dir_size" -gt 20480 ]; then
 				echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
-			elif [ "start_old" != '已开启' -a "$(cat /proc/1/comm)" = "systemd" ]; then
+			elif [ "$start_old" != '已开启' -a "$(cat /proc/1/comm)" = "systemd" ]; then
 				echo -e "\033[33m不支持systemd启动模式，请先启用保守模式！\033[0m"
 			else
 				[ "$BINDIR" = "$CRASHDIR" ] && BINDIR="$TMPDIR"
