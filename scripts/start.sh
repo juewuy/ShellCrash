@@ -1465,7 +1465,7 @@ start_firewall() { #路由规则总入口
 	getlanip          #获取局域网host地址
 	#设置策略路由
 	[ "$firewall_area" != 4 ] && {
-		[ -z "$table" ] && local table=100
+		[ -z "$table" ] && table=100
 		[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table 2>/dev/null
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
 			i=1
@@ -1628,10 +1628,10 @@ stop_firewall() { #还原防火墙配置
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
 	}
 	#清理路由规则
-	ip rule del fwmark $fwmark table 100 2>/dev/null
-	ip route flush table 100 2>/dev/null
-	ip -6 rule del fwmark $fwmark table 101 2>/dev/null
-	ip -6 route flush table 101 2>/dev/null
+	ip rule del fwmark $fwmark table $table 2>/dev/null
+	ip route flush table $table 2>/dev/null
+	ip -6 rule del fwmark $fwmark table $((table + 1)) 2>/dev/null
+	ip -6 route flush table $((table + 1)) 2>/dev/null
 	#重置nftables相关规则
 	ckcmd nft && {
 		nft flush table inet shellcrash >/dev/null 2>&1
