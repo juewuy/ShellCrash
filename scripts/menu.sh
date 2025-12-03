@@ -511,6 +511,7 @@ log_pusher() { #日志菜单
 setport() { #端口设置
 	source $CFG_PATH >/dev/null
 	[ -z "$secret" ] && secret=未设置
+	[ -z "$table" ] && table=100
 	[ -z "$authentication" ] && auth=未设置 || auth=******
 	inputport() {
 		read -p "请输入端口号(1-65535) > " portx
@@ -540,14 +541,17 @@ setport() { #端口设置
 	echo -e " 6 设置面板访问密码：	\033[36m$secret\033[0m"
 	echo -e " 7 修改默认端口过滤：	\033[36m$multiport\033[0m"
 	echo -e " 8 自定义本机host地址：	\033[36m$host\033[0m"
+	echo -e " 9 自定义路由表：	\033[36m$table,$((table + 1))\033[0m"
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ]; then
-		errornum
-	elif [ "$num" = 1 ]; then
+	case "$num" in
+	0)
+	;;
+	1)
 		xport=mix_port
 		inputport
-	elif [ "$num" = 2 ]; then
+	;;
+	2)
 		echo -----------------------------------------------
 		echo -e "格式必须是\033[32m 用户名:密码 \033[0m的形式，注意用小写冒号分隔！"
 		echo -e "请尽量不要使用特殊符号！避免产生未知错误！"
@@ -574,16 +578,20 @@ setport() { #端口设置
 			fi
 		fi
 		setport
-	elif [ "$num" = 3 ]; then
+	;;
+	3)
 		xport=redir_port
 		inputport
-	elif [ "$num" = 4 ]; then
+	;;
+	4)
 		xport=dns_port
 		inputport
-	elif [ "$num" = 5 ]; then
+	;;
+	5)
 		xport=db_port
 		inputport
-	elif [ "$num" = 6 ]; then
+	;;
+	6)
 		read -p "请输入面板访问密码(输入0删除密码) > " secret
 		if [ -n "$secret" ]; then
 			[ "$secret" = "0" ] && secret=""
@@ -591,7 +599,8 @@ setport() { #端口设置
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		setport
-	elif [ "$num" = 7 ]; then
+	;;
+	7)
 		echo -----------------------------------------------
 		echo -e "需配合\033[32m仅代理常用端口\033[0m功能使用"
 		echo -e "多个端口请用小写逗号分隔，例如：\033[33m143,80,443\033[0m"
@@ -606,7 +615,8 @@ setport() { #端口设置
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		setport
-	elif [ "$num" = 8 ]; then
+	;;
+	8)
 		echo -----------------------------------------------
 		echo -e "\033[33m如果你的局域网网段不是192.168.x或172.16.x或10.x开头，请务必修改！\033[0m"
 		echo -e "\033[31m设置后如本机host地址有变动，请务必重新修改！\033[0m"
@@ -626,7 +636,22 @@ setport() { #端口设置
 		fi
 		sleep 1
 		setport
-	fi
+	;;
+	9)
+		echo -----------------------------------------------
+		echo -e "\033[33m仅限Tproxy、Tun或混合模式路由表出现冲突时才需要设置！\033[0m"
+		read -p "请输入路由表地址(不明勿动！建议102-125之间) > " table
+		if [ -n "$table" ]; then
+			[ "$table" = "0" ] && table="100"
+			setconfig table $table
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi
+		setport
+	;;
+	*)
+		errornum
+	;;
+	esac
 }
 setdns() { #DNS详细设置
 	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'

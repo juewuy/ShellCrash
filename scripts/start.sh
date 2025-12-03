@@ -1465,7 +1465,7 @@ start_firewall() { #路由规则总入口
 	getlanip          #获取局域网host地址
 	#设置策略路由
 	[ "$firewall_area" != 4 ] && {
-		local table=166
+		[ -z "$table" ] && local table=100
 		[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table 2>/dev/null
 		[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
 			i=1
