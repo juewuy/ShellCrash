@@ -1430,7 +1430,7 @@ setcustcore(){ #自定义内核
 	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本内核"
 	echo -e "2 \033[36mMetaCubeX/mihomo\033[32m@alpha\033[0m版本内核"
 	echo -e "4 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本内核"
-	echo -e "5 \033[36mreF1nd/sing-box\033[0m内核(with_gvisor,with_wireguard)"
+	echo -e "5 \033[36mreF1nd/sing-box\033[32m@dev\033[0m版本内核(with_gvisor,with_wireguard)"
 	echo -e "6 Clash基础内核(已停止维护)"
 	echo -e "7 Premium-2023.08.17内核(已停止维护)"
 	echo -e "a \033[33m自定义内核链接 \033[0m"
