@@ -1,9 +1,9 @@
 # ID&类型 说明 地址 其他说明 (类型：100-三版全通源;200-单一源;300-基础sub;400-meta_sub;500-规则地址)
 
-101 Jsdelivr_CDN源 https://fastly.jsdelivr.net/gh/juewuy/ShellCrash
+101 Jsdelivr_CDN源 https://cdn.jsdelivr.net/gh/juewuy/ShellCrash
 102 Github直连源(请注意网络环境) https://raw.githubusercontent.com/juewuy/ShellCrash
 103 ShellClash自建源(请勿滥用!) https://gh.jwsc.eu.org
-104 Cloudflare_CDN源 https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash
+104 Cloudflare_CDN源(推荐) https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash
 
 201 wwng2333自建CN源(请勿滥用!)  https://mirrors.csgo.ovh/ShellClash 公测版
 202 http私人内测源(危险!非必要请勿使用)  http://t.jwsc.eu.org 开发版
@@ -12,17 +12,17 @@
 402 肥羊提供(有广告),支持vless|hy2 https://api.v1.mk diyua
 403 肥羊提供(有广告),支持vless|hy2 https://url.v1.mk diyua
 
-501 Acl4SSR全能优化版 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash.ini (推荐)
-502 Acl4SSR精简优化版 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Mini.ini (推荐)
-503 Acl4SSR全能优化+去广告增强 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Block.ini
-504 Acl4SSR极简版 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Nano.ini (适合自建节点)
-505 Acl4SSR分流&游戏增强 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Full.ini
-506 Acl4SSR分流&游戏&去广告增强 https://github.com/juewuy/ShellCrash/raw/master/rules/ShellClash_Full_Block.ini (低性能设备慎用)
-507 洞主规则精简版 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_clash.ini
-508 洞主规则重度完整版 https://gist.githubusercontent.com/tindy2013/1fa08640a9088ac8652dbd40c5d2715b/raw/lhie1_dler.ini
-509 Acl4SSR多国精简 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Mini_MultiCountry.ini
-510 Acl4SSR回国专用 https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_BackCN.ini
-511 Acl4SSR增强国外GFW https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_WithGFW.ini (适合黑名单模式使用)
+501 Acl4SSR全能优化版 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash.ini (推荐)
+502 Acl4SSR精简优化版 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Mini.ini (推荐)
+503 Acl4SSR全能优化+去广告增强 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Block.ini
+504 Acl4SSR极简版 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Nano.ini (适合自建节点)
+505 Acl4SSR分流&游戏增强 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Full.ini
+506 Acl4SSR分流&游戏&去广告增强 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Full_Block.ini (低性能设备慎用)
+507 洞主规则精简版 https://github.com/juewuy/ShellCrash/raw/dev/rules/lhie1_clash.ini
+508 洞主规则重度完整版 https://github.com/juewuy/ShellCrash/raw/dev/rules/lhie1_dler.ini
+509 Acl4SSR多国精简 https://github.com/juewuy/ShellCrash/raw/dev/rules/ACL4SSR_Online_Mini_MultiCountry.ini
+510 Acl4SSR回国专用 https://github.com/juewuy/ShellCrash/raw/dev/rules/ACL4SSR_BackCN.ini
+511 Acl4SSR增强国外GFW https://github.com/juewuy/ShellCrash/raw/dev/rules/ACL4SSR_WithGFW.ini (适合黑名单模式使用)
 512 DustinWin全分组规则 https://raw.githubusercontent.com/DustinWin/ruleset_geodata/master/rule_templates/DustinWin_Full.ini
 513 DustinWin无广告全分组规则 https://raw.githubusercontent.com/DustinWin/ruleset_geodata/master/rule_templates/DustinWin_Full_NoAds.ini
 514 DustinWin精简规则 https://raw.githubusercontent.com/DustinWin/ruleset_geodata/master/rule_templates/DustinWin_Lite.ini (推荐)
