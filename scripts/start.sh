@@ -463,8 +463,8 @@ EOF
 hosts:
   'time.android.com': 203.107.6.88
   'time.facebook.com': 203.107.6.88
-  'services.googleapis.cn': services.googleapis.com
 EOF
+		[ "$crashcore" = "meta" ] && echo "  'services.googleapis.cn': services.googleapis.com'" >>"$TMPDIR"/hosts.yaml
 		#加载本机hosts
 		sys_hosts=/etc/hosts
 		[ -f /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
