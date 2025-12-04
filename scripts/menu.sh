@@ -274,39 +274,70 @@ log_pusher() { #日志菜单
 			}
 		else
 			#echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-			echo -e "请先通过 \033[32;4mhttps://t.me/BotFather\033[0m 申请TG机器人并获取其\033[36mAPI TOKEN\033[0m"
-			echo -----------------------------------------------
-			read -p "请输入你获取到的API TOKEN > " TOKEN
-			echo -----------------------------------------------
-			echo -e "请向\033[32m你申请的机器人\033[31m而不是BotFather\033[0m，发送任意几条消息！"
-			echo -----------------------------------------------
-			read -p "我已经发送完成(1/0) > " res
-			if [ "$res" = 1 ]; then
+			private_bot(){
+				echo -e "请先通过 \033[32;4mhttps://t.me/BotFather\033[0m 申请TG机器人并获取其\033[36mAPI TOKEN\033[0m"
+				echo -----------------------------------------------
+				read -p "请输入你获取到的API TOKEN > " TOKEN
+				echo -----------------------------------------------
+				echo -e "请向\033[32m你申请的机器人\033[31m而不是BotFather\033[0m，发送"
 				url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
-				[ -n "$authentication" ] && auth="$authentication@"
-				export https_proxy="http://${auth}127.0.0.1:$mix_port"
-				if curl --version >/dev/null 2>&1; then
-					chat=$(curl -kfsSl $url_tg 2>/dev/null | tail -n -1)
-				else
-					chat=$(wget -Y on -q -O - $url_tg | tail -n -1)
+			}
+			public_bot(){	
+				echo -e "请向机器人：\033[32;4mhttps://t.me/ShellCrashtg_bot\033[0m"
+				TOKEN=publictoken
+				url_tg=https://tgbot.jwsc.eu.org/publictoken/getUpdates
+			}
+			set_bot(){
+				echo -e "发送此秘钥:        \033[30;46m$public_key\033[0m"
+				echo -----------------------------------------------
+				read -p "我已经发送完成(1/0) > " res
+				if [ "$res" = 1 ]; then
+					[ -n "$authentication" ] && auth="$authentication@"
+					export https_proxy="http://${auth}127.0.0.1:$mix_port"
+					if curl --version >/dev/null 2>&1; then
+						chat=$(curl -kfsSl $url_tg 2>/dev/null)
+					else
+						chat=$(wget -Y on -q -O - $url_tg)
+					fi
+					[ -n "$chat" ] && chat_ID=$(echo $chat | sed 's/"update_id":/{\n"update_id":/g' | grep "$public_key" | head -n1 |grep -oE '"id":.*,"is_bot' | sed s'/"id"://' | sed s'/,"is_bot//')
+					[ -z "$chat_ID" ] && {
+						echo -e "\033[31m无法获取对话ID，请重新输入！\033[0m"
+						chose_bot
+					}
+					if [ -n "$chat_ID" ]; then
+						push_TG=$TOKEN
+						setconfig push_TG $TOKEN
+						setconfig chat_ID $chat_ID
+						${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32	
+					else
+						echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
+					fi
 				fi
-				[ -n "$chat" ] && chat_ID=$(echo $chat | grep -oE '"id":.*,"is_bot":false' | sed s'/"id"://'g | sed s'/,"is_bot":false//'g)
-				[ -z "$chat_ID" ] && {
-					echo -e "\033[31m无法获取对话ID，请确认使用的不是已经被绑定的机器人，或手动输入ChatID！\033[0m"
-					echo -e "通常访问 $url_tg 即可看到ChatID，也可以尝试其他方法\033[0m"
-					read -p "请手动输入ChatID > " chat_ID
-				}
-				if [ -n "$chat_ID" ]; then
-					push_TG=$TOKEN
-					setconfig push_TG $TOKEN
-					setconfig chat_ID $chat_ID
-					${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32	
-				else
-					echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
-				fi
-			fi
-			sleep 1
+			}
+			chose_bot(){
+				public_key=$(cat /proc/sys/kernel/random/boot_id | sed 's/.*-//')
+				echo -----------------------------------------------
+				echo -e " 1 使用公共机器人	——不依赖内核服务"
+				echo -e " 2 使用私人机器人	——需要额外申请"			
+				echo -----------------------------------------------
+				read -p "请输入对应数字 > " num
+				case $num in
+					1)
+						public_bot
+						set_bot
+					;;
+					2)
+						private_bot
+						set_bot
+					;;
+					*)
+						errornum
+					;;
+				esac
+			}
+			chose_bot
 		fi
+		sleep 1
 		log_pusher
 		;;
 	2)
@@ -939,9 +970,9 @@ checkport() { #自动检查端口冲突
 }
 macfilter() { #局域网设备过滤
 	get_devinfo() {
-		dev_ip=$(cat $dhcpdir | grep $dev | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip=$dev
-		dev_mac=$(cat $dhcpdir | grep $dev | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$dev
-		dev_name=$(cat $dhcpdir | grep $dev | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
+		dev_ip=$(cat $dhcpdir | grep " $dev " | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip=$dev
+		dev_mac=$(cat $dhcpdir | grep " $dev " | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$dev
+		dev_name=$(cat $dhcpdir | grep " $dev " | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
 	}
 	add_mac() {
 		echo -----------------------------------------------

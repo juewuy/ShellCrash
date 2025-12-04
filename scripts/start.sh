@@ -127,6 +127,7 @@ logger() { #日志工具
 		[ -n "$device_name" ] && log_text="$log_text($device_name)"
 		[ -n "$push_TG" ] && {
 			url="https://api.telegram.org/bot${push_TG}/sendMessage"
+			[ "$push_TG" = 'publictoken' ] && url='https://tgbot.jwsc.eu.org/publictoken/sendMessage'
 			content="{\"chat_id\":\"${chat_ID}\",\"text\":\"$log_text\"}"
 			webpush "$url" "$content" &
 		}
@@ -1904,7 +1905,7 @@ afstart() { #启动后
 	}
 	#设置循环检测面板端口以判定服务启动是否成功
 	i=1
-	while [ -z "$test" -a "$i" -lt 10 ]; do
+	while [ -z "$test" -a "$i" -lt 30 ]; do
 		sleep 1
 		if curl --version >/dev/null 2>&1; then
 			test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
@@ -1942,14 +1943,15 @@ afstart() { #启动后
 			sed -i "${line}a\\. "$CRASHDIR"/task/affirewall" /etc/init.d/firewall
 		} &
 	else
-		$0 stop
 		start_error
+		$0 stop
 	fi
 }
 start_error() { #启动报错
 	if [ "$start_old" != "已开启" ] && ckcmd journalctl; then
 		journalctl -u shellcrash >$TMPDIR/core_test.log
 	else
+		PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
 		${COMMAND} >"$TMPDIR"/core_test.log 2>&1 &
 		sleep 2
 		kill $! >/dev/null 2>&1
