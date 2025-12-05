@@ -170,6 +170,7 @@ errornum() {
 	echo -e "\033[31m请输入正确的字母或数字！\033[0m"
 }
 startover() {
+	echo -ne "                                   \r"
 	echo -e "\033[32m服务已启动！\033[0m"
 	echo -e "请使用 \033[4;36mhttp://$host$hostdir\033[0m 管理内置规则"
 	if [ "$redir_mod" = "纯净模式" ]; then
@@ -195,12 +196,12 @@ start_core() {
 		${CRASHDIR}/start.sh start
 		#设置循环检测以判定服务启动是否成功
 		i=1
-		while [ -z "$test" -a "$i" -lt 10 ]; do
+		while [ -z "$test" -a "$i" -lt 30 ]; do
 			sleep 1
 			if curl --version >/dev/null 2>&1; then
-				test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
+				test=$(curl -s -H "Authorization: Bearer $secret" http://127.0.0.1:${db_port}/configs | grep -o port)
 			else
-				test=$(wget -q -O - http://127.0.0.1:${db_port}/configs | grep -o port)
+				test=$(wget -q --header="Authorization: Bearer $secret" -O - http://127.0.0.1:${db_port}/configs | grep -o port)
 			fi
 			i=$((i + 1))
 		done
@@ -685,8 +686,8 @@ setport() { #端口设置
 	esac
 }
 setdns() { #DNS详细设置
-	[ -z "$dns_nameserver" ] && dns_nameserver='114.114.114.114, 223.5.5.5'
-	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	[ -z "$dns_nameserver" ] && dns_nameserver='180.184.1.1, 1.2.4.8'
+	[ -z "$dns_fallback" ] && dns_fallback="$dns_nameserver"
 	[ -z "$hosts_opt" ] && hosts_opt=已启用
 	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$dns_no" ] && dns_no=未禁用
@@ -739,9 +740,8 @@ setdns() { #DNS详细设置
 		echo -----------------------------------------------
 		openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
 		if [ -s "$openssldir/certs/ca-certificates.crt" -o -s "/etc/ssl/certs/ca-certificates.crt" ]; then
-			dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
-			#dns_fallback='tls://1.0.0.1:853, tls://8.8.4.4:853, https://doh.opendns.com/dns-query'
-			dns_fallback=$dns_nameserver
+			dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
+			dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			setconfig dns_fallback \'"$dns_fallback"\'
 			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"

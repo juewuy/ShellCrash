@@ -55,10 +55,10 @@ getconfig() { #读取配置及全局变量
 		if [ -n "$(pidof dnsmasq)" ];then
 			dns_nameserver='127.0.0.1'
 		else
-			dns_nameserver='114.114.114.114, 223.5.5.5'
+			dns_nameserver='180.184.1.1, 1.2.4.8'
 		fi
 	}
-	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1, 8.8.4.4'
+	[ -z "$dns_fallback" ] && dns_fallback="$dns_nameserver"
 	#自动生成ua
 	[ -z "$user_agent" -o "$user_agent" = "auto" ] && {
 		if echo "$crashcore" | grep -q 'singbox';then
@@ -465,7 +465,7 @@ hosts:
   'time.android.com': 203.107.6.88
   'time.facebook.com': 203.107.6.88
 EOF
-		[ "$crashcore" = "meta" ] && echo "  'services.googleapis.cn': services.googleapis.com'" >>"$TMPDIR"/hosts.yaml
+		[ "$crashcore" = "meta" ] && echo "  'services.googleapis.cn': services.googleapis.com" >>"$TMPDIR"/hosts.yaml
 		#加载本机hosts
 		sys_hosts=/etc/hosts
 		[ -f /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
@@ -602,6 +602,16 @@ EOF
 	done
 }
 modify_json() { #修饰singbox1.13配置文件
+	#提取配置文件以获得outbounds.json,providers.json及route.json
+	"$TMPDIR"/CrashCore format -c $core_config >"$TMPDIR"/format.json
+	echo '{' >"$TMPDIR"/jsons/outbounds.json
+	echo '{' >"$TMPDIR"/jsons/route.json
+	cat "$TMPDIR"/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbounds.json
+	[ "$crashcore" = "singboxr" ] && {
+		echo '{' >"$TMPDIR"/jsons/providers.json
+		cat "$TMPDIR"/format.json | sed -n '/^  "providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
+	}
+	cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
 	#生成log.json
 	cat >"$TMPDIR"/jsons/log.json <<EOF
 { "log": { "level": "info", "timestamp": true } }
@@ -642,8 +652,6 @@ EOF
 EOF
 	fi
 	#生成dns.json
-	[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5'
-	[ -z "$dns_fallback" ] && dns_fallback='1.0.0.1'
 	dns_direct_1st=$(echo $dns_nameserver | awk -F ',' '{print $1}')
 	dns_direct=$(echo $dns_direct_1st | sed 's|.*://||' | sed 's|/.*||')
 	dns_direct_type=$(echo "$dns_direct_1st" | awk -F '://' '{print $1}')
@@ -653,9 +661,14 @@ EOF
 	dns_proxy_type=$(echo "$dns_proxy_1st" | awk -F '://' '{print $1}')
 	[ "$dns_proxy_type" = "$dns_proxy" ] && dns_proxy_type="udp"
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
+	#获取detour出口
+	auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//' )
+	[ -z "$auto_detour" ] && auto_detour=$(grep -E '"type": "selector"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//' )
+	[ -z "$auto_detour" ] && auto_detour=DIRECT
+	#根据dns模式生成
 	[ "$dns_mod" = "redir_host" ] && {
 		global_dns=dns_proxy
-		direct_dns="{ \"query_type\": [ \"A\", \"AAAA\" ], \"server\": \"dns_direct\" },"
+		direct_dns="{ \"inbound\": [ \"dns-in\" ], \"server\": \"dns_direct\" },"
 	}
 	[ "$dns_mod" = "fake-ip" ] && {
 		global_dns=dns_fakeip
@@ -699,48 +712,43 @@ EOF
         "tag": "dns_proxy",
         "type": "$dns_proxy_type",
         "server": "$dns_proxy",
+		"routing_mark": $routing_mark,
+		"detour": $auto_detour,
         "domain_resolver": "dns_resolver"
       },
       {
         "tag": "dns_direct",
         "type": "$dns_direct_type",
         "server": "$dns_direct",
+		"routing_mark": $routing_mark,
         "domain_resolver": "dns_resolver"
       },
-
       {
         "tag": "dns_fakeip",
         "type": "fakeip",
         "inet4_range": "28.0.0.1/8",
         "inet6_range": "fc00::/16"
       },
-
       {
         "tag": "dns_resolver",
         "type": "https",
-        "server": "223.5.5.5"
-      },
-
-      {
-        "tag": "local",
-        "type": "local",
+        "server": "223.5.5.5",
+		"routing_mark": $routing_mark
       }
     ],
-
     "rules": [
-      { "clash_mode": "Global", "server": "$global_dns", "strategy": "$strategy", "disable_cache": true },
-      { "clash_mode": "Direct", "server": "dns_direct", "strategy": "$strategy", "disable_cache": true },
-	  
-      { "domain_suffix": ["services.googleapis.cn"], "server": "dns_fakeip", "strategy": "$strategy", "disable_cache": true, "rewrite_ttl": 1 },
+      { "clash_mode": "Direct", "server": "dns_direct", "strategy": "$strategy" },  
+      { "domain_suffix": ["services.googleapis.cn"], "server": "dns_fakeip", "strategy": "$strategy", "rewrite_ttl": 1 },
       $fake_ip_filter_domain
       $fake_ip_filter_suffix
       $fake_ip_filter_regex
+	  { "clash_mode": "Global", "query_type": ["A", "AAAA"], "server": "$global_dns", "strategy": "$strategy", "rewrite_ttl": 1 },
       $direct_dns
-
-      { "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "$strategy", "disable_cache": true, "rewrite_ttl": 1 }
+	  $proxy_dns
+      { "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "$strategy", "rewrite_ttl": 1 }
     ],
-	"strategy": "$strategy",
     "final": "dns_proxy",
+	"strategy": "$strategy",
     "independent_cache": true,
     "reverse_mapping": true
   }
@@ -752,10 +760,7 @@ EOF
 	cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {
-	"default_domain_resolver": {
-		"server": "dns_direct",
-		"strategy": "prefer_ipv4"
-	},
+	"default_domain_resolver": "dns_resolver",
     "default_mark": $routing_mark,
 	"rules": [
 	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
@@ -845,14 +850,20 @@ EOF
 EOF
 	fi
 	#生成add_outbounds.json
-	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"DIRECT"')" ] && add_direct='{ "tag": "DIRECT", "type": "direct" }'
-	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"tag" *: *"REJECT"')" ] && add_reject='{ "tag": "REJECT", "type": "block" }'
+	grep -qE '"tag": "DIRECT"' "$TMPDIR"/jsons/outbounds.json || add_direct='{ "tag": "DIRECT", "type": "direct" }'
+	grep -qE '"tag": "REJECT"' "$TMPDIR"/jsons/outbounds.json || add_reject='{ "tag": "REJECT", "type": "block" }'
+	grep -qE '"tag": "GLOBAL"' "$TMPDIR"/jsons/outbounds.json || {
+		auto_proxies=$(grep -E '"type": "(selector|urltest)"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | sed 's/^[[:space:]]*"tag": //;$ s/,$//')
+		add_global='{ "tag": "GLOBAL", "type": "selector", "outbounds": ['"$auto_proxies"']}'
+	}
 	[ -n "$add_direct" -a -n "$add_reject" ] && add_direct="${add_direct},"
-	[ -n "$add_direct" -o -n "$add_reject" ] && cat >"$TMPDIR"/jsons/add_outbounds.json <<EOF
+	[ -n "$add_reject" -a -n "$add_global" ] && add_reject="${add_reject},"
+	[ -n "$add_direct$add_reject$add_global" ] && cat >"$TMPDIR"/jsons/add_outbounds.json <<EOF
 {
   "outbounds": [
-    $add_direct
-    $add_reject
+	$add_direct
+	$add_reject
+	$add_global
   ]
 }
 EOF
@@ -892,16 +903,6 @@ EOF
 			sed '$s/,$/ ] } }/' >"$TMPDIR"/jsons/cust_add_rules.json
 		[ ! -s "$TMPDIR"/jsons/cust_add_rules.json ] && rm -rf "$TMPDIR"/jsons/cust_add_rules.json
 	}
-	#提取配置文件以获得outbounds.json,providers.json及route.json
-	"$TMPDIR"/CrashCore format -c $core_config >"$TMPDIR"/format.json
-	echo '{' >"$TMPDIR"/jsons/outbounds.json
-	echo '{' >"$TMPDIR"/jsons/route.json
-	cat "$TMPDIR"/format.json | sed -n '/"outbounds":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/outbounds.json
-	[ "$crashcore" = "singboxr" ] && {
-		echo '{' >"$TMPDIR"/jsons/providers.json
-		cat "$TMPDIR"/format.json | sed -n '/^  "providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
-	}
-	cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
 	#清理route.json中的process_name规则以及"auto_detect_interface"
 	sed -i '/"process_name": \[/,/],$/d' "$TMPDIR"/jsons/route.json
 	sed -i '/"process_name": "[^"]*",/d' "$TMPDIR"/jsons/route.json
@@ -1833,7 +1834,7 @@ singbox_check() { #singbox启动前检查
 	return 0
 }
 network_check() { #检查是否联网
-	for host in 223.5.5.5 114.114.114.114 1.2.4.8 dns.alidns.com doh.pub doh.360.cn; do
+	for host in 223.5.5.5 dns.alidns.com doh.pub doh.360.cn; do
 		ping -c 3 $host >/dev/null 2>&1 && return 0
 		sleep 5
 	done
@@ -1906,11 +1907,12 @@ afstart() { #启动后
 	#设置循环检测面板端口以判定服务启动是否成功
 	i=1
 	while [ -z "$test" -a "$i" -lt 30 ]; do
+		echo "$i" | grep -q '10' && echo -ne "服务正在启动，请耐心等待！\r"
 		sleep 1
 		if curl --version >/dev/null 2>&1; then
-			test=$(curl -s http://127.0.0.1:${db_port}/configs | grep -o port)
+			test=$(curl -s -H "Authorization: Bearer $secret" http://127.0.0.1:${db_port}/configs | grep -o port)
 		else
-			test=$(wget -q -O - http://127.0.0.1:${db_port}/configs | grep -o port)
+			test=$(wget -q --header="Authorization: Bearer $secret" -O - http://127.0.0.1:${db_port}/configs | grep -o port)
 		fi
 		i=$((i + 1))
 	done

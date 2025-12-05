@@ -1375,6 +1375,7 @@ setcustcore(){ #自定义内核
 		if [ "$?" = 0 ];then
 			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
 			release_date=$(cat ${TMPDIR}/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
+			update_date=$(cat ${TMPDIR}/github_api | grep '"updated_at":' | head -n 1 | awk -F '"' '{print $4}')
 			[ -n "$(echo $cpucore | grep mips)" ] && cpu_type=mips || cpu_type=$cpucore
 			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$"  | sed 's/"//' > ${TMPDIR}/core.list
 			rm -rf ${TMPDIR}/github_api
@@ -1382,7 +1383,8 @@ setcustcore(){ #自定义内核
 			if [ -s ${TMPDIR}/core.list ];then
 				echo -----------------------------------------------
 				echo -e "内核版本：\033[36m$release_tag\033[0m"
-				echo -e "发布时间：\033[32m$release_date\033[0m"
+				echo -e "发布时间：\033[33m$release_date\033[0m"
+				echo -e "更新时间：\033[32m$update_date\033[0m"
 				echo -----------------------------------------------
 				echo -e "\033[33m请确认内核信息并选择：\033[0m"
 				cat ${TMPDIR}/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
@@ -2327,9 +2329,8 @@ userguide(){
 	fi
 	#设置加密DNS
 	if [ -s $openssldir/certs/ca-certificates.crt ];then
-		dns_nameserver='https://223.5.5.5/dns-query, https://doh.pub/dns-query, tls://dns.rubyfish.cn:853'
-		#dns_fallback='https://1.0.0.1/dns-query, https://8.8.4.4/dns-query, https://doh.opendns.com/dns-query'
-		dns_fallback=$dns_nameserver
+		dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
+		dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
 		setconfig dns_nameserver \'"$dns_nameserver"\'
 		setconfig dns_fallback \'"$dns_fallback"\'
 	fi
