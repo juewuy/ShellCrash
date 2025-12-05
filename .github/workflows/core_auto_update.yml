@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: reF1nd/sing-box
-          ref: building
+          ref: reF1nd-dev
           fetch-depth: 0   
       - name: Check version
         run: |
@@ -38,7 +38,7 @@ jobs:
       tag1: reF1nd/sing-box
       tag2: reF1nd-dev
       tag3: singbox_core_reF1nd
-      tag5: with_quic,with_dhcp,with_wireguard,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
+      tag5: with_quic,with_dhcp,with_wireguard,with_tailscale,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
     secrets: inherit
 
   cleanup:
