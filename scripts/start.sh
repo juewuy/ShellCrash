@@ -470,7 +470,7 @@ EOF
 	#读取本机hosts并生成配置文件
 	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -aE '^hosts:' "$CRASHDIR"/yamls/user.yaml 2>/dev/null)" ]; then
 		#NTP劫持
-		cat >>"$TMPDIR"/hosts.yaml <<EOF
+		cat >"$TMPDIR"/hosts.yaml <<EOF
 hosts:
   'time.android.com': 203.107.6.88
   'time.facebook.com': 203.107.6.88
@@ -1845,8 +1845,8 @@ singbox_check() { #singbox启动前检查
 	return 0
 }
 network_check() { #检查是否联网
-	for host in 223.5.5.5 dns.alidns.com doh.pub doh.360.cn; do
-		ping -c 3 $host >/dev/null 2>&1 && return 0
+	for text in 223.5.5.5 dns.alidns.com doh.pub doh.360.cn; do
+		ping -c 3 $text >/dev/null 2>&1 && return 0
 		sleep 5
 	done
 	logger "当前设备无法连接网络，已停止启动！" 33
@@ -2058,7 +2058,6 @@ stop)
 	fi
 	PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
 	#清理缓存目录
-	rm -rf "$TMPDIR"/crash_start_time
 	rm -rf "$TMPDIR"/CrashCore
 	;;
 restart)

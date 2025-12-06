@@ -244,34 +244,21 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 if [ -n "$profile" ]; then
 	sed -i '/alias crash=*/'d $profile
 	echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >>$profile #设置快捷命令环境变量
-	sed -i '/alias clash=*/'d $profile
-	echo "alias clash=\"$shtype $CRASHDIR/menu.sh\"" >>$profile #设置快捷命令环境变量
 	sed -i '/export CRASHDIR=*/'d $profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile #设置路径环境变量
 	source $profile >/dev/null 2>&1 || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
-	[ -n "$(cat /etc/shells 2>/dev/null | grep -oE 'zsh')" ] && [ -z "$(cat ~/.zshrc 2>/dev/null | grep CRASHDIR)" ] && {
+	zsh --version >/dev/null 2>&1 && [ -z "$(cat ~/.zshrc 2>/dev/null | grep CRASHDIR)" ] && {
 		sed -i '/alias crash=*/'d ~/.zshrc 2>/dev/null
 		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >>~/.zshrc
-		# 兼容 clash 命令
-		sed -i '/alias clash=*/'d ~/.zshrc 2>/dev/null
-		echo "alias clash=\"$shtype $CRASHDIR/menu.sh\"" >>~/.zshrc
 		sed -i '/export CRASHDIR=*/'d ~/.zshrc 2>/dev/null
 		echo "export CRASHDIR=\"$CRASHDIR\"" >>~/.zshrc
-		source ~/.zshrc >/dev/null 2>&1
+		. ~/.zshrc >/dev/null 2>&1
 	}
 else
 	echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
 	exit 1
 fi
-#在允许的情况下创建/usr/bin/crash文件
-touch /usr/bin/crash 2>/dev/null && {
-	cat >/usr/bin/crash <<EOF
-#/bin/$shtype
-$CRASHDIR/menu.sh \$1 \$2 \$3 \$4 \$5
-EOF
-	chmod +x /usr/bin/crash
-}
 #梅林/Padavan额外设置
 [ -n "$initdir" ] && {
 	sed -i '/ShellCrash初始化/'d $initdir
