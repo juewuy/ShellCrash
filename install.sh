@@ -109,9 +109,10 @@ setdir() {
 		[ "$systype" = "Padavan" ] && dir=/etc/storage
 		[ "$systype" = "mi_snapshot" ] && {
 			$echo "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"
-			[ "$(dir_avail /data)" -gt 256 ] && $echo " 1 安装到 /data 目录(推荐，支持软固化功能)"
-			[ "$(dir_avail /userdisk)" -gt 256 ] && $echo " 2 安装到 /userdisk 目录(推荐，支持软固化功能)"
-			$echo " 3 安装到自定义目录(不推荐，不明勿用！)"
+			[ -d /data ] && $echo " 1 安装到 /data 目录,剩余空间：$(dir_avail /data -h)(支持软固化功能)"
+			[ -d /userdisk ] && $echo " 2 安装到 /userdisk 目录,剩余空间：$(dir_avail /userdisk -h)(支持软固化功能)"
+			[ -d /data/other_vol ] && $echo " 3 安装到 /data/other_vol 目录,剩余空间：$(dir_avail /data/other_vol -h)(支持软固化功能)"
+			$echo " 4 安装到自定义目录(不推荐，不明勿用！)"
 			$echo " 0 退出安装"
 			echo -----------------------------------------------
 			read -p "请输入相应数字 > " num
@@ -123,6 +124,9 @@ setdir() {
 				dir=/userdisk
 				;;
 			3)
+				dir=/data/other_vol
+				;;
+			4)
 				set_cust_dir
 				;;
 			*)
