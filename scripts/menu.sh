@@ -1169,7 +1169,7 @@ setboot() { #启动相关设置
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用启动设置菜单：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 ${auto_set}\033[0mShellCrash开机启动"
+	echo -e " 1 ${auto_set}\033[0mShellCrash开机启动(alpine需先禁用再启用)"
 	echo -e " 2 使用保守模式:	\033[36m$start_old\033[0m	————基于定时任务(每分钟检测)"
 	echo -e " 3 设置自启延时:	\033[36m$delay\033[0m	————用于解决自启后服务受限"
 	echo -e " 4 启用小闪存模式:	\033[36m$mini_clash\033[0m	————用于闪存空间不足的设备"
@@ -1183,14 +1183,27 @@ setboot() { #启动相关设置
 	0) ;;
 	1)
 		if [ "$autostart" = "enable" ]; then
+			# 禁止自启动：删除各系统的启动项
 			[ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash >/dev/null 2>&1 && cd - >/dev/null
 			ckcmd systemctl && systemctl disable shellcrash.service >/dev/null 2>&1
+			# 新增：删除Alpine的启动脚本
+			[ -f "/sbin/openrc" ] && rm -f /etc/local.d/shellcrash.start
 			touch ${CRASHDIR}/.dis_startup
 			autostart=disable
 			echo -e "\033[33m已禁止ShellCrash开机启动！\033[0m"
 		elif [ "$autostart" = "disable" ]; then
+			# 允许自启动：配置各系统的启动项
 			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
 			ckcmd systemctl && systemctl enable shellcrash.service >/dev/null 2>&1
+			# 新增：配置Alpine的启动脚本
+			if [ -f "/sbin/openrc" ]; then
+				[ ! -f "/etc/local.d/shellcrash.start" ] && {
+					echo "#!/bin/sh" > /etc/local.d/shellcrash.start
+					echo "${CRASHDIR}/start.sh start &" >> /etc/local.d/shellcrash.start
+					chmod +x /etc/local.d/shellcrash.start
+				}
+				rc-update add local default >/dev/null 2>&1
+			fi
 			rm -rf ${CRASHDIR}/.dis_startup
 			autostart=enable
 			echo -e "\033[32m已设置ShellCrash开机启动！\033[0m"
