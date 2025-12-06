@@ -206,6 +206,24 @@ else
 		setconfig start_old 已开启
 	fi
 fi
+
+# 在此处添加Alpine OpenRC配置（约第220-230行附近）
+# Alpine Linux (OpenRC) 自启动配置
+if [ -f "/sbin/openrc" ] && [ "$(cat /proc/1/comm)" = "init" ]; then
+    # 创建启动脚本
+    if [ ! -f "/etc/local.d/shellcrash.start" ]; then
+        echo "#!/bin/sh" > /etc/local.d/shellcrash.start
+        echo "${CRASHDIR}/start.sh start &" >> /etc/local.d/shellcrash.start
+        chmod +x /etc/local.d/shellcrash.start
+    fi
+    # 添加到默认运行级别
+    rc-update add local default >/dev/null 2>&1
+    setconfig autostart "enable"
+    logger "已配置Alpine系统自启动" 32
+fi
+
+
+
 #修饰文件及版本号
 command -v bash >/dev/null 2>&1 && shtype=bash
 [ -x /bin/ash ] && shtype=ash
