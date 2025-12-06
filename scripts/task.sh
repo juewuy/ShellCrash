@@ -28,7 +28,7 @@ update_core(){ #自动更新内核
 	#检查版本
 	check_update
 	crash_v_new=$(eval echo \$${crashcore}_v)
-	if [ -z "$crash_v_new" -o "$crash_v_new" = "core_v" ];then
+	if [ -z "$crash_v_new" -o "$crash_v_new" = "$core_v" ];then
 		logger "任务【自动更新内核】中止-未检测到版本更新"
 		exit 1
 	else
@@ -49,13 +49,13 @@ update_core(){ #自动更新内核
 		else
 			[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
 			[ -f ${TMPDIR}/core_new.tar.gz ] && {
-				mkdir -p ${TMPDIR}/core_new
+				mkdir -p ${TMPDIR}/core_new_dir
 				[ "$BINDIR" = "$TMPDIR" ] && rm -rf ${TMPDIR}/CrashCore #小闪存模式防止空间不足
-				tar -zxf "${TMPDIR}/core_new.tar.gz" ${tar_para} -C ${TMPDIR}/core_new/
-				for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
+				tar -zxf "${TMPDIR}/core_new.tar.gz" ${tar_para} -C ${TMPDIR}/core_new_dir/
+				for file in $(find ${TMPDIR}/core_new_dir 2>/dev/null);do
 					[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
 				done
-				rm -rf ${TMPDIR}/core_new
+				rm -rf ${TMPDIR}/core_new_dir
 			}
 			[ -f ${TMPDIR}/core_new.gz ] && gunzip ${TMPDIR}/core_new.gz >/dev/null && rm -rf ${TMPDIR}/core_new.gz
 			chmod +x ${TMPDIR}/core_new

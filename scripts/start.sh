@@ -118,7 +118,7 @@ logger() { #日志工具
 		if curl --version >/dev/null 2>&1; then
 			curl -kfsSl -X POST --connect-timeout 3 -H "Content-Type: application/json; charset=utf-8" "$1" -d "$2" >/dev/null 2>&1
 		elif wget --version >/dev/null 2>&1; then
-			wget -Y on -q --timeout=3 --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1"
+			wget -Y on -q --timeout=3 -O - --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1" >/dev/null 2>&1
 		else
 			echo "找不到有效的curl或wget应用，请先安装！"
 		fi
@@ -317,6 +317,10 @@ check_singbox_config() { #检查singbox配置文件
 	#清理多余逗号
 	sed -i 's/,\+/,/g; s/\[,/\[/g; s/,]/]/g' "$core_config_new"
 }
+update_servers(){ #更新servers.list
+	get_bin "$TMPDIR"/servers.list public/servers.list
+	[ "$?" = 0 ] && mv -f "$TMPDIR"/servers.list "$CRASHDIR"/configs/servers.list
+}
 get_core_config() { #下载内核配置文件
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] || [ $server_link -gt $(grep -aE '^4' "$CRASHDIR"/configs/servers.list | wc -l) ] && server_link=1
@@ -354,8 +358,13 @@ get_core_config() { #下载内核配置文件
 			else
 				retry=$((retry + 1))
 				logger "配置文件获取失败！" 31
-				echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
-				logger "正在重试第$retry次/共3次！" 33
+				if [ "$retry" = 1 ];then
+					echo -e "\033[32m尝试更新服务器列表并使用其他服务器获取配置！\033[0m"
+					update_servers
+				else
+					echo -e "\033[32m尝试使用其他服务器获取配置！\033[0m"
+				fi
+				echo -e "正在重试\033[33m第$retry次/共3次！\033[0m"
 				if [ "$server_link" -ge 4 ]; then
 					server_link=0
 				fi
@@ -450,6 +459,7 @@ log-level: info
 ipv6: true
 external-controller: :$db_port
 external-ui: ui
+external-ui-url: "$external_ui_url"
 secret: $secret
 $tun
 $exper
@@ -874,6 +884,7 @@ EOF
     "clash_api": {
       "external_controller": "0.0.0.0:$db_port",
       "external_ui": "ui",
+	  "external_ui_download_url": "$external_ui_url",
       "secret": "$secret",
       "default_mode": "Rule"
     }

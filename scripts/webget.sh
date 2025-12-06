@@ -1489,7 +1489,7 @@ setcustcore(){ #自定义内核
 setcore(){ #内核选择菜单
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow"
-	[ ! -f ${CRASHDIR}/CrashCore.tar.gz ] && crashcore="未安装核心"
+	[ ! -f ${CRASHDIR}/CrashCore.tar.gz -o ! -f ${BINDIR}/CrashCore.tar.gz ] && crashcore="未安装核心"
 	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
 	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 	###
@@ -1844,7 +1844,7 @@ setdb(){
 			echo -----------------------------------------------
 			echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
 			echo -----------------------------------------------
-			read -p "是否覆盖安装？[1/0] > " res
+			read -p "是否升级/覆盖安装？[1/0] > " res
 			if [ "$res" = 1 ]; then
 				rm -rf ${BINDIR}/ui
 				[ -f /www/clash/CNAME ] && rm -rf /www/clash && dbdir=/www/clash
@@ -1888,15 +1888,15 @@ setdb(){
 	echo -e "\033[32m打开管理面板的速度更快且更稳定\033[0m"
 	echo -----------------------------------------------
 	echo -e "请选择面板\033[33m安装类型：\033[0m"
+	echo -----------------维护中------------------------
+	echo -e " 1 安装\033[32mzashboard面板\033[0m(约1.2mb)"
+	echo -e " 2 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
+	echo -e " 3 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
+	echo ---------------已停止维护----------------------
+	echo -e " 4 安装\033[32m基础面板\033[0m(约500kb)"
+	echo -e " 5 安装\033[32mMeta基础面板\033[0m(约800kb)"
+	echo -e " 6 安装\033[32mYacd面板\033[0m(约1.1mb)"
 	echo -----------------------------------------------
-	echo -e " 1 安装\033[32mYacd面板\033[0m(约1.1mb)"
-	echo -e " 2 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
-	echo -e " 3 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
-	echo -e " 4 安装\033[32mzashboard面板\033[0m(约1.2mb)"
-	[ "$crashcore" != singbox ] && {
-		echo -e " 5 安装\033[32m基础面板\033[0m(约500kb)"
-		echo -e " 6 安装\033[32mMeta基础面板\033[0m(约800kb)"
-	}
 	echo -e " 9 卸载\033[33m本地面板\033[0m"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
@@ -1904,27 +1904,30 @@ setdb(){
 	case "$num" in
 	0) ;;
 	1)
-		db_type=yacd
+		db_type=zashboard
+		echo $update_url
+		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/dev/bin/dashboard/zashboard.tar.gz"
 		dbdir
 	;;
 	2)
-		db_type=meta_yacd
+		db_type=meta_xd
+		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/dev/bin/dashboard/meta_xd.tar.gz"
 		dbdir
 	;;
 	3)
-		db_type=meta_xd
+		db_type=meta_yacd
 		dbdir
 	;;
 	4)
-		db_type=zashboard
-		dbdir
-	;;
-	5)
 		db_type=clashdb
 		dbdir
 	;;
-	6)
+	5)
 		db_type=meta_db
+		dbdir
+	;;
+	6)
+		db_type=yacd
 		dbdir
 	;;
 	9)
