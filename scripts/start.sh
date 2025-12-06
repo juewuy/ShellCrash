@@ -513,9 +513,9 @@ EOF
 			proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//")
 			IFS="#"
 			for name in $proxy_groups; do
-				line_a=$(grep -n "\- name: $name" "$TMPDIR"/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+				line_a=$(grep -n "\- name: $name" "$TMPDIR"/proxy-groups.yaml | head -n 1 | awk -F: '{print $1}') #获取group行号
 				[ -n "$line_a" ] && {
-					line_b=$(grep -A 8 "\- name: $name" "$TMPDIR"/proxy-groups.yaml | grep -n "proxies:$" | awk -F: '{print $1}') #获取proxies行号
+					line_b=$(grep -A 8 "\- name: $name" "$TMPDIR"/proxy-groups.yaml | grep -n "proxies:$" | head -n 1 | awk -F: '{print $1}') #获取proxies行号
 					line_c=$((line_a + line_b - 1))                                                                               #计算需要插入的行号
 					space=$(sed -n "$((line_c + 1))p" "$TMPDIR"/proxy-groups.yaml | grep -oE '^ *')                               #获取空格数
 					[ "$line_c" -gt 2 ] && sed -i "${line_c}a\\${space}- ${new_group} #自定义策略组" "$TMPDIR"/proxy-groups.yaml
@@ -536,7 +536,7 @@ EOF
 			proxy_groups=$(echo $line | grep -Eo '#.*' | sed "s/#//")
 			IFS="#"
 			for name in $proxy_groups; do
-				line_a=$(grep -n "\- name: $name" "$TMPDIR"/proxy-groups.yaml | awk -F: '{print $1}') #获取group行号
+				line_a=$(grep -n "\- name: $name" "$TMPDIR"/proxy-groups.yaml | head -n 1 | awk -F: '{print $1}') #获取group行号
 				[ -n "$line_a" ] && {
 					line_b=$(grep -A 8 "\- name: $name" "$TMPDIR"/proxy-groups.yaml | grep -n "proxies:$" | head -n 1 | awk -F: '{print $1}') #获取proxies行号
 					line_c=$((line_a + line_b - 1))                                                                                           #计算需要插入的行号
@@ -575,7 +575,7 @@ EOF
 		yaml_user="$CRASHDIR"/yamls/user.yaml
 		#set和user去重,且优先使用user.yaml
 		cp -f "$TMPDIR"/set.yaml "$TMPDIR"/set_bak.yaml
-		for char in mode allow-lan log-level tun experimental interface-name dns store-selected; do
+		for char in mode allow-lan log-level tun experimental external-ui-url interface-name dns store-selected; do
 			[ -n "$(grep -E "^$char" $yaml_user)" ] && sed -i "/^$char/d" "$TMPDIR"/set.yaml
 		done
 	}
