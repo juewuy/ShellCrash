@@ -2032,6 +2032,8 @@ start)
 			systemctl daemon-reload
 			systemctl start shellcrash.service || start_error
 		}
+	elif rc-status -r >/dev/null 2>&1; then
+		rc-service shellcrash start >/dev/null 2>&1
 	else
 		bfstart && start_old
 	fi
@@ -2052,6 +2054,8 @@ stop)
 		systemctl stop shellcrash.service >/dev/null 2>&1
 	elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
 		/etc/init.d/shellcrash stop >/dev/null 2>&1
+	elif rc-status -r >/dev/null 2>&1; then
+		rc-service shellcrash stop >/dev/null 2>&1
 	else
 		stop_firewall #清理路由策略
 		unset_proxy   #禁用本机代理

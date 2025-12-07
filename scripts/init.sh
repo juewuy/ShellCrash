@@ -177,52 +177,37 @@ mv -f /tmp/SC_tmp/* ${CRASHDIR} 2>/dev/null
 mkdir -p ${CRASHDIR}/configs
 [ -f "${CRASHDIR}/configs/ShellCrash.cfg" ] || echo '#ShellCrash配置文件，不明勿动！' >${CRASHDIR}/configs/ShellCrash.cfg
 #判断系统类型写入不同的启动文件
+[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
+[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
 	#设为init.d方式启动
 	cp -f ${CRASHDIR}/shellcrash.procd /etc/init.d/shellcrash
 	chmod 755 /etc/init.d/shellcrash
-else
-	[ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
-	[ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
-	if [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
-		#创建shellcrash用户
-		userdel shellcrash 2>/dev/null
-		sed -i '/0:7890/d' /etc/passwd
-		sed -i '/x:7890/d' /etc/group
-		if useradd -h >/dev/null 2>&1; then
-			useradd shellcrash -u 7890 2>/dev/null
-			sed -Ei s/7890:7890/0:7890/g /etc/passwd
-		else
-			echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >>/etc/passwd
-		fi
-		#配置systemd
-		mv -f ${CRASHDIR}/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
-		sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
-		rm -rf $sysdir/clash.service #旧版文件清理
-		systemctl daemon-reload
+	rm -rf ${CRASHDIR}/shellcrash.openrc
+elif [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
+	#创建shellcrash用户
+	userdel shellcrash 2>/dev/null
+	sed -i '/0:7890/d' /etc/passwd
+	sed -i '/x:7890/d' /etc/group
+	if useradd -h >/dev/null 2>&1; then
+		useradd shellcrash -u 7890 2>/dev/null
+		sed -Ei s/7890:7890/0:7890/g /etc/passwd
 	else
-		#设为保守模式启动
-		systemctl disable shellcrash 2>/dev/null
-		setconfig start_old 已开启
+		echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >>/etc/passwd
 	fi
+	#配置systemd
+	mv -f ${CRASHDIR}/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
+	sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
+	systemctl daemon-reload
+elif rc-status -r >/dev/null 2>&1; then	
+	#设为openrc方式启动
+	cp -f ${CRASHDIR}/shellcrash.openrc /etc/init.d/shellcrash
+	chmod 755 /etc/init.d/shellcrash
+	rm -rf ${CRASHDIR}/shellcrash.procd
+else
+	#设为保守模式启动
+	setconfig start_old 已开启
 fi
-
-# 在此处添加Alpine OpenRC配置（约第220-230行附近）
-# Alpine Linux (OpenRC) 自启动配置
-if [ -f "/sbin/openrc" ] && [ "$(cat /proc/1/comm)" = "init" ]; then
-    # 创建启动脚本
-    if [ ! -f "/etc/local.d/shellcrash.start" ]; then
-        echo "#!/bin/sh" > /etc/local.d/shellcrash.start
-        echo "${CRASHDIR}/start.sh start &" >> /etc/local.d/shellcrash.start
-        chmod +x /etc/local.d/shellcrash.start
-    fi
-    # 添加到默认运行级别
-    rc-update add local default >/dev/null 2>&1
-    setconfig autostart "enable"
-    logger "已配置Alpine系统自启动" 32
-fi
-
-
 
 #修饰文件及版本号
 command -v bash >/dev/null 2>&1 && shtype=bash
@@ -232,7 +217,7 @@ for file in start.sh task.sh menu.sh; do
 	chmod 755 ${CRASHDIR}/${file}
 done
 setconfig versionsh_l $version
-#生成用于执行systemd及procd服务的变量文件
+#生成用于执行启动服务的变量文件
 [ ! -f ${CRASHDIR}/configs/command.env ] && {
 	TMPDIR='/tmp/ShellCrash'
 	BINDIR=${CRASHDIR}
@@ -351,7 +336,7 @@ sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash
 rm -rf ${CRASHDIR}/rules
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
-for file in CrashCore clash.sh getdate.sh shellcrash.rc core.new clashservice log shellcrash.service mark? mark.bak; do
+for file in CrashCore clash.sh getdate.sh core.new clashservice log shellcrash.service mark? mark.bak; do
 	rm -rf ${CRASHDIR}/$file
 done
 #旧版变量改名
