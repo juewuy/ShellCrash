@@ -1930,13 +1930,13 @@ uninstall() {
 		if [ -n "${CRASHDIR}" ] && [ "${CRASHDIR}" != '/' ];then
 			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
-				mv -f ${CRASHDIR}/configs /tmp/ShellCrash
-				mv -f ${CRASHDIR}/yamls /tmp/ShellCrash
-				mv -f ${CRASHDIR}/jsons /tmp/ShellCrash
+				mv -f ${CRASHDIR}/configs /tmp/ShellCrash/
+				mv -f ${CRASHDIR}/yamls /tmp/ShellCrash/
+				mv -f ${CRASHDIR}/jsons /tmp/ShellCrash/
 				rm -rf ${CRASHDIR}/*
-				mv -f /tmp/ShellCrash/configs ${CRASHDIR}
-				mv -f /tmp/ShellCrash/yamls ${CRASHDIR}
-				mv -f /tmp/ShellCrash/jsons ${CRASHDIR}
+				mv -f /tmp/ShellCrash/configs "${CRASHDIR}/"
+				mv -f /tmp/ShellCrash/yamls "${CRASHDIR}/"
+				mv -f /tmp/ShellCrash/jsons "${CRASHDIR}/"
 			else
 				rm -rf ${CRASHDIR}
 			fi
