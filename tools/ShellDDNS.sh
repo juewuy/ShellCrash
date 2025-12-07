@@ -4,7 +4,7 @@
 ddns_dir=/etc/config/ddns
 tmp_dir=/tmp/ddns_$USER
 
-[ ! -f "$ddns_dir" ] && echo -e "本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！" && exit 1
+[ ! -d $ddns_dir -o ! -d /etc/ddns ] && echo -e "本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！" && exit 1
 echo -----------------------------------------------
 echo -e "\033[30;46m欢迎使用ShellDDNS！\033[0m"
 echo -e "TG群：\033[36;4mhttps://t.me/ShellCrash\033[0m"
@@ -102,7 +102,7 @@ network_type() {
 }
 
 rev_service() {
-	enabled=$(uci show ddns.$service | grep 'enabled' | awk -F "\'" '{print $2}')
+	enabled=$(uci show ddns.$service | grep 'enabled' | awk -F "=" '{print $2}' | tr -d "'\"")
 	[ "$enabled" = 1 ] && enabled_b="停用" || enabled_b="启用"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m立即更新\033[0m"
@@ -118,10 +118,10 @@ rev_service() {
 		/usr/lib/ddns/dynamic_dns_updater.sh -S $service start >/dev/null 2>&1 &
 		sleep 3
 	elif [ "$num" = 2 ]; then
-		domain=$(uci show ddns.$service | grep 'domain' | awk -F "\'" '{print $2}')
-		username=$(uci show ddns.$service | grep 'username' | awk -F "\'" '{print $2}')
-		password=$(uci show ddns.$service | grep 'password' | awk -F "\'" '{print $2}')
-		service_name=$(uci show ddns.$service | grep 'service_name' | awk -F "\'" '{print $2}')
+		domain=$(uci show ddns.$service | grep 'domain' | awk -F "=" '{print $2}' | tr -d "'\"")
+		username=$(uci show ddns.$service | grep 'username' | awk -F "=" '{print $2}' | tr -d "'\"")
+		password=$(uci show ddns.$service | grep 'password' | awk -F "=" '{print $2}' | tr -d "'\"")
+		service_name=$(uci show ddns.$service | grep 'service_name' | awk -F "=" '{print $2}' | tr -d "'\"")
 		uci delete ddns.$service
 		set_ddns
 	elif [ "$num" = 3 ]; then
@@ -142,9 +142,9 @@ load_ddns() {
 	for service in $(cat $tmp_dir); do
 		#echo $service >>$tmp_dir
 		nr=$((nr + 1))
-		enabled=$(uci show ddns.$service 2>/dev/null | grep 'enabled' | awk -F "\'" '{print $2}')
-		domain=$(uci show ddns.$service 2>/dev/null | grep 'domain' | awk -F "\'" '{print $2}')
-		local_ip=$(cat /var/log/ddns/$service.log | grep 'Local IP' | tail -1 | awk -F "\'" '{print $2}')
+		enabled=$(uci show ddns.$service 2>/dev/null | grep 'enabled' | awk -F "=" '{print $2}' | tr -d "'\"")
+		domain=$(uci show ddns.$service 2>/dev/null | grep 'domain' | awk -F "=" '{print $2}' | tr -d "'\"")
+		local_ip=$(cat /var/log/ddns/$service.log 2>/dev/null | grep 'Local IP' | tail -1 | awk -F "=" '{print $2}' | tr -d "'\"")
 		echo -e " $nr   $domain  $enabled   $local_ip"
 	done
 	echo -e " $((nr + 1))   添加DDNS服务"
