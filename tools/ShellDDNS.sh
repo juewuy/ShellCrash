@@ -4,7 +4,7 @@
 ddns_dir=/etc/config/ddns
 tmp_dir=/tmp/ddns_$USER
 
-[ ! -d $ddns_dir -o ! -d /etc/ddns ] && echo -e "本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！" && exit 1
+[ ! -f $ddns_dir ] && echo -e "本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！" && exit 1
 echo -----------------------------------------------
 echo -e "\033[30;46m欢迎使用ShellDDNS！\033[0m"
 echo -e "TG群：\033[36;4mhttps://t.me/ShellCrash\033[0m"
@@ -22,10 +22,12 @@ config service '$service'
 	option use_ipv6 '$use_ipv6'
 	option password '$password'
 	option ip_source 'web'
+	option ip_url 'http://ip.sb'
 	option check_unit 'minutes'
 	option check_interval '$check_interval'
 	option force_interval '$force_interval'
 	option interface 'wan'
+	option bind_network 'wan'
 EOF
 	/usr/lib/ddns/dynamic_dns_updater.sh -S $service start >/dev/null 2>&1 &
 	sleep 3
@@ -59,17 +61,23 @@ set_ddns() {
 }
 
 set_service() {
-	services_dir=/etc/ddns/$services
+	services_dir=/etc/ddns/$services 
+	if [ -s $services_dir ];then
+		row=2
+	else
+		services_dir=/usr/share/ddns/list
+		row=1
+	fi
 	echo -----------------------------------------------
 	echo -e "\033[32m请选择服务提供商\033[0m"
-	cat $services_dir | grep -v '^#' | awk -F "[\"]" '{print " "NR" " $2}'
+	cat $services_dir | grep -v '^#' | awk -F "[\"]" -v i="$row" '{print " "NR" " $i}'
 	nr=$(cat $services_dir | grep -v '^#' | wc -l)
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		i=
 	elif [ "$num" -gt 0 -a "$num" -lt $nr ]; then
-		service=$(cat $services_dir | grep -v '^#' | awk -F "[\".]" '{print $2}' | sed -n "$num"p)
-		service_name=$(cat $services_dir | grep -v '^#' | awk -F "[\"]" '{print $2}' | sed -n "$num"p)
+		service=$(cat $services_dir | grep -v '^#' | awk -F "[\".]" -v i="$row" '{print " "NR" " $i}' | sed -n "$num"p)
+		service_name=$(cat $services_dir | grep -v '^#' | awk -F "[\"]" -v i="$row" '{print " "NR" " $i}' | sed -n "$num"p)
 		set_ddns
 	else
 		echo "输入错误，请重新输入！"
@@ -144,7 +152,7 @@ load_ddns() {
 		nr=$((nr + 1))
 		enabled=$(uci show ddns.$service 2>/dev/null | grep 'enabled' | awk -F "=" '{print $2}' | tr -d "'\"")
 		domain=$(uci show ddns.$service 2>/dev/null | grep 'domain' | awk -F "=" '{print $2}' | tr -d "'\"")
-		local_ip=$(cat /var/log/ddns/$service.log 2>/dev/null | grep 'Local IP' | tail -1 | awk -F "=" '{print $2}' | tr -d "'\"")
+		local_ip=$(sed '1!G;h;$!d' /var/log/ddns/$service.log 2>/dev/null | grep -E 'Update successful - IP' | tail -1 | awk -F "'" '{print $2}' | tr -d "'\"")
 		echo -e " $nr   $domain  $enabled   $local_ip"
 	done
 	echo -e " $((nr + 1))   添加DDNS服务"
