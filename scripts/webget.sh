@@ -620,8 +620,10 @@ setproviders(){ #自定义providers
 		echo -e "本地配置文件请放在\033[32m$CRASHDIR\033[0m目录下，并填写相对路径如【\033[32m./providers/test.yaml\033[0m】"
 		echo -----------------------------------------------
 		read -p "请输入providers订阅地址或本地相对路径 > " link
+		link=$(${link// /})
 		[ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
 			read -p "请输入代理服务商的名称或者代号(不可重复) > " name
+			name=$(${name// /})
 			[ -n "$name" ] && [ -z "$(grep "name" $CRASHDIR/configs/providers.cfg)" ] && {
 				echo -----------------------------------------------
 				echo -e "代理服务商：\033[36m$name\033[0m"
