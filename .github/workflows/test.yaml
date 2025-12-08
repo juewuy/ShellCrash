@@ -98,6 +98,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{needs.go.outputs.version}}
+          
       - name: Set variables
           run: |
             VERSION="${GITHUB_REF_NAME,,}-$(git rev-parse --short HEAD)"
@@ -112,12 +113,7 @@ jobs:
             echo "BUILDTIME=$(date)" >> $GITHUB_ENV
             echo "CGO_ENABLED=0" >> $GITHUB_ENV
             echo "BUILDTAG=-extldflags --static" >> $GITHUB_ENV
-            echo "GOTOOLCHAIN=local" >> $GITHUB_ENV         
-      - name: Set ENV
-        run: |
-          sudo timedatectl set-timezone "Asia/Shanghai"
-          echo "BUILDTIME=$(date)" >> $GITHUB_ENV
-        shell: bash
+            echo "GOTOOLCHAIN=local" >> $GITHUB_ENV    
         
       - name: Update CA
         run: |
