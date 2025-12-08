@@ -41,13 +41,13 @@
       { "rule_set": [ "networktest" ], "outbound": "📈 网络测试" },
       { "rule_set": [ "proxy" ], "outbound": "🧱 代理域名" },
       { "rule_set": [ "cn" ], "outbound": "🛡️ 直连域名" },
+      { "rule_set": [ "privateip" ], "outbound": "🎯 全球直连" },
+      { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息" },
 	  
 	  { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4"},
-      { "rule_set": [ "privateip" ], "outbound": "🎯 全球直连" },
       { "rule_set": [ "cnip" ], "outbound": "🀄️ 直连 IP" },
       { "rule_set": [ "mediaip" ], "outbound": "🌍 国外媒体" },
-      { "rule_set": [ "gamesip" ], "outbound": "🎮 游戏平台" },
-      { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息" }
+      { "rule_set": [ "gamesip" ], "outbound": "🎮 游戏平台" }
     ],
     "rule_set": [
       {
