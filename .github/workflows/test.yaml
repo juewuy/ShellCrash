@@ -45,11 +45,6 @@ jobs:
       version: ${{steps.meta.outputs.version}}
       tags: ${{steps.meta.outputs.tags}}
     steps:
-
-      - name: setup go
-        uses: actions/setup-go@v6
-        with:
-          go-version: ${{needs.go.outputs.version}}
           
       - name: get meta version
         id: meta
@@ -67,10 +62,9 @@ jobs:
       matrix:
         include:
           # linux
-          - name: linux-amd64
+          - name: linux-arm64
             goos: linux
-            goarch: amd64
-            goamd64: v1
+            goarch: arm64
 
       fail-fast: false
     runs-on: ubuntu-latest
