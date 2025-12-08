@@ -1,0 +1,23 @@
+#Ruleset极简规则
+proxy-groups:
+  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all-providers: true}
+  - {name: 🎯 全球直连, type: select, proxies: [DIRECT, 🚀 节点选择]}
+rule-providers:
+  privateip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    path: ./ruleset/privateip.mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/privateip.mrs"
+    interval: 86400
+  cnip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    path: ./ruleset/cnip.mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cnip.mrs"
+    interval: 86400
+rules:
+  - RULE-SET,privateip,🎯 全球直连,no-resolve
+  - RULE-SET,cnip,🎯 全球直连
+  - MATCH,🚀 节点选择
