@@ -45,11 +45,6 @@ jobs:
       version: ${{steps.meta.outputs.version}}
       tags: ${{steps.meta.outputs.tags}}
     steps:
-
-      - name: setup go
-        uses: actions/setup-go@v4.1.0
-        with:
-          go-version: ${{needs.go.outputs.version}}
           
       - name: get meta version
         id: meta
@@ -60,7 +55,7 @@ jobs:
             echo tags='' >> $GITHUB_OUTPUT
           else
             echo tags=$TAGS >> $GITHUB_OUTPUT
-          fi      
+          fi    
 
   cross:
     strategy:
@@ -114,22 +109,32 @@ jobs:
       VERSION: ${{needs.meta.outputs.version}}
     steps:
       - name: Checkout meta
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.event.inputs.tag1 }}
           ref: ${{ github.event.inputs.tag2 }}
           fetch-depth: 1
           
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{needs.go.outputs.version}}
           
-      - name: Set ENV
+      - name: Set variables
         run: |
-          sudo timedatectl set-timezone "Asia/Shanghai"
-          echo "BUILDTIME=$(date)" >> $GITHUB_ENV
-        shell: bash
+            VERSION="${GITHUB_REF_NAME,,}-$(git rev-parse --short HEAD)"
+            VERSION="${VERSION//\//-}"
+            PackageVersion="$(curl -s "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" | jq -r '.tag_name' | sed 's/v//g' | awk -F '.' '{$NF = $NF + 1; print}' OFS='.').${VERSION/-/.}"
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION=${{ github.event.inputs.version }}
+              PackageVersion="${VERSION#v}"
+            fi
+            echo "VERSION=${VERSION}" >> $GITHUB_ENV
+            echo "PackageVersion=${PackageVersion}" >> $GITHUB_ENV
+            echo "BUILDTIME=$(date)" >> $GITHUB_ENV
+            echo "CGO_ENABLED=0" >> $GITHUB_ENV
+            echo "BUILDTAG=-extldflags --static" >> $GITHUB_ENV
+            echo "GOTOOLCHAIN=local" >> $GITHUB_ENV    
         
       - name: Update CA
         run: |
@@ -139,8 +144,9 @@ jobs:
           
       - name: build core
         id: build
-        run: go build -v -trimpath -ldflags "-X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -X 'github.com/metacubex/mihomo/constant.BuildTime=${BUILDTIME}' -s -w -buildid=" -tags "${TAGS}" -o meta
-        
+        run: |
+            go env
+            go build -v -tags "${TAGS}" -o meta -trimpath -ldflags "${BUILDTAG} -X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -X 'github.com/metacubex/mihomo/constant.BuildTime=${BUILDTIME}' -w -s -buildid="
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
         with:
