@@ -410,16 +410,15 @@ modify_yaml() { #修饰clash配置文件
 	}
 	#dns配置
 	[ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
-		default_nameserver='223.5.5.5' 
-		[ "$crashcore" = 'meta' ] && default_nameserver='https://223.5.5.5/dns-query' 
+		[ "$skip_cert" = "已开启" ] && psdns_skip_cert='#skip-cert-verify'
 		cat >"$TMPDIR"/dns.yaml <<EOF
 dns:
   enable: true
   listen: :$dns_port
   use-hosts: true
   ipv6: $dns_v6
-  default-nameserver:
-    - $default_nameserver
+  default-nameserver: [ 223.5.5.5 ]
+  proxy-server-nameserver: [ https://223.5.5.5/dns-query$psdns_skip_cert ]
   enhanced-mode: fake-ip
   fake-ip-range: 28.0.0.1/8
   fake-ip-range6: fc00::/16
@@ -471,22 +470,26 @@ EOF
 	if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -aE '^hosts:' "$CRASHDIR"/yamls/user.yaml 2>/dev/null)" ]; then
 		#NTP劫持
 		cat >"$TMPDIR"/hosts.yaml <<EOF
+use-system-hosts: true
 hosts:
   'time.android.com': 203.107.6.88
   'time.facebook.com': 203.107.6.88
 EOF
-		[ "$crashcore" = "meta" ] && echo "  'services.googleapis.cn': services.googleapis.com" >>"$TMPDIR"/hosts.yaml
-		#加载本机hosts
-		sys_hosts=/etc/hosts
-		[ -f /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
-		while read line; do
-			[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}")" ] &&
-				[ -z "$(echo "$line" | grep -oE '^#')" ] &&
-				hosts_ip=$(echo $line | awk '{print $1}') &&
-				hosts_domain=$(echo $line | awk '{print $2}') &&
-				[ -z "$(cat "$TMPDIR"/hosts.yaml | grep -oE "$hosts_domain")" ] &&
-				echo "  '$hosts_domain': $hosts_ip" >>"$TMPDIR"/hosts.yaml
-		done <$sys_hosts
+		if [ "$crashcore" = "meta" ];then
+			echo "  'services.googleapis.cn': services.googleapis.com" >>"$TMPDIR"/hosts.yaml
+		else
+			#加载本机hosts
+			sys_hosts=/etc/hosts
+			[ -f /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
+			while read line; do
+				[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}")" ] &&
+					[ -z "$(echo "$line" | grep -oE '^#')" ] &&
+					hosts_ip=$(echo $line | awk '{print $1}') &&
+					hosts_domain=$(echo $line | awk '{print $2}') &&
+					[ -z "$(cat "$TMPDIR"/hosts.yaml | grep -oE "$hosts_domain")" ] &&
+					echo "  '$hosts_domain': $hosts_ip" >>"$TMPDIR"/hosts.yaml
+			done <$sys_hosts
+		fi
 	fi
 	#分割配置文件
 	yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
@@ -935,13 +938,15 @@ EOF
 	done
 	#加载自定义配置文件
 	mkdir -p "$TMPDIR"/jsons_base
-	for char in log dns ntp experimental; do
+	#以下为覆盖脚本的自定义文件
+	for char in log dns ntp certificate experimental; do
 		[ -s "$CRASHDIR"/jsons/${char}.json ] && {
 			ln -sf "$CRASHDIR"/jsons/${char}.json "$TMPDIR"/jsons/cust_${char}.json
 			mv -f "$TMPDIR"/jsons/${char}.json "$TMPDIR"/jsons_base #如果重复则临时备份
 		}
 	done
-	for char in others inbounds outbounds providers route rule-set; do
+	#以下为增量添加的自定义文件
+	for char in others endpoints inbounds outbounds providers route services; do
 		[ -s "$CRASHDIR"/jsons/${char}.json ] && {
 			ln -sf "$CRASHDIR"/jsons/${char}.json "$TMPDIR"/jsons/cust_${char}.json
 		}
@@ -1508,9 +1513,9 @@ start_firewall() { #路由规则总入口
 	[ "$firewall_mod" = 'iptables' ] && start_iptables
 	[ "$firewall_mod" = 'nftables' ] && start_nftables
 	#修复部分虚拟机dns查询失败的问题
-	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep 'nameserver 127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && [ -w /etc/resolv.conf ] && {
+	[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep '127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && [ -w /etc/resolv.conf ] && {
 		line=$(grep -n 'nameserver' /etc/resolv.conf | awk -F: 'FNR==1{print $1}')
-		sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf 2>/dev/null
+		sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf >/dev/null 2>&1
 	}
 	#openwrt使用dnsmasq转发DNS
 	if [ "$dns_redir" = "已开启" -a "$firewall_area" -le 3 -a "$dns_no" != "已禁用" ]; then
@@ -2137,7 +2142,12 @@ webget)
 		[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 		[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
 		[ -n "$7" ] && agent="--user-agent \"$7\""
-		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
+		if curl --version | grep -q '^curl 8.' ;then
+			auth_b64=$(echo -n "$authentication" | base64)
+			result=$(curl $agent -w %{http_code} --connect-timeout 3 --proxy-header "Proxy-Authorization: Basic $auth_b64" $progress $redirect $certificate -o "$2" "$url")
+		else
+			result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
+		fi
 		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
 	else
 		if wget --version >/dev/null 2>&1; then

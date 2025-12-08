@@ -282,7 +282,7 @@ log_pusher() { #日志菜单
 				echo -----------------------------------------------
 				read -p "请输入你获取到的API TOKEN > " TOKEN
 				echo -----------------------------------------------
-				echo -e "请向\033[32m你申请的机器人\033[31m而不是BotFather\033[0m，发送"
+				echo -e "请向\033[32m你申请的机器人\033[33m而不是BotFather！\033[0m"
 				url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
 			}
 			public_bot(){	
@@ -304,16 +304,19 @@ log_pusher() { #日志菜单
 					fi
 					[ -n "$chat" ] && chat_ID=$(echo $chat | sed 's/"update_id":/{\n"update_id":/g' | grep "$public_key" | head -n1 |grep -oE '"id":.*,"is_bot' | sed s'/"id"://' | sed s'/,"is_bot//')
 					[ -z "$chat_ID" ] && {
-						echo -e "\033[31m无法获取对话ID，请重新输入！\033[0m"
-						chose_bot
+						echo -e "\033[31m无法获取对话ID，请返回重新设置或手动输入ChatID！\033[0m"
+						echo -e "通常访问 \033[32;4m$url_tg\033[0m \n\033[36m即可看到ChatID\033[0m"
+						read -p "请手动输入ChatID > " chat_ID
 					}
-					if [ -n "$chat_ID" ]; then
+					if echo "$chat_ID" | grep -qE '^[0-9]{8,}$'; then
 						push_TG=$TOKEN
 						setconfig push_TG $TOKEN
 						setconfig chat_ID $chat_ID
 						${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32	
 					else
 						echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
+						sleep 1
+						chose_bot
 					fi
 				fi
 			}
@@ -321,7 +324,7 @@ log_pusher() { #日志菜单
 				public_key=$(cat /proc/sys/kernel/random/boot_id | sed 's/.*-//')
 				echo -----------------------------------------------
 				echo -e " 1 使用公共机器人	——不依赖内核服务"
-				echo -e " 2 使用私人机器人	——需要额外申请"			
+				echo -e " 2 使用私人机器人	——需要额外申请"	
 				echo -----------------------------------------------
 				read -p "请输入对应数字 > " num
 				case $num in
@@ -1923,13 +1926,13 @@ uninstall() {
 		if [ -n "${CRASHDIR}" ] && [ "${CRASHDIR}" != '/' ];then
 			read -p "是否保留脚本配置及订阅文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
-				mv -f ${CRASHDIR}/configs /tmp/ShellCrash/
-				mv -f ${CRASHDIR}/yamls /tmp/ShellCrash/
-				mv -f ${CRASHDIR}/jsons /tmp/ShellCrash/
+				mv -f ${CRASHDIR}/configs /tmp/ShellCrash/configs_bak
+				mv -f ${CRASHDIR}/yamls /tmp/ShellCrash/yamls_bak
+				mv -f ${CRASHDIR}/jsons /tmp/ShellCrash/jsons_bak
 				rm -rf ${CRASHDIR}/*
-				mv -f /tmp/ShellCrash/configs "${CRASHDIR}/"
-				mv -f /tmp/ShellCrash/yamls "${CRASHDIR}/"
-				mv -f /tmp/ShellCrash/jsons "${CRASHDIR}/"
+				mv -f /tmp/ShellCrash/configs_bak "${CRASHDIR}/configs"
+				mv -f /tmp/ShellCrash/yamls_bak "${CRASHDIR}/yamls"
+				mv -f /tmp/ShellCrash/jsons_bak "${CRASHDIR}/jsons"
 			else
 				rm -rf ${CRASHDIR}
 			fi

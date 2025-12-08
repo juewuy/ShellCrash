@@ -620,10 +620,10 @@ setproviders(){ #自定义providers
 		echo -e "本地配置文件请放在\033[32m$CRASHDIR\033[0m目录下，并填写相对路径如【\033[32m./providers/test.yaml\033[0m】"
 		echo -----------------------------------------------
 		read -p "请输入providers订阅地址或本地相对路径 > " link
-		link=$(${link// /})
+		link="$(echo "$link" | tr -d '[:space:]')"
 		[ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
 			read -p "请输入代理服务商的名称或者代号(不可重复) > " name
-			name=$(${name// /})
+			name="$(echo "$name" | tr -d '[:space:]')"
 			[ -n "$name" ] && [ -z "$(grep "name" $CRASHDIR/configs/providers.cfg)" ] && {
 				echo -----------------------------------------------
 				echo -e "代理服务商：\033[36m$name\033[0m"
@@ -737,9 +737,11 @@ EOF
 }
 set_singbox_adv(){ #自定义singbox配置文件
 		echo -----------------------------------------------
-		echo -e "singbox配置文件中，支持自定义的模块有：\033[0m"
-		echo -e "\033[36mlog dns ntp inbounds outbounds outbound_providers route experimental\033[0m"
-		echo -e "将相应json文件放入\033[33m$JSONSDIR\033[0m目录后即可在启动时加载"
+		echo -e "支持覆盖脚本设置的模块有：\033[0m"
+		echo -e "\033[36mlog dns ntp certificate experimental\033[0m"
+		echo -e "支持与内置功能合并(但不可冲突)的模块有：\033[0m"
+		echo -e "\033[36mendpoints inbounds outbounds providers route services\033[0m"
+		echo -e "将相应json文件放入\033[33m$JSONSDIR\033[0m目录后即可在启动时自动加载"
 		echo -----------------------------------------------
 		echo -e "使用前请务必参考配置教程:\033[32;4m https://juewuy.github.io/nWTjEpkSK \033[0m"
 }
