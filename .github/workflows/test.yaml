@@ -100,7 +100,7 @@ jobs:
           go-version: ${{needs.go.outputs.version}}
           
       - name: Set variables
-          run: |
+        run: |
             VERSION="${GITHUB_REF_NAME,,}-$(git rev-parse --short HEAD)"
             VERSION="${VERSION//\//-}"
             PackageVersion="$(curl -s "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" | jq -r '.tag_name' | sed 's/v//g' | awk -F '.' '{$NF = $NF + 1; print}' OFS='.').${VERSION/-/.}"
