@@ -1260,7 +1260,7 @@ setcoretype(){ #手动指定内核类型
 	echo -e "\033[33m请确认该自定义内核的类型：\033[0m"
 	echo -e " 1 Clash基础内核"
 	echo -e " 2 Clash-Premium内核"
-	echo -e " 3 Clash-Meta内核"
+	echo -e " 3 Mihomo(Meta)内核"
 	echo -e " 4 Sing-Box内核"
 	echo -e " 5 Sing-Box-reF1nd内核"
 	read -p "请输入对应数字 > " num
