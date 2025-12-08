@@ -213,8 +213,8 @@ fi
 command -v bash >/dev/null 2>&1 && shtype=bash
 [ -x /bin/ash ] && shtype=ash
 for file in start.sh task.sh menu.sh; do
-	sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file}
-	chmod 755 ${CRASHDIR}/${file}
+	sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file} 2>/dev/null
+	chmod 755 ${CRASHDIR}/${file} 2>/dev/null
 done
 setconfig versionsh_l $version
 #生成用于执行启动服务的变量文件
@@ -316,6 +316,8 @@ mv -f ${CRASHDIR}/mark ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 #数据库改名
 mv -f ${CRASHDIR}/geosite.dat ${CRASHDIR}/GeoSite.dat 2>/dev/null
+mv -f ${CRASHDIR}/ruleset/geosite-cn.srs ${CRASHDIR}/ruleset/cn.srs 2>/dev/null
+mv -f ${CRASHDIR}/ruleset/geosite-cn.mrs ${CRASHDIR}/ruleset/cn.mrs 2>/dev/null
 #数据库移动
 mv -f ${CRASHDIR}/*.srs ${CRASHDIR}/ruleset/ 2>/dev/null
 mv -f ${CRASHDIR}/*.mrs ${CRASHDIR}/ruleset/ 2>/dev/null

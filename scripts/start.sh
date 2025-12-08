@@ -429,7 +429,7 @@ EOF
 			[ "$dns_mod" = "mix" ] && {
 				#插入过滤规则
 				cat >>"$TMPDIR"/dns.yaml <<EOF
-    - "rule-set:geosite-cn"
+    - "rule-set:cn"
 EOF
 			}
 		else
@@ -566,10 +566,10 @@ EOF
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
 	#mix模式生成rule-providers
-	[ "$dns_mod" = "mix" ] && ! grep -q 'geosite-cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+	[ "$dns_mod" = "mix" ] && ! grep -q 'cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
 		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
 		[ -z "$space" ] && space='  '
-		echo "${space}geosite-cn: {type: file, behavior: domain, format: mrs, path: ./ruleset/geosite-cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
+		echo "${space}cn: {type: http, behavior: domain, format: mrs, path: ./ruleset/cn.mrs, url: https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev/bin/geodata/mrs_geosite_cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
 }
 	#对齐rules中的空格
 	sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
@@ -700,17 +700,18 @@ EOF
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
-		direct_dns="{ \"rule_set\": [\"geosite-cn\"], \"server\": \"dns_direct\" },"
+		direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" },"
 		#生成add_rule_set.json
-		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"geosite-cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
+		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
     "rule_set": [
       {
-        "tag": "geosite-cn",
-        "type": "local",
+        "tag": "cn",
+        "type": "remote",
         "format": "binary",
-        "path": "./ruleset/geosite-cn.srs"
+        "path": "./ruleset/cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev/bin/geodata/srs_geosite_cn.srs"
       }
     ]
   }
@@ -1835,8 +1836,8 @@ clash_check() { #clash启动前检查
 	[ -n "$(grep -oEi 'geoip' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geoip:|mmdb:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo Country.mmdb cn_mini.mmdb
 	#预下载GeoSite数据库并排除存在自定义数据库链接的情况
 	[ -n "$(grep -oEi 'geosite' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo GeoSite.dat geosite.dat
-	#预下载geosite-cn.mrs数据库
-	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*geosite-cn')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/geosite-cn.mrs mrs_geosite_cn.mrs
+	#预下载cn.mrs数据库
+	[ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*cn')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/cn.mrs mrs_geosite_cn.mrs
 	return 0
 }
 singbox_check() { #singbox启动前检查
@@ -1845,8 +1846,8 @@ singbox_check() { #singbox启动前检查
 	core_check
 	#预下载geoip-cn.srs数据库
 	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo ruleset/geoip-cn.srs srs_geoip_cn.srs
-	#预下载geosite-cn.srs数据库
-	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geosite-cn"')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/geosite-cn.srs srs_geosite_cn.srs
+	#预下载cn.srs数据库
+	[ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"cn"')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/cn.srs srs_geosite_cn.srs
 	return 0
 }
 network_check() { #检查是否联网
