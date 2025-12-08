@@ -1,4 +1,4 @@
-name: Build meta Core for ShellCrash
+name: Build Core test
 
 on:
   workflow_dispatch:
