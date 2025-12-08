@@ -126,7 +126,7 @@ jobs:
         id: build
         run: |
             go env
-            go build -v -tags "with_gvisor" -trimpath -ldflags "${BUILDTAG} -X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -X 'github.com/metacubex/mihomo/constant.BuildTime=${BUILDTIME}' -w -s -buildid="
+            go build -v -tags "${TAGS}" -o meta -trimpath -ldflags "${BUILDTAG} -X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -X 'github.com/metacubex/mihomo/constant.BuildTime=${BUILDTIME}' -w -s -buildid="
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
         with:
