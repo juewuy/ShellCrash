@@ -1,129 +1,73 @@
 name: bin_update
 
 on:
-#   release:
-#       types: [published]
-#   push:
-#       tags:
-#       - 'v*'
-#   branches:
-#       - master
-    schedule:
-        - cron: 0 10 * * 5
-#   watch:
-#       types: [started]
-    workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * *"   # UTC 18 = 北京时间次日凌晨 2 点
+  workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-
-    - name: Checkout ShellCrash
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+    - name: Checkout update branch (ignore if missing)
+      uses: actions/checkout@v5
       with:
-        repository: juewuy/ShellCrash
+        ref: update
         fetch-depth: 1
+        persist-credentials: false   # 禁用默认凭据（我们用 token push）
 
-    - name: Apt Update
+    - name: Apt Update & Update CA
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo apt-get update
-        sudo apt-get -y install unzip curl git tar
+        sudo apt-get -y install unzip curl git tar ca-certificates
+        sudo update-ca-certificates
+        cp -f /etc/ssl/certs/ca-certificates.crt bin/fix/ca-certificates.crt
 
     - name: Update Dashboard
       run: |
+        ##########################################################
         mkdir -p bin/dashboard
-        mkdir -p bin/geodata
         cd bin/dashboard
-        echo 下载官方面板
-        # curl -kfSL -o clashdb.zip  https://github.com/Dreamacro/clash-dashboard/archive/gh-pages.zip
-        echo 下载Meta面板
-        curl -kfSL -o meta_db.zip  https://github.com/MetaCubeX/Razord-meta/archive/gh-pages.zip
-        echo 下载yacd面板
-        curl -kfSL -o yacd.zip  https://github.com/haishanh/yacd/archive/gh-pages.zip
         echo 下载meta魔改yacd面板
         curl -kfSL -o meta_yacd.zip  https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip
         echo 下载meta-xd面板
         curl -kfSL -o meta_xd.zip  https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
         echo 下载zashboard面板
         curl -kfSL -o zashboard.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip
-        echo 解压缩
-        # unzip -o clashdb.zip > /dev/null
-        unzip -o yacd.zip > /dev/null
-        # cd clash-dashboard-gh-pages
-        # tar -zcvf clashdb.tar.gz * > /dev/null
-        # mv -f clashdb.tar.gz ../
-        # cd ..
-        cd yacd-gh-pages
-        echo yacd特殊处理
-        find -name '*.map' | xargs  rm -rf
-        rm -rf report.html
-        tar -zcvf yacd.tar.gz * > /dev/null
-        mv -f yacd.tar.gz ../
-        cd ..
-
-        echo 解压缩meta
-        unzip -o meta_db.zip > /dev/null
+        
         unzip -o meta_yacd.zip > /dev/null
-        cd Razord-meta-gh-pages
-        tar -zcvf meta_db.tar.gz * > /dev/null
-        mv -f meta_db.tar.gz ../
-        cd ..
         cd Yacd-meta-gh-pages
-        echo yacd特殊处理
-        find -name '*.map' | xargs  rm -rf
+        find -name '*.map' | xargs rm -rf
         rm -rf report.html
         tar -zcvf meta_yacd.tar.gz * > /dev/null
         mv -f meta_yacd.tar.gz ../
         cd ..
-
-        echo 解压缩meta-xd
+        
         unzip -o meta_xd.zip > /dev/null
         cd metacubexd-gh-pages
-        echo 删除字体文件
-        find -name '*.ttf' | xargs  rm -rf
+        find -name '*.ttf' | xargs rm -rf
         tar -zcvf meta_xd.tar.gz * > /dev/null
         mv -f meta_xd.tar.gz ../
         cd ..
-
-        echo 解压缩zashboard
+        
         unzip -o zashboard.zip > /dev/null
         cd dist
-        echo 添加CNAME文件
         echo 'board.zash.run.place' > CNAME
         tar -zcvf zashboard.tar.gz * > /dev/null
         mv -f zashboard.tar.gz ../
-
         cd ..
-        rm -rf clashdb.zip
-        rm -rf yacd.zip
-        rm -rf meta_db.zip
-        rm -rf meta_yacd.zip
-        rm -rf meta_xd.zip
-        rm -rf zashboard.zip
-        rm -rf clash-dashboard-gh-pages
-        rm -rf yacd-gh-pages
-        rm -rf Razord-meta-gh-pages
-        rm -rf Yacd-meta-gh-pages
-        rm -rf metacubexd-gh-pages
-        rm -rf dist
+        
+        rm -rf meta_yacd.zip meta_xd.zip zashboard.zip
+        rm -rf clash-dashboard-gh-pages yacd-gh-pages Razord-meta-gh-pages
+        rm -rf Yacd-meta-gh-pages metacubexd-gh-pages dist
         echo 面板更新完成！
 
-    - name: Update certificate
-      run: |
-        wget https://raw.githubusercontent.com/curl/curl/master/scripts/mk-ca-bundle.pl
-        chmod +x ./mk-ca-bundle.pl
-        ./mk-ca-bundle.pl
-        rm -f mk-ca-bundle.pl certdata.txt
-
-    - name: Update GeoIP
+    - name: Update Geodata
       run: |
         cd bin
-        source version
-        #curl -kfSL -o geodata/Country.mmdb https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/release/Country.mmdb
         curl -kfSL -o geodata/cn_mini.mmdb https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/Country.mmdb
         curl -kfSL -o geodata/china_ip_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv4-List/release/cn.txt
         curl -kfSL -o geodata/china_ipv6_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv6-List/release/cn6.txt
@@ -131,15 +75,49 @@ jobs:
         curl -kfSL -o geodata/srs_geoip_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cnip.srs
         curl -kfSL -o geodata/srs_geosite_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cn.srs
         curl -kfSL -o geodata/mrs_geosite_cn.mrs https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs
-        mv -f ../ca-bundle.crt ./fix/ca-certificates.crt
-        sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d')/" version #修改版本号
+        # 下载规则集
+        curl -kfSL -o mihomo-ruleset.zip https://github.com/DustinWin/ruleset_geodata/archive/refs/heads/mihomo-ruleset.zip
+        curl -kfSL -o sing-box-ruleset.zip https://github.com/DustinWin/ruleset_geodata/archive/refs/heads/sing-box-ruleset.zip
+        
+        # 解压
+        unzip -o mihomo-ruleset.zip > /dev/null
+        unzip -o sing-box-ruleset.zip > /dev/null
+        
+        # 处理 mihomo 规则
+        cd ruleset_geodata-mihomo-ruleset
+        find . -name '*.list' -delete
+        tar -zcvf mrs.tar.gz . > /dev/null
+        mv -f mrs.tar.gz ../geodata/
+        cd ..
+        
+        # 处理 sing-box 规则
+        cd ruleset_geodata-sing-box-ruleset
+        find . -name '*.json' -delete
+        tar -zcvf srs.tar.gz . > /dev/null
+        mv -f srs.tar.gz ../geodata/
+        cd ..
+        
+        # 删除目录
+        rm -rf ruleset_geodata-mihomo-ruleset
+        rm -rf ruleset_geodata-sing-box-ruleset
+         
+        sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d')/" version
         echo 数据库及根证书文件更新完成！
 
-    - name: Commit and push
+    - name: Rebuild update branch with no history
       run: |
-        git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
-        git add . && git commit -m "自动更新最新Dashboard、地址库、根证书" || exit 0
-        git push
+        # 彻底删除历史记录
+        rm -rf .git
+        # 重新初始化仓库
+        git init
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git config user.name  "github-actions[bot]"
+        git add .
+        git commit -m "自动更新最新Dashboard、Geodata数据库及根证书"
+        # 强制推送覆盖 update 分支
+        git branch -M update
+        git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+        git push -f origin update
 
     - name: Cleanup Workflow
       uses: Mattraks/delete-workflow-runs@main
