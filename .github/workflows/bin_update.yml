@@ -95,23 +95,38 @@ jobs:
         curl -kfSL -o mihomo-ruleset.zip https://github.com/DustinWin/ruleset_geodata/archive/refs/heads/mihomo-ruleset.zip
         curl -kfSL -o sing-box-ruleset.zip https://github.com/DustinWin/ruleset_geodata/archive/refs/heads/sing-box-ruleset.zip
         
+        ##########################################
         # 解压
         unzip -o mihomo-ruleset.zip > /dev/null
         unzip -o sing-box-ruleset.zip > /dev/null
-        
-        # 处理 mihomo 规则
-        cd ruleset_geodata-mihomo-ruleset
-        find . -name '*.list' -delete
-        tar -zcvf mrs.tar.gz . > /dev/null
-        mv -f mrs.tar.gz ../geodata/
-        cd ..
-        
-        # 处理 sing-box 规则
-        cd ruleset_geodata-sing-box-ruleset
-        find . -name '*.json' -delete
-        tar -zcvf srs.tar.gz . > /dev/null
-        mv -f srs.tar.gz ../geodata/
-        cd ..
+        ##########################################
+        # 处理 mihomo 规则 (mrs)
+        if [ -d ruleset_geodata-mihomo-ruleset ]; then
+            cd ruleset_geodata-mihomo-ruleset
+            # 删除不需要的 .list
+            find . -type f -name "*.list" -delete
+            # 输出文件放到上级目录，避免 tar 自己包含自己
+            tar -zcvf ../mrs.tar.gz . > /dev/null
+            cd ..
+        else
+            echo "错误：未找到 ruleset_geodata-mihomo-ruleset"
+        fi
+        ##########################################
+        # 处理 sing-box 规则 (srs)
+        if [ -d ruleset_geodata-sing-box-ruleset ]; then
+            cd ruleset_geodata-sing-box-ruleset
+            # 删除 .json
+            find . -type f -name "*.json" -delete
+            # 同样避免目录内生成 tar 导致 file-changed 错误
+            tar -zcvf ../srs.tar.gz . > /dev/null
+            cd ..
+        else
+            echo "错误：未找到 ruleset_geodata-sing-box-ruleset"
+        fi
+        ##########################################
+        # 移动到 geodata
+        mv -f mrs.tar.gz geodata/
+        mv -f srs.tar.gz geodata/
         
         # 删除目录
         rm -rf ruleset_geodata-mihomo-ruleset
