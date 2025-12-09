@@ -66,32 +66,32 @@ jobs:
             goos: linux
             goarch: amd64
             goamd64: v1
-          - name: linux-386
-            goos: linux
-            goarch: 386
-          - name: linux-arm64
-            goos: linux
-            goarch: arm64
-          - name: linux-armv5
-            goos: linux
-            goarch: arm
-            goarm: 5
-          - name: linux-armv7
-            goos: linux
-            goarch: arm
-            goarm: 7
-          - name: linux-mips-softfloat
-            goos: linux
-            goarch: mips
-            gomips: softfloat
-          - name: linux-mipsle-softfloat
-            goos: linux
-            goarch: mipsle
-            gomips: softfloat
-          - name: linux-mipsle-hardfloat
-            goos: linux
-            goarch: mipsle
-            gomips: hardfloat   
+          # - name: linux-386
+            # goos: linux
+            # goarch: 386
+          # - name: linux-arm64
+            # goos: linux
+            # goarch: arm64
+          # - name: linux-armv5
+            # goos: linux
+            # goarch: arm
+            # goarm: 5
+          # - name: linux-armv7
+            # goos: linux
+            # goarch: arm
+            # goarm: 7
+          # - name: linux-mips-softfloat
+            # goos: linux
+            # goarch: mips
+            # gomips: softfloat
+          # - name: linux-mipsle-softfloat
+            # goos: linux
+            # goarch: mipsle
+            # gomips: softfloat
+          # - name: linux-mipsle-hardfloat
+            # goos: linux
+            # goarch: mipsle
+            # gomips: hardfloat   
 
       fail-fast: false
     runs-on: ubuntu-latest
