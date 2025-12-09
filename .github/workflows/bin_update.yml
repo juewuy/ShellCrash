@@ -123,7 +123,7 @@ jobs:
       run: |
         cd bin
         source version
-        #curl -kfSL -o geodata/Country.mmdb https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/release/Country.mmdb
+        curl -kfSL -o geodata/Country.mmdb https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/release/Country.mmdb
         curl -kfSL -o geodata/cn_mini.mmdb https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/Country.mmdb
         curl -kfSL -o geodata/china_ip_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv4-List/release/cn.txt
         curl -kfSL -o geodata/china_ipv6_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv6-List/release/cn6.txt
