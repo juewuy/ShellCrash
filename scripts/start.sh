@@ -410,15 +410,15 @@ modify_yaml() { #修饰clash配置文件
 	}
 	#dns配置
 	[ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
-		[ "$skip_cert" = "已开启" ] && psdns_skip_cert='#skip-cert-verify'
+		default_nameserver='223.5.5.5' 
+		[ "$crashcore" = 'meta' ] && default_nameserver='https://223.5.5.5/dns-query' 
 		cat >"$TMPDIR"/dns.yaml <<EOF
 dns:
   enable: true
   listen: :$dns_port
   use-hosts: true
   ipv6: $dns_v6
-  default-nameserver: [ 223.5.5.5 ]
-  proxy-server-nameserver: [ https://223.5.5.5/dns-query$psdns_skip_cert ]
+  default-nameserver: [ $default_nameserver ]
   enhanced-mode: fake-ip
   fake-ip-range: 28.0.0.1/8
   fake-ip-range6: fc00::/16
@@ -2143,7 +2143,7 @@ webget)
 		[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
 		[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
 		[ -n "$7" ] && agent="--user-agent \"$7\""
-		if curl --version | grep -q '^curl 8.' ;then
+		if curl --version | grep -q '^curl 8.' && ckcmd base64;then
 			auth_b64=$(echo -n "$authentication" | base64)
 			result=$(curl $agent -w %{http_code} --connect-timeout 3 --proxy-header "Proxy-Authorization: Basic $auth_b64" $progress $redirect $certificate -o "$2" "$url")
 		else
