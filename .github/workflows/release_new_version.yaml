@@ -47,7 +47,7 @@ jobs:
         mkdir ShellCrash && pushd ShellCrash
           cp ../../scripts/* ./
           chmod +x *
-          cp ./geodata/Country.mmdb ./
+          cp ../../bin/geodata/Country.mmdb ./
           tar zcvf ../ShellCrash.tar.gz *
         popd && rm -fr ./ShellCrash
     - name: Commit and push
