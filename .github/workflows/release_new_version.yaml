@@ -42,14 +42,14 @@ jobs:
           chmod +x *
           tar zcvf ../clashfm.tar.gz *
         popd && rm -fr clashfm
-        # 打包 ShellClash.tar.gz
-        rm ./ShellClash.tar.gz
-        mkdir ShellClash && pushd ShellClash
+        # 打包 ShellCrash.tar.gz
+        rm ./ShellCrash.tar.gz
+        mkdir ShellCrash && pushd ShellCrash
           cp ../../scripts/* ./
           chmod +x *
           cp ../Country.mmdb ./
-          tar zcvf ../ShellClash.tar.gz *
-        popd && rm -fr ./ShellClash
+          tar zcvf ../ShellCrash.tar.gz *
+        popd && rm -fr ./ShellCrash
     - name: Commit and push
       if: ${{ github.event.inputs.release_type != '内测版' }}
       run: |
@@ -65,7 +65,7 @@ jobs:
       run: |
         mkdir artifacts
         cp ./bin/clashfm.tar.gz ./artifacts/
-        cp ./bin/ShellClash.tar.gz ./artifacts/
+        cp ./bin/ShellCrash.tar.gz ./artifacts/
         echo "artifact_name=${new_type}_${new_version}_$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
     - name: Upload Test Artifact
       uses: actions/upload-artifact@main
