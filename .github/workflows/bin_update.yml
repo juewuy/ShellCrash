@@ -31,38 +31,54 @@ jobs:
         ##########################################################
         mkdir -p bin/dashboard
         cd bin/dashboard
-        echo 下载meta魔改yacd面板
-        curl -kfSL -o meta_yacd.zip  https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip
-        echo 下载meta-xd面板
-        curl -kfSL -o meta_xd.zip  https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
-        echo 下载zashboard面板
-        curl -kfSL -o zashboard.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip
         
+        echo 下载 meta 魔改 yacd 面板
+        curl -kfSL -o meta_yacd.zip  https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip
+        
+        echo 下载 meta-xd 面板
+        curl -kfSL -o meta_xd.zip  https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
+        
+        echo 下载 zashboard 面板
+        curl -kfSL -o zashboard.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip
+        ########################################
+        # Yacd-meta
+        ########################################
         unzip -o meta_yacd.zip > /dev/null
         cd Yacd-meta-gh-pages
-        find -name '*.map' | xargs rm -rf
-        rm -rf report.html
-        tar -zcvf meta_yacd.tar.gz * > /dev/null
-        mv -f meta_yacd.tar.gz ../
+        find . -name '*.map' -delete
+        rm -f report.html
+        # 输出文件放上级目录，避免 tar 读到自己
+        tar -zcvf ../meta_yacd.tar.gz . > /dev/null
         cd ..
-        
+        ########################################
+        # metacubexd
+        ########################################
         unzip -o meta_xd.zip > /dev/null
         cd metacubexd-gh-pages
-        find -name '*.ttf' | xargs rm -rf
-        tar -zcvf meta_xd.tar.gz * > /dev/null
-        mv -f meta_xd.tar.gz ../
+        find . -name '*.ttf' -delete
+        tar -zcvf ../meta_xd.tar.gz . > /dev/null
         cd ..
-        
+        ########################################
+        # zashboard
+        ########################################
         unzip -o zashboard.zip > /dev/null
-        cd dist
+        # 自动识别 dist 目录位置
+        if [ -d dist ]; then
+            cd dist
+        elif [ -d dist-cdn-fonts/dist ]; then
+            cd dist-cdn-fonts/dist
+        else
+            echo "错误：未找到 dist 目录"
+            exit 1
+        fi
         echo 'board.zash.run.place' > CNAME
-        tar -zcvf zashboard.tar.gz * > /dev/null
-        mv -f zashboard.tar.gz ../
-        cd ..
-        
+        tar -zcvf ../../zashboard.tar.gz . > /dev/null
+        cd ../..
+        ########################################
+        # 清理
+        ########################################
         rm -rf meta_yacd.zip meta_xd.zip zashboard.zip
-        rm -rf clash-dashboard-gh-pages yacd-gh-pages Razord-meta-gh-pages
-        rm -rf Yacd-meta-gh-pages metacubexd-gh-pages dist
+        rm -rf Yacd-meta-gh-pages metacubexd-gh-pages dist dist-cdn-fonts
         echo 面板更新完成！
 
     - name: Update Geodata
