@@ -49,7 +49,7 @@ error_down() {
 }
 #安装及初始化
 gettar() {
-	webget /tmp/ShellCrash.tar.gz "$url/bin/ShellCrash.tar.gz"
+	webget /tmp/ShellCrash.tar.gz "$url/ShellCrash.tar.gz"
 	if [ "$result" != "200" ]; then
 		$echo "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -259,8 +259,8 @@ if [ -n "$(echo $url | grep master)" ]; then
 	setversion
 fi
 #获取版本信息
-webget /tmp/version "$url/bin/version" echooff
-[ "$result" = "200" ] && versionsh=$(cat /tmp/version | grep "versionsh" | awk -F "=" '{print $2}')
+webget /tmp/version "$url/version" echooff
+[ "$result" = "200" ] && versionsh=$(cat /tmp/version)
 rm -rf /tmp/version
 
 #输出

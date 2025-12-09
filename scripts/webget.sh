@@ -1185,7 +1185,7 @@ set_core_config(){ #配置文件功能
 }
 #下载更新相关
 getscripts(){ #更新脚本文件
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/update.tar.gz bin/clashfm.tar.gz
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/ShellCrash.tar.gz ShellCrash.tar.gz
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -1195,7 +1195,7 @@ getscripts(){ #更新脚本文件
 		echo -----------------------------------------------
 		echo 开始解压文件！
 		mkdir -p ${CRASHDIR} > /dev/null
-		tar -zxf "${TMPDIR}/update.tar.gz" ${tar_para} -C ${CRASHDIR}/
+		tar -zxf "${TMPDIR}/ShellCrash.tar.gz" ${tar_para} -C ${CRASHDIR}/
 		if [ $? -ne 0 ];then
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
@@ -1204,7 +1204,7 @@ getscripts(){ #更新脚本文件
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi
 	fi
-	rm -rf ${TMPDIR}/update.tar.gz
+	rm -rf ${TMPDIR}/ShellCrash.tar.gz
 	exit
 }
 setscripts(){

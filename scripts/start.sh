@@ -210,7 +210,7 @@ get_bin() { #专用于项目内部文件的下载
 	. "$CRASHDIR"/configs/ShellCrash.cfg >/dev/null
 	[ -z "$update_url" ] && update_url=https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master
 	if [ -n "$url_id" ]; then
-		echo "$2" | grep -q '^/bin' && release_type=update #/bin文件改为在update分支下载
+		echo "$2" | grep -q '^bin/' && release_type=update #/bin文件改为在update分支下载
 		[ -z "$release_type" ] && release_type=master
 		if [ "$url_id" = 101 -o "$url_id" = 104 ]; then
 			url="$(grep "$url_id" "$CRASHDIR"/configs/servers.list | awk '{print $3}')@$release_type/$2" #jsdelivr特殊处理
