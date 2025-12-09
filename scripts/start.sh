@@ -609,7 +609,7 @@ EOF
 		sed -i "/#自定义/d" "$TMPDIR"/config.yaml
 	fi
 	#建立软连接
-	[ ""$TMPDIR"" = ""$BINDIR"" ] || ln -sf "$TMPDIR"/config.yaml "$BINDIR"/config.yaml
+	[ ""$TMPDIR"" = ""$BINDIR"" ] || ln -sf "$TMPDIR"/config.yaml "$BINDIR"/config.yaml 2>/dev/null || cp -f "$TMPDIR"/config.yaml "$BINDIR"/config.yaml
 	#清理缓存
 	for char in $yaml_char set set_bak dns hosts; do
 		rm -f "$TMPDIR"/${char}.yaml
