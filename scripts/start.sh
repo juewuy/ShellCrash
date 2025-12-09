@@ -31,7 +31,7 @@ getconfig() { #读取配置及全局变量
 	[ -z "$dns_port" ] && dns_port=1053
 	[ -z "$fwmark" ] && fwmark=$redir_port
 	routing_mark=$((fwmark + 2))
-	[ -z "$table" ] && table=100
+	[ -z "$table" ] && table=166
 	[ -z "$sniffer" ] && sniffer=已开启
 	#是否代理常用端口
 	[ -z "$common_ports" ] && common_ports=已开启
@@ -547,6 +547,10 @@ EOF
 			IFS="$oldIFS"
 		done
 	}
+	#anti-ad广告过滤
+  if grep -q 'anti-ad' "$CRASHDIR"/yamls/others.yaml 2>/dev/null ; then
+    line_num=$(grep -n -m 1 -v "全球直连" "$TMPDIR"/rules.yaml | cut -d: -f1) && [ -n "$line_num" ] && sed -i "${line_num}i\  - RULE-SET,anti-ad,⛔️ 广告拦截" "$TMPDIR"/rules.yaml
+  fi
 	#节点绕过功能支持
 	sed -i "/#节点绕过/d" "$TMPDIR"/rules.yaml
 	[ "$proxies_bypass" = "已启用" ] && {
@@ -1723,7 +1727,7 @@ makehtml() { #生成面板跳转文件
     <div style="text-align: center; margin-top: 50px;">
         <h1>您还未安装本地面板</h1>
 		<h3>请在脚本更新功能中(9-4)安装<br>或者使用在线面板：</h3>
-		<h4>请复制当前地址/ui(不包括)前面的内容，填入url位置即可连接</h3>
+		<h4>请复制当前地址/ui(不包括)前面的内容，填入url位置即可连接</h4>
         <a href="https://metacubexd.pages.dev" style="font-size: 24px;">Meta XD面板(推荐)<br></a>
         <a href="https://board.zash.run.place" style="font-size: 24px;">zashboard面板<br></a>
         <a href="https://yacd.metacubex.one" style="font-size: 24px;">Meta YACD面板(推荐)<br></a>
@@ -2130,12 +2134,44 @@ webget)
 	#参数【$6】代表验证证书，【$7】使用自定义UA
 	[ -n "$7" ] && agent="--user-agent \"$7\""
 	if curl --version >/dev/null 2>&1; then
-		[ "$4" = "echooff" ] && progress='-s' || progress='-#'
-		[ "$5" = "rediroff" ] && redirect='' || redirect='-L'
-		[ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
-		[ -n "$7" ] && agent="--user-agent \"$7\""
-		result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
-		[ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
+      [ "$4" = "echooff" ] && progress='-s' || progress='-#'
+      [ "$5" = "rediroff" ] && redirect='' || redirect='-L'
+      [ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
+      [ -n "$7" ] && agent="--user-agent \"$7\""
+      # 检查curl是否支持--compressed参数
+      check_compressed_support() {
+          curl --compressed --version >/dev/null 2>&1
+          return $?
+      }
+
+      # 设置压缩参数
+      if check_compressed_support; then
+          # 支持 --compressed
+          compressed_cmd='--compressed'
+          echo "curl支持--compressed参数" >/dev/null 2>&1
+      else
+          # 不支持 --compressed，使用头部方式
+          compressed_cmd='-H'
+          compressed_header='Accept-Encoding: gzip, deflate'
+          echo "curl不支持--compressed参数，使用Accept-Encoding头" >/dev/null 2>&1
+      fi
+
+      # 第一次尝试下载
+      if [ "$compressed_cmd" = "--compressed" ]; then
+          result=$(curl $agent -w %{http_code} $compressed_cmd --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
+      else
+          result=$(curl $agent -w %{http_code} $compressed_cmd "$compressed_header" --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
+      fi
+
+      # 如果第一次失败，取消代理后重试
+      if [ "$result" != "200" ]; then
+          export all_proxy=""
+          if [ "$compressed_cmd" = "--compressed" ]; then
+              result=$(curl $agent -w %{http_code} $compressed_cmd --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
+          else
+              result=$(curl $agent -w %{http_code} $compressed_cmd "$compressed_header" --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
+          fi
+      fi
 	else
 		if wget --version >/dev/null 2>&1; then
 			[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'

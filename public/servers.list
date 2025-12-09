@@ -1,7 +1,7 @@
 # ID&类型 说明 地址 其他说明 (类型：100-三版全通源;200-单一源;300-基础sub;400-meta_sub;500-规则地址)
 
-101 Jsdelivr_CDN源 https://cdn.jsdelivr.net/gh/juewuy/ShellCrash
-102 Github直连源(请注意网络环境) https://raw.githubusercontent.com/juewuy/ShellCrash
+101 Jsdelivr_CDN源 https://fastly.jsdelivr.net/gh/slipdaly/ShellCrash
+102 Github直连源(请注意网络环境) https://raw.githubusercontent.com/slipdaly/ShellCrash
 103 ShellClash自建源(请勿滥用!) https://gh.jwsc.eu.org
 104 Cloudflare_CDN源(推荐) https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash
 
@@ -11,8 +11,9 @@
 401 作者提供,支持vless|hy2 https://sub.jwsc.eu.org ua
 402 肥羊提供(有广告),支持vless|hy2 https://api.v1.mk diyua
 403 肥羊提供(有广告),支持vless|hy2 https://url.v1.mk diyua
+406 CM负载均衡,支持vless|hy2 https://subapi.cmliussss.net
 
-501 Acl4SSR全能优化版 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash.ini (推荐)
+501 Acl4SSR全能优化版 https://github.com/slipdaly/ShellCrash/raw/dev/rules/ShellClash_s.ini (推荐)
 502 Acl4SSR精简优化版 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Mini.ini (推荐)
 503 Acl4SSR全能优化+去广告增强 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Block.ini
 504 Acl4SSR极简版 https://github.com/juewuy/ShellCrash/raw/dev/rules/ShellClash_Nano.ini (适合自建节点)
