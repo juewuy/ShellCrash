@@ -1,4 +1,4 @@
-name: Build Core test
+name: Build meta Core for ShellCrash
 
 on:
   workflow_dispatch:
@@ -55,16 +55,43 @@ jobs:
             echo tags='' >> $GITHUB_OUTPUT
           else
             echo tags=$TAGS >> $GITHUB_OUTPUT
-          fi      
+          fi    
 
   cross:
     strategy:
       matrix:
         include:
           # linux
+          - name: linux-amd64
+            goos: linux
+            goarch: amd64
+            goamd64: v1
+          - name: linux-386
+            goos: linux
+            goarch: 386
           - name: linux-arm64
             goos: linux
             goarch: arm64
+          - name: linux-armv5
+            goos: linux
+            goarch: arm
+            goarm: 5
+          - name: linux-armv7
+            goos: linux
+            goarch: arm
+            goarm: 7
+          - name: linux-mips-softfloat
+            goos: linux
+            goarch: mips
+            gomips: softfloat
+          - name: linux-mipsle-softfloat
+            goos: linux
+            goarch: mipsle
+            gomips: softfloat
+          - name: linux-mipsle-hardfloat
+            goos: linux
+            goarch: mipsle
+            gomips: hardfloat   
 
       fail-fast: false
     runs-on: ubuntu-latest
@@ -113,7 +140,6 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install ca-certificates
           sudo update-ca-certificates
-          ls -l
           cp -f /etc/ssl/certs/ca-certificates.crt component/ca/ca-certificates.crt
           
       - name: build core
@@ -137,10 +163,11 @@ jobs:
       PUSHDIR: ${{ github.event.inputs.tag4 }}
       VERSION: ${{needs.meta.outputs.version}}
     steps:
-      - name: Checkout ShellCrash
+      - name: Checkout bin branch (create if missing)
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
+          ref: update
           
       - name: Download file from workspace
         uses: actions/download-artifact@v4
