@@ -422,6 +422,7 @@ EOF
 	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
+		mkdir -p ${CRASHDIR}/yamls
 		mv -f ${TMPDIR}/config.yaml ${CRASHDIR}/yamls/config.yaml
 		read -p "是否立即启动/重启服务？(1/0) > " res
 		[ "$res" = 1 ] && {
@@ -523,6 +524,7 @@ EOF
 	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
+		mkdir -p ${CRASHDIR}/jsons
 		mv -f ${TMPDIR}/config.json ${CRASHDIR}/jsons/config.json
 		rm -rf ${TMPDIR}/providers
 		read -p "是否立即启动/重启服务？(1/0) > " res
