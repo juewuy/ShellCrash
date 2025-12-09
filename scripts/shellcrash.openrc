@@ -1,7 +1,7 @@
 #!/sbin/openrc-run
 
 # 服务名
-name="ShellCrash"
+name="shellcrash"
 description="Custom proxy service for ShellCrash"
 #获取目录
 CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
@@ -40,13 +40,13 @@ start() {
         return
     fi
 
-    # 启动主程序（后台进程）
-    start-stop-daemon --start \
-        --background \
-        --make-pidfile \
+    # 启动主程序（自动守护 + 自动重启）
+    supervise-daemon "${name}" \
         --pidfile "${pidfile}" \
         --user "${runuser}" \
-        --exec ${COMMAND%% *} -- ${COMMAND#* }
+        --respawn-max 0 \
+        --respawn-delay 3 \
+        --start ${COMMAND%% *} -- ${COMMAND#* }
 
     ret=$?
     eend $ret
