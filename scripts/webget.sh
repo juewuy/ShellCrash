@@ -1433,12 +1433,11 @@ setcustcore(){ #自定义内核
 	}
 	echo -----------------------------------------------
 	echo -e "\033[33m请选择需要使用的核心！\033[0m"
-	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本内核"
-	echo -e "2 \033[36mMetaCubeX/mihomo\033[32m@alpha\033[0m版本内核"
-	echo -e "4 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本内核"
-	echo -e "5 \033[36mreF1nd/sing-box\033[32m@dev\033[0m版本内核(with_gvisor,with_wireguard)"
-	echo -e "6 Clash基础内核(已停止维护)"
-	echo -e "7 Premium-2023.08.17内核(已停止维护)"
+	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核"
+	echo -e "2 \033[36mMetaCubeX/mihomo\033[32m@alpha\033[0m版本官方内核"
+	echo -e "3 \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)"
+	echo -e "4 \033[36mreF1nd/sing-box\033[32m@dev\033[0m版本内核(完整编译)"
+	echo -e "5 Premium-2023.08.17内核(已停止维护)"
 	echo -e "a \033[33m自定义内核链接 \033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -1455,25 +1454,19 @@ setcustcore(){ #自定义内核
 		crashcore=meta
 		checkcustcore
 	;;
-	4)
-		project=SagerNet/sing-box
-		api_tag=latest
-		crashcore=singbox
+	3)
+		project=vernesong/mihomo
+		api_tag=Prerelease-Alpha
+		crashcore=meta
 		checkcustcore
 	;;
-	5)
+	4)
 		project=juewuy/ShellCrash
 		api_tag=singbox_core_reF1nd
 		crashcore=singboxr
 		checkcustcore
 	;;
-	6)
-		project=juewuy/ShellCrash
-		api_tag=Clash_Dreamacro
-		crashcore=clash
-		checkcustcore
-	;;
-	7)
+	5)
 		project=juewuy/ShellCrash
 		api_tag=clash.premium.latest
 		crashcore=clashpre
@@ -1505,14 +1498,17 @@ setcore(){ #内核选择菜单
 	echo -e "\033[36m如需本地上传，请将二进制文件上传至 /tmp 目录后重新运行crash命令\033[0m"
 	echo -----------------------------------------------
 	echo -e "1 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
-	echo -e " >>\033[32m$meta_v   	\033[33m占用略高，GeoSite可能不兼容华硕固件\033[0m"
+	echo -e " >>\033[32m$meta_v   		\033[33m占用略高\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
 	echo -e "2 \033[43;30m SingBoxR \033[0m：	\033[32m支持全面\033[0m"
 	echo -e " >>\033[32m$singboxr_v  	\033[33m使用reF1nd增强分支\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-boxr.dustinwin.us.kg\033[0m"
-	#echo -e "4 \033[43;30m SingBoxP \033[0m：	\033[32m支持ssr、providers、dns并发……\033[0m"
-	#echo -e " >>\033[32m$singboxp_v  \033[33mPuerNya分支版本\033[0m"
-	#echo -e "  说明文档：	\033[36;4mhttps://sing-boxp.dustinwin.top\033[0m"
+	echo -e "3 \033[43;30m SingBox \033[0m：	\033[32m占用较低\033[0m"
+	echo -e " >>\033[32m$singbox_v  		\033[33m不支持providers\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
+	echo -e "4 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
+	echo -e " >>\033[32m$clash_v  		\033[33m不安全,已停止维护\033[0m"
+	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	echo -----------------------------------------------
 	echo -e "5 \033[36m自定义内核\033[0m	$custcore"
 	echo -e "6 \033[32m更新当前内核\033[0m"
@@ -1538,8 +1534,13 @@ setcore(){ #内核选择菜单
 		custcorelink=''
 		getcore
 	;;
+	3)
+		crashcore=singbox
+		custcorelink=''
+		getcore
+	;;
 	4)
-		crashcore=singboxp
+		crashcore=clash
 		custcorelink=''
 		getcore
 	;;
