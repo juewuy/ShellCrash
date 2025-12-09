@@ -1,6 +1,6 @@
 ShellCrash-ruleset极简规则 ShellCrash_RS_Nano.yaml
 DustinWin-ruleset轻量规则 DustinWin_RS_Light.yaml
-DustinWin-ruleset全分组规则 DustinWin_RS_Full.yaml
-DustinWin-ruleset无广告全分组规则 DustinWin_RS_Full_NoAds.yaml
-DustinWin-ruleset精简规则 DustinWin_RS_Lite.yaml
-DustinWin-ruleset无广告精简规则 DustinWin_RS_Lite_NoAds.yaml
+DustinWin-ruleset标准规则 DustinWin_RS_Lite_NoAds.yaml
+DustinWin-ruleset标准规则+去广告 DustinWin_RS_Lite.yaml
+DustinWin-ruleset全分组规则 DustinWin_RS_Full_NoAds.yaml
+DustinWin-ruleset全分组规则+去广告 DustinWin_RS_Full.yaml

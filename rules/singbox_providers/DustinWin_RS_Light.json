@@ -3,12 +3,11 @@
   "outbounds": [
     { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", "🖐️ 手动选择", "DIRECT", {providers_tags} ] },
     { "tag": "🖐️ 手动选择", "type": "selector", "use_all_providers": true },
-    { "tag": "🀄️ 直连 IP", "type": "selector", "outbounds": [ "🎯 全球直连", "🚀 节点选择" ] },
+    { "tag": "🎯 全球直连", "type": "selector", "outbounds": [ "DIRECT", "🚀 节点选择" ] },
     { "tag": "🧱 代理域名", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 全球直连" ] },
     { "tag": "📲 电报消息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
     { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags}, "🎯 全球直连" ] },
-    { "tag": "🎯 全球直连", "type": "selector", "outbounds": [ "DIRECT" ] },
-    { "tag": "GLOBAL", "type": "selector", "outbounds": [ "DIRECT", "🚀 节点选择" ] },
+    { "tag": "GLOBAL", "type": "selector", "outbounds": [ "🚀 节点选择", "DIRECT" ] },
     { "tag": "👑 高级节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" },
     { "tag": "📉 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量" },
     { "tag": "🇭🇰 香港节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
@@ -22,13 +21,21 @@
       { "rule_set": [ "private" ], "outbound": "🎯 全球直连" },
       { "rule_set": [ "tld-proxy" ], "outbound": "🧱 代理域名" },
       { "rule_set": [ "proxy" ], "outbound": "🧱 代理域名" },
+	  { "rule_set": [ "cn" ], "outbound": "🎯 全球直连" },
       { "rule_set": [ "privateip" ], "outbound": "🎯 全球直连" },
       { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息" },
 	  
 	  { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4"},
-      { "rule_set": [ "cnip" ], "outbound": "🀄️ 直连 IP" }
+      { "rule_set": [ "cnip" ], "outbound": "🎯 全球直连" }
     ],
     "rule_set": [
+      {
+        "tag": "cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs"
+      },
       {
         "tag": "private",
         "type": "remote",

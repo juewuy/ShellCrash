@@ -1,6 +1,6 @@
 ShellCrash-ruleset极简规则 ShellCrash_RS_Nano.json
 DustinWin-ruleset轻量规则 DustinWin_RS_Light.json
-DustinWin-ruleset全分组规则 DustinWin_RS_Full.json
-DustinWin-ruleset无广告全分组规则 DustinWin_RS_Full_NoAds.json
-DustinWin-ruleset精简规则 DustinWin_RS_Lite.json
-DustinWin-ruleset无广告精简规则 DustinWin_RS_Lite_NoAds.json
+DustinWin-ruleset标准规则 DustinWin_RS_Lite_NoAds.json
+DustinWin-ruleset标准规则+去广告 DustinWin_RS_Lite.json
+DustinWin-ruleset全分组规则 DustinWin_RS_Full_NoAds.json
+DustinWin-ruleset全分组规则+去广告 DustinWin_RS_Full.json

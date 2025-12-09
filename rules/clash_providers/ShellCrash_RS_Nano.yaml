@@ -3,6 +3,13 @@ proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all-providers: true}
   - {name: 🎯 全球直连, type: select, proxies: [DIRECT, 🚀 节点选择]}
 rule-providers:
+  cn:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./ruleset/cn.mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs"
+    interval: 86400  
   privateip:
     type: http
     behavior: ipcidr
@@ -19,5 +26,6 @@ rule-providers:
     interval: 86400
 rules:
   - RULE-SET,privateip,🎯 全球直连,no-resolve
+  - RULE-SET,cn,🎯 全球直连
   - RULE-SET,cnip,🎯 全球直连
   - MATCH,🚀 节点选择
