@@ -9,8 +9,8 @@ CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 YAMLSDIR=${CRASHDIR}/yamls
 JSONSDIR=${CRASHDIR}/jsons
 #加载执行目录，失败则初始化
-source ${CRASHDIR}/configs/command.env 2>/dev/null
-[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && source ${CRASHDIR}/init.sh >/dev/null 2>&1
+. ${CRASHDIR}/configs/command.env 2>/dev/null
+[ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && . ${CRASHDIR}/init.sh >/dev/null 2>&1
 [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
 [ -n "$(tar --help 2>&1 | grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 
@@ -29,9 +29,9 @@ ckstatus() {
 	#检查/读取脚本配置文件
 	if [ -f $CFG_PATH ]; then
 		[ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' $CFG_PATH >$CFG_PATH #检查重复行并去除
-		source $CFG_PATH 2>/dev/null
+		. $CFG_PATH 2>/dev/null
 	else
-		source ${CRASHDIR}/init.sh >/dev/null 2>&1
+		. ${CRASHDIR}/init.sh >/dev/null 2>&1
 	fi
 	versionsh=$(cat ${CRASHDIR}/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
@@ -112,7 +112,7 @@ ckstatus() {
 	#检查新手引导
 	if [ -z "$userguide" ]; then
 		setconfig userguide 1
-		source ${CRASHDIR}/webget.sh && userguide
+		. ${CRASHDIR}/webget.sh && userguide
 	fi
 	#检查执行权限
 	[ ! -x ${CRASHDIR}/start.sh ] && chmod +x ${CRASHDIR}/start.sh
@@ -126,7 +126,7 @@ ckstatus() {
 			core_v=$(/tmp/$file -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 			[ -z "$core_v" ] && core_v=$(/tmp/$file version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')
 			if [ -n "$core_v" ]; then
-				source ${CRASHDIR}/webget.sh && setcoretype &&
+				. ${CRASHDIR}/webget.sh && setcoretype &&
 					mv -f /tmp/$file ${TMPDIR}/CrashCore &&
 					tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore &&
 					echo -e "\033[32m内核加载完成！\033[0m " &&
@@ -193,7 +193,7 @@ start_core() {
 		echo -e "\033[33m没有找到${crashcore}配置文件，尝试生成providers配置文件！\033[0m"
 		[ "$crashcore" = singboxr ] && coretype=singbox
 		[ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
-		source ${CRASHDIR}/webget.sh && gen_${coretype}_providers
+		. ${CRASHDIR}/webget.sh && gen_${coretype}_providers
 	elif [ -s $core_config -o -n "$Url" -o -n "$Https" ]; then
 		${CRASHDIR}/start.sh start
 		#设置循环检测以判定服务启动是否成功
@@ -210,7 +210,7 @@ start_core() {
 		[ -n "$test" -o -n "$(pidof CrashCore)" ] && startover
 	else
 		echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"
-		source ${CRASHDIR}/webget.sh && set_core_config
+		. ${CRASHDIR}/webget.sh && set_core_config
 	fi
 }
 start_service() {
@@ -546,7 +546,7 @@ log_pusher() { #日志菜单
 	esac
 }
 setport() { #端口设置
-	source $CFG_PATH >/dev/null
+	. $CFG_PATH >/dev/null
 	[ -z "$secret" ] && secret=未设置
 	[ -z "$table" ] && table=100
 	[ -z "$authentication" ] && auth=未设置 || auth=******
@@ -968,7 +968,7 @@ checkport() { #自动检查端口冲突
 			echo -e "\033[0m-----------------------------------------------"
 			echo -e "\033[36m请修改默认端口配置！\033[0m"
 			setport
-			source $CFG_PATH >/dev/null
+			. $CFG_PATH >/dev/null
 			checkport
 		fi
 	done
@@ -1883,7 +1883,7 @@ advanced_set() { #进阶设置
 			fi
 		elif [ "$num" = 3 ]; then
 			mv -f $CFG_PATH $CFG_PATH.bak
-			source ${CRASHDIR}/init.sh >/dev/null
+			. ${CRASHDIR}/init.sh >/dev/null
 			echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
 		fi
 		echo -e "\033[33m请重新启动脚本！\033[0m"
@@ -2068,10 +2068,10 @@ tools() {
 		i=
 
 	elif [ "$num" = 1 ]; then
-		source ${CRASHDIR}/webget.sh && testcommand
+		. ${CRASHDIR}/webget.sh && testcommand
 
 	elif [ "$num" = 2 ]; then
-		source ${CRASHDIR}/webget.sh && userguide
+		. ${CRASHDIR}/webget.sh && userguide
 
 	elif [ "$num" = 3 ]; then
 		log_pusher
@@ -2203,11 +2203,11 @@ main_menu() {
 		main_menu
 
 	elif [ "$num" = 5 ]; then
-		source ${CRASHDIR}/task/task.sh && task_menu
+		. ${CRASHDIR}/task/task.sh && task_menu
 		main_menu
 
 	elif [ "$num" = 6 ]; then
-		source ${CRASHDIR}/webget.sh && set_core_config
+		. ${CRASHDIR}/webget.sh && set_core_config
 		main_menu
 
 	elif [ "$num" = 7 ]; then
@@ -2225,7 +2225,7 @@ main_menu() {
 
 	elif [ "$num" = 9 ]; then
 		checkcfg=$(cat $CFG_PATH)
-		source ${CRASHDIR}/webget.sh && update
+		. ${CRASHDIR}/webget.sh && update
 		if [ -n "$PID" ]; then
 			checkcfg_new=$(cat $CFG_PATH)
 			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
@@ -2244,7 +2244,7 @@ main_menu() {
 		cd $(dirname $0)
 		pwd
 	)
-	source ${CRASHDIR}/init.sh
+	. ${CRASHDIR}/init.sh
 	sleep 1
 	echo 请重启SSH窗口以完成初始化！
 	exit
@@ -2280,7 +2280,7 @@ case "$1" in
 	${CRASHDIR}/start.sh $2 $3 $4 $5 $6
 	;;
 -i)
-	source ${CRASHDIR}/init.sh
+	. ${CRASHDIR}/init.sh
 	;;
 -st)
 	shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash

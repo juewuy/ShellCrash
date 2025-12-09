@@ -210,6 +210,7 @@ get_bin() { #专用于项目内部文件的下载
 	. "$CRASHDIR"/configs/ShellCrash.cfg >/dev/null
 	[ -z "$update_url" ] && update_url=https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master
 	if [ -n "$url_id" ]; then
+		echo "$2" | grep -q '^/bin' && release_type=update #/bin文件改为在update分支下载
 		[ -z "$release_type" ] && release_type=master
 		if [ "$url_id" = 101 -o "$url_id" = 104 ]; then
 			url="$(grep "$url_id" "$CRASHDIR"/configs/servers.list | awk '{print $3}')@$release_type/$2" #jsdelivr特殊处理
@@ -1032,7 +1033,7 @@ start_ipt_route() { #iptables-route通用工具
 	[ "$3" = 'PREROUTING' ] && [ "$macfilter_type" != "白名单" ] && {
 		[ -s "$CRASHDIR"/configs/mac ] &&
 			for mac in $(cat "$CRASHDIR"/configs/mac); do
-				$1 $w -t $2 -A $4 -m mac --mac-source $mac -j RETURN
+				$1 $w -t $2 -A $4 -m mac --mac-. $mac -j RETURN
 			done
 		[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] &&
 			for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
@@ -1044,7 +1045,7 @@ start_ipt_route() { #iptables-route通用工具
 		if [ "$3" = 'PREROUTING' ] && [ "$4" != 'shellcrash_vm' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat $CRASHDIR/configs/mac $CRASHDIR/configs/ip_filter 2>/dev/null)" ]; then
 			[ -s "$CRASHDIR"/configs/mac ] &&
 				for mac in $(cat "$CRASHDIR"/configs/mac); do
-					$1 $w -t $2 -A $4 -p $5 -m mac --mac-source $mac -j $JUMP
+					$1 $w -t $2 -A $4 -p $5 -m mac --mac-. $mac -j $JUMP
 				done
 			[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] &&
 				for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
@@ -1090,7 +1091,7 @@ start_ipt_dns() { #iptables-dns通用工具
 	[ "$2" = 'PREROUTING' ] && [ "$macfilter_type" != "白名单" ] && {
 		[ -s "$CRASHDIR"/configs/mac ] &&
 			for mac in $(cat "$CRASHDIR"/configs/mac); do
-				$1 $w -t nat -A $3 -m mac --mac-source $mac -j RETURN
+				$1 $w -t nat -A $3 -m mac --mac-. $mac -j RETURN
 			done
 		[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] &&
 			for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
@@ -1100,8 +1101,8 @@ start_ipt_dns() { #iptables-dns通用工具
 	if [ "$2" = 'PREROUTING' ] && [ "$3" != 'shellcrash_vm_dns' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat $CRASHDIR/configs/mac $CRASHDIR/configs/ip_filter 2>/dev/null)" ]; then
 		[ -s "$CRASHDIR"/configs/mac ] &&
 			for mac in $(cat "$CRASHDIR"/configs/mac); do
-				$1 $w -t nat -A $3 -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
-				$1 $w -t nat -A $3 -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
+				$1 $w -t nat -A $3 -p tcp -m mac --mac-. $mac -j REDIRECT --to-ports $dns_port
+				$1 $w -t nat -A $3 -p udp -m mac --mac-. $mac -j REDIRECT --to-ports $dns_port
 			done
 		[ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] &&
 			for ip in $(cat "$CRASHDIR"/configs/ip_filter); do

@@ -6,7 +6,7 @@
 [ -z "$BINDIR" ] && BINDIR=${CRASHDIR}
 CFG_PATH=${CRASHDIR}/configs/ShellCrash.cfg
 TMPDIR=/tmp/ShellCrash && [ ! -f ${TMPDIR} ] && mkdir -p ${TMPDIR}
-source $CFG_PATH >/dev/null 2>&1
+. $CFG_PATH >/dev/null 2>&1
 [ -n "$(tar --help 2>&1|grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 
 setconfig(){
@@ -21,7 +21,7 @@ ckcmd(){ #检查命令是否存在
 #任务命令
 check_update(){ #检查更新工具
 	${CRASHDIR}/start.sh get_bin ${TMPDIR}/crashversion "bin/version" echooff
-	[ "$?" = "0" ] && source ${TMPDIR}/crashversion 2>/dev/null	
+	[ "$?" = "0" ] && . ${TMPDIR}/crashversion 2>/dev/null	
 	rm -rf ${TMPDIR}/crashversion
 }
 update_core(){ #自动更新内核
@@ -109,7 +109,7 @@ update_scripts(){ #自动更新脚本
 				${CRASHDIR}/start.sh start
 				return 1
 			else
-				source ${CRASHDIR}/init.sh >/dev/null
+				. ${CRASHDIR}/init.sh >/dev/null
 				${CRASHDIR}/start.sh start
 				return 0
 			fi		

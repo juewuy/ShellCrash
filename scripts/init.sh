@@ -249,7 +249,7 @@ if [ -n "$profile" ]; then
 	echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >>$profile #设置快捷命令环境变量
 	sed -i '/export CRASHDIR=*/'d $profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile #设置路径环境变量
-	source $profile >/dev/null 2>&1 || echo 运行错误！请使用bash而不是dash运行安装命令！！！
+	. $profile >/dev/null 2>&1 || echo 运行错误！请使用bash而不是dash运行安装命令！！！
 	#适配zsh环境变量
 	zsh --version >/dev/null 2>&1 && [ -z "$(cat ~/.zshrc 2>/dev/null | grep CRASHDIR)" ] && {
 		sed -i '/alias crash=*/'d ~/.zshrc 2>/dev/null

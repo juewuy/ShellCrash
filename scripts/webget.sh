@@ -1097,7 +1097,7 @@ set_core_config(){ #配置文件功能
 		exit
 	;;
 	5)
-		source ${CRASHDIR}/task/task.sh && task_menu
+		. ${CRASHDIR}/task/task.sh && task_menu
 		set_core_config
 	;;
 	6)
@@ -1200,7 +1200,7 @@ getscripts(){ #更新脚本文件
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
 		else
-			source ${CRASHDIR}/init.sh >/dev/null
+			. ${CRASHDIR}/init.sh >/dev/null
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi
 	fi
@@ -1305,7 +1305,7 @@ switch_core(){ #clash与singbox内核切换
 	else
 		COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 	fi
-	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && source ${CRASHDIR}/configs/command.env
+	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && . ${CRASHDIR}/configs/command.env
 }
 getcore(){ #下载内核文件
 	[ -z "$crashcore" ] && crashcore=meta
@@ -1709,7 +1709,7 @@ setcustgeo(){ #下载自定义数据库文件
 	esac
 }
 setgeo(){ #数据库选择菜单
-	source $CFG_PATH > /dev/null
+	. $CFG_PATH > /dev/null
 	[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
 	echo -----------------------------------------------
 	echo -e "\033[36m请选择需要更新的Geo/CN数据库文件：\033[0m"
@@ -2136,10 +2136,13 @@ setserver(){
 }
 #检查更新
 checkupdate(){
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/version_new bin/version echooff
-	[ "$?" = "0" ] && version_new=$(cat ${TMPDIR}/version_new | grep -oE 'versionsh=.*' | awk -F'=' '{ print $2 }')
-	if [ -n "$version_new" ];then
-		source ${TMPDIR}/version_new 2>/dev/null
+	${CRASHDIR}/start.sh get_bin ${TMPDIR}/version_new version echooff
+	[ "$?" = "0" ] && {
+		version_new=$(cat ${TMPDIR}/version_new)
+		${CRASHDIR}/start.sh get_bin ${TMPDIR}/version_new bin/version echooff
+	}
+	if [ "$?" = "0" ];then
+		. ${TMPDIR}/version_new 2>/dev/null
 	else
 		echo -e "\033[31m检查更新失败！请尝试切换其他安装源！\033[0m"
 		setserver
@@ -2211,7 +2214,7 @@ update(){
 		setserver
 		update
 	elif [ "$num" = 8 ]; then
-		source ${CRASHDIR}/task/task.sh && task_add
+		. ${CRASHDIR}/task/task.sh && task_add
 		update
 
 	elif [ "$num" = 9 ]; then
@@ -2375,7 +2378,7 @@ userguide(){
 		fi
 	fi
 	#启用推荐的自动任务配置
-	source ${CRASHDIR}/task/task.sh && task_recom
+	. ${CRASHDIR}/task/task.sh && task_recom
 	#小米设备软固化
 	if [ "$systype" = "mi_snapshot" ];then
 		echo -----------------------------------------------
