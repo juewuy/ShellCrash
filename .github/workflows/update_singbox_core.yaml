@@ -183,10 +183,11 @@ jobs:
       VERSION: ${{needs.sing-box.outputs.version}}
     steps:
       - name: Checkout ShellCrash
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@v5
         with:
           repository: juewuy/ShellCrash
           fetch-depth: 1
+          ref: update
           
       - name: Download file from workspace
         uses: actions/download-artifact@v4
@@ -196,6 +197,7 @@ jobs:
       - name: Zip core by tar
         run: |      
           for arch in amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
+            [ ! -f ./tmp/linux-${arch}/sing-box ] && continue
             mv -f ./tmp/linux-${arch}/sing-box ./tmp/CrashCore
             chmod +x ./tmp/CrashCore
             tar --no-same-owner -zcvf ./tmp/singbox-linux-${arch}.tar.gz -C ./tmp CrashCore

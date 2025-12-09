@@ -164,9 +164,10 @@ jobs:
       VERSION: ${{needs.meta.outputs.version}}
     steps:
       - name: Checkout ShellCrash
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
+          ref: update
           
       - name: Download file from workspace
         uses: actions/download-artifact@v4
@@ -176,6 +177,7 @@ jobs:
       - name: Zip core by tar
         run: |      
           for arch in amd64 armv5 armv7 arm64 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
+            [ ! -f ./tmp/linux-${arch}/meta ] && continue
             mv -f ./tmp/linux-${arch}/meta ./tmp/CrashCore
             chmod +x ./tmp/CrashCore
             tar --no-same-owner -zcvf ./tmp/clash-linux-${arch}.tar.gz -C ./tmp CrashCore
