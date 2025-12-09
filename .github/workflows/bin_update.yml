@@ -28,58 +28,46 @@ jobs:
 
     - name: Update Dashboard
       run: |
-        ##########################################################
-        mkdir -p bin/dashboard
-        cd bin/dashboard
-        
-        echo 下载 meta 魔改 yacd 面板
-        curl -kfSL -o meta_yacd.zip  https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip
-        
-        echo 下载 meta-xd 面板
-        curl -kfSL -o meta_xd.zip  https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
-        
-        echo 下载 zashboard 面板
-        curl -kfSL -o zashboard.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip
+        DASH="$GITHUB_WORKSPACE/bin/dashboard"
+        TEMP="$DASH/.tmp"     # 临时目录
+        mkdir -p "$TEMP"
+        echo "下载面板..."
+        # 下载文件到临时目录
+        curl -kfSL -o "$TEMP/meta_yacd.zip"  https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip
+        curl -kfSL -o "$TEMP/meta_xd.zip"     https://github.com/MetaCubeX/metacubexd/archive/gh-pages.zip
+        curl -kfSL -o "$TEMP/zashboard.zip"   https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip
         ########################################
         # Yacd-meta
         ########################################
-        unzip -o meta_yacd.zip > /dev/null
-        cd Yacd-meta-gh-pages
-        find . -name '*.map' -delete
-        rm -f report.html
-        # 输出文件放上级目录，避免 tar 读到自己
-        tar -zcvf ../meta_yacd.tar.gz . > /dev/null
-        cd ..
+        unzip -o "$TEMP/meta_yacd.zip" -d "$TEMP/yacd" > /dev/null
+        find "$TEMP/yacd" -name "*.map" -delete
+        rm -f "$TEMP/yacd/report.html"
+        tar -zcvf "$DASH/meta_yacd.tar.gz" -C "$TEMP/yacd" . > /dev/null
         ########################################
         # metacubexd
         ########################################
-        unzip -o meta_xd.zip > /dev/null
-        cd metacubexd-gh-pages
-        find . -name '*.ttf' -delete
-        tar -zcvf ../meta_xd.tar.gz . > /dev/null
-        cd ..
+        unzip -o "$TEMP/meta_xd.zip" -d "$TEMP/xd" > /dev/null
+        find "$TEMP/xd" -name "*.ttf" -delete
+        tar -zcvf "$DASH/meta_xd.tar.gz" -C "$TEMP/xd" . > /dev/null
         ########################################
         # zashboard
         ########################################
-        unzip -o zashboard.zip > /dev/null
-        # 自动识别 dist 目录位置
-        if [ -d dist ]; then
-            cd dist
-        elif [ -d dist-cdn-fonts/dist ]; then
-            cd dist-cdn-fonts/dist
+        unzip -o "$TEMP/zashboard.zip" -d "$TEMP/zash" > /dev/null
+        if [ -d "$TEMP/zash/dist" ]; then
+            ZDIR="$TEMP/zash/dist"
+        elif [ -d "$TEMP/zash/dist-cdn-fonts/dist" ]; then
+            ZDIR="$TEMP/zash/dist-cdn-fonts/dist"
         else
-            echo "错误：未找到 dist 目录"
+            echo "未找到 dist 目录"
             exit 1
         fi
-        echo 'board.zash.run.place' > CNAME
-        tar -zcvf ../../zashboard.tar.gz . > /dev/null
-        cd ../..
+        echo 'board.zash.run.place' > "$ZDIR/CNAME"
+        tar -zcvf "$DASH/zashboard.tar.gz" -C "$ZDIR" . > /dev/null
         ########################################
-        # 清理
+        # 一步清理所有临时文件（核心）
         ########################################
-        rm -rf meta_yacd.zip meta_xd.zip zashboard.zip
-        rm -rf Yacd-meta-gh-pages metacubexd-gh-pages dist dist-cdn-fonts
-        echo 面板更新完成！
+        rm -rf "$TEMP"
+        echo "面板更新完成！"
 
     - name: Update Geodata
       run: |
@@ -131,6 +119,8 @@ jobs:
         # 删除目录
         rm -rf ruleset_geodata-mihomo-ruleset
         rm -rf ruleset_geodata-sing-box-ruleset
+        rm -rf mihomo-ruleset.zip
+        rm -rf sing-box-ruleset.zip
          
         sed -i "s/GeoIP_v=.*/GeoIP_v=$(date '+%Y%m%d')/" version
         echo 数据库及根证书文件更新完成！
