@@ -91,8 +91,9 @@ jobs:
         # 处理 mihomo 规则 (mrs)
         if [ -d ruleset_geodata-mihomo-ruleset ]; then
             cd ruleset_geodata-mihomo-ruleset
-            # 删除不需要的 .list
+            # 删除不需要的 .list和ads
             find . -type f -name "*.list" -delete
+            find . -type f -name "ads.mrs" -delete
             # 输出文件放到上级目录，避免 tar 自己包含自己
             tar -zcvf ../mrs.tar.gz . > /dev/null
             cd ..
@@ -103,8 +104,9 @@ jobs:
         # 处理 sing-box 规则 (srs)
         if [ -d ruleset_geodata-sing-box-ruleset ]; then
             cd ruleset_geodata-sing-box-ruleset
-            # 删除 .json
+            # 删除 .json和ads.srs
             find . -type f -name "*.json" -delete
+            find . -type f -name "ads.srs" -delete
             # 同样避免目录内生成 tar 导致 file-changed 错误
             tar -zcvf ../srs.tar.gz . > /dev/null
             cd ..
