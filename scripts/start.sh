@@ -1282,6 +1282,7 @@ start_nft_route() { #nftables-route通用工具
 	[ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
 	#添加新链
 	nft add chain inet shellcrash $1 { type $3 hook $2 priority $4 \; }
+	[ "$1" = 'prerouting_vm' ] && nft add rule inet shellcrash $1 ip saddr != {$HOST_IP} return #仅代理虚拟机流量
 	#过滤dns
 	nft add rule inet shellcrash $1 tcp dport 53 return
 	nft add rule inet shellcrash $1 udp dport 53 return

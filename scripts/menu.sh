@@ -1401,14 +1401,17 @@ set_firewall_area() { #防火墙模式设置
 		read -p "请输入对应数字 > " num
 		case $num in
 		1)
-			vm_redir=已开启
+			if [ -n "$vm_ipv4" ];then
+				vm_redir=已开启
+			else
+				echo -e "\033[33m请先运行容器再运行脚本或者手动设置网段\033[0m"
+			fi
 			;;
 		2)
 			echo -e "多个网段请用空格连接，可运行容器后使用【ip route】命令查看网段地址"
 			echo -e "示例：\033[32m10.88.0.0/16 172.17.0.0/16\033[0m"
 			read -p "请输入自定义网段 > " text
-			[ -n "$text" ] && vm_ipv4=$text
-			vm_redir=已开启
+			[ -n "$text" ] && vm_ipv4=$text && vm_redir=已开启
 			;;
 		3)
 			vm_redir=未开启
@@ -1418,6 +1421,7 @@ set_firewall_area() { #防火墙模式设置
 		esac
 		setconfig vm_redir $vm_redir
 		setconfig vm_ipv4 "\'$vm_ipv4\'"
+		sleep 1
 		set_firewall_area
 		;;
 	*) errornum ;;
