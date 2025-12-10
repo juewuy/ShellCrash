@@ -11,6 +11,7 @@ echo -e "TG群：\033[36;4mhttps://t.me/ShellCrash\033[0m"
 
 add_ddns() {
 	cat >>$ddns_dir <<EOF
+	
 config service '$service'
 	option enabled '1'
 	option force_unit 'hours'
@@ -61,23 +62,18 @@ set_ddns() {
 }
 
 set_service() {
-	services_dir=/etc/ddns/$services 
-	if [ -s $services_dir ];then
-		row=2
-	else
-		services_dir=/usr/share/ddns/list
-		row=1
-	fi
+	services_dir=/etc/ddns/$serv 
+	[ -s $services_dir ] || services_dir=/usr/share/ddns/list
 	echo -----------------------------------------------
 	echo -e "\033[32m请选择服务提供商\033[0m"
-	cat $services_dir | grep -v '^#' | awk -F "[\"]" -v i="$row" '{print " "NR" " $i}'
+	cat $services_dir | grep -v '^#' | awk '{print " "NR" " $1}'
 	nr=$(cat $services_dir | grep -v '^#' | wc -l)
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		i=
 	elif [ "$num" -gt 0 -a "$num" -lt $nr ]; then
-		service=$(cat $services_dir | grep -v '^#' | awk -F "[\".]" -v i="$row" '{print " "NR" " $i}' | sed -n "$num"p)
-		service_name=$(cat $services_dir | grep -v '^#' | awk -F "[\"]" -v i="$row" '{print " "NR" " $i}' | sed -n "$num"p)
+		service_name=$(cat $services_dir | grep -v '^#' | awk '{print $1}' | sed -n "$num"p | sed 's/"//g')
+		service=$(echo $service_name | sed 's/\./_/g')
 		set_ddns
 	else
 		echo "输入错误，请重新输入！"
@@ -96,11 +92,11 @@ network_type() {
 		i=
 	elif [ "$num" = 1 ]; then
 		use_ipv6=0
-		services=services
+		serv=services
 		set_service
 	elif [ "$num" = 2 ]; then
 		use_ipv6=1
-		services=services_ipv6
+		serv=services_ipv6
 		set_service
 	else
 		echo "输入错误，请重新输入！"
@@ -117,6 +113,7 @@ rev_service() {
 	echo -e " 2 编辑当前服务\033[0m"
 	echo -e " 3 $enabled_b当前服务"
 	echo -e " 4 移除当前服务"
+	echo -e " 5 查看运行日志"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -138,6 +135,10 @@ rev_service() {
 	elif [ "$num" = 4 ]; then
 		uci delete ddns.$service
 		uci commit ddns.$service
+	elif [ "$num" = 5 ]; then
+		echo -----------------------------------------------
+		cat /var/log/ddns/$service.log 2>/dev/null
+		sleep 1
 	fi
 }
 
@@ -152,7 +153,7 @@ load_ddns() {
 		nr=$((nr + 1))
 		enabled=$(uci show ddns.$service 2>/dev/null | grep 'enabled' | awk -F "=" '{print $2}' | tr -d "'\"")
 		domain=$(uci show ddns.$service 2>/dev/null | grep 'domain' | awk -F "=" '{print $2}' | tr -d "'\"")
-		local_ip=$(sed '1!G;h;$!d' /var/log/ddns/$service.log 2>/dev/null | grep -E 'Update successful - IP' | tail -1 | awk -F "'" '{print $2}' | tr -d "'\"")
+		local_ip=$(sed '1!G;h;$!d' /var/log/ddns/$service.log 2>/dev/null | grep -E 'Registered IP' | tail -1 | awk -F "'" '{print $2}' | tr -d "'\"")
 		echo -e " $nr   $domain  $enabled   $local_ip"
 	done
 	echo -e " $((nr + 1))   添加DDNS服务"
