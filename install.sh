@@ -1,14 +1,9 @@
 #! /bin/bash
 # Copyright (C) Juewuy
 
-[ -z "$url" ] && url="https://fastly.jsdelivr.net/gh/juewuy/ShellCrash@master"
+[ -z "$url" ] && url="https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev"
 type bash &>/dev/null && shtype=bash || shtype=sh
-echo='echo -e'
-[ -n "$(echo -e | grep e)" ] && {
-	echo "\033[31m不支持dash环境安装！请先输入bash命令后再运行安装命令！\033[0m"
-	exit
-}
-
+[ -n "$(echo -e | grep e)" ] && echo=echo || echo='echo -e'
 echo "***********************************************"
 echo "**                 欢迎使用                  **"
 echo "**                ShellCrash                 **"
@@ -209,8 +204,8 @@ install() {
 	gettar
 	echo -----------------------------------------------
 	echo ShellCrash 已经安装成功!
-	[ "$profile" = "~/.bashrc" ] && echo "请执行【. ~/.bashrc &> /dev/null】命令以加载环境变量！"
-	[ -n "$(ls -l /bin/sh | grep -oE 'zsh')" ] && echo "请执行【. ~/.zshrc &> /dev/null】命令以加载环境变量！"
+	[ "$profile" = "~/.bashrc" ] && echo "请执行【. ~/.bashrc > /dev/null】命令以加载环境变量！"
+	[ -n "$(ls -l /bin/sh | grep -oE 'zsh')" ] && echo "请执行【. ~/.zshrc > /dev/null】命令以加载环境变量！"
 	echo -----------------------------------------------
 	$echo "\033[33m输入\033[30;47m crash \033[0;33m命令即可管理！！！\033[0m"
 	echo -----------------------------------------------
