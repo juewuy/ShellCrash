@@ -51,14 +51,9 @@ getconfig() { #读取配置及全局变量
 	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
 	ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
 	#默认dns
-	[ -z "$dns_nameserver" ] && {
-		if [ -n "$(pidof dnsmasq)" ];then
-			dns_nameserver='127.0.0.1'
-		else
-			dns_nameserver='180.184.1.1, 1.2.4.8'
-		fi
-	}
-	[ -z "$dns_fallback" ] && dns_fallback="$dns_nameserver"
+	[ -z "$dns_nameserver" ] && dns_nameserver='180.184.1.1, 1.2.4.8'
+	[ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
+	[ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
 	#自动生成ua
 	[ -z "$user_agent" -o "$user_agent" = "auto" ] && {
 		if echo "$crashcore" | grep -q 'singbox';then
@@ -411,15 +406,13 @@ modify_yaml() { #修饰clash配置文件
 	}
 	#dns配置
 	[ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
-		default_nameserver='223.5.5.5' 
-		[ "$crashcore" = 'meta' ] && default_nameserver='https://223.5.5.5/dns-query' 
 		cat >"$TMPDIR"/dns.yaml <<EOF
 dns:
   enable: true
   listen: :$dns_port
   use-hosts: true
   ipv6: $dns_v6
-  default-nameserver: [ $default_nameserver ]
+  default-nameserver: [ $dns_resolver ]
   enhanced-mode: fake-ip
   fake-ip-range: 28.0.0.1/8
   fake-ip-range6: fc00::/16
@@ -428,16 +421,20 @@ EOF
 		if [ "$dns_mod" != "redir_host" ]; then
 			cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep -v '#' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
 			[ "$dns_mod" = "mix" ] && {
-				#插入过滤规则
+				#插入MIX模式防泄露设置
 				cat >>"$TMPDIR"/dns.yaml <<EOF
     - "rule-set:cn"
+  respect-rules: true
+  direct-nameserver : [ $dns_nameserver ]
+  proxy-server-nameserver : [ $dns_resolver ]
+  nameserver: [ $dns_fallback ]
 EOF
 			}
 		else
 			echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
 		fi
-		cat >>"$TMPDIR"/dns.yaml <<EOF
-  nameserver: [$dns_nameserver]
+		[ "$dns_mod" != "mix" ] && cat >>"$TMPDIR"/dns.yaml <<EOF
+  nameserver: [ $dns_nameserver ]
 EOF
 		# [ -s "$CRASHDIR"/configs/fallback_filter.list ] && {
 			# echo "    domain:" >>"$TMPDIR"/dns.yaml
@@ -674,6 +671,10 @@ EOF
 	dns_proxy=$(echo $dns_proxy_1st | sed 's|.*://||' | sed 's|/.*||')
 	dns_proxy_type=$(echo "$dns_proxy_1st" | awk -F '://' '{print $1}')
 	[ "$dns_proxy_type" = "$dns_proxy" ] && dns_proxy_type="udp"
+	dns_resolver_1st=$(echo $dns_resolver | awk -F ',' '{print $1}')
+	dns_resolverip=$(echo $dns_resolver_1st | sed 's|.*://||' | sed 's|/.*||')
+	dns_resolver_type=$(echo "$dns_resolver_1st" | awk -F '://' '{print $1}')
+	[ "$dns_resolver_type" = "$dns_resolverip" ] && dns_resolver_type="udp"
 	[ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
 	#获取detour出口
 	auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//' )
@@ -746,8 +747,8 @@ EOF
       },
       {
         "tag": "dns_resolver",
-        "type": "https",
-        "server": "223.5.5.5",
+        "type": "$dns_resolver_type",
+        "server": "$dns_resolverip",
 		"routing_mark": $routing_mark
       }
     ],

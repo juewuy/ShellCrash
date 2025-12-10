@@ -692,71 +692,83 @@ setport() { #端口设置
 }
 setdns() { #DNS详细设置
 	[ -z "$dns_nameserver" ] && dns_nameserver='180.184.1.1, 1.2.4.8'
-	[ -z "$dns_fallback" ] && dns_fallback="$dns_nameserver"
+	[ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
+	[ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
 	[ -z "$hosts_opt" ] && hosts_opt=已启用
 	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$dns_no" ] && dns_no=未禁用
 	echo -----------------------------------------------
 	echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
 	echo -e "PROXY-DNS：\033[36m$dns_fallback\033[0m"
+	echo -e "解析DNS：\033[33m$dns_resolver\033[0m"
 	echo -e "多个DNS地址请用\033[30;47m“|”\033[0m或者\033[30;47m“, ”\033[0m分隔输入"
 	echo -e "\033[33m必须拥有本地根证书文件才能使用dot/doh类型的加密dns\033[0m"
-	echo -e "\033[33m注意singbox内核只有首个dns会被加载！\033[0m"
+	echo -e "\033[31m注意singbox内核只有首个dns会被加载！\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
-	echo -e " 2 修改\033[36mPROXY-DNS\033[0m"
-	echo -e " 3 \033[33m重置\033[0m默认DNS配置"
+	echo -e " 2 修改\033[36mPROXY-DNS\033[0m(该DNS查询会经过节点)"
+	echo -e " 3 修改\033[33m解析DNS\033[0m(必须是IP,用于解析其他DNS)"
 	echo -e " 4 一键配置\033[32m加密DNS\033[0m"
 	echo -e " 5 hosts优化：  	\033[36m$hosts_opt\033[0m	————调用本机hosts并劫持NTP服务"
 	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————不推荐使用"
 	echo -e " 7 禁用DNS劫持：	\033[36m$dns_no\033[0m	————搭配第三方DNS使用"
+	echo -e " 9 \033[33m重置\033[0m默认DNS配置"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
-	if [ -z "$num" ]; then
-		errornum
-	elif [ "$num" = 1 ]; then
+	case "$num" in
+	0)
+	;;
+	1)
 		read -p "请输入新的DNS > " dns_nameserver
 		dns_nameserver=$(echo $dns_nameserver | sed 's#|#\,\ #g')
 		if [ -n "$dns_nameserver" ]; then
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
+		sleep 1
 		setdns
-
-	elif [ "$num" = 2 ]; then
+	;;
+	2)
 		read -p "请输入新的DNS > " dns_fallback
 		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /g')
 		if [ -n "$dns_fallback" ]; then
 			setconfig dns_fallback \'"$dns_fallback"\'
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
+		sleep 1
 		setdns
-
-	elif [ "$num" = 3 ]; then
-		dns_nameserver=""
-		dns_fallback=""
-		setconfig dns_nameserver
-		setconfig dns_fallback
-		echo -e "\033[33mDNS配置已重置！！！\033[0m"
+	;;
+	3)
+		read -p "请输入新的DNS > " text
+		if echo "$text" | grep -qE '://.*::'; then
+			echo -e "\033[31m此选项暂不支持ipv6加密DNS！！！\033[0m"
+		elif [ -n "$text" ]; then
+			dns_resolver=$(echo $text | sed 's/|/\,\ /g')
+			setconfig dns_resolver \'"$dns_resolver"\'
+			echo -e "\033[32m设置成功！！！\033[0m"
+		fi
+		sleep 1
 		setdns
-
-	elif [ "$num" = 4 ]; then
+	;;
+	4)
 		echo -----------------------------------------------
 		openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
 		if [ -s "$openssldir/certs/ca-certificates.crt" -o -s "/etc/ssl/certs/ca-certificates.crt" ]; then
 			dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
 			dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
+			dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
 			setconfig dns_nameserver \'"$dns_nameserver"\'
 			setconfig dns_fallback \'"$dns_fallback"\'
+			setconfig dns_resolver \'"$dns_resolver"\'
 			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"
 		else
 			echo -e "\033[31m找不到根证书文件，无法启用加密DNS，Linux系统请自行搜索安装OpenSSL的方式！\033[0m"
 		fi
-		sleep 2
+		sleep 1
 		setdns
-
-	elif [ "$num" = 5 ]; then
+	;;
+	5)
 		echo -----------------------------------------------
 		if [ "$hosts_opt" = "已启用" ]; then
 			hosts_opt=未启用
@@ -765,18 +777,17 @@ setdns() { #DNS详细设置
 			hosts_opt=已启用
 			echo -e "\033[33m已启用hosts优化功能！！！\033[0m"
 		fi
-		sleep 1
 		setconfig hosts_opt $hosts_opt
+		sleep 1
 		setdns
-
-	elif [ "$num" = 6 ]; then
+	;;
+	6)
 		echo -----------------------------------------------
 		if [ "$dns_redir" = "未开启" ]; then
 			echo -e "\033[31m将使用OpenWrt中Dnsmasq插件自带的DNS转发功能转发DNS请求至内核！\033[0m"
 			echo -e "\033[33m启用后将禁用本插件自带的iptables转发功能\033[0m"
 			dns_redir=已开启
 			echo -e "\033[32m已启用Dnsmasq转发DNS功能！！！\033[0m"
-			sleep 1
 		else
 			uci del dhcp.@dnsmasq[-1].server
 			uci set dhcp.@dnsmasq[0].noresolv=0
@@ -785,11 +796,11 @@ setdns() { #DNS详细设置
 			echo -e "\033[33m禁用成功！！如有报错请重启设备！\033[0m"
 			dns_redir=未开启
 		fi
-		sleep 1
 		setconfig dns_redir $dns_redir
+		sleep 1
 		setdns
-
-	elif [ "$num" = 7 ]; then
+	;;
+	7)
 		echo -----------------------------------------------
 		if [ "$dns_no" = "未禁用" ]; then
 			echo -e "\033[31m仅限搭配其他DNS服务(比如dnsmasq、smartDNS)时使用！\033[0m"
@@ -799,10 +810,26 @@ setdns() { #DNS详细设置
 			dns_no=未禁用
 			echo -e "\033[33m已启用DNS劫持！！！\033[0m"
 		fi
-		sleep 1
 		setconfig dns_no $dns_no
+		sleep 1
 		setdns
-	fi
+	;;
+	9)
+		dns_nameserver=
+		dns_fallback=
+		dns_resolver=
+		setconfig dns_nameserver
+		setconfig dns_fallback
+		setconfig dns_resolver
+		echo -e "\033[33mDNS配置已重置！！！\033[0m"
+		sleep 1
+		setdns
+	;;
+	*)
+		errornum
+		sleep 1
+	;;
+	esac
 }
 setipv6() { #ipv6设置
 	[ -z "$ipv6_redir" ] && ipv6_redir=未开启
@@ -1575,10 +1602,10 @@ set_dns_mod() { #DNS模式设置
 	echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 fake-ip模式：   \033[32m响应速度更快\033[0m"
+	echo -e " 1 fake-ip模式：   \033[32m响应快，兼容性较差\033[0m"
 	echo -e "                   不支持CN-IP绕过功能"
-	echo -e " 2 redir_host模式：\033[32m兼容性更好\033[0m"
-	echo -e "                   需搭配加密DNS使用"
+	echo -e " 2 redir_host模式：\033[32m不安全，易被污染\033[0m"
+	echo -e "                   建议搭配第三方DNS服务使用"
 	if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
 		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
 		echo -e "                   依赖geosite.dat/geosite-cn.srs数据库"
