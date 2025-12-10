@@ -2040,7 +2040,8 @@ start)
 			systemctl start shellcrash.service || start_error
 		}
 	elif rc-status -r >/dev/null 2>&1; then
-		rc-service shellcrash start >/dev/null 2>&1
+		rc-service shellcrash stop >/dev/null 2>&1
+		rc-service shellcrash start
 	else
 		bfstart && start_old
 	fi

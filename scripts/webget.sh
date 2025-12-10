@@ -1572,18 +1572,19 @@ getgeo(){ #下载Geo文件
 		echo -e "\033[31m文件下载失败！\033[0m"
 		error_down
 	else
-		echo "$geoname" | grep -Eq '.mrs|.srs' && {
+		echo "$geoname" | grep -Eq '.mrs|.srs|.tar.gz' && {
 			geofile='ruleset/'
 			[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
 		}
-		mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
+		if echo "$geoname" | grep -Eq '.tar.gz';then
+			tar -zxf ${TMPDIR}/${geoname} ${tar_para} -C ${BINDIR}/${geofile} > /dev/null
+			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/${geoname} && exit 1
+			rm -rf ${TMPDIR}/${geoname}
+		else
+			mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
+		fi
 		echo -----------------------------------------------
 		echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
-		#全球版GeoIP和精简版CN-IP数据库不共存
-		[ "$geoname" = "Country.mmdb" ] && {
-			setconfig Country_v
-			setconfig cn_mini_v
-		}
 		geo_v="$(echo $geotype | awk -F "." '{print $1}')_v"
 		setconfig $geo_v $GeoIP_v
 	fi
@@ -1715,27 +1716,21 @@ setgeo(){ #数据库选择菜单
 	. $CFG_PATH > /dev/null
 	[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
 	echo -----------------------------------------------
-	echo -e "\033[36m请选择需要更新的Geo/CN数据库文件：\033[0m"
-	echo -e "\033[36m全球版GeoIP和精简版CN-IP数据库不共存\033[0m"
-	echo -e "\033[36mClash内核和SingBox内核的数据库文件不通用\033[0m"
-	echo -e "在线数据库最新版本：\033[32m$GeoIP_v\033[0m"
+	echo -e "\033[36m请选择需要更新的Geo数据库文件：\033[0m"
+	echo -e "\033[36mMihomo内核和SingBox内核的数据库文件不通用\033[0m"
+	echo -e "在线数据库最新版本(每日同步上游)：\033[32m$GeoIP_v\033[0m"
 	echo -----------------------------------------------
-	[ "$cn_ip_route" = "已开启" ] && {
-		echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
-		echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
-	}
-	[ -z "$(echo "$crashcore" | grep sing)" ] && {
-		echo -e " 3 Clash精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
-		echo -e " 4 Meta完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
-		echo -e " 5 geosite-cn.mrs数据库(DNS分流,约0.5mb)	\033[33m$mrs_geosite_cn_v\033[0m"
-	}
-	[ -n "$(echo "$crashcore" | grep sing)" ] && {
-		echo -e " 6 geoip-cn.srs数据库(约0.1mb)	\033[33m$srs_geoip_cn_v\033[0m"
-		echo -e " 7 geosite-cn.srs数据库(DNS分流,约0.5mb)	\033[33m$srs_geosite_cn_v\033[0m"
-	}
+	echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
+	echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
 	echo -----------------------------------------------
-	echo -e " a \033[32m自定义数据库文件\033[0m"
-	echo -e " b \033[31m清理数据库文件\033[0m"
+	echo -e " 3 Mihomo精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
+	echo -e " 4 Mihomo完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
+	echo -e " 5 Mihomo-mrs数据库常用包(约1mb)	\033[33m$mrs_v\033[0m"
+	echo -----------------------------------------------
+	echo -e " 6 Singbox-srs数据库常用包(约0.8mb)	\033[33m$srs_v\033[0m"
+	echo -----------------------------------------------
+	echo -e " 8 \033[32m自定义数据库文件\033[0m"
+	echo -e " 9 \033[31m清理数据库文件\033[0m"
 	echo " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -1767,30 +1762,24 @@ setgeo(){ #数据库选择菜单
 		setgeo
 	;;
 	5)
-		geotype=mrs_geosite_cn.mrs
-		geoname=geosite-cn.mrs
+		geotype=mrs.tar.gz
+		geoname=mrs.tar.gz
 		getgeo
 		setgeo
 	;;
 	6)
-		geotype=srs_geoip_cn.srs
-		geoname=geoip-cn.srs
+		geotype=srs.tar.gz
+		geoname=srs.tar.gz
 		getgeo
 		setgeo
 	;;
-	7)
-		geotype=srs_geosite_cn.srs
-		geoname=geosite-cn.srs
-		getgeo
-		setgeo
-	;;
-	a)
+	8)
 		setcustgeo
 		setgeo
 	;;
-	b)
+	9)
 		echo -----------------------------------------------
-		echo -e "\033[33m这将清理$CRASHDIR目录下所有数据库文件！\033[0m"
+		echo -e "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
 		echo -e "\033[36m清理后启动服务即可自动下载所需文件~\033[0m"
 		echo -----------------------------------------------
 		read -p "确认清理？[1/0] > " res
@@ -1798,7 +1787,7 @@ setgeo(){ #数据库选择菜单
 			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db;do
 				rm -rf $CRASHDIR/$file
 			done
-			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v ;do
+			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v mrs_v srs_v;do
 				setconfig $var
 			done
 			rm -rf $CRASHDIR/ruleset/*
