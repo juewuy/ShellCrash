@@ -5,6 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=shellcrash
+User=shellcrash
+StandardOutput=null
 ExecStartPre=/etc/ShellCrash/start.sh bfstart
 ExecStart=/etc/ShellCrash/CrashCore run -D /etc/ShellCrash -C /tmp/ShellCrash/jsons >/dev/null
 ExecStartPost=/etc/ShellCrash/start.sh afstart
