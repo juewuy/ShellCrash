@@ -575,10 +575,10 @@ setproviders(){ #自定义providers
 			errornum
 		else
 			echo -----------------------------------------------
-			echo -e " 1 修改代理服务商：\033[36m$provider_name\033[0m"
+			echo -e " 1 修改名称：\033[36m$provider_name\033[0m"
 			echo -e " 2 修改链接地址：\033[32m$provider_url\033[0m"
-			echo -e " 3 生成\033[33m仅包含此服务商\033[0m的配置文件"
-			echo -e " 4 \033[31m移除此服务商\033[0m"
+			echo -e " 3 生成\033[33m仅包含此链接\033[0m的配置文件"
+			echo -e " 4 \033[31m移除此链接\033[0m"
 			echo -----------------------------------------------
 			echo -e " 0 返回上级菜单"
 			read -p "请选择需要执行的操作 > " num
@@ -586,15 +586,15 @@ setproviders(){ #自定义providers
 			0)
 			;;
 			1)
-				read -p "请输入代理服务商的名称或者代称(如有多个服务商不可重复) > " name
-				if [ -n "$name" ] && [ -z "$(grep "$name" $CRASHDIR/configs/providers.cfg)" ];then
+				read -p "请输入名称或者代号(不可重复,不支持纯数字)  > " name
+				if [ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" $CRASHDIR/configs/providers.cfg;then
 					sed -i "s|$provider_name $provider_url|$name $provider_url|" $CRASHDIR/configs/providers.cfg
 				else
 					echo -e "\033[31m输入错误，请重新输入！\033[0m"
 				fi
 			;;
 			2)
-				read -p "请输入providers订阅地址或本地相对路径 > " link
+				read -p "请输入链接地址或本地相对路径 > " link
 				if [ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && [ -z "$(grep "$link" $CRASHDIR/configs/providers.cfg)" ];then
 					link=$(echo $link | sed 's/\&/\\\&/g') #特殊字符添加转义
 					sed -i "s|$provider_name $provider_url|$provider_name $link|" $CRASHDIR/configs/providers.cfg
@@ -621,14 +621,14 @@ setproviders(){ #自定义providers
 		echo -e "支持填写在线的\033[32mYClash订阅地址\033[0m或者\033[32m本地Clash配置文件\033[0m"
 		echo -e "本地配置文件请放在\033[32m$CRASHDIR\033[0m目录下，并填写相对路径如【\033[32m./providers/test.yaml\033[0m】"
 		echo -----------------------------------------------
-		read -p "请输入providers订阅地址或本地相对路径 > " link
+		read -p "请输入链接地址或本地相对路径 > " link
 		link=$(echo $link | sed 's/ //g') #去空格
 		[ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
-			read -p "请输入代理服务商的名称或者代号(不可重复) > " name
+			read -p "请输入名称或代号(不可重复,不支持纯数字) > " name
 			name=$(echo $name | sed 's/ //g')
-			[ -n "$name" ] && [ -z "$(grep "name" $CRASHDIR/configs/providers.cfg)" ] && {
+			[ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" $CRASHDIR/configs/providers.cfg && {
 				echo -----------------------------------------------
-				echo -e "代理服务商：\033[36m$name\033[0m"
+				echo -e "名称：\033[36m$name\033[0m"
 				echo -e "链接地址/路径：\033[32m$link\033[0m"
 				read -p "确认添加？(1/0) > " res
 					[ "$res" = 1 ] && {
@@ -637,7 +637,7 @@ setproviders(){ #自定义providers
 					}
 			}
 		}
-		[ "$?" != 0 ] && echo -e "\033[31m操作已取消！\033[0m"
+		[ "$?" != 0 ] && echo -e "\033[31m输入错误，操作已取消！\033[0m"
 		sleep 1
 		setproviders
 	;;
@@ -651,7 +651,7 @@ setproviders(){ #自定义providers
 				gen_${coretype}_providers
 			}
 		else
-			echo -e "\033[31m你还未添加providers服务商，请先添加！\033[0m"
+			echo -e "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
 			sleep 1
 		fi
 		setproviders
@@ -692,7 +692,7 @@ setproviders(){ #自定义providers
 		setproviders
 	;;
 	d)
-		read -p "确认清空全部providers服务商？(1/0) > " res
+		read -p "确认清空全部链接？(1/0) > " res
 		[ "$res" = "1" ] && rm -rf $CRASHDIR/configs/providers.cfg
 		setproviders
 	;;
@@ -1032,13 +1032,13 @@ set_core_config(){ #配置文件功能
 	echo -----------------------------------------------
 	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 在线\033[32m生成$crashcore配置文件\033[0m"
+	echo -e " 1 在线\033[32m生成配置文件\033[0m(基于Subconverter订阅转换)"
 	if [ -f "$CRASHDIR"/v2b_api.sh ];then
 		echo -e " 2 登录\033[33m获取订阅(推荐！)\033[0m"
 	else
-		echo -e " 2 在线\033[33m获取完整配置文件\033[0m"
+		echo -e " 2 在线\033[33m获取配置文件\033[0m(基于订阅提供者)"
 	fi
-	echo -e " 3 本地\033[32m生成providers配置文件\033[0m"
+	echo -e " 3 本地\033[32m生成配置文件\033[0m(基于内核providers,推荐！)"
 	echo -e " 4 本地\033[33m上传完整配置文件\033[0m"
 	echo -e " 5 设置\033[36m自动更新\033[0m"
 	echo -e " 6 \033[32m自定义\033[0m配置文件"
@@ -2264,6 +2264,7 @@ userguide(){
 			setconfig crashcore "mihomo"
 			setconfig redir_mod "$redir_mod"
 			setconfig dns_mod mix
+			setconfig firewall_area '1'
 			#默认启用绕过CN-IP
 			setconfig cn_ip_route 已开启
 			#自动识别IPV6
