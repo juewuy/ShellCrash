@@ -572,7 +572,7 @@ setport() { #端口设置
 	echo -----------------------------------------------
 	echo -e " 1 修改Http/Sock5端口：	\033[36m$mix_port\033[0m"
 	echo -e " 2 设置Http/Sock5密码：	\033[36m$auth\033[0m"
-	echo -e " 3 修改静态路由端口：	\033[36m$redir_port\033[0m"
+	echo -e " 3 修改Redir/Tproxy端口：\033[36m$redir_port,$((redir_port + 1))\033[0m"
 	echo -e " 4 修改DNS监听端口：	\033[36m$dns_port\033[0m"
 	echo -e " 5 修改面板访问端口：	\033[36m$db_port\033[0m"
 	echo -e " 6 设置面板访问密码：	\033[36m$secret\033[0m"
@@ -645,7 +645,7 @@ setport() { #端口设置
 		echo -----------------------------------------------
 		read -p "请输入需要指定代理的端口 > " multiport
 		if [ -n "$multiport" ]; then
-			[ "$multiport" = "0" ] && multiport=""
+			[ "$multiport" = "0" ] && multiport="22,80,143,194,443,465,587,853,993,995,5222,8080,8443"
 			common_ports=已开启
 			setconfig multiport $multiport
 			setconfig common_ports $common_ports
