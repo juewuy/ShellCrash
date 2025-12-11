@@ -987,7 +987,7 @@ setfirewall() { #防火墙设置
 	esac
 }
 checkport() { #自动检查端口冲突
-	for portx in $dns_port $mix_port $redir_port $db_port; do
+	for portx in $dns_port $mix_port $redir_port $((redir_port + 1)) $db_port; do
 		if [ -n "$(netstat -ntul 2>&1 | grep ':$portx ')" ]; then
 			echo -----------------------------------------------
 			echo -e "检测到端口【$portx】被以下进程占用！内核可能无法正常启动！\033[33m"
