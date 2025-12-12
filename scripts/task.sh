@@ -161,7 +161,6 @@ logger(){
 	[ "$task_push" = 1 ] && push= || push=off
 	[ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
 	[ "$3" = 'off' ] && push=off
-	echo "$1"
 	echo "$1" |grep -qE '(每隔|时每)([1-9]|[1-9][0-9])分钟' && push=off
 	${CRASHDIR}/start.sh logger "$1" 0 "$push"
 }

@@ -410,6 +410,7 @@ modify_yaml() { #修饰clash配置文件
 	}
 	#dns配置
 	[ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
+		[ "$crashcore" != meta ] && dns_resolver='223.5.5.5'
 		cat >"$TMPDIR"/dns.yaml <<EOF
 dns:
   enable: true
