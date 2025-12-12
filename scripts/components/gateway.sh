@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-CFG="$CRASHDIR"/config/gateway.cfg
+CFG="$CRASHDIR"/configs/gateway.cfg
 
 gateway(){
 	echo -----------------------------------------------
@@ -44,14 +44,6 @@ gateway(){
 }
 
 setendpoints(){
-	genendpoints(){
-		cat >"$CRASHDIR"/yamls/wireguard.yaml <<EOF
-
-
-
-
-EOF
-	}
 	setwireguard(){
 		echo -----------------------------------------------
 		echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译WireGuard模块\n如需使用请先前往自定义内核更新完整版内核文件！"
@@ -96,24 +88,39 @@ EOF
 		esac		
 	}
 	settailscale(){
+		[ -n "$ts_auth_key" ] && ts_auth_key_info='已设置'
 		echo -----------------------------------------------
 		echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译Tailscale模块\n如需使用请先前往自定义内核更新完整版内核文件！"
 		echo -e "登陆后请前往此处创建秘钥\033[36;4mhttps://login.tailscale.com/admin/settings/keys\033[0m"
+		echo -e "通告路由首次启动服务后，需前往\033[36;4mhttps://login.tailscale.com\033[0m允许对应通告，并在客户端启用相关路由"
 		echo -----------------------------------------------
-		echo -e " 1 设置秘钥"
-		echo -e " 2 使用代理出站"
+		echo -e " 1 启用/关闭Tailscale服务		\033[32m$ts_service\033[0m"
+		echo -e " 2 设置秘钥(Auth Key)			\033[32m$ts_auth_key_info\033[0m"
+		echo -e " 3 通告路由保留地址(Subnet)	\033[32m$ts_advertise_routes\033[0m"
+		echo -e " 4 通告路由全部流量(EXIT NODE)	\033[32m$ts_exit_node_allow\033[0m"
 		echo -e " 0 返回上级菜单 \033[0m"
 		echo -----------------------------------------------
 		read -p "请输入对应数字 > " num
-		read -p "请输入相应内容 > " text
 		case "$num" in
 		0) ;;
 		1)
-			setconfig ts_auth_key "$text" "$CFG"
+			[ "ts_service" = ON ] && ts_service=OFF || ts_service=ON
+			setconfig ts_service "$ts_service"
 			setwireguard
 			;;
 		2)
-			setconfig ts_proxy_type "$text" "$CFG"
+			read -p "请输入秘钥(Auth key) > " text
+			[ -n "$text" ] && setconfig ts_auth_key "$text" "$CFG"
+			setwireguard
+			;;
+		3)
+			[ "ts_advertise_routes" = true ] && ts_advertise_routes=false || ts_advertise_routes=true
+			setconfig ts_advertise_routes "$ts_advertise_routes" "$CFG"
+			setwireguard
+			;;
+		4)
+			[ "advertise_exit_node" = true ] && advertise_exit_node=false || advertise_exit_node=true
+			setconfig advertise_exit_node "$advertise_exit_node" "$CFG"
 			setwireguard
 			;;
 		*) errornum ;;
@@ -121,33 +128,22 @@ EOF
 	}
 	echo -----------------------------------------------
 	echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译WireGuard/Tailscale模块\n如需使用请先前往自定义内核更新完整版内核文件！"
-	echo -e "\033[33m配置完成后请手动生成配置文件！相关文件会在内核启动时自动加载！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 生成内核配置文件"
-	echo -e " 2 配置WireGuard客户端"
-	echo -e " 3 配置Tailscale(仅限Singbox内核)"
-	echo -e " 4 移除内核配置文件"
-	echo -e " 0 返回上级菜单 \033[0m"
+	echo -e " 1 配置WireGuard客户端"
+	echo -e " 2 配置Tailscale(仅限Singbox内核)"
+	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	case "$num" in
-	0) ;;
+	0) ;;	
 	1)
-		genendpoints
-		gateway
-		;;	
-	2)
 		setwireguard
 		gateway
 		;;
-	3)
+	2)
 		settailscale
 		gateway
 		;;
-	4)
-		delendpoints
-		gateway
-		;;	
 	*) errornum ;;
 	esac
 }

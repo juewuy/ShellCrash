@@ -625,6 +625,11 @@ modify_json() { #修饰singbox1.13配置文件
 		cat "$TMPDIR"/format.json | sed -n '/^  "providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
 	}
 	cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
+	#加载端点配置文件并生成
+	[ "ts_service" = ON ] || [ "wg_service" = ON ] && {
+		. "$CRASHDIR"/configs/gateway.cfg
+		. "$CRASHDIR"/components/endpoints.sh
+	}
 	#生成log.json
 	cat >"$TMPDIR"/jsons/log.json <<EOF
 { "log": { "level": "info", "timestamp": true } }
@@ -772,6 +777,7 @@ EOF
 	#生成add_route.json
 		#域名嗅探配置
 	[ "$sniffer" = "已启用" ] && sniffer_set='{ "inbound": [ "redirect-in", "tproxy-in", "tun-in" ], "action": "sniff", "timeout": "500ms" },' 
+	[ "advertise_exit_node" = true ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
 	cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {
@@ -779,6 +785,7 @@ EOF
     "default_mark": $routing_mark,
 	"rules": [
 	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
+	  $tailscale_set
 	  $sniffer_set
       { "protocol": "dns", "action": "hijack-dns" },
       { "clash_mode": "Direct" , "outbound": "DIRECT" },
