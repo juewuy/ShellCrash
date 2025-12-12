@@ -1602,15 +1602,17 @@ set_dns_mod() { #DNS模式设置
 	echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 fake-ip模式：   \033[32m响应快，兼容性较差\033[0m"
+	echo -e " 1 fake-ip模式：   响应快，\033[33m兼容性较差\033[0m"
 	echo -e "                   不支持CN-IP绕过功能"
-	echo -e " 2 redir_host模式：\033[32m不安全，易被污染\033[0m"
+	echo -e " 2 redir_host模式：\033[33m不安全，易被污染\033[0m"
 	echo -e "                   建议搭配第三方DNS服务使用"
 	if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
-		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
-		echo -e "                   依赖geosite.dat/geosite-cn.srs数据库"
+		echo -e " 3 mix混合模式：   \033[32m防污染防泄露，响应快，推荐！\033[0m"
+		echo -e "                   cn域名realip其他fakeip分流"
+		echo -e " 4 route模式：     \033[32m防污染防泄露，全真实IP\033[0m"
+		echo -e "                   cn域名realip其他dns2proxy分流"
 	fi
-	echo -e " 4 \033[36mDNS进阶设置\033[0m"
+	echo -e " 9 \033[36mDNS进阶设置\033[0m"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
@@ -1639,6 +1641,17 @@ set_dns_mod() { #DNS模式设置
 		fi
 		;;
 	4)
+		if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
+			dns_mod=route
+			setconfig dns_mod $dns_mod
+			echo -----------------------------------------------
+			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+		else
+			echo -e "\033[31m当前内核不支持的功能！！！\033[0m"
+			sleep 1
+		fi
+		;;
+	9)
 		setdns
 		set_dns_mod
 		;;
@@ -1728,6 +1741,7 @@ normal_set() { #基础设置
 
 	elif [ "$num" = 2 ]; then
 		set_dns_mod
+		sleep 1
 		normal_set
 
 	elif [ "$num" = 3 ]; then

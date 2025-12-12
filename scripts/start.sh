@@ -418,28 +418,26 @@ dns:
   fake-ip-range6: fc00::/16
   fake-ip-filter:
 EOF
-		if [ "$dns_mod" != "redir_host" ]; then
+		if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "fake-ip" ];then
 			cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep -v '#' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
-			[ "$dns_mod" = "mix" ] && {
-				#插入MIX模式防泄露设置
-				cat >>"$TMPDIR"/dns.yaml <<EOF
-    - "rule-set:cn"
+		else
+			echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
+		fi
+		#mix模式fakeip绕过cn
+		[ "$dns_mod" = "mix" ] && echo '    - "rule-set:cn"' >>"$TMPDIR"/dns.yaml
+		#mix模式和route模式插入分流设置
+		if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ];then
+			cat >>"$TMPDIR"/dns.yaml <<EOF
   respect-rules: true
   nameserver-policy: {'rule-set:cn': [ $dns_nameserver ]}
   proxy-server-nameserver : [ $dns_resolver ]
   nameserver: [ $dns_fallback ]
 EOF
-			}
 		else
-			echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
-		fi
-		[ "$dns_mod" != "mix" ] && cat >>"$TMPDIR"/dns.yaml <<EOF
+			cat >>"$TMPDIR"/dns.yaml <<EOF
   nameserver: [ $dns_nameserver ]
 EOF
-		# [ -s "$CRASHDIR"/configs/fallback_filter.list ] && {
-			# echo "    domain:" >>"$TMPDIR"/dns.yaml
-			# cat "$CRASHDIR"/configs/fallback_filter.list | grep -v '#' | sed "s/^/      - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
-		# }
+		fi
 	}
 	#域名嗅探配置
 	[ "$sniffer" = "已启用" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: [Mijia Cloud], sniff: {http: {ports: [80, 8080-8880], override-destination: true}, tls: {ports: [443, 8443]}, quic: {ports: [443, 8443]}}}"
@@ -683,9 +681,9 @@ EOF
 	#根据dns模式生成
 	[ "$dns_mod" = "redir_host" ] && {
 		global_dns=dns_proxy
-		direct_dns="{ \"inbound\": [ \"dns-in\" ], \"server\": \"dns_direct\" },"
+		direct_dns="{ \"inbound\": [ \"dns-in\" ], \"server\": \"dns_direct\" }"
 	}
-	[ "$dns_mod" = "fake-ip" ] && {
+	[ "$dns_mod" = "fake-ip" ] || [ "$dns_mod" = "mix" ] && {
 		global_dns=dns_fakeip
 		fake_ip_filter_domain=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|\*|\+|Mijia' | sed '/^\s*$/d' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
 		fake_ip_filter_suffix=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -v '.\*' | grep -E '\*|\+' | sed 's/^[*+]\.//' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
@@ -693,18 +691,18 @@ EOF
 		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
+		proxy_dns='{ "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "'"$strategy"'", "rewrite_ttl": 1 }'
+		#mix模式插入fakeip过滤规则
+		[ "$dns_mod" = "mix" ] && direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" },"
 	}
-	[ "$dns_mod" = "mix" ] && {
-		global_dns=dns_fakeip
-		fake_ip_filter_domain=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -Ev '#|\*|\+|Mijia' | sed '/^\s*$/d' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-		fake_ip_filter_suffix=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep -v '.\*' | grep -E '\*|\+' | sed 's/^[*+]\.//' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-		fake_ip_filter_regex=$(cat ${CRASHDIR}/configs/fake_ip_filter ${CRASHDIR}/configs/fake_ip_filter.list 2>/dev/null | grep '.\*' | sed 's/^*/.\*/' | sed 's/^+/.\+/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
-		[ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
-		[ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
-		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
-		direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" },"
+	[ "$dns_mod" = "route" ] && {
+		global_dns=dns_proxy
+		direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" }"
+	}
 		#生成add_rule_set.json
-		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] && cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
+		[ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && \
+		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] && \
+		cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
     "rule_set": [
@@ -719,7 +717,6 @@ EOF
   }
 }
 EOF
-	}
 	cat >"$TMPDIR"/jsons/dns.json <<EOF
 {
   "dns": {
@@ -761,7 +758,6 @@ EOF
 	  { "clash_mode": "Global", "query_type": ["A", "AAAA"], "server": "$global_dns", "strategy": "$strategy", "rewrite_ttl": 1 },
       $direct_dns
 	  $proxy_dns
-      { "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "$strategy", "rewrite_ttl": 1 }
     ],
     "final": "dns_proxy",
 	"strategy": "$strategy",
@@ -1059,8 +1055,8 @@ start_ipt_route() { #iptables-route通用工具
 		fi
 		#将所在链指定流量指向shellcrash表
 		$1 $w -t $2 -I $3 -p $5 $ports -j $4
-		[ "$dns_mod" != "redir_host" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 $w -t $2 -I $3 -p $5 -d 28.0.0.1/8 -j $4
-		[ "$dns_mod" != "redir_host" ] && [ "$common_ports" = "已开启" ] && [ "$1" = ip6tables ] && $1 $w -t $2 -I $3 -p $5 -d fc00::/16 -j $4
+		[ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 $w -t $2 -I $3 -p $5 -d 28.0.0.1/8 -j $4
+		[ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "已开启" ] && [ "$1" = ip6tables ] && $1 $w -t $2 -I $3 -p $5 -d fc00::/16 -j $4
 	}
 	[ "$5" = "tcp" -o "$5" = "all" ] && proxy_set $1 $2 $3 $4 tcp
 	[ "$5" = "udp" -o "$5" = "all" ] && proxy_set $1 $2 $3 $4 udp
