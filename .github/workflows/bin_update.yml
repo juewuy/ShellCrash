@@ -41,7 +41,7 @@ jobs:
         ########################################
         unzip -o "$TEMP/meta_yacd.zip" -d "$TEMP/yacd" > /dev/null
         # 删除字体文件
-        find "$TEMP/yacd" \( -name "*.ttf" -o -name "*.woff" \) -delete
+        find "$TEMP/yacd" \( -name "*.ttf" -o -name "*.woff -o -name "*.woff2" \) -delete
         # 确认子目录名称
         subdir=$(find "$TEMP/yacd" -maxdepth 1 -type d ! -path "$TEMP/yacd" | head -n1)
         # 打包
@@ -51,7 +51,7 @@ jobs:
         ########################################
         unzip -o "$TEMP/meta_xd.zip" -d "$TEMP/xd" > /dev/null
         # 删除字体文件
-        find "$TEMP/yacd" \( -name "*.ttf" -o -name "*.woff" \) -delete
+        find "$TEMP/xd" \( -name "*.ttf" -o -name "*.woff" -o -name "*.woff2" \) -delete
         # 确认子目录名称
         subdir=$(find "$TEMP/xd" -maxdepth 1 -type d ! -path "$TEMP/xd" | head -n1)
         # 打包
@@ -68,6 +68,8 @@ jobs:
             echo "未找到 dist 目录"
             exit 1
         fi
+        # 删除字体文件
+        find "$ZDIR" \( -name "*.ttf" -o -name "*.woff" -o -name "*.woff2" \) -delete
         echo 'board.zash.run.place' > "$ZDIR/CNAME"
         tar -zcvf "$DASH/zashboard.tar.gz" -C "$ZDIR" . > /dev/null
         ########################################
