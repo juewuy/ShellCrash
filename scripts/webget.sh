@@ -1819,12 +1819,13 @@ getdb(){ #下载Dashboard文件
 		tar -zxf "${TMPDIR}/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/clashfm.tar.gz && exit 1
 		#修改默认host和端口
-		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" -o "$db_type" = "zashboard" ];then
+		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "zashboard" ];then
 			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
 			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
+		elif [ "$db_type" = "meta_xd" ];then
+			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/_nuxt/*.js
 		else
 			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
-			#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
 		fi
 		#写入配置文件
 		setconfig hostdir "'$hostdir'"
@@ -1885,9 +1886,9 @@ setdb(){
 	echo -----------------------------------------------
 	echo -e "请选择面板\033[33m安装类型：\033[0m"
 	echo -----------------维护中------------------------
-	echo -e " 1 安装\033[32mzashboard面板\033[0m(约1.2mb)"
+	echo -e " 1 安装\033[32mzashboard面板\033[0m(约2.2mb)"
 	echo -e " 2 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
-	echo -e " 3 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
+	echo -e " 3 安装\033[32mYacd-Meta魔改面板\033[0m(约1.7mb)"
 	echo ---------------已停止维护----------------------
 	echo -e " 4 安装\033[32m基础面板\033[0m(约500kb)"
 	echo -e " 5 安装\033[32mMeta基础面板\033[0m(约800kb)"
@@ -1902,12 +1903,12 @@ setdb(){
 	1)
 		db_type=zashboard
 		echo $update_url
-		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/dev/bin/dashboard/zashboard.tar.gz"
+		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/zashboard.tar.gz"
 		dbdir
 	;;
 	2)
 		db_type=meta_xd
-		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/dev/bin/dashboard/meta_xd.tar.gz"
+		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/meta_xd.tar.gz"
 		dbdir
 	;;
 	3)
