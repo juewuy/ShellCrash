@@ -23,8 +23,6 @@ autoSSH(){
 	#备份还原SSH秘钥
 	[ -f $CRASHDIR/configs/dropbear_rsa_host_key ] && ln -sf $CRASHDIR/configs/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
 	[ -f $CRASHDIR/configs/authorized_keys ] && ln -sf $CRASHDIR/configs/authorized_keys /etc/dropbear/authorized_keys
-	#自动清理升级备份文件夹
-	rm -rf /data/etc_bak
 }
 tunfix(){
 	ko_dir=$(modinfo ip_tables | grep  -Eo '/lib/modules.*/ip_tables.ko' | sed 's|/ip_tables.ko||' )
@@ -41,6 +39,14 @@ tproxyfix(){
 	sysctl -w net.bridge.bridge-nf-call-iptables=0
 	sysctl -w net.bridge.bridge-nf-call-ip6tables=0
 }
+auto_clean(){
+	#自动清理升级备份文件夹
+	rm -rf /data/etc_bak
+	#自动清理被写入闪存的系统日志并禁止服务
+	/etc/init.d/stat_points stop
+	/etc/init.d/stat_points disable
+	rm -rf /data/usr/log
+}
 init(){
 	#等待启动完成
 	while ! ip a| grep -q lan; do
@@ -54,8 +60,8 @@ init(){
 	echo "alias crash=\"sh $CRASHDIR/menu.sh\"" >>$profile
 	echo "alias clash=\"sh $CRASHDIR/menu.sh\"" >>$profile
 	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
-	#软固化功能
-	autoSSH
+	autoSSH #软固化功能
+	auto_clean #自动清理
 	#设置init.d服务
 	cp -f $CRASHDIR/shellcrash.procd /etc/init.d/shellcrash
 	chmod 755 /etc/init.d/shellcrash
@@ -76,6 +82,7 @@ init(){
 case "$1" in
 	tunfix) tunfix ;;
 	tproxyfix) tproxyfix ;;
+	auto_clean) auto_clean ;;
 	init) init ;;
 	*)
 		if [ -z $(pidof CrashCore) ];then
