@@ -17,8 +17,12 @@ JSONSDIR=${CRASHDIR}/jsons
 #读取配置相关
 setconfig() {
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=${CFG_PATH} || configpath="${3}"
-	grep -q "${1}=" "$configpath" && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || sed -i "\$a\\${1}=${2}" $configpath
+	[ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
+	if grep -q "^${1}=" "$configpath";then
+		sed -i "s#${1}=.*#${1}=${2}#g" "$configpath"
+	else
+		printf '%s=%s\n' "$1" "$2" >> "$configpath"
+	fi
 }
 ckcmd() {
 	command -v sh >/dev/null 2>&1 && command -v $1 >/dev/null 2>&1 || type $1 >/dev/null 2>&1
@@ -607,7 +611,7 @@ setport() { #端口设置
 			else
 				authentication=$(echo $input | grep :)
 				if [ -n "$authentication" ]; then
-					setconfig authentication \'$authentication\'
+					setconfig authentication "'$authentication'"
 					echo -e "\033[32m设置成功！！！\033[0m"
 				else
 					echo -e "\033[31m输入有误，请重新输入！\033[0m"
@@ -723,7 +727,7 @@ setdns() { #DNS详细设置
 		read -p "请输入新的DNS > " dns_nameserver
 		dns_nameserver=$(echo $dns_nameserver | sed 's#|#\,\ #g')
 		if [ -n "$dns_nameserver" ]; then
-			setconfig dns_nameserver \'"$dns_nameserver"\'
+			setconfig dns_nameserver "'$dns_nameserver'"
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		sleep 1
@@ -733,7 +737,7 @@ setdns() { #DNS详细设置
 		read -p "请输入新的DNS > " dns_fallback
 		dns_fallback=$(echo $dns_fallback | sed 's/|/\,\ /g')
 		if [ -n "$dns_fallback" ]; then
-			setconfig dns_fallback \'"$dns_fallback"\'
+			setconfig dns_fallback "'$dns_fallback'"
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		sleep 1
@@ -745,7 +749,7 @@ setdns() { #DNS详细设置
 			echo -e "\033[31m此选项暂不支持ipv6加密DNS！！！\033[0m"
 		elif [ -n "$text" ]; then
 			dns_resolver=$(echo $text | sed 's/|/\,\ /g')
-			setconfig dns_resolver \'"$dns_resolver"\'
+			setconfig dns_resolver "'$dns_resolver'"
 			echo -e "\033[32m设置成功！！！\033[0m"
 		fi
 		sleep 1
@@ -758,9 +762,9 @@ setdns() { #DNS详细设置
 			dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
 			dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
 			dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
-			setconfig dns_nameserver \'"$dns_nameserver"\'
-			setconfig dns_fallback \'"$dns_fallback"\'
-			setconfig dns_resolver \'"$dns_resolver"\'
+			setconfig dns_nameserver "'$dns_nameserver'"
+			setconfig dns_fallback "'$dns_fallback'"
+			setconfig dns_resolver "'$dns_resolver'"
 			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"
 		else
 			echo -e "\033[31m找不到根证书文件，无法启用加密DNS，Linux系统请自行搜索安装OpenSSL的方式！\033[0m"
@@ -974,7 +978,7 @@ setfirewall() { #防火墙设置
 		)" ]; then
 			reserve_ipv4="$text"
 			echo -e "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
-			setconfig reserve_ipv4 "\'$reserve_ipv4\'"
+			setconfig reserve_ipv4 "'$reserve_ipv4'"
 		else
 			echo -e "\033[31m输入有误，操作已取消！\033[0m"
 		fi
@@ -1447,7 +1451,7 @@ set_firewall_area() { #防火墙模式设置
 		*) ;;
 		esac
 		setconfig vm_redir $vm_redir
-		setconfig vm_ipv4 "\'$vm_ipv4\'"
+		setconfig vm_ipv4 "'$vm_ipv4'"
 		sleep 1
 		set_firewall_area
 		;;
@@ -1602,15 +1606,17 @@ set_dns_mod() { #DNS模式设置
 	echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
 	echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 fake-ip模式：   \033[32m响应快，兼容性较差\033[0m"
+	echo -e " 1 fake-ip模式：   响应快，\033[33m兼容性较差\033[0m"
 	echo -e "                   不支持CN-IP绕过功能"
-	echo -e " 2 redir_host模式：\033[32m不安全，易被污染\033[0m"
+	echo -e " 2 redir_host模式：\033[33m不安全，易被污染\033[0m"
 	echo -e "                   建议搭配第三方DNS服务使用"
 	if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
-		echo -e " 3 mix混合模式：   \033[32m内部realip外部fakeip\033[0m"
-		echo -e "                   依赖geosite.dat/geosite-cn.srs数据库"
+		echo -e " 3 mix混合模式：   \033[32m防污染防泄露，响应快，推荐！\033[0m"
+		echo -e "                   cn域名realip其他fakeip分流"
+		echo -e " 4 route模式：     \033[32m防污染防泄露，全真实IP\033[0m"
+		echo -e "                   cn域名realip其他dns2proxy分流"
 	fi
-	echo -e " 4 \033[36mDNS进阶设置\033[0m"
+	echo -e " 9 \033[36mDNS进阶设置\033[0m"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case $num in
@@ -1639,6 +1645,17 @@ set_dns_mod() { #DNS模式设置
 		fi
 		;;
 	4)
+		if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
+			dns_mod=route
+			setconfig dns_mod $dns_mod
+			echo -----------------------------------------------
+			echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+		else
+			echo -e "\033[31m当前内核不支持的功能！！！\033[0m"
+			sleep 1
+		fi
+		;;
+	9)
 		setdns
 		set_dns_mod
 		;;
@@ -1728,6 +1745,7 @@ normal_set() { #基础设置
 
 	elif [ "$num" = 2 ]; then
 		set_dns_mod
+		sleep 1
 		normal_set
 
 	elif [ "$num" = 3 ]; then

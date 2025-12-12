@@ -880,7 +880,7 @@ gen_link_flt(){ #在线生成节点过滤
 		exclude=''
 		echo -e "\033[31m 已删除节点过滤关键字！！！\033[0m"
 	fi
-	setconfig exclude \'$exclude\'
+	setconfig exclude "'$exclude'"
 }
 gen_link_ele(){ #在线生成节点筛选
 	[ -z "$include" ] && include="未设置"
@@ -900,7 +900,7 @@ gen_link_ele(){ #在线生成节点筛选
 		include=''
 		echo -e "\033[31m 已删除节点匹配关键字！！！\033[0m"
 	fi
-	setconfig include \'$include\'
+	setconfig include "'$include'"
 }
 get_core_config(){ #调用工具下载
 	${CRASHDIR}/start.sh get_core_config
@@ -954,7 +954,7 @@ gen_core_config_link(){ #在线生成工具
 				i=100
 				#将用户链接写入配置
 				setconfig Https
-				setconfig Url \'$Url_link\'
+				setconfig Url "'$Url_link'"
 				#获取在线yaml文件
 				get_core_config
 			else
@@ -1008,7 +1008,7 @@ set_core_config_link(){ #直接导入配置
 			if [ "$res" = '1' ]; then
 				#将用户链接写入配置
 				sed -i '/Url=*/'d $CFG_PATH
-				setconfig Https \'$link\'
+				setconfig Https "'$link'"
 				setconfig Url
 				#获取在线yaml文件
 				get_core_config
@@ -1819,15 +1819,16 @@ getdb(){ #下载Dashboard文件
 		tar -zxf "${TMPDIR}/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/clashfm.tar.gz && exit 1
 		#修改默认host和端口
-		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "meta_xd" -o "$db_type" = "zashboard" ];then
+		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "zashboard" ];then
 			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
 			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
+		elif [ "$db_type" = "meta_xd" ];then
+			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/_nuxt/*.js
 		else
 			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
-			#sed -i "s/7892/${db_port}/g" $dbdir/app*.js
 		fi
 		#写入配置文件
-		setconfig hostdir \'$hostdir\'
+		setconfig hostdir "'$hostdir'"
 		echo -----------------------------------------------
 		echo -e "\033[32m面板安装成功！\033[36m如未生效，请使用【Ctrl+F5】强制刷新浏览器！！！\033[0m"
 		rm -rf ${TMPDIR}/clashdb.tar.gz
@@ -1885,9 +1886,9 @@ setdb(){
 	echo -----------------------------------------------
 	echo -e "请选择面板\033[33m安装类型：\033[0m"
 	echo -----------------维护中------------------------
-	echo -e " 1 安装\033[32mzashboard面板\033[0m(约1.2mb)"
+	echo -e " 1 安装\033[32mzashboard面板\033[0m(约2.2mb)"
 	echo -e " 2 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
-	echo -e " 3 安装\033[32mYacd-Meta魔改面板\033[0m(约1.5mb)"
+	echo -e " 3 安装\033[32mYacd-Meta魔改面板\033[0m(约1.7mb)"
 	echo ---------------已停止维护----------------------
 	echo -e " 4 安装\033[32m基础面板\033[0m(约500kb)"
 	echo -e " 5 安装\033[32mMeta基础面板\033[0m(约800kb)"
@@ -1902,12 +1903,12 @@ setdb(){
 	1)
 		db_type=zashboard
 		echo $update_url
-		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/dev/bin/dashboard/zashboard.tar.gz"
+		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/zashboard.tar.gz"
 		dbdir
 	;;
 	2)
 		db_type=meta_xd
-		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/dev/bin/dashboard/meta_xd.tar.gz"
+		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/meta_xd.tar.gz"
 		dbdir
 	;;
 	3)
@@ -2007,7 +2008,7 @@ setserver(){
 	[ -n "$url_id" ] && url_name=$(grep "$url_id" ${CRASHDIR}/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name=$update_url
 	saveserver(){
 		#写入配置文件
-		setconfig update_url \'$update_url\'
+		setconfig update_url "'$update_url'"
 		setconfig url_id $url_id
 		setconfig release_type $release_type
 		echo -----------------------------------------------
@@ -2335,9 +2336,9 @@ userguide(){
 		dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
 		dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
 		dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
-		setconfig dns_nameserver \'"$dns_nameserver"\'
-		setconfig dns_fallback \'"$dns_fallback"\'
-		setconfig dns_resolver \'"$dns_resolver"\'
+		setconfig dns_nameserver "'$dns_nameserver'"
+		setconfig dns_fallback "'$dns_fallback'"
+		setconfig dns_resolver "'$dns_resolver'"
 	fi
 	#开启公网访问
 	sethost(){
@@ -2369,7 +2370,7 @@ userguide(){
 			setconfig mix_port $mix_port
 			setconfig host $host
 			setconfig public_support $public_support
-			setconfig authentication \'$authentication\'
+			setconfig authentication "'$authentication'"
 		fi
 	fi
 	#启用推荐的自动任务配置
