@@ -69,7 +69,11 @@ getconfig() { #读取配置及全局变量
 setconfig() { #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
 	[ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
-	grep -q "${1}=" "$configpath" && sed -i "s#${1}=.*#${1}=${2}#g" "$configpath" || sed -i "\$a\\${1}=${2}" $configpath
+	if grep -q "^${1}=" "$configpath";then
+		sed -i "s#${1}=.*#${1}=${2}#g" "$configpath"
+	else
+		printf '%s=%s\n' "$1" "$2" >> "$configpath"
+	fi
 }
 ckcmd() { #检查命令是否存在
 	command -v sh >/dev/null 2>&1 && command -v "$1" >/dev/null 2>&1 || type "$1" >/dev/null 2>&1
@@ -709,7 +713,6 @@ EOF
       {
         "tag": "cn",
         "type": "remote",
-        "format": "binary",
         "path": "./ruleset/cn.srs",
         "url": "https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@update/bin/geodata/srs_geosite_cn.srs"
       }
@@ -2171,7 +2174,7 @@ webget)
 	[ "$result" = "200" ] && exit 0 || exit 1
 	;;
 *)
-	$1 $2 $3 $4 $5 $6 $7
+	"$1" "$2" "$3" "$4" "$5" "$6" "$7"
 	;;
 
 esac

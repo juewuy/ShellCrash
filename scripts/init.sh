@@ -145,10 +145,14 @@ setdir() {
 		[ "$res" = "1" ] && CRASHDIR=$dir/ShellCrash || setdir
 	fi
 }
-setconfig() {
+setconfig() { #脚本配置工具
 	#参数1代表变量名，参数2代表变量值,参数3即文件路径
-	[ -z "$3" ] && configpath=${CRASHDIR}/configs/ShellCrash.cfg || configpath="${3}"
-	[ -n "$(grep "${1}=" "$configpath")" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >>$configpath
+	[ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
+	if grep -q "^${1}=" "$configpath";then
+		sed -i "s#${1}=.*#${1}=${2}#g" "$configpath"
+	else
+		printf '%s=%s\n' "$1" "$2" >> "$configpath"
+	fi
 }
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
