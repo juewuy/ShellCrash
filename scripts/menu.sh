@@ -1849,6 +1849,10 @@ advanced_set() { #进阶设置
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
+	1)
+		. "$CRASHDIR"/components/gateway.sh && gateway
+		advanced_set
+		;;
 	3)
 		setfirewall
 		advanced_set
