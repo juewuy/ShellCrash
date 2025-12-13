@@ -84,7 +84,7 @@ jobs:
         curl -kfSL -o geodata/cn_mini.mmdb https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/Country.mmdb
         curl -kfSL -o geodata/china_ip_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv4-List/release/cn.txt
         curl -kfSL -o geodata/china_ipv6_list.txt https://raw.githubusercontent.com/ChanthMiao/China-IPv6-List/release/cn6.txt
-        curl -kfSL -o geodata/geosite.dat https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-geodata/geosite-all.dat
+        curl -kfSL -o geodata/geosite.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat
         curl -kfSL -o geodata/srs_geoip_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cnip.srs
         curl -kfSL -o geodata/srs_geosite_cn.srs https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cn.srs
         curl -kfSL -o geodata/mrs_geosite_cn.mrs https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs

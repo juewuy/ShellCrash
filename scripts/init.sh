@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.3beta5fix
+version=1.9.3beta6
 
 setdir() {
 	dir_avail() {
@@ -248,20 +248,19 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 [ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
 [ -w ~/.bashrc ] && profile=~/.bashrc
 [ -w /etc/profile ] && profile=/etc/profile
+set_profile(){
+	[ -z "$my_alias" ] && my_alias=crash
+	sed -i "/alias crash=*/"d "$1"
+	sed -i "/alias ${my_alias}=*/"d "$1"
+	echo "alias ${my_alias}=\"$shtype $CRASHDIR/menu.sh\"" >>"$1" #设置快捷命令环境变量
+	sed -i '/export CRASHDIR=*/'d "$1"
+	echo "export CRASHDIR=\"$CRASHDIR\"" >>"$1" #设置路径环境变量
+	. "$1" >/dev/null 2>&1
+}
 if [ -n "$profile" ]; then
-	sed -i '/alias crash=*/'d $profile
-	echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >>$profile #设置快捷命令环境变量
-	sed -i '/export CRASHDIR=*/'d $profile
-	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile #设置路径环境变量
-	. $profile >/dev/null 2>&1 || echo 运行错误！请使用bash而不是dash运行安装命令！！！
+	set_profile "$profile"
 	#适配zsh环境变量
-	zsh --version >/dev/null 2>&1 && [ -z "$(cat ~/.zshrc 2>/dev/null | grep CRASHDIR)" ] && {
-		sed -i '/alias crash=*/'d ~/.zshrc 2>/dev/null
-		echo "alias crash=\"$shtype $CRASHDIR/menu.sh\"" >>~/.zshrc
-		sed -i '/export CRASHDIR=*/'d ~/.zshrc 2>/dev/null
-		echo "export CRASHDIR=\"$CRASHDIR\"" >>~/.zshrc
-		. ~/.zshrc >/dev/null 2>&1
-	}
+	zsh --version >/dev/null 2>&1 && [ -z "$(cat ~/.zshrc 2>/dev/null | grep CRASHDIR)" ] && set_profile '~/.zshrc' 2>/dev/null
 else
 	echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
 	exit 1

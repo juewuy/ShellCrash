@@ -43,8 +43,9 @@ auto_clean(){
 	#自动清理升级备份文件夹
 	rm -rf /data/etc_bak
 	#自动清理被写入闪存的系统日志并禁止服务
-	/etc/init.d/stat_points stop
-	/etc/init.d/stat_points disable
+	/etc/init.d/stat_points stop 2>/dev/null
+	/etc/init.d/stat_points disable 2>/dev/null
+	sed -i '\#/logrotate#{ /^[[:space:]]*#/!s/^/#ShellCrash自动注释 / }' /etc/crontabs/root
 	rm -rf /data/usr/log
 }
 init(){

@@ -2262,7 +2262,7 @@ userguide(){
 					redir_mod="Redir模式"
 				fi
 			}
-			setconfig crashcore "mihomo"
+			setconfig crashcore "meta"
 			setconfig redir_mod "$redir_mod"
 			setconfig dns_mod mix
 			setconfig firewall_area '1'

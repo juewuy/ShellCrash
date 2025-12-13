@@ -302,6 +302,12 @@ check_singbox_config() { #检查singbox配置文件
 		sed -i 's/^.*"inbounds":/{"inbounds":/' "$core_config_new"
 		sed -i 's/{[^{}]*"dns-out"[^{}]*}//g' "$core_config_new"
 	}
+	#检查不支持的旧版内容
+	grep -q '"sni"' "$core_config_new" && {
+		logger "获取到了不支持的旧版(<1.12)配置文件【$core_config_new】！" 31
+		echo "请尝试使用支持1.12以上版本内核的方式生成配置文件！"
+		exit 1
+	}
 	#检测并去除无效策略组
 	[ -n "$url_type" ] && {
 		#获得无效策略组名称
@@ -682,7 +688,7 @@ EOF
 	#获取detour出口
 	auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//' )
 	[ -z "$auto_detour" ] && auto_detour=$(grep -E '"type": "selector"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//' )
-	[ -z "$auto_detour" ] && auto_detour=DIRECT
+	[ -z "$auto_detour" ] && auto_detour='"DIRECT"'
 	#根据dns模式生成
 	[ "$dns_mod" = "redir_host" ] && {
 		global_dns=dns_proxy
@@ -713,9 +719,8 @@ EOF
     "rule_set": [
       {
         "tag": "cn",
-        "type": "remote",
-        "path": "./ruleset/cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@update/bin/geodata/srs_geosite_cn.srs"
+        "type": "local",
+        "path": "./ruleset/cn.srs"
       }
     ]
   }
@@ -870,7 +875,7 @@ EOF
 	grep -qE '"tag": "REJECT"' "$TMPDIR"/jsons/outbounds.json || add_reject='{ "tag": "REJECT", "type": "block" }'
 	grep -qE '"tag": "GLOBAL"' "$TMPDIR"/jsons/outbounds.json || {
 		auto_proxies=$(grep -E '"type": "(selector|urltest)"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | sed 's/^[[:space:]]*"tag": //;$ s/,$//')
-		add_global='{ "tag": "GLOBAL", "type": "selector", "outbounds": ['"$auto_proxies"']}'
+		[ -n "$auto_proxies" ] && add_global='{ "tag": "GLOBAL", "type": "selector", "outbounds": ['"$auto_proxies"', "DIRECT"]}'
 	}
 	[ -n "$add_direct" -a -n "$add_reject" ] && add_direct="${add_direct},"
 	[ -n "$add_reject" -a -n "$add_global" ] && add_reject="${add_reject},"
