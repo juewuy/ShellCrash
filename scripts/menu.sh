@@ -1992,10 +1992,14 @@ uninstall() {
 		#移除其他内容
 		[ -w ~/.bashrc ] && profile=~/.bashrc
 		[ -w /etc/profile ] && profile=/etc/profile
-		sed -i '/alias clash=*/'d $profile
+		sed -i "/alias $my_alias=*/"d $profile
 		sed -i '/alias crash=*/'d $profile
 		sed -i '/export CRASHDIR=*/'d $profile
 		sed -i '/export crashdir=*/'d $profile
+		[ -w ~/.zshrc ] && {
+			sed -i "/alias $my_alias=*/"d ~/.zshrc
+			sed -i '/export CRASHDIR=*/'d ~/.zshrc
+		}
 		sed -i '/all_proxy/'d $profile
 		sed -i '/ALL_PROXY/'d $profile
 		sed -i "/启用外网访问SSH服务/d" /etc/firewall.user 2>/dev/null
