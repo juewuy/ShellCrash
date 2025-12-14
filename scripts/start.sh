@@ -1674,10 +1674,10 @@ web_save() { #最小化保存面板节点选择
 	#使用get_save获取面板节点设置
 	get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector"' | grep -aoE '"name":.*"now":".*",' >"$TMPDIR"/web_proxies
 	[ -s "$TMPDIR"/web_proxies ] && while read line; do
-		def=$(echo $line | grep -oE '"all".*",' | awk -F "[:\"]" '{print $5}')
-		now=$(echo $line | grep -oE '"now".*",' | awk -F "[:\"]" '{print $5}')
+		def=$(echo $line | grep -oE '"all".*",' | awk -F "[\"]" '{print $4}')
+		now=$(echo $line | grep -oE '"now".*",' | awk -F "[\"]" '{print $4}')
 		[ "$def" != "$now" ] && {
-			name=$(echo $line | grep -oE '"name".*",' | awk -F "[:\"]" '{print $5}')
+			name=$(echo $line | grep -oE '"name".*",' | awk -F "[\"]" '{print $4}')
 			echo "${name},${now}" >>"$TMPDIR"/web_save
 		}
 	done <"$TMPDIR"/web_proxies
