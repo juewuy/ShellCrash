@@ -634,7 +634,7 @@ modify_json() { #修饰singbox1.13配置文件
 	}
 	cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
 	#加载端点配置文件并生成
-	[ "ts_service" = ON ] || [ "wg_service" = ON ] && {
+	[ "$ts_service" = ON ] || [ "$wg_service" = ON ] && {
 		. "$CRASHDIR"/configs/gateway.cfg
 		. "$CRASHDIR"/components/endpoints.sh
 	}

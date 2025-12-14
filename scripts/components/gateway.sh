@@ -13,7 +13,8 @@ gateway(){
 	echo -e " 3 配置DDNS自动域名"
 	[ "$disoverride" != "1" ] && {
 		echo -e " 4 自定义公网入站节点"
-		echo -e " 5 配置\033[32m内网穿透\033[0m(Tailscale,仅限Singbox)"
+		echo -e " 5 配置\033[32mTailscale内网穿透\033[0m(限Singbox)"
+		echo -e " 6 配置\033[32mWireguard客户端\033[0m"
 	}
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -23,29 +24,33 @@ gateway(){
 	1)
 		set_pub_fw
 		gateway
-		;;
+	;;
 	2)
 		set_bot_tg
 		gateway
-		;;
+	;;
 	3)
 		set_ddns
 		gateway
-		;;
+	;;
 	4)
 		set_listeners
 		gateway
-		;;
+	;;
 	5)
 		if echo "$crashcore" | grep -q 'sing';then
-			setendpoints
+			set_tailscale
 		else
 			echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
 			sleep 1
 			checkupdate && setcore
 		fi
 		gateway
-		;;
+	;;
+	6)
+		set_wireguard
+		gateway
+	;;
 	*) errornum ;;
 	esac
 }
@@ -174,47 +179,122 @@ set_bot_tg(){
 set_ddns(){
 	echo
 }
-setendpoints(){
-	settailscale(){
-		[ -n "$ts_auth_key" ] && ts_auth_key_info='已设置'
-		echo -----------------------------------------------
-		echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译Tailscale模块\n如需使用请先前往自定义内核更新完整版内核文件！"
-		echo -e "创建秘钥:\033[32;4mhttps://login.tailscale.com/admin/settings/keys\033[0m"
-		echo -e "访问非本机目标需允许通告:\033[32;4mhttps://login.tailscale.com\033[0m"
-		echo -e "访问非本机目标需在终端设置使用Subnet或EXIT-NODE模式"
-		echo -----------------------------------------------
-		echo -e " 1 启用/关闭Tailscale服务	\033[32m$ts_service\033[0m"
-		echo -e " 2 设置秘钥(Auth Key)		\033[32m$ts_auth_key_info\033[0m"
-		echo -e " 3 通告路由内网地址(Subnet)	\033[32m$ts_subnet\033[0m"
-		echo -e " 4 通告路由全部流量(EXIT-NODE)	\033[32m$ts_exit_node\033[0m"
-		echo -e " 0 返回上级菜单 \033[0m"
-		echo -----------------------------------------------
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0) ;;
-		1)
+
+set_tailscale(){
+	[ -n "$ts_auth_key" ] && ts_auth_key_info='*********'
+	echo -----------------------------------------------
+	echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译Tailscale模块\n如需使用请先前往自定义内核更新完整版内核文件！"
+	echo -e "创建秘钥:\033[32;4mhttps://login.tailscale.com/admin/settings/keys\033[0m"
+	echo -e "访问非本机目标需允许通告:\033[32;4mhttps://login.tailscale.com\033[0m"
+	echo -e "访问非本机目标需在终端设置使用Subnet或EXIT-NODE模式"
+	echo -----------------------------------------------
+	echo -e " 1 \033[32m启用/关闭\033[0mTailscale服务	\033[32m$ts_service\033[0m"
+	echo -e " 2 设置\033[36m秘钥\033[0m(Auth Key)		$ts_auth_key_info"
+	echo -e " 3 通告路由\033[33m内网地址\033[0m(Subnet)	\033[36m$ts_subnet\033[0m"
+	echo -e " 4 通告路由\033[31m全部流量\033[0m(EXIT-NODE)	\033[36m$ts_exit_node\033[0m"
+	echo -e " 0 返回上级菜单 \033[0m"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	case "$num" in
+	0) ;;
+	1)
+		if [ -n "$ts_auth_key" ];then
 			[ "$ts_service" = ON ] && ts_service=OFF || ts_service=ON
 			setconfig ts_service "$ts_service"
-			settailscale
-			;;
+		else
+			echo -e "\033[31m请先设置秘钥！\033[0m"
+			sleep 1
+		fi
+		set_tailscale
+	;;
+	2)
+		read -p "请输入秘钥(输入0删除) > " text
+		[ "$text" = 0 ] && unset ts_auth_key ts_auth_key_info || ts_auth_key="$text"
+		[ -n "$ts_auth_key" ] && setconfig ts_auth_key "$ts_auth_key" "$CFG"
+		set_tailscale
+	;;
+	3)
+		[ "$ts_subnet" = true ] && ts_subnet=false || ts_subnet=true
+		setconfig ts_subnet "$ts_subnet" "$CFG"
+		set_tailscale
+	;;
+	4)
+		[ "$ts_exit_node" = true ] && ts_exit_node=false || ts_exit_node=true
+		setconfig ts_exit_node "$ts_exit_node" "$CFG"
+		set_tailscale
+	;;
+	*) errornum ;;
+	esac		
+}
+
+set_wireguard(){
+	[ -n "$wg_public_key" ] && wgp_key_info='*********' || unset wgp_key_info
+	[ -n "$wg_private_key" ] && wgv_key_info='*********' || unset wgv_key_info
+	[ -n "$wg_pre_shared_key" ] && wgpsk_key_info='*********' || unset wgpsk_key_info
+	echo -----------------------------------------------
+	echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译WireGuard模块\n如需使用请先前往自定义内核更新完整版内核文件！"
+	echo -----------------------------------------------
+	echo -e " 1 \033[32m启用/关闭\033[0mWireguard服务	\033[32m$wg_service\033[0m"
+	echo -----------------------------------------------
+	echo -e " 2 设置\033[36mEndpoint地址\033[0m：		\033[36m$wg_server\033[0m"
+	echo -e " 3 设置\033[36mEndpoint端口\033[0m：		\033[36m$wg_port\033[0m"
+	echo -e " 4 设置\033[36m公钥-PublicKey\033[0m：		\033[36m$wgp_key_info\033[0m"
+	echo -e " 5 设置\033[36m密钥-PresharedKey\033[0m：	\033[36m$wgpsk_key_info\033[0m"
+	echo -----------------------------------------------
+	echo -e " 6 设置\033[33m私钥-PrivateKey\033[0m：	\033[33m$wgv_key_info\033[0m"
+	echo -e " 7 设置\033[33m组网IPV4地址\033[0m：		\033[33m$wg_ipv4\033[0m"
+	echo -e " 8 可选\033[33m组网IPV6地址\033[0m：	\033[33m$wg_ipv6\033[0m"
+	echo -e " 0 返回上级菜单 \033[0m"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	case "$num" in
+	0) ;;
+	1)
+		if [ -n "$wg_server" ] && [ -n "$wg_port" ] && [ -n "$wg_public_key" ] && [ -n "$wg_pre_shared_key" ] && [ -n "$wg_private_key" ] && [ -n "$wg_ipv4" ];then
+			[ "$wg_service" = ON ] && wg_service=OFF || wg_service=ON
+			setconfig wg_service "$wg_service"
+		else
+			echo -e "\033[31m请先完成必选设置！\033[0m"
+			sleep 1
+		fi
+		set_wireguard
+	;;
+	[1-8])
+		read -p "请输入相应内容(回车或0删除) > " text
+		[ "$text" = 0 ] && text=''
+		case "$num" in
 		2)
-			read -p "请输入秘钥(输入0删除) > " text
-			[ "$text" = 0 ] && unset ts_auth_key ts_auth_key_info || ts_auth_key="$text"
-			[ -n "$ts_auth_key" ] && setconfig ts_auth_key "$ts_auth_key" "$CFG"
-			settailscale
-			;;
+			wg_server="$text"
+			setconfig wg_server "$text" "$CFG"
+		;;
 		3)
-			[ "$ts_subnet" = true ] && ts_subnet=false || ts_subnet=true
-			setconfig ts_subnet "$ts_subnet" "$CFG"
-			settailscale
-			;;
+			wg_port="$text"
+			setconfig wg_port "$text" "$CFG"
+		;;
 		4)
-			[ "$ts_exit_node" = true ] && ts_exit_node=false || ts_exit_node=true
-			setconfig ts_exit_node "$ts_exit_node" "$CFG"
-			settailscale
-			;;
-		*) errornum ;;
-		esac		
-	}
-	settailscale
+			wg_public_key="$text"
+			setconfig wg_public_key "$text" "$CFG"
+		;;
+		5)
+			wg_pre_shared_key="$text"
+			setconfig wg_pre_shared_key "$text" "$CFG"
+		;;
+		6)
+			wg_private_key="$text"
+			setconfig wg_private_key "$text" "$CFG"
+		;;
+		7)
+			wg_ipv4="$text"
+			setconfig wg_ipv4 "$text" "$CFG"
+		;;
+		8)
+			wg_ipv6="$text"
+			setconfig wg_ipv6 "$text" "$CFG"
+		;;
+
+		esac
+		set_wireguard
+	;;
+	*) errornum ;;
+	esac		
 }
