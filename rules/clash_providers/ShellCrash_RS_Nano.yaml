@@ -9,7 +9,7 @@ rule-providers:
     format: mrs
     path: ./ruleset/cn.mrs
     url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs"
-    interval: 86400  
+    interval: 86400
   privateip:
     type: http
     behavior: ipcidr

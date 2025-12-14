@@ -13,9 +13,8 @@ echo "***********************************************"
 dir_avail() {
 	df $2 $1 | awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' | grep -E 'Ava|可用' | awk '{print $2}'
 }
-setconfig() {
-	configpath=$CRASHDIR/configs/ShellCrash.cfg
-	[ -n "$(grep ${1} $configpath)" ] && sed -i "s#${1}=.*#${1}=${2}#g" $configpath || echo "${1}=${2}" >>$configpath
+ckcmd() { #检查命令
+	command -v sh >/dev/null 2>&1 && command -v "$1" || type "$1" 
 }
 webget() {
 	#参数【$1】代表下载目录，【$2】代表在线地址
@@ -43,6 +42,29 @@ error_down() {
 	$echo "\033[33m使用其他安装源重新安装！\033[0m"
 }
 #安装及初始化
+set_alias(){
+	echo -----------------------------------------------
+	$echo "\033[36m请选择一个别名，或使用自定义别名：\033[0m"
+	echo -----------------------------------------------
+	$echo " 1 【\033[32mcrash\033[0m】"
+	$echo " 2 【\033[32m sc \033[0m】"
+	$echo " 3 【\033[32m mm \033[0m】"
+	$echo " 0 退出安装"
+	echo -----------------------------------------------
+	read -p "请输入相应数字或自定义别名 > " res
+	case "$res" in
+	1) my_alias=crash ;;
+	2) my_alias=sc ;;
+	3) my_alias=mm ;;
+	*) my_alias=$res ;;
+	esac
+	cmd=$(ckcmd "$my_alias" | grep 'menu.sh')
+	ckcmd "$my_alias" >/dev/null 2>&1 && [ -z "$cmd" ] && {
+		$echo "\033[33m此别名和当前系统内置命令/别名冲突，请换一个！\033[0m"
+		sleep 1
+		set_alias
+	}
+}
 gettar() {
 	webget /tmp/ShellCrash.tar.gz "$url/ShellCrash.tar.gz"
 	if [ "$result" != "200" ]; then
@@ -57,7 +79,9 @@ gettar() {
 		mkdir -p $CRASHDIR >/dev/null
 		tar -zxf '/tmp/ShellCrash.tar.gz' -C $CRASHDIR/ || tar -zxf '/tmp/ShellCrash.tar.gz' --no-same-owner -C $CRASHDIR/
 		if [ -s $CRASHDIR/init.sh ]; then
-			. $CRASHDIR/init.sh >/dev/null || $echo "\033[33m初始化失败，请尝试本地安装！\033[0m"
+			set_alias
+			. $CRASHDIR/init.sh >/dev/null
+			[ "$?" != 0 ] && $echo "\033[33m初始化失败，请尝试本地安装！\033[0m" && exit 1
 		else
 			rm -rf /tmp/ShellCrash.tar.gz
 			$echo "\033[33m文件解压失败！\033[0m"
@@ -207,7 +231,7 @@ install() {
 	[ "$profile" = "~/.bashrc" ] && echo "请执行【. ~/.bashrc > /dev/null】命令以加载环境变量！"
 	[ -n "$(ls -l /bin/sh | grep -oE 'zsh')" ] && echo "请执行【. ~/.zshrc > /dev/null】命令以加载环境变量！"
 	echo -----------------------------------------------
-	$echo "\033[33m输入\033[30;47m crash \033[0;33m命令即可管理！！！\033[0m"
+	$echo "\033[33m输入\033[30;47m $my_alias \033[0;33m命令即可管理！！！\033[0m"
 	echo -----------------------------------------------
 }
 setversion() {

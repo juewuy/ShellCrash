@@ -1438,8 +1438,10 @@ setcustcore(){ #自定义内核
 	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核"
 	echo -e "2 \033[36mMetaCubeX/mihomo\033[32m@alpha\033[0m版本官方内核"
 	echo -e "3 \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)"
-	echo -e "4 \033[36mreF1nd/sing-box\033[32m@dev\033[0m版本内核(完整编译)"
-	echo -e "5 Premium-2023.08.17内核(已停止维护)"
+	echo -e "4 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本官方内核"
+	echo -e "5 \033[36mreF1nd/sing-box\033[32m@release\033[0m版本内核(完整编译)"
+	echo -e "6 \033[36mreF1nd/sing-box\033[32m@dev\033[0m版本内核(完整编译)"
+	echo -e "7 Premium-2023.08.17内核(已停止维护)"
 	echo -e "a \033[33m自定义内核链接 \033[0m"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
@@ -1463,12 +1465,24 @@ setcustcore(){ #自定义内核
 		checkcustcore
 	;;
 	4)
+		project=SagerNet/sing-box
+		api_tag=latest
+		crashcore=singbox
+		checkcustcore
+	;;
+	5)
 		project=juewuy/ShellCrash
 		api_tag=singbox_core_reF1nd
 		crashcore=singboxr
 		checkcustcore
 	;;
-	5)
+	6)
+		project=juewuy/ShellCrash
+		api_tag=singbox_core_dev_reF1nd
+		crashcore=singboxr
+		checkcustcore
+	;;
+	7)
 		project=juewuy/ShellCrash
 		api_tag=clash.premium.latest
 		crashcore=clashpre
@@ -2182,7 +2196,6 @@ update(){
 
 	elif [ "$num" = 2 ]; then
 		setcore
-		update
 
 	elif [ "$num" = 3 ]; then
 		setgeo
@@ -2262,7 +2275,7 @@ userguide(){
 					redir_mod="Redir模式"
 				fi
 			}
-			setconfig crashcore "mihomo"
+			setconfig crashcore "meta"
 			setconfig redir_mod "$redir_mod"
 			setconfig dns_mod mix
 			setconfig firewall_area '1'

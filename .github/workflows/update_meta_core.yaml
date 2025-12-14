@@ -195,6 +195,12 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
           git add . && git commit -m "更新${crashcore}内核至${VERSION}" || exit 0
           git push
+          #刷新cdn缓存
+          sleep 60
+          find "bin/${crashcore}" -type f | while read -r file; do
+            curl -s "https://purge.jsdelivr.net/gh/juewuy/ShellClash@update/${file#bin/}" || true
+          done
+          curl -s https://purge.jsdelivr.net/gh/juewuy/ShellClash@update/bin/version  || true
           
       - name: Create Release and Upload Release Asset
         if: ${{ env.RELEASE != '' && env.PUSHDIR == '' }}

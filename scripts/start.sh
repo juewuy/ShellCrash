@@ -303,6 +303,12 @@ check_singbox_config() { #检查singbox配置文件
 		sed -i 's/{[^{}]*"dns-out"[^{}]*}//g' "$core_config_new"
 	}
 	#检测并去除无效策略组
+	grep -q '"sni"' "$core_config_new" && {
+		logger "获取到了不支持的旧版(<1.12)配置文件【$core_config_new】！" 31
+		echo "请尝试使用支持1.12以上版本内核的方式生成配置文件！"
+		exit 1
+	}
+	#检测并去除无效策略组
 	[ -n "$url_type" ] && {
 		#获得无效策略组名称
 		grep -oE '\{"type":"urltest","tag":"[^"]*","outbounds":\["DIRECT"\]' "$core_config_new" | sed -n 's/.*"tag":"\([^"]*\)".*/\1/p' >"$TMPDIR"/singbox_tags
@@ -432,11 +438,12 @@ EOF
 		[ "$dns_mod" = "mix" ] && echo '    - "rule-set:cn"' >>"$TMPDIR"/dns.yaml
 		#mix模式和route模式插入分流设置
 		if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ];then
+			[ "$dns_protect" = "OFF" ] && dns_final="$dns_fallback" || dns_final="$dns_nameserver"
 			cat >>"$TMPDIR"/dns.yaml <<EOF
   respect-rules: true
   nameserver-policy: {'rule-set:cn': [ $dns_nameserver ]}
   proxy-server-nameserver : [ $dns_resolver ]
-  nameserver: [ $dns_fallback ]
+  nameserver: [ $dns_final ]
 EOF
 		else
 			cat >>"$TMPDIR"/dns.yaml <<EOF
@@ -687,11 +694,11 @@ EOF
 	#获取detour出口
 	auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//' )
 	[ -z "$auto_detour" ] && auto_detour=$(grep -E '"type": "selector"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//' )
-	[ -z "$auto_detour" ] && auto_detour=DIRECT
+	[ -z "$auto_detour" ] && auto_detour='"DIRECT"'
 	#根据dns模式生成
 	[ "$dns_mod" = "redir_host" ] && {
 		global_dns=dns_proxy
-		direct_dns="{ \"inbound\": [ \"dns-in\" ], \"server\": \"dns_direct\" }"
+		direct_dns='{ "inbound": [ "dns-in" ], "server": "dns_direct" }'
 	}
 	[ "$dns_mod" = "fake-ip" ] || [ "$dns_mod" = "mix" ] && {
 		global_dns=dns_fakeip
@@ -703,13 +710,15 @@ EOF
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
 		proxy_dns='{ "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "'"$strategy"'", "rewrite_ttl": 1 }'
 		#mix模式插入fakeip过滤规则
-		[ "$dns_mod" = "mix" ] && direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" },"
+		[ "$dns_mod" = "mix" ] && direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" }'
 	}
 	[ "$dns_mod" = "route" ] && {
 		global_dns=dns_proxy
-		direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" }"
+		direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" }'
 	}
 		#生成add_rule_set.json
+	[ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
+	#生成add_rule_set.json
 		[ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && \
 		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] && \
 		cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
@@ -718,9 +727,8 @@ EOF
     "rule_set": [
       {
         "tag": "cn",
-        "type": "remote",
-        "path": "./ruleset/cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@update/bin/geodata/srs_geosite_cn.srs"
+        "type": "local",
+        "path": "./ruleset/cn.srs"
       }
     ]
   }
@@ -785,29 +793,17 @@ EOF
 	"default_domain_resolver": "dns_resolver",
     "default_mark": $routing_mark,
 	"rules": [
-	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
+	  { "inbound": [ "dns-in" ], "action": "sniff", "timeout": "500ms" },
 	  $tailscale_set
 	  $sniffer_set
       { "protocol": "dns", "action": "hijack-dns" },
+	  { "inbound": [ "dns-in" ], "action": "reject" },
       { "clash_mode": "Direct" , "outbound": "DIRECT" },
       { "clash_mode": "Global" , "outbound": "GLOBAL" }
 	]
   }
 }
 EOF
-	#生成ntp.json
-	# cat > "$TMPDIR"/jsons/ntp.json <<EOF
-	# {
-	# "ntp": {
-	# "enabled": true,
-	# "server": "203.107.6.88",
-	# "server_port": 123,
-	# "interval": "30m0s",
-	# "detour": "DIRECT"
-	# }
-	# }
-	# EOF
-	#生成certificate.json
 	cat >"$TMPDIR"/jsons/certificate.json <<EOF
 {
   "certificate": {
@@ -877,7 +873,7 @@ EOF
 	grep -qE '"tag": "REJECT"' "$TMPDIR"/jsons/outbounds.json || add_reject='{ "tag": "REJECT", "type": "block" }'
 	grep -qE '"tag": "GLOBAL"' "$TMPDIR"/jsons/outbounds.json || {
 		auto_proxies=$(grep -E '"type": "(selector|urltest)"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | sed 's/^[[:space:]]*"tag": //;$ s/,$//')
-		add_global='{ "tag": "GLOBAL", "type": "selector", "outbounds": ['"$auto_proxies"']}'
+		[ -n "$auto_proxies" ] && add_global='{ "tag": "GLOBAL", "type": "selector", "outbounds": ['"$auto_proxies"', "DIRECT"]}'
 	}
 	[ -n "$add_direct" -a -n "$add_reject" ] && add_direct="${add_direct},"
 	[ -n "$add_reject" -a -n "$add_global" ] && add_reject="${add_reject},"
@@ -1676,10 +1672,10 @@ web_save() { #最小化保存面板节点选择
 	#使用get_save获取面板节点设置
 	get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector"' | grep -aoE '"name":.*"now":".*",' >"$TMPDIR"/web_proxies
 	[ -s "$TMPDIR"/web_proxies ] && while read line; do
-		def=$(echo $line | grep -oE '"all".*",' | awk -F "[:\"]" '{print $5}')
-		now=$(echo $line | grep -oE '"now".*",' | awk -F "[:\"]" '{print $5}')
+		def=$(echo $line | grep -oE '"all".*",' | awk -F "[\"]" '{print $4}')
+		now=$(echo $line | grep -oE '"now".*",' | awk -F "[\"]" '{print $4}')
 		[ "$def" != "$now" ] && {
-			name=$(echo $line | grep -oE '"name".*",' | awk -F "[:\"]" '{print $5}')
+			name=$(echo $line | grep -oE '"name".*",' | awk -F "[\"]" '{print $4}')
 			echo "${name},${now}" >>"$TMPDIR"/web_save
 		}
 	done <"$TMPDIR"/web_proxies
@@ -1698,12 +1694,11 @@ web_restore() { #还原面板选择
 	#设置循环检测面板端口以判定服务启动是否成功
 	test=""
 	i=1
-	while [ -z "$test" -a "$i" -lt 20 ]; do
-		sleep 2
-		test=$(get_save http://127.0.0.1:${db_port}/configs | grep -o port)
+	while [ -z "$test" -a "$i" -lt 30 ]; do
+		test=$(get_save http://127.0.0.1:${db_port}/proxies | grep -o proxies)
 		i=$((i + 1))
+		sleep 2
 	done
-	sleep 1
 	[ -n "$test" ] && {
 		#发送节点选择数据
 		[ -s "$CRASHDIR"/configs/web_save ] && {
