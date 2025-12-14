@@ -574,7 +574,7 @@ EOF
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
 	#mix模式生成rule-providers
-	[ "$dns_mod" = "mix" ] && ! grep -q ' cn: ' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+	[ "$dns_mod" = "mix" ] && ! grep -q 'cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
 		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
 		[ -z "$space" ] && space='  '
 		echo "${space}cn: {type: http, behavior: domain, format: mrs, path: ./ruleset/cn.mrs, url: https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@update/bin/geodata/mrs_geosite_cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
@@ -705,7 +705,7 @@ EOF
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
 		proxy_dns='{ "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "'"$strategy"'", "rewrite_ttl": 1 }'
 		#mix模式插入fakeip过滤规则
-		[ "$dns_mod" = "mix" ] && direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" }'
+		[ "$dns_mod" = "mix" ] && direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" },'
 	}
 	[ "$dns_mod" = "route" ] && {
 		global_dns=dns_proxy
