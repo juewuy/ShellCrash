@@ -699,6 +699,7 @@ setdns() { #DNS详细设置
 	[ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
 	[ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
 	[ -z "$hosts_opt" ] && hosts_opt=已启用
+	[ -z "$dns_protect" ] && dns_protect=ON
 	[ -z "$dns_redir" ] && dns_redir=未开启
 	[ -z "$dns_no" ] && dns_no=未禁用
 	echo -----------------------------------------------
@@ -712,10 +713,11 @@ setdns() { #DNS详细设置
 	echo -e " 1 修改\033[32m基础DNS\033[0m"
 	echo -e " 2 修改\033[36mPROXY-DNS\033[0m(该DNS查询会经过节点)"
 	echo -e " 3 修改\033[33m解析DNS\033[0m(必须是IP,用于解析其他DNS)"
-	echo -e " 4 一键配置\033[32m加密DNS\033[0m"
-	echo -e " 5 hosts优化：  	\033[36m$hosts_opt\033[0m	————调用本机hosts并劫持NTP服务"
-	echo -e " 6 Dnsmasq转发：	\033[36m$dns_redir\033[0m	————不推荐使用"
-	echo -e " 7 禁用DNS劫持：	\033[36m$dns_no\033[0m	————搭配第三方DNS使用"
+	echo -e " 4 DNS防泄漏：  \033[36m$dns_protect\033[0m	———启用时少量网站可能连接卡顿"
+	echo -e " 5 hosts优化：  \033[36m$hosts_opt\033[0m	———调用本机hosts并劫持NTP服务"
+	#echo -e " 6 Dnsmasq转发：\033[36m$dns_redir\033[0m	———不推荐使用"
+	echo -e " 7 禁用DNS劫持：\033[36m$dns_no\033[0m	———搭配第三方DNS使用"
+	echo -e " 8 一键配置\033[32m加密DNS\033[0m"
 	echo -e " 9 \033[33m重置\033[0m默认DNS配置"
 	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
@@ -756,21 +758,9 @@ setdns() { #DNS详细设置
 		setdns
 	;;
 	4)
-		echo -----------------------------------------------
-		openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
-		if [ -s "$openssldir/certs/ca-certificates.crt" -o -s "/etc/ssl/certs/ca-certificates.crt" ]; then
-			dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
-			dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
-			dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
-			setconfig dns_nameserver "'$dns_nameserver'"
-			setconfig dns_fallback "'$dns_fallback'"
-			setconfig dns_resolver "'$dns_resolver'"
-			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"
-		else
-			echo -e "\033[31m找不到根证书文件，无法启用加密DNS，Linux系统请自行搜索安装OpenSSL的方式！\033[0m"
-		fi
-		sleep 1
-		setdns
+		[ "$dns_protect" = "ON" ] && dns_protect=OFF || dns_protect=ON
+		setconfig dns_protect $dns_protect
+		setdns		
 	;;
 	5)
 		echo -----------------------------------------------
@@ -815,6 +805,24 @@ setdns() { #DNS详细设置
 			echo -e "\033[33m已启用DNS劫持！！！\033[0m"
 		fi
 		setconfig dns_no $dns_no
+		sleep 1
+		setdns
+	;;
+	8)
+		echo -----------------------------------------------
+		openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
+		if [ -s "$openssldir/certs/ca-certificates.crt" ] || [ -s "/etc/ssl/certs/ca-certificates.crt" ] || \
+			echo "$crashcore" |grep -qE 'meta|singbox'; then
+			dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
+			dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
+			dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
+			setconfig dns_nameserver "'$dns_nameserver'"
+			setconfig dns_fallback "'$dns_fallback'"
+			setconfig dns_resolver "'$dns_resolver'"
+			echo -e "\033[32m已设置加密DNS，如出现DNS解析问题，请尝试重置DNS配置！\033[0m"
+		else
+			echo -e "\033[31m找不到根证书文件，无法启用加密DNS，Linux系统请自行搜索安装OpenSSL的方式！\033[0m"
+		fi
 		sleep 1
 		setdns
 	;;

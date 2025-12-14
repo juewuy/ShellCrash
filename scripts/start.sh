@@ -438,11 +438,12 @@ EOF
 		[ "$dns_mod" = "mix" ] && echo '    - "rule-set:cn"' >>"$TMPDIR"/dns.yaml
 		#mix模式和route模式插入分流设置
 		if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ];then
+			[ "$dns_protect" = "OFF" ] && dns_final="$dns_fallback" || dns_final="$dns_nameserver"
 			cat >>"$TMPDIR"/dns.yaml <<EOF
   respect-rules: true
   nameserver-policy: {'rule-set:cn': [ $dns_nameserver ]}
   proxy-server-nameserver : [ $dns_resolver ]
-  nameserver: [ $dns_fallback ]
+  nameserver: [ $dns_final ]
 EOF
 		else
 			cat >>"$TMPDIR"/dns.yaml <<EOF
@@ -573,7 +574,7 @@ EOF
 		mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
 	}
 	#mix模式生成rule-providers
-	[ "$dns_mod" = "mix" ] && ! grep -q 'cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+	[ "$dns_mod" = "mix" ] && ! grep -q ' cn: ' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
 		space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *')                               #获取空格数
 		[ -z "$space" ] && space='  '
 		echo "${space}cn: {type: http, behavior: domain, format: mrs, path: ./ruleset/cn.mrs, url: https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@update/bin/geodata/mrs_geosite_cn.mrs}" >> "$TMPDIR"/rule-providers.yaml 
@@ -692,7 +693,7 @@ EOF
 	#根据dns模式生成
 	[ "$dns_mod" = "redir_host" ] && {
 		global_dns=dns_proxy
-		direct_dns="{ \"inbound\": [ \"dns-in\" ], \"server\": \"dns_direct\" }"
+		direct_dns='{ "inbound": [ "dns-in" ], "server": "dns_direct" }'
 	}
 	[ "$dns_mod" = "fake-ip" ] || [ "$dns_mod" = "mix" ] && {
 		global_dns=dns_fakeip
@@ -704,16 +705,18 @@ EOF
 		[ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
 		proxy_dns='{ "query_type": ["A", "AAAA"], "server": "dns_fakeip", "strategy": "'"$strategy"'", "rewrite_ttl": 1 }'
 		#mix模式插入fakeip过滤规则
-		[ "$dns_mod" = "mix" ] && direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" },"
+		[ "$dns_mod" = "mix" ] && direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" }'
 	}
 	[ "$dns_mod" = "route" ] && {
 		global_dns=dns_proxy
-		direct_dns="{ \"rule_set\": [\"cn\"], \"server\": \"dns_direct\" }"
+		direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" }'
 	}
-		#生成add_rule_set.json
-		[ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && \
-		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] && \
-		cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
+	#防泄露设置
+	[ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
+	#生成add_rule_set.json
+	[ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && \
+	[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] && \
+	cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
     "rule_set": [
@@ -784,27 +787,16 @@ EOF
 	"default_domain_resolver": "dns_resolver",
     "default_mark": $routing_mark,
 	"rules": [
-	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
+	  { "inbound": [ "dns-in" ], "action": "sniff", "timeout": "500ms" },
 	  $sniffer_set
       { "protocol": "dns", "action": "hijack-dns" },
+	  { "inbound": [ "dns-in" ], "action": "reject" },
       { "clash_mode": "Direct" , "outbound": "DIRECT" },
       { "clash_mode": "Global" , "outbound": "GLOBAL" }
 	]
   }
 }
 EOF
-	#生成ntp.json
-	# cat > "$TMPDIR"/jsons/ntp.json <<EOF
-	# {
-	# "ntp": {
-	# "enabled": true,
-	# "server": "203.107.6.88",
-	# "server_port": 123,
-	# "interval": "30m0s",
-	# "detour": "DIRECT"
-	# }
-	# }
-	# EOF
 	#生成certificate.json
 	cat >"$TMPDIR"/jsons/certificate.json <<EOF
 {
@@ -1696,12 +1688,11 @@ web_restore() { #还原面板选择
 	#设置循环检测面板端口以判定服务启动是否成功
 	test=""
 	i=1
-	while [ -z "$test" -a "$i" -lt 20 ]; do
-		sleep 2
-		test=$(get_save http://127.0.0.1:${db_port}/configs | grep -o port)
+	while [ -z "$test" -a "$i" -lt 30 ]; do
+		test=$(get_save http://127.0.0.1:${db_port}/proxies | grep -o proxies)
 		i=$((i + 1))
+		sleep 2
 	done
-	sleep 1
 	[ -n "$test" ] && {
 		#发送节点选择数据
 		[ -s "$CRASHDIR"/configs/web_save ] && {
