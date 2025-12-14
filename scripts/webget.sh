@@ -2182,7 +2182,6 @@ update(){
 
 	elif [ "$num" = 2 ]; then
 		setcore
-		update
 
 	elif [ "$num" = 3 ]; then
 		setgeo
