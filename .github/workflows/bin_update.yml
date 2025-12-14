@@ -150,7 +150,12 @@ jobs:
         git branch -M update
         git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
         git push -f origin update
-
+        #刷新cdn缓存
+        sleep 60
+        find bin/dashboard bin/geodata -type f 2>/dev/null | while read -r file; do
+          curl -s "https://purge.jsdelivr.net/gh/juewuy/ShellClash@update/${file#bin/}" || true
+        done
+        curl -s https://purge.jsdelivr.net/gh/juewuy/ShellClash@update/bin/version  || true
     - name: Cleanup Workflow
       uses: Mattraks/delete-workflow-runs@main
       with:
