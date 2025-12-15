@@ -255,28 +255,28 @@ check_clash_config() { #检查clash配置文件
 	#检测节点或providers
 	sed -n "/^proxies:/,/^[a-z]/ { /^[a-z]/d; p; }" "$core_config_new" >"$TMPDIR"/proxies.yaml
 	if ! grep -Eq 'server:|server":|server'\'':' "$TMPDIR"/proxies.yaml && ! grep -q 'proxy-providers:' "$core_config_new"; then
-		echo -----------------------------------------------
+        echo "-----------------------------------------------"
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		cat "$TMPDIR"/proxies.yaml
 		sleep 1
-		echo -----------------------------------------------
+        echo "-----------------------------------------------"
 		echo "请尝试使用6-2或者6-3的方式生成配置文件！"
 		exit 1
 	fi
 	rm -rf "$TMPDIR"/proxies.yaml
 	#检测旧格式
 	if cat "$core_config_new" | grep 'Proxy Group:' >/dev/null; then
-		echo -----------------------------------------------
+        echo "-----------------------------------------------"
 		logger "已经停止对旧格式配置文件的支持！！！" 31
 		echo -e "请使用新格式或者使用【在线生成配置文件】功能！"
-		echo -----------------------------------------------
+        echo "-----------------------------------------------"
 		exit 1
 	fi
 	#检测不支持的加密协议
 	if cat "$core_config_new" | grep 'cipher: chacha20,' >/dev/null; then
-		echo -----------------------------------------------
+        echo "-----------------------------------------------"
 		logger "已停止支持chacha20加密，请更换更安全的节点加密协议！" 31
-		echo -----------------------------------------------
+        echo "-----------------------------------------------"
 		exit 1
 	fi
 	#检测并去除无效策略组
@@ -292,7 +292,7 @@ check_clash_config() { #检查clash配置文件
 check_singbox_config() { #检查singbox配置文件
 	#检测节点或providers
 	if ! grep -qE '"(socks|http|shadowsocks(r)?|vmess|trojan|wireguard|hysteria(2)?|vless|shadowtls|tuic|ssh|tor|providers|anytls|soduku)"' "$core_config_new"; then
-		echo -----------------------------------------------
+        echo "-----------------------------------------------"
 		logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
 		echo "请尝试使用6-2或者6-3的方式生成配置文件！"
 		exit 1
@@ -302,7 +302,7 @@ check_singbox_config() { #检查singbox配置文件
 		sed -i 's/^.*"inbounds":/{"inbounds":/' "$core_config_new"
 		sed -i 's/{[^{}]*"dns-out"[^{}]*}//g' "$core_config_new"
 	}
-	#检测并去除无效策略组
+    #检查不支持的旧版内容
 	grep -q '"sni"' "$core_config_new" && {
 		logger "获取到了不支持的旧版(<1.12)配置文件【$core_config_new】！" 31
 		echo "请尝试使用支持1.12以上版本内核的方式生成配置文件！"
@@ -341,7 +341,7 @@ get_core_config() { #下载内核配置文件
 		url_type=true
 	fi
 	#输出
-	echo -----------------------------------------------
+    echo "-----------------------------------------------"
 	logger 正在连接服务器获取【${target}】配置文件…………
 	echo -e "链接地址为：\033[4;32m$Https\033[0m"
 	echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
@@ -351,10 +351,10 @@ get_core_config() { #下载内核配置文件
 	$0 webget "$core_config_new" "$Https" echoon rediron skipceron "$user_agent"
 	if [ "$?" = "1" ]; then
 		if [ -z "$url_type" ]; then
-			echo -----------------------------------------------
+            echo "-----------------------------------------------"
 			logger "配置文件获取失败！" 31
 			echo -e "\033[31m请尝试使用【在线生成配置文件】功能！\033[0m"
-			echo -----------------------------------------------
+            echo "-----------------------------------------------"
 			exit 1
 		else
 			if [ "$retry" -ge 3 ]; then
@@ -716,12 +716,12 @@ EOF
 		global_dns=dns_proxy
 		direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" }'
 	}
-		#生成add_rule_set.json
+    #防泄露设置
 	[ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
 	#生成add_rule_set.json
-		[ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && \
-		[ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] && \
-		cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] &&
+        [ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] &&
+        cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
     "rule_set": [
@@ -804,6 +804,7 @@ EOF
   }
 }
 EOF
+    #生成certificate.json
 	cat >"$TMPDIR"/jsons/certificate.json <<EOF
 {
   "certificate": {
@@ -1823,7 +1824,7 @@ core_exchange() { #升级为高级内核
 	rm -rf "$BINDIR"/CrashCore.tar.gz
 	crashcore="$1"
 	setconfig crashcore "$1"
-	echo -----------------------------------------------
+    echo "-----------------------------------------------"
 }
 clash_check() { #clash启动前检查
 	#检测vless/hysteria协议
