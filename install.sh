@@ -9,13 +9,17 @@ echo "**                 欢迎使用                  **"
 echo "**                ShellCrash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
+
 #内置工具
 dir_avail() {
     df $2 $1 | awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' | grep -E 'Ava|可用' | awk '{print $2}'
 }
-ckcmd() { #检查命令
+
+#检查命令
+ckcmd() {
     command -v sh >/dev/null 2>&1 && command -v "$1" || type "$1"
 }
+
 webget() {
     #参数【$1】代表下载目录，【$2】代表在线地址
     #参数【$3】代表输出显示，【$4】不启用重定向
@@ -37,34 +41,54 @@ webget() {
         [ $? -eq 0 ] && result="200"
     fi
 }
+
 error_down() {
     $echo "请参考 \033[32mhttps://github.com/juewuy/ShellCrash/blob/master/README_CN.md"
     $echo "\033[33m使用其他安装源重新安装！\033[0m"
 }
+
 #安装及初始化
 set_alias() {
-    echo "-----------------------------------------------"
-    $echo "\033[36m请选择一个别名，或使用自定义别名：\033[0m"
-    echo "-----------------------------------------------"
-    $echo " 1 【\033[32mcrash\033[0m】"
-    $echo " 2 【\033[32m sc \033[0m】"
-    $echo " 3 【\033[32m mm \033[0m】"
-    $echo " 0 退出安装"
-    echo "-----------------------------------------------"
-    read -p "请输入相应数字或自定义别名 > " res
-    case "$res" in
-    1) my_alias=crash ;;
-    2) my_alias=sc ;;
-    3) my_alias=mm ;;
-    *) my_alias=$res ;;
-    esac
-    cmd=$(ckcmd "$my_alias" | grep 'menu.sh')
-    ckcmd "$my_alias" >/dev/null 2>&1 && [ -z "$cmd" ] && {
-        $echo "\033[33m此别名和当前系统内置命令/别名冲突，请换一个！\033[0m"
+    while true; do
+        echo "-----------------------------------------------"
+        $echo "\033[36m请选择一个别名，或使用自定义别名：\033[0m"
+        echo "-----------------------------------------------"
+        $echo " 1 【\033[32mcrash\033[0m】"
+        $echo " 2 【\033[32m sc \033[0m】"
+        $echo " 3 【\033[32m mm \033[0m】"
+        $echo " 0 退出安装"
+        echo "-----------------------------------------------"
+        read -p "请输入相应数字或自定义别名 > " res
+        case "$res" in
+        0)
+            return
+            ;;
+        1)
+            my_alias=crash
+            ;;
+        2)
+            my_alias=sc
+            ;;
+        3)
+            my_alias=mm
+            ;;
+        *)
+            my_alias=$res
+            ;;
+        esac
+
+        cmd=$(ckcmd "$my_alias" | grep 'menu.sh')
+        ckcmd "$my_alias" >/dev/null 2>&1 && [ -z "$cmd" ] && {
+            $echo "\033[33m此别名和当前系统内置命令/别名冲突，请更换！\033[0m"
+            sleep 1
+            continue
+        }
+        $echo "\033[32m别名 \"$my_alias\" 可用，已选择\033[0m"
         sleep 1
-        set_alias
-    }
+        break
+    done
 }
+
 gettar() {
     webget /tmp/ShellCrash.tar.gz "$url/ShellCrash.tar.gz"
     if [ "$result" != "200" ]; then
@@ -75,7 +99,7 @@ gettar() {
         $CRASHDIR/start.sh stop 2>/dev/null
         #解压
         echo "-----------------------------------------------"
-        echo 开始解压文件！
+        echo "开始解压文件！"
         mkdir -p $CRASHDIR >/dev/null
         tar -zxf '/tmp/ShellCrash.tar.gz' -C $CRASHDIR/ || tar -zxf '/tmp/ShellCrash.tar.gz' --no-same-owner -C $CRASHDIR/
         if [ -s $CRASHDIR/init.sh ]; then
@@ -90,141 +114,183 @@ gettar() {
         fi
     fi
 }
+
 setdir() {
     set_usb_dir() {
-        $echo "请选择安装目录"
-        du -hL /mnt | awk '{print " "NR" "$2"  "$1}'
-        read -p "请输入相应数字 > " num
-        dir=$(du -hL /mnt | awk '{print $2}' | sed -n "$num"p)
-        if [ -z "$dir" ]; then
-            $echo "\033[31m输入错误！请重新设置！\033[0m"
-            set_usb_dir
-        fi
+        while true; do
+            $echo "请选择安装目录"
+            du -hL /mnt | awk '{print " "NR" "$2"  "$1}'
+            read -p "请输入相应数字 > " num
+            dir=$(du -hL /mnt | awk '{print $2}' | sed -n "$num"p)
+            if [ -z "$dir" ]; then
+                $echo "\033[31m输入错误！请重新设置！\033[0m"
+                continue
+            fi
+            return
+        done
     }
+
     set_asus_dir() {
-        echo -e "请选择U盘目录"
-        du -hL /tmp/mnt | awk -F/ 'NF<=4' | awk '{print " "NR" "$2"  "$1}'
-        read -p "请输入相应数字 > " num
-        dir=$(du -hL /tmp/mnt | awk -F/ 'NF<=4' | awk '{print $2}' | sed -n "$num"p)
-        if [ ! -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ]; then
-            echo -e "\033[31m未找到下载大师自启文件：$dir/asusware.arm/etc/init.d/S50downloadmaster，请检查设置！\033[0m"
-            set_asus_dir
-        fi
+        while true; do
+            echo -e "请选择U盘目录"
+            du -hL /tmp/mnt | awk -F/ 'NF<=4' | awk '{print " "NR" "$2"  "$1}'
+            read -p "请输入相应数字 > " num
+            dir=$(du -hL /tmp/mnt | awk -F/ 'NF<=4' | awk '{print $2}' | sed -n "$num"p)
+            if [ ! -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ]; then
+                echo -e "\033[31m未找到下载大师自启文件：$dir/asusware.arm/etc/init.d/S50downloadmaster，请检查设置！\033[0m"
+                continue
+            fi
+            return
+        done
     }
+
     set_cust_dir() {
-        echo "-----------------------------------------------"
-        echo '可用路径 剩余空间:'
-        df -h | awk '{print $6,$4}' | sed 1d
-        echo '路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！'
-        read -p "请输入自定义路径 > " dir
-        if [ "$(dir_avail $dir)" = 0 ] || [ -n "$(echo $dir | grep -E 'tmp|opt|sys')" ]; then
-            $echo "\033[31m路径错误！请重新设置！\033[0m"
-            set_cust_dir
-        fi
+        while true; do
+            echo "-----------------------------------------------"
+            echo "可用路径 剩余空间:"
+            df -h | awk '{print $6,$4}' | sed 1d
+            echo "路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！"
+            read -p "请输入自定义路径 > " dir
+            if [ "$(dir_avail '$dir')" = 0 ] || echo "$dir" | grep -Eq '(^|/)(tmp|opt|sys)(/|$)'; then
+                $echo "\033[31m路径错误！请重新设置！\033[0m"
+                continue
+            fi
+            return
+        done
     }
-    echo "-----------------------------------------------"
-    $echo "\033[33m注意：安装ShellCrash至少需要预留约1MB的磁盘空间\033[0m"
+
+    # ========== 目录选择阶段 ==========
     if [ -n "$systype" ]; then
         [ "$systype" = "Padavan" ] && dir=/etc/storage
+
         [ "$systype" = "mi_snapshot" ] && {
-            $echo "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"
-            [ -d /data ] && $echo " 1 安装到 /data 目录,剩余空间：$(dir_avail /data -h)(支持软固化功能)"
-            [ -d /userdisk ] && $echo " 2 安装到 /userdisk 目录,剩余空间：$(dir_avail /userdisk -h)(支持软固化功能)"
-            [ -d /data/other_vol ] && $echo " 3 安装到 /data/other_vol 目录,剩余空间：$(dir_avail /data/other_vol -h)(支持软固化功能)"
-            $echo " 4 安装到自定义目录(不推荐，不明勿用！)"
-            $echo " 0 退出安装"
-            echo "-----------------------------------------------"
-            read -p "请输入相应数字 > " num
-            case "$num" in
-            1)
-                dir=/data
-                ;;
-            2)
-                dir=/userdisk
-                ;;
-            3)
-                dir=/data/other_vol
-                ;;
-            4)
-                set_cust_dir
-                ;;
-            *)
-                exit 1
-                ;;
-            esac
+            while true; do
+                $echo "\033[33m检测到当前设备为小米官方系统，请选择安装位置\033[0m"
+                [ -d /data ] && $echo " 1 安装到 /data 目录,剩余空间：$(dir_avail /data -h)(支持软固化功能)"
+                [ -d /userdisk ] && $echo " 2 安装到 /userdisk 目录,剩余空间：$(dir_avail /userdisk -h)(支持软固化功能)"
+                [ -d /data/other_vol ] && $echo " 3 安装到 /data/other_vol 目录,剩余空间：$(dir_avail /data/other_vol -h)(支持软固化功能)"
+                $echo " 4 安装到自定义目录(不推荐，不明勿用！)"
+                $echo " 0 退出安装"
+                echo "-----------------------------------------------"
+                read -p "请输入相应数字 > " num
+                case "$num" in
+                0)
+                    exit 0
+                    ;;
+                1)
+                    dir=/data
+                    break
+                    ;;
+                2)
+                    dir=/userdisk
+                    break
+                    ;;
+                3)
+                    dir=/data/other_vol
+                    break
+                    ;;
+                4)
+                    set_cust_dir
+                    break
+                    ;;
+                *) echo "无效输入，请重新输入" ;;
+                esac
+            done
         }
+
         [ "$systype" = "asusrouter" ] && {
-            $echo "\033[33m检测到当前设备为华硕固件，请选择安装方式\033[0m"
-            $echo " 1 基于USB设备安装(限23年9月之前固件，须插入\033[31m任意\033[0mUSB设备)"
-            $echo " 2 基于自启脚本安装(仅支持梅林及部分非koolshare官改固件)"
-            $echo " 3 基于U盘+下载大师安装(支持所有固件，限ARM设备，须插入U盘或移动硬盘)"
-            $echo " 0 退出安装"
-            echo "-----------------------------------------------"
-            read -p "请输入相应数字 > " num
-            case "$num" in
-            1)
-                read -p "将脚本安装到USB存储/系统闪存？(1/0) > " res
-                [ "$res" = "1" ] && set_usb_dir || dir=/jffs
-                usb_status=1
-                ;;
-            2)
-                $echo "如无法正常开机启动，请重新使用USB方式安装！"
-                sleep 2
-                dir=/jffs
-                ;;
-            3)
-                echo -e "请先在路由器网页后台安装下载大师并启用，之后选择外置存储所在目录！"
-                sleep 2
-                set_asus_dir
-                ;;
-            *)
-                exit 1
-                ;;
-            esac
+            while true; do
+                $echo "\033[33m检测到当前设备为华硕固件，请选择安装方式\033[0m"
+                $echo " 1 基于USB设备安装(限23年9月之前固件，须插入\033[31m任意\033[0mUSB设备)"
+                $echo " 2 基于自启脚本安装(仅支持梅林及部分非koolshare官改固件)"
+                $echo " 3 基于U盘+下载大师安装(支持所有固件，限ARM设备，须插入U盘或移动硬盘)"
+                $echo " 0 退出安装"
+                echo "-----------------------------------------------"
+                read -p "请输入相应数字 > " num
+                case "$num" in
+                0) exit 0 ;;
+                1)
+                    read -p "将脚本安装到USB存储/系统闪存？(1/0) > " res
+                    [ "$res" = "1" ] && set_usb_dir || dir=/jffs
+                    usb_status=1
+                    break
+                    ;;
+                2)
+                    $echo "如无法正常开机启动，请重新使用USB方式安装！"
+                    sleep 2
+                    dir=/jffs
+                    break
+                    ;;
+                3)
+                    echo -e "请先在路由器网页后台安装下载大师并启用，之后选择外置存储所在目录！"
+                    sleep 2
+                    set_asus_dir
+                    break
+                    ;;
+                *) echo "无效输入，请重新输入" ;;
+                esac
+            done
         }
+
         [ "$systype" = "ng_snapshot" ] && dir=/tmp/mnt
     else
-        $echo " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
-        $echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux系统)"
-        $echo " 3 在\033[32m当前用户目录\033[0m下安装(适合非root用户)"
-        $echo " 4 在\033[32m外置存储\033[0m中安装"
-        $echo " 5 手动设置安装目录"
-        $echo " 0 退出安装"
-        echo "----------------------------------------------"
-        read -p "请输入相应数字 > " num
-        #设置目录
-        case "$num" in
-        1)
-            dir=/etc
-            ;;
-        2)
-            dir=/usr/share
-            ;;
-        3)
-            dir=~/.local/share
-            mkdir -p ~/.config/systemd/user
-            ;;
-        4)
-            set_usb_dir
-            ;;
-        5)
-            set_cust_dir
-            ;;
-        *)
-            echo "安装已取消"
-            exit 1
-            ;;
-        esac
+        while true; do
+            $echo " 1 在\033[32m/etc目录\033[0m下安装(适合root用户)"
+            $echo " 2 在\033[32m/usr/share目录\033[0m下安装(适合Linux系统)"
+            $echo " 3 在\033[32m当前用户目录\033[0m下安装(适合非root用户)"
+            $echo " 4 在\033[32m外置存储\033[0m中安装"
+            $echo " 5 手动设置安装目录"
+            $echo " 0 退出安装"
+            echo "----------------------------------------------"
+            read -p "请输入相应数字 > " num
+            case "$num" in
+            0)
+                echo "安装已取消"
+                exit 1
+                ;;
+            1)
+                dir=/etc
+                break
+                ;;
+            2)
+                dir=/usr/share
+                break
+                ;;
+            3)
+                dir=~/.local/share
+                mkdir -p ~/.config/systemd/user
+                break
+                ;;
+            4)
+                set_usb_dir
+                break
+                ;;
+            5)
+                set_cust_dir
+                break
+                ;;
+            *) echo "无效输入，请重新输入" ;;
+            esac
+        done
     fi
 
-    if [ ! -w $dir ]; then
-        $echo "\033[31m没有$dir目录写入权限！请重新设置！\033[0m" && sleep 1 && setdir
-    else
-        $echo "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir -h)"
-        read -p "确认安装？(1/0) > " res
-        [ "$res" = "1" ] && CRASHDIR=$dir/ShellCrash || setdir
+    # ========== 最终确认阶段 ==========
+    if [ ! -w "$dir" ]; then
+        $echo "\033[31m没有$dir目录写入权限！\033[0m"
+        exit 1
     fi
+
+    $echo "目标目录\033[32m$dir\033[0m空间剩余：$(dir_avail $dir -h)"
+    read -p "确认安装？(1/0) > " res
+
+    if [ "$res" = "1" ]; then
+        CRASHDIR=$dir/ShellCrash
+        return
+    fi
+
+    exit 0
 }
+
 install() {
     echo "-----------------------------------------------"
     echo 开始从服务器获取安装文件！
@@ -238,24 +304,36 @@ install() {
     $echo "\033[33m输入\033[30;47m $my_alias \033[0;33m命令即可管理！！！\033[0m"
     echo "-----------------------------------------------"
 }
+
 setversion() {
-    echo "-----------------------------------------------"
-    $echo "\033[33m请选择想要安装的版本：\033[0m"
-    $echo " 1 \033[32m公测版(推荐)\033[0m"
-    $echo " 2 \033[36m稳定版\033[0m"
-    $echo " 3 \033[31m开发版\033[0m"
-    echo "-----------------------------------------------"
-    read -p "请输入相应数字 > " num
-    case "$num" in
-    2)
-        url=$(echo $url | sed 's/master/stable/')
-        ;;
-    3)
-        url=$(echo $url | sed 's/master/dev/')
-        ;;
-    *) ;;
-    esac
+    while true; do
+        echo "-----------------------------------------------"
+        $echo "\033[33m请选择想要安装的版本：\033[0m"
+        $echo " 1 \033[32m公测版(推荐&默认)\033[0m"
+        $echo " 2 \033[36m稳定版\033[0m"
+        $echo " 3 \033[31m开发版\033[0m"
+        echo "-----------------------------------------------"
+        echo " 0 退出安装"
+        read -p "请输入相应数字 > " num
+        case "$num" in
+        0)
+            exit 0
+            ;;
+        2)
+            url=$(echo $url | sed 's/master/stable/')
+            break
+            ;;
+        3)
+            url=$(echo $url | sed 's/master/dev/')
+            break
+            ;;
+        *)
+            echo "无效输入，请重新输入"
+            ;;
+        esac
+    done
 }
+
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
     systype=Padavan #老毛子固件
@@ -281,6 +359,7 @@ fi
 if [ -n "$(echo $url | grep master)" ]; then
     setversion
 fi
+
 #获取版本信息
 webget /tmp/version "$url/version" echooff
 [ "$result" = "200" ] && versionsh=$(cat /tmp/version)

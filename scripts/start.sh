@@ -327,7 +327,9 @@ update_servers() { #更新servers.list
     get_bin "$TMPDIR"/servers.list public/servers.list
     [ "$?" = 0 ] && mv -f "$TMPDIR"/servers.list "$CRASHDIR"/configs/servers.list
 }
-get_core_config() { #下载内核配置文件
+
+#下载内核配置文件
+get_core_config() {
     [ -z "$rule_link" ] && rule_link=1
     [ -z "$server_link" ] || [ $server_link -gt $(grep -aE '^4' "$CRASHDIR"/configs/servers.list | wc -l) ] && server_link=1
     Server=$(grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
@@ -342,9 +344,9 @@ get_core_config() { #下载内核配置文件
     fi
     #输出
     echo "-----------------------------------------------"
-    logger 正在连接服务器获取【${target}】配置文件…………
+    logger "正在连接服务器获取【${target}】配置文件…………"
     echo -e "链接地址为：\033[4;32m$Https\033[0m"
-    echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
+    echo "可以手动复制该链接到浏览器打开并查看数据是否正常！"
     #获取在线config文件
     core_config_new="$TMPDIR"/${target}_config.${format}
     rm -rf ${core_config_new}
@@ -398,6 +400,7 @@ get_core_config() { #下载内核配置文件
     fi
     return 0
 }
+
 modify_yaml() { #修饰clash配置文件
     ##########需要变更的配置###########
     [ -z "$skip_cert" ] && skip_cert=已开启

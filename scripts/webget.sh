@@ -12,231 +12,249 @@ dir_avail(){
 	}
 
 #导入订阅、配置文件相关
-setrules(){ #自定义规则
-	set_rule_type(){
-		echo "-----------------------------------------------"
-		echo -e "\033[33m请选择规则类型\033[0m"
-		echo $rule_type | awk -F ' ' '{for(i=1;i<=NF;i++){print i" "$i}}'
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0) ;;
-		[0-9]*)
-			if [ $num -gt $(echo $rule_type | awk -F " " '{print NF}') ];then
-				errornum
-			else
-				rule_type_set=$(echo $rule_type|cut -d' ' -f$num)
-				echo "-----------------------------------------------"
-				echo -e "\033[33m请输入规则语句，可以是域名、泛域名、IP网段或者其他匹配规则类型的内容\033[0m"
-				read -p "请输入对应规则 > " rule_state_set
-				[ -n "$rule_state_set" ] && set_group_type || errornum
-			fi
-		;;
-		*)
-			errornum
-		;;
-		esac
-	}
-	set_group_type(){
-		echo "-----------------------------------------------"
-		echo -e "\033[36m请选择具体规则\033[0m"
-		echo -e "\033[33m此处规则读取自现有配置文件，如果你后续更换配置文件时运行出错，请尝试重新添加\033[0m"
-		echo $rule_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0) ;;
-		[0-9]*)
-			if [ $num -gt $(echo $rule_group | awk -F "#" '{print NF}') ];then
-				errornum
-			else
-				rule_group_set=$(echo $rule_group|cut -d'#' -f$num)
-				rule_all="- ${rule_type_set},${rule_state_set},${rule_group_set}"
-				[ -n "$(echo IP-CIDR SRC-IP-CIDR IP-CIDR6|grep "$rule_type_set")" ] && rule_all="${rule_all},no-resolve"
-				echo $rule_all >> $YAMLSDIR/rules.yaml
-				echo "-----------------------------------------------"
-				echo -e "\033[32m添加成功！\033[0m"
-			fi
-		;;
-		*)
-			errornum
-		;;
-		esac
-	}
-	del_rule_type(){
-		echo -e "输入对应数字即可移除相应规则:"
-		sed -i '/^ *$/d; /^#/d' $YAMLSDIR/rules.yaml
-		cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
-		echo "-----------------------------------------------"
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0)	;;
-		'')	;;
-		*)
-			if [ "$num" -le "$(wc -l < $YAMLSDIR/rules.yaml)" ];then
-				sed -i "${num}d" $YAMLSDIR/rules.yaml
-				sleep 1
-				del_rule_type
-			else
-				errornum
-			fi
-		;;
-		esac
-	}
-	get_rule_group(){
-		"$CRASHDIR"/start.sh get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector|URLTest|LoadBalance"' | grep -aoE '"name":.*"now":".*",' | awk -F '"' '{print "#"$4}' | tr -d '\n'
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
-	echo -e "如需批量操作，请手动编辑：\033[36m $YAMLSDIR/rules.yaml\033[0m"
-	echo -e "\033[33msingbox和clash共用此处规则，可无缝切换！\033[0m"
-	echo -e "大量规则请尽量使用rule-set功能添加，\033[31m此处过量添加可能导致启动卡顿！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 新增自定义规则"
-	echo -e " 2 移除自定义规则"
-	echo -e " 3 清空规则列表"
-	echo "$crashcore" | grep -q 'singbox' || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN PROCESS-NAME"
-		rule_group="DIRECT#REJECT$(get_rule_group)"
-		set_rule_type
-		setrules
-	;;
-	2)
-		echo "-----------------------------------------------"
-		if [ -s $YAMLSDIR/rules.yaml ];then
-			del_rule_type
-		else
-			echo -e "请先添加自定义规则！"
-			sleep 1
-		fi
-		setrules
-	;;
-	3)
-		read -p "确认清空全部自定义规则？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $YAMLSDIR/rules.yaml
-		setrules
-	;;
-	4)
-		echo "-----------------------------------------------"
-		if [ "$proxies_bypass" = "未启用" ];then
-			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
-			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
-			read -p "启用节点绕过？(1/0) > " res
-			[ "$res" = "1" ] && proxies_bypass=已启用
-		else
-			proxies_bypass=未启用
-		fi
-		setconfig proxies_bypass $proxies_bypass
-		sleep 1
-		setrules
-	;;
-	*)
-		errornum
-	;;
-	esac
-}
-setgroups(){ #自定义clash策略组
-	set_group_type(){
-		echo "-----------------------------------------------"
-		echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
-		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m"
-		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$YAMLSDIR/proxy-groups.yaml\033[0m"
-		read -p "请输入自定义策略组名称(不支持纯数字且不要包含特殊字符！) > " new_group_name
-		echo "-----------------------------------------------"
-		echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
-		echo $group_type_cn | awk '{for(i=1;i<=NF;i++){print i" "$i}}'
-		read -p "请输入对应数字 > " num
-		new_group_type=$(echo $group_type | awk '{print $'"$num"'}')
-		if [ "$num" = "1" ];then
-			unset new_group_url interval
-		else
-			read -p "请输入测速地址，回车则默认使用https://www.gstatic.com/generate_204 > " new_group_url
-			[ -z "$new_group_url" ] && new_group_url=https://www.gstatic.com/generate_204
-			new_group_url="url: '$new_group_url'"
-			interval="interval: 300"
-		fi
-		set_group_add
-		#添加自定义策略组
-		cat >> $YAMLSDIR/proxy-groups.yaml <<EOF
-  - name: $new_group_name
-    type: $new_group_type
-    $new_group_url
-    $interval
-    proxies:
-     - DIRECT
-EOF
-		sed -i "/^ *$/d" $YAMLSDIR/proxy-groups.yaml
-		echo "-----------------------------------------------"
-		echo -e "\033[32m添加成功！\033[0m"
+#
+#自定义规则
+setrules(){
+   	set_rule_type(){
+   		echo "-----------------------------------------------"
+   		echo -e "\033[33m请选择规则类型\033[0m"
+   		echo $rule_type | awk -F ' ' '{for(i=1;i<=NF;i++){print i" "$i}}'
+   		echo -e " 0 返回上级菜单"
+   		read -p "请输入对应数字 > " num
+   		case "$num" in
+   		0) ;;
+   		[0-9]*)
+   			if [ $num -gt $(echo $rule_type | awk -F " " '{print NF}') ];then
+   				errornum
+   			else
+   				rule_type_set=$(echo $rule_type|cut -d' ' -f$num)
+   				echo "-----------------------------------------------"
+   				echo -e "\033[33m请输入规则语句，可以是域名、泛域名、IP网段或者其他匹配规则类型的内容\033[0m"
+   				read -p "请输入对应规则 > " rule_state_set
+   				[ -n "$rule_state_set" ] && set_group_type || errornum
+   			fi
+   			;;
+   		*)
+   			errornum
+   			;;
+   		esac
+   	}
 
-	}
-	set_group_add(){
-		echo "-----------------------------------------------"
-		echo -e "\033[36m请选择想要将本策略添加到的策略组\033[0m"
-		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
-		echo "-----------------------------------------------"
-		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
-		echo "-----------------------------------------------"
-		echo -e " 0 跳过添加"
-		read -p "请输入对应数字(多个用空格隔开) > " char
-		case "$char" in
-		0) ;;
-		*)
-			for num in $char;do
-				rule_group_set=$(echo $proxy_group|cut -d'#' -f$num)
-				rule_group_add="${rule_group_add}#${rule_group_set}"
-			done
-			if [ -n "$rule_group_add" ];then
-				new_group_name="$new_group_name$rule_group_add"
-				unset rule_group_add
-			else
-				errornum
-			fi
-		;;
-		esac
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[33m你可以在这里快捷管理自定义策略组\033[0m"
-	echo -e "\033[36m如需修改或批量操作，请手动编辑：$YAMLSDIR/proxy-groups.yaml\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 添加自定义策略组"
-	echo -e " 2 查看自定义策略组"
-	echo -e " 3 清空自定义策略组"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		group_type="select url-test fallback load-balance"
-		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
-		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
-		set_group_type
-		setgroups
-	;;
-	2)
-		echo "-----------------------------------------------"
-		cat $YAMLSDIR/proxy-groups.yaml
-		setgroups
-	;;
-	3)
-		read -p "确认清空全部自定义策略组？(1/0) > " res
-		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > $YAMLSDIR/proxy-groups.yaml
-		setgroups
-	;;
-	*)
-		errornum
-	;;
-	esac
+   	set_group_type(){
+   		echo "-----------------------------------------------"
+   		echo -e "\033[36m请选择具体规则\033[0m"
+   		echo -e "\033[33m此处规则读取自现有配置文件，如果你后续更换配置文件时运行出错，请尝试重新添加\033[0m"
+   		echo $rule_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+   		echo -e " 0 返回上级菜单"
+   		read -p "请输入对应数字 > " num
+   		case "$num" in
+   		0) ;;
+   		[0-9]*)
+   			if [ $num -gt $(echo $rule_group | awk -F "#" '{print NF}') ];then
+   				errornum
+   			else
+   				rule_group_set=$(echo $rule_group|cut -d'#' -f$num)
+   				rule_all="- ${rule_type_set},${rule_state_set},${rule_group_set}"
+   				[ -n "$(echo IP-CIDR SRC-IP-CIDR IP-CIDR6|grep "$rule_type_set")" ] && rule_all="${rule_all},no-resolve"
+   				echo $rule_all >> $YAMLSDIR/rules.yaml
+   				echo "-----------------------------------------------"
+   				echo -e "\033[32m添加成功！\033[0m"
+   			fi
+   			;;
+   		*)
+   			errornum
+   			;;
+   		esac
+   	}
+
+   	del_rule_type(){
+           while true;
+           do
+               echo -e "输入对应数字即可移除相应规则:"
+         		sed -i '/^ *$/d; /^#/d' $YAMLSDIR/rules.yaml
+         		cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
+         		echo "-----------------------------------------------"
+         		echo -e " 0 返回上级菜单"
+         		read -p "请输入对应数字 > " num
+         		case "$num" in
+         		0)
+                   break
+                   ;;
+               '' | *[!0-9]*) #Handling non-positive integers
+             		echo -e "\033[31m输入错误，请重新输入！\033[0m"
+             		sleep 1
+                   ;;
+         		*)
+        			if [ "$num" -le "$(wc -l < $YAMLSDIR/rules.yaml)" ];then
+           				sed -i "${num}d" $YAMLSDIR/rules.yaml
+           				sleep 1
+        			fi
+        			;;
+         		esac
+           done
+   	}
+
+   	get_rule_group(){
+   		"$CRASHDIR"/start.sh get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector|URLTest|LoadBalance"' | grep -aoE '"name":.*"now":".*",' | awk -F '"' '{print "#"$4}' | tr -d '\n'
+   	}
+
+    while true;
+    do
+    	echo "-----------------------------------------------"
+    	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
+    	echo -e "如需批量操作，请手动编辑：\033[36m $YAMLSDIR/rules.yaml\033[0m"
+    	echo -e "\033[33msingbox和clash共用此处规则，可无缝切换！\033[0m"
+    	echo -e "大量规则请尽量使用rule-set功能添加，\033[31m此处过量添加可能导致启动卡顿！\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 1 新增自定义规则"
+    	echo -e " 2 移除自定义规则"
+    	echo -e " 3 清空规则列表"
+    	echo "$crashcore" | grep -q 'singbox' || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
+    	echo -e " 0 返回上级菜单"
+    	read -p "请输入对应数字 > " num
+    	case "$num" in
+    	0)
+            break
+    	    ;;
+    	1)
+    		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN PROCESS-NAME"
+    		rule_group="DIRECT#REJECT$(get_rule_group)"
+    		set_rule_type
+    	    ;;
+    	2)
+    		echo "-----------------------------------------------"
+    		if [ -s $YAMLSDIR/rules.yaml ];then
+    			del_rule_type
+    		else
+    			echo -e "请先添加自定义规则！"
+    			sleep 1
+    		fi
+    		;;
+    	3)
+    		read -p "确认清空全部自定义规则？(1/0) > " res
+    		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $YAMLSDIR/rules.yaml
+    		;;
+    	4)
+    		echo "-----------------------------------------------"
+    		if [ "$proxies_bypass" = "未启用" ];then
+    			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
+    			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
+    			read -p "启用节点绕过？(1/0) > " res
+    			[ "$res" = "1" ] && proxies_bypass=已启用
+    		else
+    			proxies_bypass=未启用
+    		fi
+    		setconfig proxies_bypass $proxies_bypass
+    		sleep 1
+    		;;
+    	*)
+    		errornum
+    		;;
+    	esac
+    done
 }
-setproxies(){ #自定义clash节点
+
+#自定义clash策略组
+setgroups(){
+    while true;
+    do
+    	set_group_type(){
+    		echo "-----------------------------------------------"
+    		echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
+    		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m"
+    		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$YAMLSDIR/proxy-groups.yaml\033[0m"
+    		read -p "请输入自定义策略组名称(不支持纯数字且不要包含特殊字符！) > " new_group_name
+    		echo "-----------------------------------------------"
+    		echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
+    		echo $group_type_cn | awk '{for(i=1;i<=NF;i++){print i" "$i}}'
+    		read -p "请输入对应数字 > " num
+    		new_group_type=$(echo $group_type | awk '{print $'"$num"'}')
+    		if [ "$num" = "1" ];then
+    			unset new_group_url interval
+    		else
+    			read -p "请输入测速地址，回车则默认使用https://www.gstatic.com/generate_204 > " new_group_url
+    			[ -z "$new_group_url" ] && new_group_url=https://www.gstatic.com/generate_204
+    			new_group_url="url: '$new_group_url'"
+    			interval="interval: 300"
+    		fi
+    		set_group_add
+    		#添加自定义策略组
+    		cat >> $YAMLSDIR/proxy-groups.yaml <<EOF
+    - name: $new_group_name
+        type: $new_group_type
+        $new_group_url
+        $interval
+        proxies:
+        - DIRECT
+    EOF
+    		sed -i "/^ *$/d" $YAMLSDIR/proxy-groups.yaml
+    		echo "-----------------------------------------------"
+    		echo -e "\033[32m添加成功！\033[0m"
+
+    	}
+
+    	set_group_add(){
+    		echo "-----------------------------------------------"
+    		echo -e "\033[36m请选择想要将本策略添加到的策略组\033[0m"
+    		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
+    		echo "-----------------------------------------------"
+    		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+    		echo "-----------------------------------------------"
+    		echo -e " 0 跳过添加"
+    		read -p "请输入对应数字(多个用空格隔开) > " char
+    		case "$char" in
+    		0) ;;
+    		*)
+    			for num in $char;do
+    				rule_group_set=$(echo $proxy_group|cut -d'#' -f$num)
+    				rule_group_add="${rule_group_add}#${rule_group_set}"
+    			done
+    			if [ -n "$rule_group_add" ];then
+    				new_group_name="$new_group_name$rule_group_add"
+    				unset rule_group_add
+    			else
+    				errornum
+    			fi
+    		;;
+    		esac
+    	}
+
+    	echo "-----------------------------------------------"
+    	echo -e "\033[33m你可以在这里快捷管理自定义策略组\033[0m"
+    	echo -e "\033[36m如需修改或批量操作，请手动编辑：$YAMLSDIR/proxy-groups.yaml\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 1 添加自定义策略组"
+    	echo -e " 2 查看自定义策略组"
+    	echo -e " 3 清空自定义策略组"
+    	echo -e " 0 返回上级菜单"
+    	read -p "请输入对应数字 > " num
+    	case "$num" in
+    	0)
+            break
+    	    ;;
+    	1)
+    		group_type="select url-test fallback load-balance"
+    		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
+    		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+    		set_group_type
+    		;;
+    	2)
+    		echo "-----------------------------------------------"
+    		cat $YAMLSDIR/proxy-groups.yaml
+    		;;
+    	3)
+    		read -p "确认清空全部自定义策略组？(1/0) > " res
+    		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > $YAMLSDIR/proxy-groups.yaml
+    		;;
+    	*)
+    		errornum
+    		;;
+    	esac
+    done
+}
+
+#自定义clash节点
+setproxies(){
 	set_proxy_type(){
 		echo "-----------------------------------------------"
 		echo -e "\033[33m注意节点格式必须是单行,不包括括号,name:必须写在最前,例如：\033[0m"
@@ -251,6 +269,7 @@ setproxies(){ #自定义clash节点
 			errornum
 		fi
 	}
+
 	set_group_add(){
 		echo "-----------------------------------------------"
 		echo -e "\033[36m请选择想要将节点添加到的策略组\033[0m"
@@ -279,6 +298,7 @@ setproxies(){ #自定义clash节点
 		;;
 		esac
 	}
+
 	echo "-----------------------------------------------"
 	echo -e "\033[33m你可以在这里快捷管理自定义节点\033[0m"
 	echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/proxies.yaml\033[0m"
@@ -291,13 +311,13 @@ setproxies(){ #自定义clash节点
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0)
-	;;
+	    break
+	    ;;
 	1)
 		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
 		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_proxy_type
-		setproxies
-	;;
+		;;
 	2)
 		echo "-----------------------------------------------"
 		sed -i '/^ *$/d' $YAMLSDIR/proxies.yaml 2>/dev/null
@@ -316,13 +336,11 @@ setproxies(){ #自定义clash节点
 			echo -e "请先添加自定义节点！"
 			sleep 1
 		fi
-		setproxies
-	;;
+		;;
 	3)
 		read -p "确认清空全部自定义节点？(1/0) > " res
 		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $YAMLSDIR/proxies.yaml 2>/dev/null
-		setproxies
-	;;
+		;;
 	4)
 		echo "-----------------------------------------------"
 		if [ "$proxies_bypass" = "未启用" ];then
@@ -336,12 +354,13 @@ setproxies(){ #自定义clash节点
 		setconfig proxies_bypass $proxies_bypass
 		sleep 1
 		setrules
-	;;
+		;;
 	*)
 		errornum
-	;;
+		;;
 	esac
 }
+
 gen_clash_providers(){ #生成clash的providers配置文件
 	gen_clash_providers_txt(){
 		if [ -n "$(echo $2|grep -E '^./')" ];then
@@ -538,177 +557,178 @@ EOF
 		rm -rf ${TMPDIR}/providers
 	fi
 }
-setproviders(){ #自定义providers
-	#获取模版名称
-	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
-		provider_temp_des=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
-	else
-		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
-		provider_temp_des=$(grep "$provider_temp_file" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
-		[ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
-	fi
-	echo "-----------------------------------------------"
-	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers服务商\033[0m"
-	echo -e "\033[33m支持在线及本地的Yaml格式配置导入\033[0m"
-	[ -s $CRASHDIR/configs/providers.cfg ] && {
-		echo "-----------------------------------------------"
-		echo -e "\033[36m输入对应数字可管理providers服务商\033[0m"
-		cat $CRASHDIR/configs/providers.cfg | awk -F "#" '{print " "NR" "$1" "$2}'
-	}
-	echo -e " d \033[31m清空\033[0mproviders服务商列表"
-	echo -e " e \033[33m清理\033[0mproviders目录文件"
-	echo "-----------------------------------------------"
-	echo -e "\033[36m按照a-b-c的顺序即可完成配置生成\033[0m"
-	echo -e " a \033[36m添加\033[0mproviders服务商/节点"
-	echo -e " b 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
-	echo -e " c \033[32m生成\033[0m基于providers的配置文件"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应字母或数字 > " num
-	case "$num" in
-	0)
-	;;
-	[1-9]|[1-9][0-9])
-		provider_name=$(sed -n "$num p" $CRASHDIR/configs/providers.cfg | awk '{print $1}')
-		provider_url=$(sed -n "$num p" $CRASHDIR/configs/providers.cfg | awk '{print $2}')
-		if [ -z "$provider_name" ];then
-			errornum
-		else
-			echo "-----------------------------------------------"
-			echo -e " 1 修改名称：\033[36m$provider_name\033[0m"
-			echo -e " 2 修改链接地址：\033[32m$provider_url\033[0m"
-			echo -e " 3 生成\033[33m仅包含此链接\033[0m的配置文件"
-			echo -e " 4 \033[31m移除此链接\033[0m"
-			echo "-----------------------------------------------"
-			echo -e " 0 返回上级菜单"
-			read -p "请选择需要执行的操作 > " num
-			case "$num" in
-			0)
-			;;
-			1)
-				read -p "请输入名称或者代号(不可重复,不支持纯数字)  > " name
-				if [ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" $CRASHDIR/configs/providers.cfg;then
-					sed -i "s|$provider_name $provider_url|$name $provider_url|" $CRASHDIR/configs/providers.cfg
-				else
-					echo -e "\033[31m输入错误，请重新输入！\033[0m"
-				fi
-			;;
-			2)
-				read -p "请输入链接地址或本地相对路径 > " link
-				if [ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && [ -z "$(grep "$link" $CRASHDIR/configs/providers.cfg)" ];then
-					link=$(echo $link | sed 's/\&/\\\&/g') #特殊字符添加转义
-					sed -i "s|$provider_name $provider_url|$provider_name $link|" $CRASHDIR/configs/providers.cfg
-				else
-					echo -e "\033[31m输入错误，请重新输入！\033[0m"
-				fi
-			;;
-			3)
-				gen_${coretype}_providers $provider_name $provider_url
-			;;
-			4)
-				sed -i "/^$provider_name /d" $CRASHDIR/configs/providers.cfg
-			;;
-			*)
-				errornum
-			;;
-			esac
-			sleep 1
-		fi
-		setproviders
-	;;
-	a)
-		echo "-----------------------------------------------"
-		echo -e "支持填写在线的\033[32mYClash订阅地址\033[0m或者\033[32m本地Clash配置文件\033[0m"
-		echo -e "本地配置文件请放在\033[32m$CRASHDIR\033[0m目录下，并填写相对路径如【\033[32m./providers/test.yaml\033[0m】"
-		echo "-----------------------------------------------"
-		read -p "请输入链接地址或本地相对路径 > " link
-		link=$(echo $link | sed 's/ //g') #去空格
-		[ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
-			read -p "请输入名称或代号(不可重复,不支持纯数字) > " name
-			name=$(echo $name | sed 's/ //g')
-			[ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" $CRASHDIR/configs/providers.cfg && {
-				echo "-----------------------------------------------"
-				echo -e "名称：\033[36m$name\033[0m"
-				echo -e "链接地址/路径：\033[32m$link\033[0m"
-				read -p "确认添加？(1/0) > " res
-					[ "$res" = 1 ] && {
-						echo "$name $link" >> $CRASHDIR/configs/providers.cfg
-						echo -e "\033[32mproviders已添加！\033[0m"
-					}
-			}
-		}
-		[ "$?" != 0 ] && echo -e "\033[31m输入错误，操作已取消！\033[0m"
-		sleep 1
-		setproviders
-	;;
-	c)
-		echo "-----------------------------------------------"
-		if [ -s $CRASHDIR/configs/providers.cfg ];then
-			echo -e "\033[33msingboxr与mihomo内核的providers配置文件不互通！\033[0m"
-			echo "-----------------------------------------------"
-			read -p "确认生成${coretype}配置文件？(1/0) > " res
-			[ "$res" = "1" ] && {
-				gen_${coretype}_providers
-			}
-		else
-			echo -e "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
-			sleep 1
-		fi
-		setproviders
-	;;
-	b)
-		echo "-----------------------------------------------"
-		echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
-		echo -e "\033[33m请选择在线模版：\033[0m"
-		echo "-----------------------------------------------"
-		cat ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print " "NR" "$1}'
-		echo "-----------------------------------------------"
-		echo -e " a 使用\033[36m本地模版\033[0m"
-		echo "-----------------------------------------------"
-		read -p "请输入对应字母或数字 > " num
-		case "$num" in
-		0)
-		;;
-		a)
-			read -p "请输入模版的路径(绝对路径) > " dir
-			if [ -s $dir ];then
-				provider_temp_file=$dir
-				setconfig provider_temp_${coretype} $provider_temp_file
-				echo -e "\033[32m设置成功！\033[0m"
-			else
-				echo -e "\033[31m输入错误，找不到对应模版文件！\033[0m"
-			fi
-			sleep 1
-		;;
-		*)
-			provider_temp_file=$(sed -n "$num p" ${CRASHDIR}/configs/${coretype}_providers.list 2>/dev/null | awk '{print $2}')
-			if [ -z "$provider_temp_file" ];then
-				errornum
-			else
-				setconfig provider_temp_${coretype} $provider_temp_file
-			fi
-		;;
-		esac
-		setproviders
-	;;
-	d)
-		read -p "确认清空全部链接？(1/0) > " res
-		[ "$res" = "1" ] && rm -rf $CRASHDIR/configs/providers.cfg
-		setproviders
-	;;
-	e)
-		echo -e "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
-		read -p "是否继续？(1/0) > " res
-		[ "$res" = "1" ] && rm -rf $CRASHDIR/providers
-		setproviders
-	;;
-	*)
-		errornum
-	;;
-	esac
+
+#自定义providers
+setproviders(){
+    while true;
+	do
+    	#获取模版名称
+    	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
+    		provider_temp_des=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
+    	else
+    		provider_temp_file=$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
+    		provider_temp_des=$(grep "$provider_temp_file" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')
+    		[ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
+    	fi
+    	echo "-----------------------------------------------"
+    	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers服务商\033[0m"
+    	echo -e "\033[33m支持在线及本地的Yaml格式配置导入\033[0m"
+    	[ -s $CRASHDIR/configs/providers.cfg ] && {
+    		echo "-----------------------------------------------"
+    		echo -e "\033[36m输入对应数字可管理providers服务商\033[0m"
+    		cat $CRASHDIR/configs/providers.cfg | awk -F "#" '{print " "NR" "$1" "$2}'
+    	}
+    	echo -e " d \033[31m清空\033[0mproviders服务商列表"
+    	echo -e " e \033[33m清理\033[0mproviders目录文件"
+    	echo "-----------------------------------------------"
+    	echo -e "\033[36m按照a-b-c的顺序即可完成配置生成\033[0m"
+    	echo -e " a \033[36m添加\033[0mproviders服务商/节点"
+    	echo -e " b 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
+    	echo -e " c \033[32m生成\033[0m基于providers的配置文件"
+    	echo "-----------------------------------------------"
+    	echo -e " 0 返回上级菜单"
+    	read -p "请输入对应字母或数字 > " num
+    	case "$num" in
+    	0)
+            break
+    	    ;;
+    	[1-9]|[1-9][0-9])
+    		provider_name=$(sed -n "$num p" $CRASHDIR/configs/providers.cfg | awk '{print $1}')
+    		provider_url=$(sed -n "$num p" $CRASHDIR/configs/providers.cfg | awk '{print $2}')
+    		if [ -z "$provider_name" ];then
+    			errornum
+    		else
+    			echo "-----------------------------------------------"
+    			echo -e " 1 修改名称：\033[36m$provider_name\033[0m"
+    			echo -e " 2 修改链接地址：\033[32m$provider_url\033[0m"
+    			echo -e " 3 生成\033[33m仅包含此链接\033[0m的配置文件"
+    			echo -e " 4 \033[31m移除此链接\033[0m"
+    			echo "-----------------------------------------------"
+    			echo -e " 0 返回上级菜单"
+    			read -p "请选择需要执行的操作 > " num
+    			case "$num" in
+    			0)
+    			    ;;
+    			1)
+    				read -p "请输入名称或者代号(不可重复,不支持纯数字)  > " name
+    				if [ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" $CRASHDIR/configs/providers.cfg;then
+    					sed -i "s|$provider_name $provider_url|$name $provider_url|" $CRASHDIR/configs/providers.cfg
+    				else
+    					echo -e "\033[31m输入错误，请重新输入！\033[0m"
+    				fi
+    				;;
+    			2)
+    				read -p "请输入链接地址或本地相对路径 > " link
+    				if [ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && [ -z "$(grep "$link" $CRASHDIR/configs/providers.cfg)" ];then
+    					link=$(echo $link | sed 's/\&/\\\&/g') #特殊字符添加转义
+    					sed -i "s|$provider_name $provider_url|$provider_name $link|" $CRASHDIR/configs/providers.cfg
+    				else
+    					echo -e "\033[31m输入错误，请重新输入！\033[0m"
+    				fi
+    				;;
+    			3)
+    				gen_${coretype}_providers $provider_name $provider_url
+    				;;
+    			4)
+    				sed -i "/^$provider_name /d" $CRASHDIR/configs/providers.cfg
+    				;;
+    			*)
+    				errornum
+    				;;
+    			esac
+    			sleep 1
+    		fi
+    		;;
+    	a)
+    		echo "-----------------------------------------------"
+    		echo -e "支持填写在线的\033[32mYClash订阅地址\033[0m或者\033[32m本地Clash配置文件\033[0m"
+    		echo -e "本地配置文件请放在\033[32m$CRASHDIR\033[0m目录下，并填写相对路径如【\033[32m./providers/test.yaml\033[0m】"
+    		echo "-----------------------------------------------"
+    		read -p "请输入链接地址或本地相对路径 > " link
+    		link=$(echo $link | sed 's/ //g') #去空格
+    		[ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
+    			read -p "请输入名称或代号(不可重复,不支持纯数字) > " name
+    			name=$(echo $name | sed 's/ //g')
+    			[ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" $CRASHDIR/configs/providers.cfg && {
+    				echo "-----------------------------------------------"
+    				echo -e "名称：\033[36m$name\033[0m"
+    				echo -e "链接地址/路径：\033[32m$link\033[0m"
+    				read -p "确认添加？(1/0) > " res
+    					[ "$res" = 1 ] && {
+    						echo "$name $link" >> $CRASHDIR/configs/providers.cfg
+    						echo -e "\033[32mproviders已添加！\033[0m"
+    					}
+    			}
+    		}
+    		[ "$?" != 0 ] && echo -e "\033[31m输入错误，操作已取消！\033[0m"
+    		sleep 1
+    		;;
+    	c)
+    		echo "-----------------------------------------------"
+    		if [ -s $CRASHDIR/configs/providers.cfg ];then
+    			echo -e "\033[33msingboxr与mihomo内核的providers配置文件不互通！\033[0m"
+    			echo "-----------------------------------------------"
+    			read -p "确认生成${coretype}配置文件？(1/0) > " res
+    			[ "$res" = "1" ] && {
+    				gen_${coretype}_providers
+    			}
+    		else
+    			echo -e "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
+    			sleep 1
+    		fi
+    		;;
+    	b)
+    		echo "-----------------------------------------------"
+    		echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
+    		echo -e "\033[33m请选择在线模版：\033[0m"
+    		echo "-----------------------------------------------"
+    		cat ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print " "NR" "$1}'
+    		echo "-----------------------------------------------"
+    		echo -e " a 使用\033[36m本地模版\033[0m"
+    		echo "-----------------------------------------------"
+    		read -p "请输入对应字母或数字 > " num
+    		case "$num" in
+    		0)
+    		    ;;
+    		a)
+    			read -p "请输入模版的路径(绝对路径) > " dir
+    			if [ -s $dir ];then
+    				provider_temp_file=$dir
+    				setconfig provider_temp_${coretype} $provider_temp_file
+    				echo -e "\033[32m设置成功！\033[0m"
+    			else
+    				echo -e "\033[31m输入错误，找不到对应模版文件！\033[0m"
+    			fi
+    			sleep 1
+    			;;
+    		*)
+    			provider_temp_file=$(sed -n "$num p" ${CRASHDIR}/configs/${coretype}_providers.list 2>/dev/null | awk '{print $2}')
+    			if [ -z "$provider_temp_file" ];then
+    				errornum
+    			else
+    				setconfig provider_temp_${coretype} $provider_temp_file
+    			fi
+    			;;
+    		esac
+    		;;
+    	d)
+    		read -p "确认清空全部链接？(1/0) > " res
+    		[ "$res" = "1" ] && rm -rf $CRASHDIR/configs/providers.cfg
+    		;;
+    	e)
+    		echo -e "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
+    		read -p "是否继续？(1/0) > " res
+    		[ "$res" = "1" ] && rm -rf $CRASHDIR/providers
+    		;;
+    	*)
+    		errornum
+    		;;
+    	esac
+	done
 }
 
-set_clash_adv(){ #自定义clash高级规则
+#自定义clash高级规则
+set_clash_adv(){
 		[ ! -f $YAMLSDIR/user.yaml ] && cat > $YAMLSDIR/user.yaml <<EOF
 #用于编写自定义设定(可参考https://lancellc.gitbook.io/clash/clash-config-file/general 或 https://docs.metacubex.one/function/general)
 #端口之类请在脚本中修改，否则不会加载
@@ -737,7 +757,9 @@ EOF
 		echo -e "MacOS下请\n使用\033[33mSecureFX软件\033[0m进行编辑！\033[0m"
 		echo -e "Linux本机可\n使用\033[33mvim\033[0m进行编辑(路由设备可能不显示中文请勿使用)！\033[0m"
 }
-set_singbox_adv(){ #自定义singbox配置文件
+
+#自定义singbox配置文件
+set_singbox_adv(){
 		echo "-----------------------------------------------"
 		echo -e "支持覆盖脚本设置的模块有：\033[0m"
 		echo -e "\033[36mlog dns ntp certificate experimental\033[0m"
@@ -747,77 +769,77 @@ set_singbox_adv(){ #自定义singbox配置文件
 		echo "-----------------------------------------------"
 		echo -e "使用前请务必参考配置教程:\033[32;4m https://juewuy.github.io/nWTjEpkSK \033[0m"
 }
-override(){ #配置文件覆写
-	[ -z "$rule_link" ] && rule_link=1
-	[ -z "$server_link" ] && server_link=1
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
-	echo -e " 2 管理\033[36m自定义规则\033[0m"
-	echo "$crashcore" | grep -q 'singbox' || {
-		echo -e " 3 管理\033[33m自定义节点\033[0m"
-		echo -e " 4 管理\033[36m自定义策略组\033[0m"
-	}
-	echo -e " 5 \033[32m自定义\033[0m高级功能"
-	[ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
-	echo "-----------------------------------------------"
-	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		if [ -n "$(pidof CrashCore)" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
-			read -p "是否停止服务？(1/0) > " res
-			if [ "$res" = "1" ];then
-				${CRASHDIR}/start.sh stop
-				setport
-			fi
-		else
-			setport
-		fi
-		override
-	;;
-	2)
-		setrules
-		override
-	;;
-	3)
-		setproxies
-		override
-	;;
-	4)
-		setgroups
-		override
-	;;
-	5)
-		echo "$crashcore" | grep -q 'singbox' && set_singbox_adv || set_clash_adv
-		sleep 3
-		override
-	;;
-	9)
-		echo "-----------------------------------------------"
-		echo -e "\033[33m此功能可能会导致严重问题！启用后脚本中大部分功能都将禁用！！！\033[0m"
-		echo -e "如果你不是非常了解$crashcore的运行机制，切勿开启！\033[0m"
-		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
-		echo "-----------------------------------------------"
-		sleep 2
-		read -p "我确认遇到问题可以自行解决[1/0] > " res
-		[ "$res" = '1' ] && {
-			disoverride=1
-			setconfig disoverride $disoverride
-			echo "-----------------------------------------------"
-			echo -e "\033[32m设置成功！\033[0m"
-		}
-		override
-	;;
-	*)
-		errornum
-	;;
-	esac
+
+#配置文件覆写
+override(){
+    while true;
+    do
+    	[ -z "$rule_link" ] && rule_link=1
+    	[ -z "$server_link" ] && server_link=1
+    	echo "-----------------------------------------------"
+    	echo -e "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
+    	echo -e " 2 管理\033[36m自定义规则\033[0m"
+    	echo "$crashcore" | grep -q 'singbox' || {
+    		echo -e " 3 管理\033[33m自定义节点\033[0m"
+    		echo -e " 4 管理\033[36m自定义策略组\033[0m"
+    	}
+    	echo -e " 5 \033[32m自定义\033[0m高级功能"
+    	[ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
+    	echo "-----------------------------------------------"
+    	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
+    	read -p "请输入对应数字 > " num
+    	case "$num" in
+    	0)
+            break
+    	    ;;
+    	1)
+    		if [ -n "$(pidof CrashCore)" ];then
+    			echo "-----------------------------------------------"
+    			echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
+    			read -p "是否停止服务？(1/0) > " res
+    			if [ "$res" = "1" ];then
+    				${CRASHDIR}/start.sh stop
+    				setport
+    			fi
+    		else
+    			setport
+    		fi
+    		;;
+    	2)
+    		setrules
+    		;;
+    	3)
+    		setproxies
+    		;;
+    	4)
+    		setgroups
+    		;;
+    	5)
+    		echo "$crashcore" | grep -q 'singbox' && set_singbox_adv || set_clash_adv
+    		sleep 3
+    		;;
+    	9)
+    		echo "-----------------------------------------------"
+    		echo -e "\033[33m此功能可能会导致严重问题！启用后脚本中大部分功能都将禁用！！！\033[0m"
+    		echo -e "如果你不是非常了解$crashcore的运行机制，切勿开启！\033[0m"
+    		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+    		echo "-----------------------------------------------"
+    		sleep 2
+    		read -p "我确认遇到问题可以自行解决[1/0] > " res
+    		[ "$res" = '1' ] && {
+    			disoverride=1
+    			setconfig disoverride $disoverride
+    			echo "-----------------------------------------------"
+    			echo -e "\033[32m设置成功！\033[0m"
+    		}
+    		;;
+    	*)
+    		errornum
+    		;;
+    	esac
+	done
 }
 
 gen_link_config(){ #选择在线规则
@@ -902,7 +924,9 @@ gen_link_ele(){ #在线生成节点筛选
 	fi
 	setconfig include "'$include'"
 }
-get_core_config(){ #调用工具下载
+
+#调用工具下载
+get_core_config(){
 	${CRASHDIR}/start.sh get_core_config
 	if [ "$?" = 0 ];then
 		if [ "$inuserguide" != 1 ];then
@@ -912,7 +936,9 @@ get_core_config(){ #调用工具下载
 		fi
 	fi
 }
-gen_core_config_link(){ #在线生成工具
+
+#在线生成工具
+gen_core_config_link(){
 	echo "-----------------------------------------------"
 	echo -e "\033[30;47m 欢迎使用在线生成配置文件功能！\033[0m"
 	echo "-----------------------------------------------"
@@ -986,205 +1012,209 @@ gen_core_config_link(){ #在线生成工具
 		fi
 	done
 }
-set_core_config_link(){ #直接导入配置
-	echo "-----------------------------------------------"
-	echo -e "\033[32m仅限导入完整的配置文件链接！！！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "注意：\033[31m此功能不兼容“跳过证书验证”功能，部分老旧\n设备可能出现x509报错导致节点不通\033[0m"
-	echo -e "你也可以搭配在线订阅转换网站或者自建SubStore使用"
-	echo "$crashcore" | grep -q 'singbox' &&echo -e "singbox内核建议使用\033[32;4mhttps://subv.jwsc.eu.org/\033[0m转换"
-	echo "-----------------------------------------------"
-	echo -e "\033[33m0 返回上级菜单\033[0m"
-	echo "-----------------------------------------------"
-	read -p "请输入完整链接 > " link
-	test=$(echo $link | grep -iE "tp.*://" )
-	link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
-	link=`echo ${link//\&/\\\&}`   #处理分隔符
-	if [ -n "$link" -a -n "$test" ];then
-		echo "-----------------------------------------------"
-		echo -e 请检查输入的链接是否正确：
-		echo -e "\033[4;32m$link\033[0m"
-		read -p "确认导入配置文件？原配置文件将被备份![1/0] > " res
-			if [ "$res" = '1' ]; then
-				#将用户链接写入配置
-				sed -i '/Url=*/'d $CFG_PATH
-				setconfig Https "'$link'"
-				setconfig Url
-				#获取在线yaml文件
-				get_core_config
-			else
-				set_core_config_link
-			fi
-	elif [ "$link" = 0 ];then
-		i=
-	else
-		echo "-----------------------------------------------"
-		echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
-		echo -e "\033[33m仅支持http、https、ftp以及ftps链接！\033[0m"
-		sleep 1
-		set_core_config_link
-	fi
+
+#直接导入配置
+set_core_config_link(){
+    while true;
+    do
+    	echo "-----------------------------------------------"
+    	echo -e "\033[32m仅限导入完整的配置文件链接！！！\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e "注意：\033[31m此功能不兼容“跳过证书验证”功能，部分老旧\n设备可能出现x509报错导致节点不通\033[0m"
+    	echo -e "你也可以搭配在线订阅转换网站或者自建SubStore使用"
+    	echo "$crashcore" | grep -q 'singbox' &&echo -e "singbox内核建议使用\033[32;4mhttps://subv.jwsc.eu.org/\033[0m转换"
+    	echo "-----------------------------------------------"
+    	echo -e "\033[33m0 返回上级菜单\033[0m"
+    	echo "-----------------------------------------------"
+    	read -p "请输入完整链接 > " link
+    	test=$(echo $link | grep -iE "tp.*://" )
+    	link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
+    	link=`echo ${link//\&/\\\&}`   #处理分隔符
+    	if [ -n "$link" -a -n "$test" ];then
+    		echo "-----------------------------------------------"
+    		echo -e 请检查输入的链接是否正确：
+    		echo -e "\033[4;32m$link\033[0m"
+    		read -p "确认导入配置文件？原配置文件将被备份![1/0] > " res
+    			if [ "$res" = '1' ]; then
+    				#将用户链接写入配置
+    				sed -i '/Url=*/'d $CFG_PATH
+    				setconfig Https "'$link'"
+    				setconfig Url
+    				#获取在线yaml文件
+    				get_core_config
+                    break
+    			else
+       				echo -e "\033[31m操作已取消\033[0m"
+    			fi
+    	elif [ "$link" = 0 ];then
+       		break
+    	else
+    		echo "-----------------------------------------------"
+    		echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
+    		echo -e "\033[33m仅支持http、https、ftp以及ftps链接！\033[0m"
+    		sleep 1
+    	fi
+	done
 }
-set_core_config(){ #配置文件功能
-	[ -z "$rule_link" ] && rule_link=1
-	[ -z "$server_link" ] && server_link=1
-	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 在线\033[32m生成配置文件\033[0m(基于Subconverter订阅转换)"
-	if [ -f "$CRASHDIR"/v2b_api.sh ];then
-		echo -e " 2 登录\033[33m获取订阅(推荐！)\033[0m"
-	else
-		echo -e " 2 在线\033[33m获取配置文件\033[0m(基于订阅提供者)"
-	fi
-	echo -e " 3 本地\033[32m生成配置文件\033[0m(基于内核providers,推荐！)"
-	echo -e " 4 本地\033[33m上传完整配置文件\033[0m"
-	echo -e " 5 设置\033[36m自动更新\033[0m"
-	echo -e " 6 \033[32m自定义\033[0m配置文件"
-	echo -e " 7 \033[33m更新\033[0m配置文件"
-	echo -e " 8 \033[36m还原\033[0m配置文件"
-	echo -e " 9 自定义浏览器UA  \033[32m$user_agent\033[0m"
-	echo "-----------------------------------------------"
-	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		if [ -n "$Url" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[33m检测到已记录的链接内容：\033[0m"
-			echo -e "\033[4;32m$Url\033[0m"
-			echo "-----------------------------------------------"
-			read -p "清空链接/追加导入？[1/0] > " res
-			if [ "$res" = '1' ]; then
-				Url_link=""
-				echo "-----------------------------------------------"
-				echo -e "\033[31m链接已清空！\033[0m"
-			else
-				Url_link=$Url
-			fi
-		fi
-		gen_core_config_link
-		set_core_config
-	;;
-	2)
-		if [ -f "$CRASHDIR"/v2b_api.sh ];then
-			. "$CRASHDIR"/v2b_api.sh
-			set_core_config
-		else
-			set_core_config_link
-		fi
-		set_core_config
-	;;
-	3)
-		if [ "$crashcore" = meta -o "$crashcore" = clashpre ];then
-			coretype=clash
-			setproviders
-		elif [ "$crashcore" = singboxr ];then
-			coretype=singbox
-			setproviders
-		else
-			echo -e "\033[33msingbox官方内核及Clash基础内核不支持此功能，请先更换内核！\033[0m"
-			sleep 1
-			checkupdate && setcore
-		fi
-		set_core_config
-	;;
-	4)
-		echo "-----------------------------------------------"
-		echo -e "\033[33m请将本地配置文件上传到/tmp目录并重命名为config.yaml或者config.json\033[0m"
-		echo -e "\033[32m之后重新运行本脚本即可自动弹出导入提示！\033[0m"
-		exit
-	;;
-	5)
-		. ${CRASHDIR}/task/task.sh && task_menu
-		set_core_config
-	;;
-	6)
-		checkcfg=$(cat $CFG_PATH)
-		override
-		if [ -n "$PID" ];then
-			checkcfg_new=$(cat $CFG_PATH)
-			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-		fi
-		set_core_config
-	;;
-	7)
-		if [ -z "$Url" -a -z "$Https" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[31m没有找到你的配置文件/订阅链接！请先输入链接！\033[0m"
-			sleep 1
-			set_core_config
-		else
-			echo "-----------------------------------------------"
-			echo -e "\033[33m当前系统记录的链接为：\033[0m"
-			echo -e "\033[4;32m$Url$Https\033[0m"
-			echo "-----------------------------------------------"
-			read -p "确认更新配置文件？[1/0] > " res
-			if [ "$res" = '1' ]; then
-				get_core_config
-			else
-				set_core_config
-			fi
-		fi
-	;;
-	8)
-		if [ ! -f ${config_path}.bak ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
-			set_core_config
-		else
-			echo "-----------------------------------------------"
-			echo -e 备份文件共有"\033[32m`wc -l < ${config_path}.bak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < ${config_path}`\033[0m"行内容
-			read -p "确认还原配置文件？此操作不可逆！[1/0] > " res
-			if [ "$res" = '1' ]; then
-				mv ${config_path}.bak ${config_path}
-				echo "----------------------------------------------"
-				echo -e "\033[32m配置文件已还原！请手动重启服务！\033[0m"
-				sleep 1
-			else
-				echo "-----------------------------------------------"
-				echo -e "\033[31m操作已取消！返回上级菜单！\033[0m"
-				set_core_config
-			fi
-		fi
-	;;
-	9)
-		echo "-----------------------------------------------"
-		echo -e "\033[36m如果6-1或者6-2无法正确获取配置文件时可以尝试使用\033[0m"
-		echo -e " 1 使用自动UA"
-		echo -e " 2 不使用UA"
-		echo -e " 3 使用自定义UA：\033[32m$user_agent\033[0m"
-		echo "-----------------------------------------------"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0)
-			user_agent=''
-		;;
-		1)
-			user_agent='auto'
-		;;
-		2)
-			user_agent='none'
-		;;
-		3)
-			read -p "请输入自定义UA(不要包含空格和特殊符号！) > " text
-			[ -n "$text" ] && user_agent="$text"
-		;;
-		*)
-			errornum
-		;;
-		esac
-		[ "$num" -le 3 ] && setconfig user_agent "$user_agent"
-		set_core_config
-	;;
-	*)
-		errornum
-	;;
-	esac
+
+#配置文件功能
+set_core_config(){
+    while true;
+	do
+    	[ -z "$rule_link" ] && rule_link=1
+    	[ -z "$server_link" ] && server_link=1
+    	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
+    	echo "-----------------------------------------------"
+    	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 1 在线\033[32m生成配置文件\033[0m(基于Subconverter订阅转换)"
+    	if [ -f "$CRASHDIR"/v2b_api.sh ];then
+    		echo -e " 2 登录\033[33m获取订阅(推荐！)\033[0m"
+    	else
+    		echo -e " 2 在线\033[33m获取配置文件\033[0m(基于订阅提供者)"
+    	fi
+    	echo -e " 3 本地\033[32m生成配置文件\033[0m(基于内核providers,推荐！)"
+    	echo -e " 4 本地\033[33m上传完整配置文件\033[0m"
+    	echo -e " 5 设置\033[36m自动更新\033[0m"
+    	echo -e " 6 \033[32m自定义\033[0m配置文件"
+    	echo -e " 7 \033[33m更新\033[0m配置文件"
+    	echo -e " 8 \033[36m还原\033[0m配置文件"
+    	echo -e " 9 自定义浏览器UA  \033[32m$user_agent\033[0m"
+    	echo "-----------------------------------------------"
+    	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
+    	read -p "请输入对应数字 > " num
+    	case "$num" in
+    	0)
+    	    break
+    	    ;;
+    	1)
+    		if [ -n "$Url" ];then
+    			echo "-----------------------------------------------"
+    			echo -e "\033[33m检测到已记录的链接内容：\033[0m"
+    			echo -e "\033[4;32m$Url\033[0m"
+    			echo "-----------------------------------------------"
+    			read -p "清空链接/追加导入？[1/0] > " res
+    			if [ "$res" = '1' ]; then
+    				Url_link=""
+    				echo "-----------------------------------------------"
+    				echo -e "\033[31m链接已清空！\033[0m"
+    			else
+    				Url_link=$Url
+    			fi
+    		fi
+    		gen_core_config_link
+     	    ;;
+    	2)
+    		if [ -f "$CRASHDIR"/v2b_api.sh ];then
+    			. "$CRASHDIR"/v2b_api.sh
+    		else
+    			set_core_config_link
+    		fi
+     	    ;;
+    	3)
+    		if [ "$crashcore" = meta -o "$crashcore" = clashpre ];then
+    			coretype=clash
+    			setproviders
+    		elif [ "$crashcore" = singboxr ];then
+    			coretype=singbox
+    			setproviders
+    		else
+    			echo -e "\033[33msingbox官方内核及Clash基础内核不支持此功能，请先更换内核！\033[0m"
+    			sleep 1
+    			checkupdate && setcore
+    		fi
+     	    ;;
+    	4)
+    		echo "-----------------------------------------------"
+    		echo -e "\033[33m请将本地配置文件上传到/tmp目录并重命名为config.yaml或者config.json\033[0m"
+    		echo -e "\033[32m之后重新运行本脚本即可自动弹出导入提示！\033[0m"
+    		exit 0
+     	    ;;
+    	5)
+    		. ${CRASHDIR}/task/task.sh && task_menu
+     	    ;;
+    	6)
+    		checkcfg=$(cat $CFG_PATH)
+    		override
+    		if [ -n "$PID" ];then
+    			checkcfg_new=$(cat $CFG_PATH)
+    			[ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+    		fi
+     	    ;;
+    	7)
+    		if [ -z "$Url" -a -z "$Https" ];then
+    			echo "-----------------------------------------------"
+    			echo -e "\033[31m没有找到你的配置文件/订阅链接！请先输入链接！\033[0m"
+    			sleep 1
+    		else
+    			echo "-----------------------------------------------"
+    			echo -e "\033[33m当前系统记录的链接为：\033[0m"
+    			echo -e "\033[4;32m$Url$Https\033[0m"
+    			echo "-----------------------------------------------"
+    			read -p "确认更新配置文件？[1/0] > " res
+    			if [ "$res" = '1' ]; then
+    				get_core_config
+    			else
+               	    echo -e "\033[31m操作已取消\033[0m"
+    			fi
+    		fi
+     	    ;;
+    	8)
+    		if [ ! -f ${config_path}.bak ];then
+    			echo "-----------------------------------------------"
+    			echo -e "\033[31m没有找到配置文件的备份！\033[0m"
+    			sleep 1
+    		else
+    			echo "-----------------------------------------------"
+    			echo -e 备份文件共有"\033[32m`wc -l < ${config_path}.bak`\033[0m"行内容，当前文件共有"\033[32m`wc -l < ${config_path}`\033[0m"行内容
+    			read -p "确认还原配置文件？此操作不可逆！[1/0] > " res
+    			if [ "$res" = '1' ]; then
+    				mv ${config_path}.bak ${config_path}
+    				echo "----------------------------------------------"
+    				echo -e "\033[32m配置文件已还原！请手动重启服务！\033[0m"
+    				sleep 1
+                    exit 0
+    			else
+    				echo "-----------------------------------------------"
+    				echo -e "\033[31m操作已取消！返回上级菜单！\033[0m"
+    			fi
+    		fi
+     	    ;;
+    	9)
+    		echo "-----------------------------------------------"
+    		echo -e "\033[36m如果6-1或者6-2无法正确获取配置文件时可以尝试使用\033[0m"
+    		echo -e " 1 使用自动UA"
+    		echo -e " 2 不使用UA"
+    		echo -e " 3 使用自定义UA：\033[32m$user_agent\033[0m"
+    		echo "-----------------------------------------------"
+    		read -p "请输入对应数字 > " num
+    		case "$num" in
+    		0)
+    			user_agent=''
+     		    ;;
+    		1)
+    			user_agent='auto'
+     		    ;;
+    		2)
+    			user_agent='none'
+     		    ;;
+    		3)
+    			read -p "请输入自定义UA(不要包含空格和特殊符号！) > " text
+    			[ -n "$text" ] && user_agent="$text"
+     		    ;;
+    		*)
+    			errornum
+     		    ;;
+    		esac
+    		[ "$num" -le 3 ] && setconfig user_agent "$user_agent"
+    		;;
+    	*)
+    		errornum
+    		;;
+    	esac
+	done
 }
+
 #下载更新相关
 getscripts(){ #更新脚本文件
 	${CRASHDIR}/start.sh get_bin ${TMPDIR}/ShellCrash.tar.gz ShellCrash.tar.gz
@@ -1209,6 +1239,7 @@ getscripts(){ #更新脚本文件
 	rm -rf ${TMPDIR}/ShellCrash.tar.gz
 	exit
 }
+
 setscripts(){
 	echo "-----------------------------------------------"
 	echo -e "当前脚本版本为：\033[33m $versionsh_l \033[0m"
@@ -1309,7 +1340,9 @@ switch_core(){ #clash与singbox内核切换
 	fi
 	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && . ${CRASHDIR}/configs/command.env
 }
-getcore(){ #下载内核文件
+
+#下载内核文件
+getcore(){
 	[ -z "$crashcore" ] && crashcore=meta
 	[ -z "$cpucore" ] && getcpucore
 	echo "$crashcore" | grep -q 'singbox' && core_new=singbox || core_new=clash
@@ -1372,7 +1405,9 @@ getcore(){ #下载内核文件
 		fi
 	fi
 }
-setcustcore(){ #自定义内核
+
+#自定义内核
+setcustcore(){
 	checkcustcore(){
 		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
 		#通过githubapi获取内核信息
@@ -1400,7 +1435,7 @@ setcustcore(){ #自定义内核
 				case "$num" in
 				0)
 					setcustcore
-				;;
+					;;
 				[1-9]|[1-9][0-9])
 					if [ "$num" -le "$(wc -l < ${TMPDIR}/core.list)" ];then
 						custcorelink=$(sed -n "$num"p ${TMPDIR}/core.list)
@@ -1408,10 +1443,10 @@ setcustcore(){ #自定义内核
 					else
 						errornum
 					fi
-				;;
+					;;
 				*)
 					errornum
-				;;
+					;;
 				esac
 			else
 				echo -e "\033[31m找不到可用内核，可能是作者没有编译相关CPU架构版本的内核文件！\033[0m"
@@ -1423,6 +1458,7 @@ setcustcore(){ #自定义内核
 		fi
 		rm -rf ${TMPDIR}/core.list
 	}
+
 	[ -z "$cpucore" ] && getcpucore
 	echo "-----------------------------------------------"
 	echo -e "\033[36m此处内核通常源自互联网采集，此处致谢各位开发者！\033[0m"
@@ -1451,55 +1487,57 @@ setcustcore(){ #自定义内核
 		api_tag=latest
 		crashcore=meta
 		checkcustcore
-	;;
+		;;
 	2)
 		project=MetaCubeX/mihomo
 		api_tag=Prerelease-Alpha
 		crashcore=meta
 		checkcustcore
-	;;
+		;;
 	3)
 		project=vernesong/mihomo
 		api_tag=Prerelease-Alpha
 		crashcore=meta
 		checkcustcore
-	;;
+		;;
 	4)
 		project=SagerNet/sing-box
 		api_tag=latest
 		crashcore=singbox
 		checkcustcore
-	;;
+		;;
 	5)
 		project=juewuy/ShellCrash
 		api_tag=singbox_core_reF1nd
 		crashcore=singboxr
 		checkcustcore
-	;;
+		;;
 	6)
 		project=juewuy/ShellCrash
 		api_tag=singbox_core_dev_reF1nd
 		crashcore=singboxr
 		checkcustcore
-	;;
+		;;
 	7)
 		project=juewuy/ShellCrash
 		api_tag=clash.premium.latest
 		crashcore=clashpre
 		checkcustcore
-	;;
+		;;
 	a)
 		read -p "请输入自定义内核的链接地址(必须是以.tar.gz或.gz结尾的压缩文件) > " link
 		[ -n "$link" ] && custcorelink="$link"
 		crashcore=unknow
 		getcore
-	;;
+		;;
 	*)
 		errornum
-	;;
+		;;
 	esac
 }
-setcore(){ #内核选择菜单
+
+#内核选择菜单
+setcore(){
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow"
 	[ ! -f ${CRASHDIR}/CrashCore.tar.gz -o ! -f ${BINDIR}/CrashCore.tar.gz ] && crashcore="未安装核心"
@@ -1535,7 +1573,7 @@ setcore(){ #内核选择菜单
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0)
-	;;
+	    ;;
 	1)
 		[ -d "/jffs" ] && {
 			echo -e "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
@@ -1544,39 +1582,40 @@ setcore(){ #内核选择菜单
 		crashcore=meta
 		custcorelink=''
 		getcore
-	;;
+		;;
 	2)
 		crashcore=singboxr
 		custcorelink=''
 		getcore
-	;;
+		;;
 	3)
 		crashcore=singbox
 		custcorelink=''
 		getcore
-	;;
+		;;
 	4)
 		crashcore=clash
 		custcorelink=''
 		getcore
-	;;
+		;;
 	5)
 		setcustcore
 		setcore
-	;;
+		;;
 	6)
 		getcore
-	;;
+		;;
 	9)
 		setcpucore
-	;;
+		;;
 	*)
 		errornum
-	;;
+		;;
 	esac
 }
 
-getgeo(){ #下载Geo文件
+#下载Geo文件
+getgeo(){
 	#生成链接
 	echo "-----------------------------------------------"
 	echo 正在从服务器获取数据库文件…………
@@ -1604,219 +1643,223 @@ getgeo(){ #下载Geo文件
 	fi
 	sleep 1
 }
-setcustgeo(){ #下载自定义数据库文件
-	getcustgeo(){
-		echo "-----------------------------------------------"
-		echo "正在获取数据库文件…………"
-		${CRASHDIR}/start.sh webget ${TMPDIR}/$geoname $custgeolink
-		if [ "$?" = "1" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[31m文件下载失败！\033[0m"
-			error_down
-		else
-			echo "$geoname" | grep -Eq '.mrs|.srs' && {
+
+#下载自定义数据库文件
+setcustgeo(){
+   	getcustgeo(){
+  		echo "-----------------------------------------------"
+  		echo "正在获取数据库文件…………"
+  		${CRASHDIR}/start.sh webget ${TMPDIR}/$geoname $custgeolink
+  		if [ "$?" = "1" ];then
+ 			echo "-----------------------------------------------"
+ 			echo -e "\033[31m文件下载失败！\033[0m"
+ 			error_down
+  		else
+ 			echo "$geoname" | grep -Eq '.mrs|.srs' && {
 				geofile='ruleset/'
 				[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
-			}
-			mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
-			echo "-----------------------------------------------"
-			echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
-		fi
-		sleep 1
-	}
-	checkcustgeo(){
-		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
-		[ ! -s ${TMPDIR}/geo.list ] && {
-			echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
-			${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
-			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > ${TMPDIR}/geo.list
-			rm -rf ${TMPDIR}/github_api
-		}
-		if [ -s ${TMPDIR}/geo.list ];then
-			echo -e "请选择需要更新的数据库文件："
-			echo "-----------------------------------------------"
-			cat ${TMPDIR}/geo.list | awk '{print " "NR" "$1}'
-			echo -e " 0 返回上级菜单"
-			echo "-----------------------------------------------"
-			read -p "请输入对应数字 > " num
-			case "$num" in
-			0)
-			;;
-			[1-99])
-				if [ "$num" -le "$(wc -l < ${TMPDIR}/geo.list)" ];then
-					geotype=$(sed -n "$num"p ${TMPDIR}/geo.list)
-					[ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
-					[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
-					[ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
-					custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
-					getcustgeo
-					checkcustgeo
-				else
-					errornum
-				fi
-			;;
-			*)
-				errornum
-			;;
-			esac
-		else
-			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
-			sleep 1
-		fi
-	}
-	rm -rf ${TMPDIR}/geo.list
-	echo "-----------------------------------------------"
-	echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
-	echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
-	echo -e "\033[31m自定义数据库不支持定时任务及小闪存模式！\033[0m"
-	echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
-	echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (仅限Clash/Mihomo)"
-	echo -e " 2 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Clash/Mihomo)"
-	echo -e " 3 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限SingBox-srs)"
-	echo -e " 4 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Mihomo-mrs)"
-	echo -e " 5 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
-	echo "-----------------------------------------------"
-	echo -e " 9 \033[33m自定义数据库链接 \033[0m"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		project=MetaCubeX/meta-rules-dat
-		api_tag=latest
-		checkcustgeo
-		setcustgeo
-	;;
-	2)
-		project=DustinWin/ruleset_geodata
-		api_tag=mihomo-geodata
-		checkcustgeo
-		setcustgeo
-	;;
-	3)
-		project=DustinWin/ruleset_geodata
-		api_tag=sing-box-ruleset
-		checkcustgeo
-		setcustgeo
-	;;
-	4)
-		project=DustinWin/ruleset_geodata
-		api_tag=mihomo-ruleset
-		checkcustgeo
-		setcustgeo
-	;;
-	5)
-		project=Loyalsoldier/geoip
-		api_tag=latest
-		checkcustgeo
-		setcustgeo
-	;;
-	9)
-		read -p "请输入自定义数据库的链接地址 > " link
-		[ -n "$link" ] && custgeolink="$link"
-		getgeo
-		setcustgeo
-	;;
-	*)
-		errornum
-	;;
-	esac
-}
-setgeo(){ #数据库选择菜单
-	. $CFG_PATH > /dev/null
-	[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
-	echo "-----------------------------------------------"
-	echo -e "\033[36m请选择需要更新的Geo数据库文件：\033[0m"
-	echo -e "\033[36mMihomo内核和SingBox内核的数据库文件不通用\033[0m"
-	echo -e "在线数据库最新版本(每日同步上游)：\033[32m$GeoIP_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
-	echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 3 Mihomo精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
-	echo -e " 4 Mihomo完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
-	echo -e " 5 Mihomo-mrs数据库常用包(约1mb)	\033[33m$mrs_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 6 Singbox-srs数据库常用包(约0.8mb)	\033[33m$srs_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 8 \033[32m自定义数据库文件\033[0m"
-	echo -e " 9 \033[31m清理数据库文件\033[0m"
-	echo " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		geotype=china_ip_list.txt
-		geoname=cn_ip.txt
-		getgeo
-		setgeo
-	;;
-	2)
-		geotype=china_ipv6_list.txt
-		geoname=cn_ipv6.txt
-		getgeo
-		setgeo
-	;;
-	3)
-		geotype=cn_mini.mmdb
-		geoname=Country.mmdb
-		getgeo
-		setgeo
-	;;
-	4)
-		geotype=geosite.dat
-		geoname=GeoSite.dat
-		getgeo
-		setgeo
-	;;
-	5)
-		geotype=mrs.tar.gz
-		geoname=mrs.tar.gz
-		getgeo
-		setgeo
-	;;
-	6)
-		geotype=srs.tar.gz
-		geoname=srs.tar.gz
-		getgeo
-		setgeo
-	;;
-	8)
-		setcustgeo
-		setgeo
-	;;
-	9)
-		echo "-----------------------------------------------"
-		echo -e "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
-		echo -e "\033[36m清理后启动服务即可自动下载所需文件~\033[0m"
-		echo "-----------------------------------------------"
-		read -p "确认清理？[1/0] > " res
-		[ "$res" = '1' ] && {
-			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db;do
-				rm -rf $CRASHDIR/$file
-			done
-			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v mrs_v srs_v;do
-				setconfig $var
-			done
-			rm -rf $CRASHDIR/ruleset/*
-			echo -e "\033[33m所有数据库文件均已清理！\033[0m"
-			sleep 1
-		}
-		setgeo
-	;;
-	*)
-		errornum
-	;;
-esac
+ 			}
+ 			mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
+ 			echo "-----------------------------------------------"
+ 			echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
+  		fi
+  		sleep 1
+   	}
+
+   	checkcustgeo(){
+        while true;
+        do
+      		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
+      		[ ! -s ${TMPDIR}/geo.list ] && {
+     			echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
+     			${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
+     			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+     			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > ${TMPDIR}/geo.list
+     			rm -rf ${TMPDIR}/github_api
+      		}
+      		if [ -s ${TMPDIR}/geo.list ];then
+     			echo -e "请选择需要更新的数据库文件："
+     			echo "-----------------------------------------------"
+     			cat ${TMPDIR}/geo.list | awk '{print " "NR" "$1}'
+     			echo -e " 0 返回上级菜单"
+     			echo "-----------------------------------------------"
+     			read -p "请输入对应数字 > " num
+     			case "$num" in
+     			0)
+                    break
+     			    ;;
+     			[1-99])
+        				if [ "$num" -le "$(wc -l < ${TMPDIR}/geo.list)" ];then
+           					geotype=$(sed -n "$num"p ${TMPDIR}/geo.list)
+           					[ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
+           					[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
+           					[ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
+           					custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
+           					getcustgeo
+        				else
+           					errornum
+        				fi
+        				;;
+     			*)
+    				errornum
+    				;;
+     			esac
+      		else
+     			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
+     			sleep 1
+      		fi
+        done
+   	}
+
+    while true;
+    do
+    	rm -rf ${TMPDIR}/geo.list
+    	echo "-----------------------------------------------"
+    	echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
+    	echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
+    	echo -e "\033[31m自定义数据库不支持定时任务及小闪存模式！\033[0m"
+    	echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
+    	echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (仅限Clash/Mihomo)"
+    	echo -e " 2 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Clash/Mihomo)"
+    	echo -e " 3 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限SingBox-srs)"
+    	echo -e " 4 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Mihomo-mrs)"
+    	echo -e " 5 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
+    	echo "-----------------------------------------------"
+    	echo -e " 9 \033[33m自定义数据库链接 \033[0m"
+    	echo -e " 0 返回上级菜单"
+    	read -p "请输入对应数字 > " num
+    	case "$num" in
+    	0)
+            break
+    	    ;;
+    	1)
+    		project=MetaCubeX/meta-rules-dat
+    		api_tag=latest
+    		checkcustgeo
+    		;;
+    	2)
+    		project=DustinWin/ruleset_geodata
+    		api_tag=mihomo-geodata
+    		checkcustgeo
+    		;;
+    	3)
+    		project=DustinWin/ruleset_geodata
+    		api_tag=sing-box-ruleset
+    		checkcustgeo
+    		;;
+    	4)
+    		project=DustinWin/ruleset_geodata
+    		api_tag=mihomo-ruleset
+    		checkcustgeo
+    		;;
+    	5)
+    		project=Loyalsoldier/geoip
+    		api_tag=latest
+    		checkcustgeo
+    		;;
+    	9)
+    		read -p "请输入自定义数据库的链接地址 > " link
+    		[ -n "$link" ] && custgeolink="$link"
+    		getgeo
+    		;;
+    	*)
+    		errornum
+    		;;
+    	esac
+    done
 }
 
-getdb(){ #下载Dashboard文件
+#数据库选择菜单
+setgeo(){
+    while true;
+    do
+       	. $CFG_PATH > /dev/null
+       	[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
+       	echo "-----------------------------------------------"
+       	echo -e "\033[36m请选择需要更新的Geo数据库文件：\033[0m"
+       	echo -e "\033[36mMihomo内核和SingBox内核的数据库文件不通用\033[0m"
+       	echo -e "在线数据库最新版本(每日同步上游)：\033[32m$GeoIP_v\033[0m"
+       	echo "-----------------------------------------------"
+       	echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
+       	echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
+       	echo "-----------------------------------------------"
+       	echo -e " 3 Mihomo精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
+       	echo -e " 4 Mihomo完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
+       	echo -e " 5 Mihomo-mrs数据库常用包(约1mb)	\033[33m$mrs_v\033[0m"
+       	echo "-----------------------------------------------"
+       	echo -e " 6 Singbox-srs数据库常用包(约0.8mb)	\033[33m$srs_v\033[0m"
+       	echo "-----------------------------------------------"
+       	echo -e " 8 \033[32m自定义数据库文件\033[0m"
+       	echo -e " 9 \033[31m清理数据库文件\033[0m"
+       	echo " 0 返回上级菜单"
+       	echo "-----------------------------------------------"
+       	read -p "请输入对应数字 > " num
+       	case "$num" in
+       	0)
+            break
+       	    ;;
+       	1)
+      		geotype=china_ip_list.txt
+      		geoname=cn_ip.txt
+      		getgeo
+      		;;
+       	2)
+      		geotype=china_ipv6_list.txt
+      		geoname=cn_ipv6.txt
+      		getgeo
+      		;;
+       	3)
+      		geotype=cn_mini.mmdb
+      		geoname=Country.mmdb
+      		getgeo
+      		;;
+       	4)
+      		geotype=geosite.dat
+      		geoname=GeoSite.dat
+      		getgeo
+      		;;
+       	5)
+      		geotype=mrs.tar.gz
+      		geoname=mrs.tar.gz
+      		getgeo
+      		;;
+       	6)
+      		geotype=srs.tar.gz
+      		geoname=srs.tar.gz
+      		getgeo
+      		;;
+       	8)
+      		setcustgeo
+      		;;
+       	9)
+      		echo "-----------------------------------------------"
+      		echo -e "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
+      		echo -e "\033[36m清理后启动服务即可自动下载所需文件~\033[0m"
+      		echo "-----------------------------------------------"
+      		read -p "确认清理？[1/0] > " res
+      		[ "$res" = '1' ] && {
+     			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db;do
+        				rm -rf $CRASHDIR/$file
+     			done
+     			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v mrs_v srs_v;do
+        				setconfig $var
+     			done
+     			rm -rf $CRASHDIR/ruleset/*
+     			echo -e "\033[33m所有数据库文件均已清理！\033[0m"
+     			sleep 1
+      		}
+      		;;
+       	*)
+      		errornum
+      		;;
+        esac
+    done
+}
+
+#下载Dashboard文件
+getdb(){
 	dblink="${update_url}/"
 	echo "-----------------------------------------------"
 	echo 正在连接服务器获取安装文件…………
@@ -1849,6 +1892,7 @@ getdb(){ #下载Dashboard文件
 	fi
 	sleep 1
 }
+
 setdb(){
 	dbdir(){
 		if [ -f /www/clash/CNAME -o -f ${CRASHDIR}/ui/CNAME ];then
@@ -1981,6 +2025,7 @@ getcrt(){ #下载根证书文件
 		sleep 1
 	fi
 }
+
 setcrt(){
 	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
 	if [ -d "$openssldir/certs/" ];then
@@ -2012,135 +2057,136 @@ setcrt(){
 		sleep 1
 	fi
 }
+
 #安装源
 setserver(){
-	[ -z "$release_type" ] && release_name=未指定
-	[ -n "$release_type" ] && release_name=${release_type}'(回退)'
-	[ "$release_type" = stable ] && release_name=稳定版
-	[ "$release_type" = master ] && release_name=公测版
-	[ "$release_type" = dev ] && release_name=开发版
-	[ -n "$url_id" ] && url_name=$(grep "$url_id" ${CRASHDIR}/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name=$update_url
-	saveserver(){
-		#写入配置文件
-		setconfig update_url "'$update_url'"
-		setconfig url_id $url_id
-		setconfig release_type $release_type
-		echo "-----------------------------------------------"
-		echo -e "\033[32m源地址切换成功！\033[0m"
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
-	echo -e "当前版本：\033[4;33m$release_name\033[0m 当前源：\033[4;32m$url_name\033[0m"
-	echo "-----------------------------------------------"
-	grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | awk '{print " "NR" "$2}'
-	echo "-----------------------------------------------"
-	echo -e " a 切换至\033[32m稳定版-stable\033[0m"
-	echo -e " b 切换至\033[36m公测版-master\033[0m"
-	echo -e " c 切换至\033[33m开发版-dev\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " d 自定义源地址(用于本地源或自建源)"
-	echo -e " e \033[31m版本回退\033[0m"
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应字母或数字 > " num
-	case "$num" in
-	0)
-		checkupdate=false
-	;;
-	[1-99])
-		url_id_new=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
-		if [ -z "$url_id_new" ];then
-			errornum
-			sleep 1
-			setserver
-		elif [ "$url_id_new" -ge 200 ];then
-			update_url=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
-			url_id=''
-			saveserver
-		else
-			url_id=$url_id_new
-			update_url=''
-			saveserver
-		fi
-		unset url_id_new
-	;;
-	a)
-		release_type=stable
-		[ -z "$url_id" ] && url_id=101
-		saveserver
-		setserver
-	;;
-	b)
-		release_type=master
-		[ -z "$url_id" ] && url_id=101
-		saveserver
-		setserver
-	;;
-	c)
-		echo "-----------------------------------------------"
-		echo -e "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
-		echo -e "\033[36m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
-		echo -e "请务必加入我们的讨论组：\033[32;4mhttps://t.me/ShellClash\033[0m"
-		read -p "是否依然切换到开发版？(1/0) > " res
-		if [ "$res" = 1 ];then
-			release_type=dev
-			[ -z "$url_id" ] && url_id=101
-			saveserver
-		fi
-		setserver
-	;;
-	d)
-		echo "-----------------------------------------------"
-		read -p "请输入个人源路径 > " update_url
-		if [ -z "$update_url" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
-		else
-			url_id=''
-			release_type=''
-			saveserver
-		fi
-	;;
-	e)
-		echo "-----------------------------------------------"
-		if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
-			echo -ne "\033[32m正在获取版本信息！\033[0m\r"
-			${CRASHDIR}/start.sh get_bin ${TMPDIR}/release_version bin/release_version
-			if [ "$?" = "0" ];then
-				echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
-				cat ${TMPDIR}/release_version | awk '{print " "NR" "$1}'
-				echo -e " 0 返回上级菜单"
-				read -p "请输入对应数字 > " num
-				if [ -z "$num" -o "$num" = 0 ]; then
-					setserver
-				elif [ $num -le $(cat ${TMPDIR}/release_version 2>/dev/null | awk 'END{print NR}') ]; then
-					release_type=$(cat ${TMPDIR}/release_version | awk '{print $1}' | sed -n "$num"p)
-					update_url=''
-					saveserver
-				else
-					echo "-----------------------------------------------"
-					errornum
-					sleep 1
-					setserver
-				fi
-			else
-				echo "-----------------------------------------------"
-				echo -e "\033[31m版本回退信息获取失败，请尝试更换其他安装源！\033[0m"
-				sleep 1
-				setserver
-			fi
-			rm -rf ${TMPDIR}/release_version
-		else
-			echo -e "\033[31m当前源不支持版本回退，请尝试更换其他安装源！\033[0m"
-			sleep 1
-			setserver
-		fi
-	;;
-	*)
-		errornum
-	;;
-	esac
+    while true;
+    do
+    	[ -z "$release_type" ] && release_name=未指定
+    	[ -n "$release_type" ] && release_name=${release_type}'(回退)'
+    	[ "$release_type" = stable ] && release_name=稳定版
+    	[ "$release_type" = master ] && release_name=公测版
+    	[ "$release_type" = dev ] && release_name=开发版
+    	[ -n "$url_id" ] && url_name=$(grep "$url_id" ${CRASHDIR}/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name=$update_url
+
+    	saveserver(){
+    		#写入配置文件
+    		setconfig update_url "'$update_url'"
+    		setconfig url_id $url_id
+    		setconfig release_type $release_type
+    		echo "-----------------------------------------------"
+    		echo -e "\033[32m源地址切换成功！\033[0m"
+    	}
+
+    	echo "-----------------------------------------------"
+    	echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
+    	echo -e "当前版本：\033[4;33m$release_name\033[0m 当前源：\033[4;32m$url_name\033[0m"
+    	echo "-----------------------------------------------"
+    	grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | awk '{print " "NR" "$2}'
+    	echo "-----------------------------------------------"
+    	echo -e " a 切换至\033[32m稳定版-stable\033[0m"
+    	echo -e " b 切换至\033[36m公测版-master\033[0m"
+    	echo -e " c 切换至\033[33m开发版-dev\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " d 自定义源地址(用于本地源或自建源)"
+    	echo -e " e \033[31m版本回退\033[0m"
+    	echo -e " 0 返回上级菜单"
+    	echo "-----------------------------------------------"
+    	read -p "请输入对应字母或数字 > " num
+    	case "$num" in
+    	0)
+    		checkupdate=false
+            break
+    		;;
+    	[1-99])
+    		url_id_new=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
+    		if [ -z "$url_id_new" ];then
+    			errornum
+    			sleep 1
+    		elif [ "$url_id_new" -ge 200 ];then
+    			update_url=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+    			url_id=''
+    			saveserver
+    		else
+    			url_id=$url_id_new
+    			update_url=''
+    			saveserver
+    		fi
+    		unset url_id_new
+    		;;
+    	a)
+    		release_type=stable
+    		[ -z "$url_id" ] && url_id=101
+    		saveserver
+    		;;
+    	b)
+    		release_type=master
+    		[ -z "$url_id" ] && url_id=101
+    		saveserver
+    		;;
+    	c)
+    		echo "-----------------------------------------------"
+    		echo -e "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
+    		echo -e "\033[36m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
+    		echo -e "请务必加入我们的讨论组：\033[32;4mhttps://t.me/ShellClash\033[0m"
+    		read -p "是否依然切换到开发版？(1/0) > " res
+    		if [ "$res" = 1 ];then
+    			release_type=dev
+    			[ -z "$url_id" ] && url_id=101
+    			saveserver
+    		fi
+    		;;
+    	d)
+    		echo "-----------------------------------------------"
+    		read -p "请输入个人源路径 > " update_url
+    		if [ -z "$update_url" ];then
+    			echo "-----------------------------------------------"
+    			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
+    		else
+    			url_id=''
+    			release_type=''
+    			saveserver
+    		fi
+    		;;
+    	e)
+    		echo "-----------------------------------------------"
+    		if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
+    			echo -ne "\033[32m正在获取版本信息！\033[0m\r"
+    			${CRASHDIR}/start.sh get_bin ${TMPDIR}/release_version bin/release_version
+    			if [ "$?" = "0" ];then
+    				echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
+    				cat ${TMPDIR}/release_version | awk '{print " "NR" "$1}'
+    				echo -e " 0 返回上级菜单"
+    				read -p "请输入对应数字 > " num
+    				if [ -z "$num" -o "$num" = 0 ]; then
+       					continue
+    				elif [ $num -le $(cat ${TMPDIR}/release_version 2>/dev/null | awk 'END{print NR}') ]; then
+    					release_type=$(cat ${TMPDIR}/release_version | awk '{print $1}' | sed -n "$num"p)
+    					update_url=''
+    					saveserver
+    				else
+    					echo "-----------------------------------------------"
+    					errornum
+    					sleep 1
+    				fi
+    			else
+    				echo "-----------------------------------------------"
+    				echo -e "\033[31m版本回退信息获取失败，请尝试更换其他安装源！\033[0m"
+    				sleep 1
+    			fi
+    			rm -rf ${TMPDIR}/release_version
+    		else
+    			echo -e "\033[31m当前源不支持版本回退，请尝试更换其他安装源！\033[0m"
+    			sleep 1
+    		fi
+    		;;
+    	*)
+    		errornum
+    		;;
+    	esac
+    done
 }
+
 #检查更新
 checkupdate(){
 	${CRASHDIR}/start.sh get_bin ${TMPDIR}/version_new version echooff
@@ -2157,101 +2203,101 @@ checkupdate(){
 	fi
 	rm -rf ${TMPDIR}/version_new
 }
+
 update(){
-    echo "-----------------------------------------------"
-	echo -ne "\033[32m正在检查更新！\033[0m\r"
-	checkupdate
-	[ -z "$core_v" ] && core_v=$crashcore
-	core_v_new=$(eval echo \$${crashcore}_v)
-	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "当前目录(\033[32m${CRASHDIR}\033[0m)剩余空间：\033[36m$(dir_avail ${CRASHDIR} -h)\033[0m"
-	[ "$(dir_avail ${CRASHDIR})" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
-		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
-		sleep 1
-	}
-	echo "-----------------------------------------------"
-	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
-	echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
-	echo -e " 3 更新\033[32m数据库文件\033[0m	> \033[32m$GeoIP_v\033[0m"
-	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
-	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
-	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
-	echo "-----------------------------------------------"
-	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
-	echo -e " 8 \033[32m配置自动更新\033[0m"
-	echo -e " 9 \033[31m卸载ShellCrash\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "99 \033[36m鸣谢！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-		;;
-	1)
-	    setscripts
-		;;
-	2)
-	    setcore
-	    ;;
-	3)
-		setgeo
-		update
-	    ;;
-	4)
-		setdb
-		update
-		;;
-	5)
-	    setcrt
-	    update
-	    ;;
-	6)
-	    echo "-----------------------------------------------"
-	    echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
-	    echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
-	    sleep 2
-	    update
-	    ;;
-	7)
-	    setserver
-	    update
-	    ;;
-	8)
-	    . ${CRASHDIR}/task/task.sh && task_add
-	    update
-	    ;;
-	9)
-	    uninstall
-	    exit
-	    ;;
-	99)
-		echo "-----------------------------------------------"
-		echo -e "感谢：\033[32mClash项目 \033[0m作者\033[36m Dreamacro\033[0m"
-		echo -e "感谢：\033[32msing-box项目 \033[0m作者\033[36m SagerNet\033[0m 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
-		echo -e "感谢：\033[32mMetaCubeX项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
-		echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
-		echo -e "感谢：\033[32mzashboard项目 \033[0m作者\033[36m Zephyruso\033[0m 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
-		echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
-		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m PuerNya\033[0m 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
-		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m reF1nd\033[0m 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
-		echo -e "感谢：\033[32mDustinWin相关项目 \033[0m作者\033[36m DustinWin\033[0m 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
-		echo "-----------------------------------------------"
-		echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
-		echo "-----------------------------------------------"
-		sleep 2
-		update
-	    ;;
-	*)
-	    errornum
-		;;
-	esac
+    while true;
+    do
+        echo "-----------------------------------------------"
+    	echo -ne "\033[32m正在检查更新！\033[0m\r"
+    	checkupdate
+    	[ -z "$core_v" ] && core_v=$crashcore
+    	core_v_new=$(eval echo \$${crashcore}_v)
+    	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e "当前目录(\033[32m${CRASHDIR}\033[0m)剩余空间：\033[36m$(dir_avail ${CRASHDIR} -h)\033[0m"
+
+    	[ "$(dir_avail ${CRASHDIR})" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
+    		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
+    		sleep 1
+    	}
+
+    	echo "-----------------------------------------------"
+    	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
+    	echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
+    	echo -e " 3 更新\033[32m数据库文件\033[0m	> \033[32m$GeoIP_v\033[0m"
+    	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+    	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
+    	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
+    	echo "-----------------------------------------------"
+    	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
+    	echo -e " 8 \033[32m配置自动更新\033[0m"
+    	echo -e " 9 \033[31m卸载ShellCrash\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e "99 \033[36m鸣谢！\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 0 返回上级菜单"
+    	echo "-----------------------------------------------"
+    	read -p "请输入对应数字 > " num
+    	case "$num" in
+    	0)
+       		break
+    		;;
+    	1)
+    	    setscripts
+    		;;
+    	2)
+    	    setcore
+    	    ;;
+    	3)
+    		setgeo
+    	    ;;
+    	4)
+    		setdb
+    		;;
+    	5)
+    	    setcrt
+    	    ;;
+    	6)
+    	    echo "-----------------------------------------------"
+    	    echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
+    	    echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
+    	    sleep 2
+    	    ;;
+    	7)
+    	    setserver
+    	    ;;
+    	8)
+    	    . ${CRASHDIR}/task/task.sh && task_add
+    	    ;;
+    	9)
+    	    uninstall
+    	    exit 0
+    	    ;;
+    	99)
+    		echo "-----------------------------------------------"
+    		echo -e "感谢：\033[32mClash项目 \033[0m作者\033[36m Dreamacro\033[0m"
+    		echo -e "感谢：\033[32msing-box项目 \033[0m作者\033[36m SagerNet\033[0m 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
+    		echo -e "感谢：\033[32mMetaCubeX项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
+    		echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
+    		echo -e "感谢：\033[32mzashboard项目 \033[0m作者\033[36m Zephyruso\033[0m 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
+    		echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
+    		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m PuerNya\033[0m 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
+    		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m reF1nd\033[0m 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
+    		echo -e "感谢：\033[32mDustinWin相关项目 \033[0m作者\033[36m DustinWin\033[0m 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
+    		echo "-----------------------------------------------"
+    		echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
+    		echo "-----------------------------------------------"
+    		sleep 2
+    	    ;;
+    	*)
+    	    errornum
+    		;;
+    	esac
+    done
 }
+
 #新手引导
 userguide(){
-
 	forwhat(){
 		echo "-----------------------------------------------"
 		echo -e "\033[30;46m 欢迎使用ShellCrash新手引导！ \033[0m"
@@ -2325,7 +2371,9 @@ userguide(){
 			;;
 		esac
 	}
+
 	forwhat
+
 	#检测小内存模式
 	dir_size=$(dir_avail ${CRASHDIR})
 	if [ "$dir_size" -lt 10240 ];then
@@ -2340,6 +2388,7 @@ userguide(){
 			setconfig BINDIR /tmp/ShellCrash ${CRASHDIR}/configs/command.env
 		}
 	fi
+
 	#检测及下载根证书
 	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
 	[ ! -d "$openssldir/certs" ] && openssldir=/etc/ssl
@@ -2350,6 +2399,7 @@ userguide(){
 		read -p "是否下载并安装根证书？(1/0) > " res
 		[ "$res" = 1 ] && checkupdate && getcrt
 	fi
+
 	#设置加密DNS
 	if [ -s $openssldir/certs/ca-certificates.crt ];then
 		dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
@@ -2359,6 +2409,7 @@ userguide(){
 		setconfig dns_fallback "'$dns_fallback'"
 		setconfig dns_resolver "'$dns_resolver'"
 	fi
+
 	#开启公网访问
 	sethost(){
 		read -p "请输入你的公网IP地址 > " host
@@ -2368,6 +2419,7 @@ userguide(){
 			sethost
 		fi
 	}
+
 	if ckcmd systemctl;then
 		echo "-----------------------------------------------"
 		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
@@ -2392,8 +2444,10 @@ userguide(){
 			setconfig authentication "'$authentication'"
 		fi
 	fi
+
 	#启用推荐的自动任务配置
 	. ${CRASHDIR}/task/task.sh && task_recom
+
 	#小米设备软固化
 	if [ "$systype" = "mi_snapshot" ];then
 		echo "-----------------------------------------------"
@@ -2401,6 +2455,7 @@ userguide(){
 		read -p "是否启用软固化功能？(1/0) > " res
 		[ "$res" = 1 ] && autoSSH
 	fi
+
 	#提示导入订阅或者配置文件
 	[ ! -s $CRASHDIR/yamls/config.yaml -a ! -s $CRASHDIR/jsons/config.json ] && {
 		echo "-----------------------------------------------"
@@ -2418,6 +2473,7 @@ userguide(){
 			inuserguide=""
 		}
 	}
+
 	#回到主界面
 	echo "-----------------------------------------------"
 	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
@@ -2426,6 +2482,7 @@ userguide(){
 	[ "$res" = 1 ] && start_core && sleep 2
 	main_menu
 }
+
 #测试菜单
 debug(){
 	echo "$crashcore" | grep -q 'singbox' && config_tmp=$TMPDIR/jsons || config_tmp=$TMPDIR/config.yaml
@@ -2462,7 +2519,7 @@ debug(){
 		rm -rf ${TMPDIR}/CrashCore
 		echo "-----------------------------------------------"
 		exit
-	;;
+		;;
 	2)
 		$CRASHDIR/start.sh stop
 		$CRASHDIR/start.sh bfstart
@@ -2470,39 +2527,40 @@ debug(){
 		rm -rf ${TMPDIR}/CrashCore
 		echo "-----------------------------------------------"
 		exit
-	;;
+		;;
 	3)
 		$CRASHDIR/start.sh debug error
 		main_menu
-	;;
+		;;
 	4)
 		$CRASHDIR/start.sh debug info
 		main_menu
-	;;
+		;;
 	5)
 		$CRASHDIR/start.sh debug debug
 		main_menu
-	;;
+		;;
 	6)
 		echo -e "频繁写入闪存会导致闪存寿命降低，如非遇到会导致设备死机或重启的bug，请勿使用此功能！"
 		read -p "是否继续？(1/0) > " res
 		[ "$res" = 1 ] && $CRASHDIR/start.sh debug debug flash
 		main_menu
-	;;
+		;;
 	8)
 		$0 -d
 		main_menu
-	;;
+		;;
 	9)
 		${CRASHDIR}/start.sh core_check && $TMPDIR/CrashCore merge $TMPDIR/debug.json -C $TMPDIR/jsons && echo -e "\033[32m合并成功！\033[0m"
 		rm -rf ${TMPDIR}/CrashCore
 		main_menu
-	;;
+		;;
 	*)
 		errornum
-	;;
+		;;
 	esac
 }
+
 testcommand(){
 	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo "-----------------------------------------------"

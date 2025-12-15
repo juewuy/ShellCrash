@@ -222,7 +222,9 @@ set_service(){
 	sleep 1
 }
 #任务界面
-task_user_add(){ #自定义命令添加
+#
+#自定义命令添加
+task_user_add(){
 	echo "-----------------------------------------------"
 	echo -e "\033[33m命令可包含空格，请确保命令可执行！\033[0m"
 	echo -e "\033[36m此处不要添加执行条件，请在添加完成后返回添加具体执行条件！\033[0m"
@@ -245,25 +247,37 @@ task_user_add(){ #自定义命令添加
 		sleep 1
 	fi
 }
-task_user_del(){ #自定义命令删除
-	echo "-----------------------------------------------"
-	echo -e "请输入对应ID移除对应自定义任务(不会影响内置任务)"
-	echo -e "也可以手动编辑\033[32m${CRASHDIR}/task/task.user\033[0m"
-	echo "-----------------------------------------------"
-	cat ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^#' | awk -F '#' '{print $1" "$3}'
-	echo "-----------------------------------------------"
-	echo 0 返回上级菜单
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	if [ -n "$num" ];then
-		sed -i "/^$num#/d" ${CRASHDIR}/task/task.user 2>/dev/null
-		[ "$num" != 0 ] && task_user_del
-	else
-		echo -e "\033[31m输入错误，请重新输入！\033[0m"
-		sleep 1
-	fi
+
+#自定义命令删除
+task_user_del(){
+    while true;
+    do
+    	echo "-----------------------------------------------"
+    	echo -e "请输入对应ID移除对应自定义任务(不会影响内置任务)"
+    	echo -e "也可以手动编辑\033[32m${CRASHDIR}/task/task.user\033[0m"
+    	echo "-----------------------------------------------"
+    	cat ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^#' | awk -F '#' '{print $1" "$3}'
+    	echo "-----------------------------------------------"
+    	echo "0 返回上级菜单"
+    	echo "-----------------------------------------------"
+    	read -p "请输入对应数字 > " num
+        case "$num" in
+        0)
+            break
+            ;;
+        '' | *[!0-9]*) #Handling non-positive integers
+       		echo -e "\033[31m输入错误，请重新输入！\033[0m"
+       		sleep 1
+            ;;
+        *)
+            sed -i "/^$num#/d" ${CRASHDIR}/task/task.user 2>/dev/null
+            ;;
+        esac
+    done
 }
-task_add(){ #任务添加
+
+#任务添加
+task_add(){
 	echo "-----------------------------------------------"
 	echo -e "\033[36m请选择需要添加的任务\033[0m"
 	echo "-----------------------------------------------"
@@ -274,7 +288,7 @@ task_add(){ #任务添加
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0)
-	;;
+	    ;;
 	[1-9]|[1-9][0-9])
 		if [ "$num" -le "$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | wc -l)" ];then
 			task_id=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | sed -n "$num p" | awk -F '#' '{print $1}')
@@ -283,12 +297,13 @@ task_add(){ #任务添加
 		else
 			errornum
 		fi
-	;;
+		;;
 	*)
 	errornum
-	;;
+	    ;;
 	esac
 }
+
 task_del(){ #任务删除
 	#删除定时任务
 	croncmd -l > ${TMPDIR}/cron && sed -i "/$1/d" ${TMPDIR}/cron && croncmd ${TMPDIR}/cron
@@ -316,10 +331,9 @@ task_type(){ #任务条件选择菜单
 	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case "$num" in
-
 	0)
 		return 1
-	;;
+		;;
 	1)
 		echo "-----------------------------------------------"
 		echo -e " 输入  1-7  对应\033[33m每周的指定某天\033[0m运行(7=周日)"
@@ -332,7 +346,7 @@ task_type(){ #任务条件选择菜单
 		cron_time="在每周$week的$hour点整"
 		cron_time=`echo ${cron_time/周0/周日}` #把0换成日
 		[ -n "$week" ] && [ -n "$hour" ] && set_cron
-	;;
+		;;
 	2)
 		echo "-----------------------------------------------"
 		echo -e " 输入 1,7,15 代表\033[36m每到1,7,15点\033[0m运行"
@@ -342,27 +356,27 @@ task_type(){ #任务条件选择菜单
 		read -p "想在具体哪分钟执行？（0-59的整数） > " min
 		cron_time="在每日的$hour点$min分"
 		[ -n "$min" ] && [ -n "$hour" ] && set_cron
-	;;
+		;;
 	3)
 		echo "-----------------------------------------------"
 		read -p "想每隔多少小时执行一次？（1-23的整数） > " num
 		hour="*/$num"
 		cron_time="每隔$num小时"
 		[ -n "$hour" ] && set_cron
-	;;
+		;;
 	4)
 		echo "-----------------------------------------------"
 		read -p "想每隔多少分钟执行一次？（1-59的整数） > " num
 		min="*/$num"
 		cron_time="每隔$num分钟"
 		[ -n "$min" ] && set_cron
-	;;
+		;;
 	5)
 		set_service bfstart "$task_id" "服务启动前$task_name"
-	;;
+		;;
 	6)
 		set_service afstart "$task_id" "服务启动后$task_name"
-	;;
+		;;
 	7)
 		echo "-----------------------------------------------"
 		echo -e " 输入10即每隔10分钟运行一次，1440即每隔24小时运行一次"
@@ -378,115 +392,126 @@ task_type(){ #任务条件选择菜单
 			time_des="$hour小时"
 		fi
 		[ -n "$cron_time" ] && set_service running "$task_id" "运行时每$time_des$task_name" "$cron_time"
-	;;
+		;;
 	8)
 		echo -e "该功能会将相关启动代码注入到/etc/init.d/firewall中"
 		read -p "是否继续？(1/0) > " res
 		[ "$res" = 1 ] && set_service affirewall "$task_id" "防火墙重启后$task_name"
-	;;
+		;;
 	*)
 		errornum
 		return 1
-	;;
+		;;
 	esac
 }
-task_manager(){ #任务管理列表
-	echo "-----------------------------------------------"
-	#抽取并生成临时列表
-	croncmd -l > ${TMPDIR}/task_cronlist
-	cat ${TMPDIR}/task_cronlist ${CRASHDIR}/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > ${TMPDIR}/task_list
-	cat ${CRASHDIR}/task/bfstart ${CRASHDIR}/task/afstart ${CRASHDIR}/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> ${TMPDIR}/task_list
-	cat ${TMPDIR}/task_cronlist 2>/dev/null | sort -u | grep -oE " #.*" | grep -v "守护" | awk -F '#' '{print "0 旧版任务-"$2}' >> ${TMPDIR}/task_list
-	sed -i '/^ *$/d' ${TMPDIR}/task_list
-	rm -rf ${TMPDIR}/task_cronlist
-	#判断为空则返回
-	if [ ! -s ${TMPDIR}/task_list ];then
-		echo -e "\033[31m当前没有可供管理的任务！\033[36m"
-		sleep 1
-	else
-		echo -e "\033[33m已添加的任务:\033[0m"
-		echo "-----------------------------------------------"
-		cat ${TMPDIR}/task_list | awk '{print " " NR " " $2}'
-		echo "-----------------------------------------------"
-		echo -e " a 清空旧版任务"
-		echo -e " d 清空任务列表"
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0)
-		;;
-		a)
-			task_del "#"
-			echo -e "\033[31m旧版任务已清空！\033[36m"
-			sleep 1
-		;;
-		d)
-			task_del "task.sh"
-			echo -e "\033[31m全部任务已清空！\033[36m"
-			sleep 1
-		;;
-		[1-9]|[1-9][0-9])
 
-			task_txt=$(sed -n "$num p" ${TMPDIR}/task_list)
-			task_id=$(echo $task_txt | awk '{print $1}')
-			if [ "$task_id" = 0 ];then
-				read -p "旧版任务不支持管理，是否移除?(1/0) > " res
-				[ "$res" = 1 ] && {
-					cronname=$(echo $task_txt | awk -F '-' '{print $2}')
-					croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
-					sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
-					rm -f $TMPDIR/conf
-				}
-			else
-				task_des=$(echo $task_txt | awk '{print $2}')
-				task_name=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $3}')
-				echo "-----------------------------------------------"
-				echo -e "当前任务为：\033[36m $task_des\033[0m"
-				echo -e " 1 \033[33m修改\033[0m当前任务"
-				echo -e " 2 \033[31m删除\033[0m当前任务"
-				echo -e " 3 \033[32m立即执行\033[0m一次"
-				echo -e " 4 查看\033[33m执行记录\033[0m"
-				echo "-----------------------------------------------"
-				echo -e " 0 返回上级菜单"
-				read -p "请选择需要执行的操作 > " num
-				case "$num" in
-				0)
-				;;
-				1)
-					task_type && task_del $task_des
-				;;
-				2)
-					task_del $task_des
-				;;
-				3)
-					task_command=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $2}')
-					eval $task_command && task_res='执行成功！' || task_res='执行失败！'
-					logger "任务【$task_des】$task_res" 33 off
-					sleep 1
-				;;
-				4)
-					echo "-----------------------------------------------"
-					if [ -n "$(cat ${TMPDIR}/ShellCrash.log | grep "$task_name")" ];then
-						cat ${TMPDIR}/ShellCrash.log | grep "$task_name"
-					else
-						echo -e "\033[31m未找到相关执行记录！\033[0m"
-					fi
-					sleep 1
-				;;
-				*)
-					errornum
-				;;
-				esac
-			fi
-			task_manager
-		;;
-		*)
-			errornum
-		;;
-		esac
-	fi
+#任务管理列表
+task_manager(){
+    while true;
+    do
+    	echo "-----------------------------------------------"
+    	#抽取并生成临时列表
+    	croncmd -l > ${TMPDIR}/task_cronlist
+    	cat ${TMPDIR}/task_cronlist ${CRASHDIR}/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > ${TMPDIR}/task_list
+    	cat ${CRASHDIR}/task/bfstart ${CRASHDIR}/task/afstart ${CRASHDIR}/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> ${TMPDIR}/task_list
+    	cat ${TMPDIR}/task_cronlist 2>/dev/null | sort -u | grep -oE " #.*" | grep -v "守护" | awk -F '#' '{print "0 旧版任务-"$2}' >> ${TMPDIR}/task_list
+    	sed -i '/^ *$/d' ${TMPDIR}/task_list
+    	rm -rf ${TMPDIR}/task_cronlist
+    	#判断为空则返回
+    	if [ ! -s ${TMPDIR}/task_list ];then
+    		echo -e "\033[31m当前没有可供管理的任务！\033[36m"
+    		sleep 1
+            break
+    	else
+    		echo -e "\033[33m已添加的任务:\033[0m"
+    		echo "-----------------------------------------------"
+    		cat ${TMPDIR}/task_list | awk '{print " " NR " " $2}'
+    		echo "-----------------------------------------------"
+    		echo -e " a 清空旧版任务"
+    		echo -e " d 清空任务列表"
+    		echo -e " 0 返回上级菜单"
+    		read -p "请输入对应数字 > " num
+    		case "$num" in
+    		0)
+                break
+    		    ;;
+    		a)
+    			task_del "#"
+    			echo -e "\033[31m旧版任务已清空！\033[36m"
+    			sleep 1
+    			;;
+    		d)
+    			task_del "task.sh"
+    			echo -e "\033[31m全部任务已清空！\033[36m"
+    			sleep 1
+    			;;
+    		[1-9]|[1-9][0-9])
+    			task_txt=$(sed -n "$num p" ${TMPDIR}/task_list)
+    			task_id=$(echo $task_txt | awk '{print $1}')
+    			if [ "$task_id" = 0 ];then
+    				read -p "旧版任务不支持管理，是否移除?(1/0) > " res
+    				[ "$res" = 1 ] && {
+    					cronname=$(echo $task_txt | awk -F '-' '{print $2}')
+    					croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
+    					sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
+    					rm -f $TMPDIR/conf
+    				}
+    			else
+                    while true;
+                    do
+        				task_des=$(echo $task_txt | awk '{print $2}')
+        				task_name=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $3}')
+        				echo "-----------------------------------------------"
+        				echo -e "当前任务为：\033[36m $task_des\033[0m"
+        				echo -e " 1 \033[33m修改\033[0m当前任务"
+        				echo -e " 2 \033[31m删除\033[0m当前任务"
+        				echo -e " 3 \033[32m立即执行\033[0m一次"
+        				echo -e " 4 查看\033[33m执行记录\033[0m"
+        				echo "-----------------------------------------------"
+        				echo -e " 0 返回上级菜单"
+        				read -p "请选择需要执行的操作 > " num
+        				case "$num" in
+        				0)
+                            break
+        				    ;;
+        				1)
+           					task_type && task_del $task_des
+           					;;
+        				2)
+           					task_del $task_des
+           					;;
+        				3)
+           					task_command=$(cat ${CRASHDIR}/task/task.list ${CRASHDIR}/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $2}')
+           					eval $task_command && task_res='执行成功！' || task_res='执行失败！'
+           					logger "任务【$task_des】$task_res" 33 off
+           					sleep 1
+           					;;
+        				4)
+           					echo "-----------------------------------------------"
+           					if [ -n "$(cat ${TMPDIR}/ShellCrash.log | grep "$task_name")" ];then
+          						cat ${TMPDIR}/ShellCrash.log | grep "$task_name"
+           					else
+          						echo -e "\033[31m未找到相关执行记录！\033[0m"
+           					fi
+           					sleep 1
+       					    ;;
+        				*)
+           					errornum
+           					;;
+        				esac
+                    done
+    			fi
+    			;;
+    		*)
+    			errornum
+    			;;
+    		esac
+    	fi
+    done
 }
-task_recom(){ #任务推荐
+
+#任务推荐
+task_recom(){
 	echo "-----------------------------------------------"
 	echo -e "\033[32m启用推荐的自动任务配置？这包括：\033[0m"
 	echo "-----------------------------------------------"
@@ -502,68 +527,65 @@ task_recom(){ #任务推荐
 		echo -e "任务【在每日的3点0分重启服务】\033[32m添加成功！\033[0m"
 	}
 }
-task_menu(){ #任务菜单
-	#检测并创建自定义任务文件
-	[ -f ${CRASHDIR}/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' > ${CRASHDIR}/task/task.user
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m欢迎使用自动任务功能：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 添加\033[32m自动任务\033[0m"
-	echo -e " 2 管理\033[33m任务列表\033[0m"
-	echo -e " 3 查看\033[36m任务日志\033[0m"
-	echo -e " 4 配置\033[36m日志推送\033[0m"
-	echo -e " 5 添加\033[33m自定义任务\033[0m"
-	echo -e " 6 删除\033[33m自定义任务\033[0m"
-	echo -e " 7 使用\033[32m推荐设置\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		task_add
-		task_menu
-	;;
-	2)
-		task_manager
-		rm -rf ${TMPDIR}/task_list
-		task_menu
-	;;
-	3)
-		if [ -n "$(cat ${TMPDIR}/ShellCrash.log | grep '任务【')" ];then
-			echo "-----------------------------------------------"
-			cat ${TMPDIR}/ShellCrash.log | grep '任务【'
-		else
-			echo -e "\033[31m未找到任务相关执行日志！\033[0m"
-		fi
-		sleep 1
-		task_menu
-	;;
-	4)
-		echo "-----------------------------------------------"
-		echo -e "\033[36m请在日志工具中配置相关推送通道及推送开关\033[0m"
-		log_pusher
-		task_menu
-	;;
-	5)
-		task_user_add
-		task_menu
-	;;
-	6)
-		task_user_del
-		task_menu
-	;;
-	7)
-		task_recom
-		task_menu
-	;;
-	*)
-		errornum
-	;;
 
-	esac
-
+#任务菜单
+task_menu(){
+    while true;
+    do
+    	#检测并创建自定义任务文件
+    	[ -f ${CRASHDIR}/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' > ${CRASHDIR}/task/task.user
+    	echo "-----------------------------------------------"
+    	echo -e "\033[30;47m欢迎使用自动任务功能：\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 1 添加\033[32m自动任务\033[0m"
+    	echo -e " 2 管理\033[33m任务列表\033[0m"
+    	echo -e " 3 查看\033[36m任务日志\033[0m"
+    	echo -e " 4 配置\033[36m日志推送\033[0m"
+    	echo -e " 5 添加\033[33m自定义任务\033[0m"
+    	echo -e " 6 删除\033[33m自定义任务\033[0m"
+    	echo -e " 7 使用\033[32m推荐设置\033[0m"
+    	echo "-----------------------------------------------"
+    	echo -e " 0 返回上级菜单"
+    	read -p "请输入对应数字 > " num
+    	case "$num" in
+       	0)
+            break
+           	;;
+    	1)
+    		task_add
+     	    ;;
+    	2)
+    		task_manager
+    		rm -rf ${TMPDIR}/task_list
+     	    ;;
+    	3)
+    		if [ -n "$(cat ${TMPDIR}/ShellCrash.log | grep '任务【')" ];then
+    			echo "-----------------------------------------------"
+    			cat ${TMPDIR}/ShellCrash.log | grep '任务【'
+    		else
+    			echo -e "\033[31m未找到任务相关执行日志！\033[0m"
+    		fi
+    		sleep 1
+     	    ;;
+    	4)
+    		echo "-----------------------------------------------"
+    		echo -e "\033[36m请在日志工具中配置相关推送通道及推送开关\033[0m"
+    		log_pusher
+     	    ;;
+    	5)
+    		task_user_add
+     	    ;;
+    	6)
+    		task_user_del
+     	    ;;
+    	7)
+    		task_recom
+     	    ;;
+    	*)
+    		errornum
+     	    ;;
+    	esac
+	done
 }
 
 case "$1" in

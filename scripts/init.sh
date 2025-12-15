@@ -149,6 +149,7 @@ setdir() {
         [ "$res" = "1" ] && CRASHDIR=$dir/ShellCrash || setdir
     fi
 }
+
 setconfig() { #脚本配置工具
     #参数1代表变量名，参数2代表变量值,参数3即文件路径
     [ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
@@ -158,11 +159,13 @@ setconfig() { #脚本配置工具
         printf '%s=%s\n' "$1" "$2" >>"$configpath"
     fi
 }
+
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
     systype=Padavan #老毛子固件
     initdir='/etc/storage/started_script.sh'
 }
+
 [ -d "/jffs" ] && {
     systype=asusrouter #华硕固件
     [ -f "/jffs/.asusrouter" ] && initdir='/jffs/.asusrouter'
@@ -171,12 +174,14 @@ setconfig() { #脚本配置工具
     nvram set jffs2_scripts="1"
     nvram commit
 }
+
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot   #NETGEAR设备
 
 #检查环境变量
 [ -z "$CRASHDIR" -a -n "$clashdir" ] && CRASHDIR=$clashdir
 [ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && setdir
+
 #移动文件
 mkdir -p ${CRASHDIR}
 mv -f /tmp/SC_tmp/* ${CRASHDIR} 2>/dev/null
@@ -184,9 +189,11 @@ mv -f /tmp/SC_tmp/* ${CRASHDIR} 2>/dev/null
 #初始化
 mkdir -p ${CRASHDIR}/configs
 [ -f "${CRASHDIR}/configs/ShellCrash.cfg" ] || echo '#ShellCrash配置文件，不明勿动！' >${CRASHDIR}/configs/ShellCrash.cfg
+
 #判断系统类型写入不同的启动文件
 [ -w /usr/lib/systemd/system ] && sysdir=/usr/lib/systemd/system
 [ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
+
 if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
     #设为init.d方式启动
     cp -f ${CRASHDIR}/shellcrash.procd /etc/init.d/shellcrash
@@ -225,6 +232,7 @@ for file in start.sh task.sh menu.sh; do
     chmod 755 ${CRASHDIR}/${file} 2>/dev/null
 done
 setconfig versionsh_l $version
+
 #生成用于执行启动服务的变量文件
 [ ! -f ${CRASHDIR}/configs/command.env ] && {
     TMPDIR='/tmp/ShellCrash'
@@ -233,25 +241,30 @@ setconfig versionsh_l $version
     setconfig TMPDIR ${TMPDIR} ${CRASHDIR}/configs/command.env
     setconfig BINDIR ${BINDIR} ${CRASHDIR}/configs/command.env
 }
+
 if [ -n "$(grep 'crashcore=singbox' ${CRASHDIR}/configs/ShellCrash.cfg)" ]; then
     COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 else
     COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 fi
 setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env
+
 #设置防火墙执行模式
 grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
     firewall_mod=iptables
     nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
     setconfig firewall_mod $firewall_mod
 }
+
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
+
 #设置环境变量
 [ -w /opt/etc/profile ] && profile=/opt/etc/profile
 [ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
 [ -w ~/.bashrc ] && profile=~/.bashrc
 [ -w /etc/profile ] && profile=/etc/profile
+
 set_profile() {
     [ -z "$my_alias" ] && my_alias=crash
     sed -i "/alias crash=*/"d "$1"
@@ -261,6 +274,7 @@ set_profile() {
     echo "export CRASHDIR=\"$CRASHDIR\"" >>"$1" #设置路径环境变量
     . "$1" >/dev/null 2>&1
 }
+
 if [ -n "$profile" ]; then
     set_profile "$profile"
     #适配zsh环境变量
@@ -270,6 +284,7 @@ else
     echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
     exit 1
 fi
+
 #梅林/Padavan额外设置
 [ -n "$initdir" ] && {
     sed -i '/ShellCrash初始化/'d $initdir
@@ -278,8 +293,10 @@ fi
     chmod a+rx $initdir 2>/dev/null
     setconfig initdir $initdir
 }
+
 #Padavan额外设置
 [ -f "/etc/storage/started_script.sh" ] && mount -t tmpfs -o remount,rw,size=45M tmpfs /tmp #增加/tmp空间以适配新的内核压缩方式
+
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ]; then
     chmod 755 ${CRASHDIR}/misnap_init.sh
@@ -294,18 +311,22 @@ if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ]; then
 else
     rm -rf ${CRASHDIR}/misnap_init.sh
 fi
+
 #华硕USB启动额外设置
 [ "$usb_status" = "1" ] && {
     echo "$CRASHDIR/start.sh init & #ShellCrash初始化脚本" >${CRASHDIR}/asus_usb_mount.sh
     nvram set script_usbmount="$CRASHDIR/asus_usb_mount.sh"
     nvram commit
 }
+
 #华硕下载大师启动额外设置
 [ -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ] && [ -z "$(grep 'ShellCrash' $dir/asusware.arm/etc/init.d/S50downloadmaster)" ] &&
     sed -i "/^PATH=/a\\$CRASHDIR/start.sh init & #ShellCrash初始化脚本" "$dir/asusware.arm/etc/init.d/S50downloadmaster"
+
 #删除临时文件
 rm -rf /tmp/*rash*gz
 rm -rf /tmp/SC_tmp
+
 #转换&清理旧版本文件
 mkdir -p ${CRASHDIR}/yamls
 mkdir -p ${CRASHDIR}/jsons
@@ -319,18 +340,23 @@ done
 for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallback_filter.list singbox_providers.list clash_providers.list; do
     mv -f ${CRASHDIR}/$file ${CRASHDIR}/configs/$file 2>/dev/null
 done
+
 #配置文件改名
 mv -f ${CRASHDIR}/mark ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
+
 #数据库改名
 mv -f ${CRASHDIR}/geosite.dat ${CRASHDIR}/GeoSite.dat 2>/dev/null
 mv -f ${CRASHDIR}/ruleset/geosite-cn.srs ${CRASHDIR}/ruleset/cn.srs 2>/dev/null
 mv -f ${CRASHDIR}/ruleset/geosite-cn.mrs ${CRASHDIR}/ruleset/cn.mrs 2>/dev/null
+
 #数据库移动
 mv -f ${CRASHDIR}/*.srs ${CRASHDIR}/ruleset/ 2>/dev/null
 mv -f ${CRASHDIR}/*.mrs ${CRASHDIR}/ruleset/ 2>/dev/null
+
 #内核改名
 mv -f ${CRASHDIR}/clash ${CRASHDIR}/CrashCore 2>/dev/null
+
 #内核压缩
 [ -f ${CRASHDIR}/CrashCore ] && tar -zcf ${CRASHDIR}/CrashCore.tar.gz -C ${CRASHDIR} CrashCore
 for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh; do
@@ -339,6 +365,7 @@ done
 for file in cron task.sh task.list; do
     mv -f ${CRASHDIR}/$file ${CRASHDIR}/task/$file 2>/dev/null
 done
+
 #旧版文件清理
 userdel shellclash >/dev/null 2>&1
 sed -i '/shellclash/d' /etc/passwd
@@ -349,6 +376,7 @@ rm -rf ${CRASHDIR}/rules
 for file in CrashCore clash.sh getdate.sh core.new clashservice log shellcrash.service mark? mark.bak; do
     rm -rf ${CRASHDIR}/$file
 done
+
 #旧版变量改名
 sed -i "s/clashcore/crashcore/g" $configpath
 sed -i "s/clash_v/core_v/g" $configpath

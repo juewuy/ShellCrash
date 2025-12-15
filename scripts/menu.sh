@@ -175,6 +175,7 @@ errornum() {
     echo "-----------------------------------------------"
     echo -e "\033[31m请输入正确的字母或数字！\033[0m"
 }
+
 startover() {
     echo -ne "                                   \r"
     echo -e "\033[32m服务已启动！\033[0m"
@@ -186,6 +187,7 @@ startover() {
     fi
     return 0
 }
+
 start_core() {
     if echo "$crashcore" | grep -q 'singbox'; then
         core_config=${CRASHDIR}/jsons/config.json
@@ -217,6 +219,7 @@ start_core() {
         . ${CRASHDIR}/webget.sh && set_core_config
     fi
 }
+
 start_service() {
     if [ "$firewall_area" = 5 ]; then
         ${CRASHDIR}/start.sh start
@@ -225,6 +228,7 @@ start_service() {
         start_core
     fi
 }
+
 checkrestart() {
     echo "-----------------------------------------------"
     echo -e "\033[32m检测到已变更的内容，请重启服务！\033[0m"
@@ -233,323 +237,315 @@ checkrestart() {
     [ "$res" = 1 ] && start_service
 }
 #功能相关
-log_pusher() { #日志菜单
-    [ -n "$push_TG" ] && stat_TG=32m已启用 || stat_TG=33m未启用
-    [ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
-    [ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
-    [ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
-    [ -n "$push_PP" ] && stat_PP=32m已启用 || stat_PP=33m未启用
-    [ -n "$push_SynoChat" ] && stat_SynoChat=32m已启用 || stat_SynoChat=33m未启用
-    [ -n "$push_Gotify" ] && stat_Gotify=32m已启用 || stat_Gotify=33m未启用
-    [ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
-    [ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
-    echo "-----------------------------------------------"
-    echo -e " 1 Telegram推送	——\033[$stat_TG\033[0m"
-    echo -e " 2 PushDeer推送	——\033[$stat_Deer\033[0m"
-    echo -e " 3 Bark推送-IOS	——\033[$stat_bark\033[0m"
-    echo -e " 4 Passover推送	——\033[$stat_Po\033[0m"
-    echo -e " 5 PushPlus推送	——\033[$stat_PP\033[0m"
-    echo -e " 6 SynoChat推送	——\033[$stat_SynoChat\033[0m"
-    echo -e " 7 Gotify推送	——\033[$stat_Gotify\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " a 查看\033[36m运行日志\033[0m"
-    echo -e " b 推送任务日志	——\033[$stat_task\033[0m"
-    echo -e " c 设置设备名称	——\033[$device_s\033[0m"
-    echo -e " d 清空日志文件"
-    echo "-----------------------------------------------"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    a)
-        if [ -s ${TMPDIR}/ShellCrash.log ]; then
-            echo "-----------------------------------------------"
-            cat ${TMPDIR}/ShellCrash.log
-            exit 0
-        else
-            echo -e "\033[31m未找到相关日志！\033[0m"
-        fi
-        sleep 1
-        ;;
-    1)
+#
+#日志菜单
+log_pusher() {
+    while true; do
+        [ -n "$push_TG" ] && stat_TG=32m已启用 || stat_TG=33m未启用
+        [ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
+        [ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
+        [ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
+        [ -n "$push_PP" ] && stat_PP=32m已启用 || stat_PP=33m未启用
+        [ -n "$push_SynoChat" ] && stat_SynoChat=32m已启用 || stat_SynoChat=33m未启用
+        [ -n "$push_Gotify" ] && stat_Gotify=32m已启用 || stat_Gotify=33m未启用
+        [ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
+        [ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
         echo "-----------------------------------------------"
-        if [ -n "$push_TG" ]; then
-            read -p "确认关闭TG日志推送？(1/0) > " res
-            [ "$res" = 1 ] && {
-                push_TG=
-                chat_ID=
-                setconfig push_TG
-                setconfig chat_ID
-            }
-        else
-            #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-            private_bot() {
-                echo -e "请先通过 \033[32;4mhttps://t.me/BotFather\033[0m 申请TG机器人并获取其\033[36mAPI TOKEN\033[0m"
-                echo "-----------------------------------------------"
-                read -p "请输入你获取到的API TOKEN > " TOKEN
-                echo "-----------------------------------------------"
-                echo -e "请向\033[32m你申请的机器人\033[33m而不是BotFather！\033[0m"
-                url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
-            }
-            public_bot() {
-                echo -e "请向机器人：\033[32;4mhttps://t.me/ShellCrashtg_bot\033[0m"
-                TOKEN=publictoken
-                url_tg=https://tgbot.jwsc.eu.org/publictoken/getUpdates
-            }
-            set_bot() {
-                echo -e "发送此秘钥:        \033[30;46m$public_key\033[0m"
-                echo "-----------------------------------------------"
-                read -p "我已经发送完成(1/0) > " res
-                if [ "$res" = 1 ]; then
-                    [ -n "$authentication" ] && auth="$authentication@"
-                    export https_proxy="http://${auth}127.0.0.1:$mix_port"
-                    if curl --version >/dev/null 2>&1; then
-                        chat=$(curl -kfsSl $url_tg 2>/dev/null)
-                    else
-                        chat=$(wget -Y on -q -O - $url_tg)
-                    fi
-                    [ -n "$chat" ] && chat_ID=$(echo $chat | sed 's/"update_id":/{\n"update_id":/g' | grep "$public_key" | head -n1 | grep -oE '"id":.*,"is_bot' | sed s'/"id"://' | sed s'/,"is_bot//')
-                    [ -z "$chat_ID" ] && {
-                        echo -e "\033[31m无法获取对话ID，请返回重新设置或手动输入ChatID！\033[0m"
-                        echo -e "通常访问 \033[32;4m$url_tg\033[0m \n\033[36m即可看到ChatID\033[0m"
-                        read -p "请手动输入ChatID > " chat_ID
-                    }
-                    if echo "$chat_ID" | grep -qE '^[0-9]{8,}$'; then
-                        push_TG=$TOKEN
-                        setconfig push_TG $TOKEN
-                        setconfig chat_ID $chat_ID
-                        ${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32
-                    else
-                        echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
-                        sleep 1
-                        chose_bot
-                    fi
-                fi
-            }
-            chose_bot() {
-                public_key=$(cat /proc/sys/kernel/random/boot_id | sed 's/.*-//')
-                echo "-----------------------------------------------"
-                echo -e " 1 使用公共机器人	——不依赖内核服务"
-                echo -e " 2 使用私人机器人	——需要额外申请"
-                echo "-----------------------------------------------"
-                read -p "请输入对应数字 > " num
-                case $num in
-                1)
-                    public_bot
-                    set_bot
-                    ;;
-                2)
-                    private_bot
-                    set_bot
-                    ;;
-                *)
-                    errornum
-                    ;;
-                esac
-            }
-            chose_bot
-        fi
-        sleep 1
-        log_pusher
-        ;;
-    2)
+        echo -e " 1 Telegram推送	——\033[$stat_TG\033[0m"
+        echo -e " 2 PushDeer推送	——\033[$stat_Deer\033[0m"
+        echo -e " 3 Bark推送-IOS	——\033[$stat_bark\033[0m"
+        echo -e " 4 Passover推送	——\033[$stat_Po\033[0m"
+        echo -e " 5 PushPlus推送	——\033[$stat_PP\033[0m"
+        echo -e " 6 SynoChat推送	——\033[$stat_SynoChat\033[0m"
+        echo -e " 7 Gotify推送	——\033[$stat_Gotify\033[0m"
         echo "-----------------------------------------------"
-        if [ -n "$push_Deer" ]; then
-            read -p "确认关闭PushDeer日志推送？(1/0) > " res
-            [ "$res" = 1 ] && {
-                push_Deer=
-                setconfig push_Deer
-            }
-        else
-            #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-            echo -e "请先前往 \033[32;4mhttp://www.pushdeer.com/official.html\033[0m 扫码安装快应用或下载APP"
-            echo -e "打开快应用/APP，并完成登陆"
-            echo -e "\033[33m切换到「设备」标签页，点击右上角的加号，注册当前设备\033[0m"
-            echo -e "\033[36m切换到「秘钥」标签页，点击右上角的加号，创建一个秘钥，并复制\033[0m"
+        echo -e " a 查看\033[36m运行日志\033[0m"
+        echo -e " b 推送任务日志	——\033[$stat_task\033[0m"
+        echo -e " c 设置设备名称	——\033[$device_s\033[0m"
+        echo -e " d 清空日志文件"
+        echo "-----------------------------------------------"
+        echo -e " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        0)
+            return
+            ;;
+        1)
             echo "-----------------------------------------------"
-            read -p "请输入你复制的秘钥 > " url
-            if [ -n "$url" ]; then
-                push_Deer=$url
-                setconfig push_Deer $url
-                ${CRASHDIR}/start.sh logger "已完成PushDeer日志推送设置！" 32
+            if [ -n "$push_TG" ]; then
+                read -p "确认关闭TG日志推送？(1/0) > " res
+                [ "$res" = 1 ] && {
+                    push_TG=
+                    chat_ID=
+                    setconfig push_TG
+                    setconfig chat_ID
+                }
             else
-                echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+                private_bot() {
+                    echo -e "请先通过 \033[32;4mhttps://t.me/BotFather\033[0m 申请TG机器人并获取其\033[36mAPI TOKEN\033[0m"
+                    echo "-----------------------------------------------"
+                    read -p "请输入你获取到的API TOKEN > " TOKEN
+                    echo "-----------------------------------------------"
+                    echo -e "请向\033[32m你申请的机器人\033[33m而不是BotFather！\033[0m"
+                    url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
+                }
+                public_bot() {
+                    echo -e "请向机器人：\033[32;4mhttps://t.me/ShellCrashtg_bot\033[0m"
+                    TOKEN=publictoken
+                    url_tg=https://tgbot.jwsc.eu.org/publictoken/getUpdates
+                }
+                set_bot() {
+                    echo -e "发送此秘钥:        \033[30;46m$public_key\033[0m"
+                    echo "-----------------------------------------------"
+                    read -p "我已经发送完成(1/0) > " res
+                    if [ "$res" = 1 ]; then
+                        [ -n "$authentication" ] && auth="$authentication@"
+                        export https_proxy="http://${auth}127.0.0.1:$mix_port"
+                        if curl --version >/dev/null 2>&1; then
+                            chat=$(curl -kfsSl $url_tg 2>/dev/null)
+                        else
+                            chat=$(wget -Y on -q -O - $url_tg)
+                        fi
+                        [ -n "$chat" ] && chat_ID=$(echo $chat | sed 's/"update_id":/{\n"update_id":/g' | grep "$public_key" | head -n1 | grep -oE '"id":.*,"is_bot' | sed s'/"id"://' | sed s'/,"is_bot//')
+                        [ -z "$chat_ID" ] && {
+                            echo -e "\033[31m无法获取对话ID，请返回重新设置或手动输入ChatID！\033[0m"
+                            echo -e "通常访问 \033[32;4m$url_tg\033[0m \n\033[36m即可看到ChatID\033[0m"
+                            read -p "请手动输入ChatID > " chat_ID
+                        }
+                        if echo "$chat_ID" | grep -qE '^[0-9]{8,}$'; then
+                            push_TG=$TOKEN
+                            setconfig push_TG $TOKEN
+                            setconfig chat_ID $chat_ID
+                            ${CRASHDIR}/start.sh logger "已完成Telegram日志推送设置！" 32
+                        else
+                            echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
+                            sleep 1
+                            chose_bot
+                        fi
+                    fi
+                }
+                chose_bot() {
+                    public_key=$(cat /proc/sys/kernel/random/boot_id | sed 's/.*-//')
+                    echo "-----------------------------------------------"
+                    echo -e " 1 使用公共机器人	——不依赖内核服务"
+                    echo -e " 2 使用私人机器人	——需要额外申请"
+                    echo "-----------------------------------------------"
+                    read -p "请输入对应数字 > " num
+                    case "$num" in
+                    1)
+                        public_bot
+                        set_bot
+                        ;;
+                    2)
+                        private_bot
+                        set_bot
+                        ;;
+                    *)
+                        errornum
+                        ;;
+                    esac
+                }
+                chose_bot
             fi
-            sleep 1
-        fi
-        log_pusher
-        ;;
-    3)
-        echo "-----------------------------------------------"
-        if [ -n "$push_bark" ]; then
-            read -p "确认关闭Bark日志推送？(1/0) > " res
-            [ "$res" = 1 ] && {
-                push_bark=
-                bark_param=
-                setconfig push_bark
-                setconfig bark_param
-            }
-        else
-            #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-            echo -e "\033[33mBark推送仅支持IOS系统，其他平台请使用其他推送方式！\033[0m"
-            echo -e "\033[32m请安装Bark-IOS客户端，并在客户端中找到专属推送链接\033[0m"
+            ;;
+        2)
             echo "-----------------------------------------------"
-            read -p "请输入你的Bark推送链接 > " url
-            if [ -n "$url" ]; then
-                push_bark=$url
-                setconfig push_bark $url
-                ${CRASHDIR}/start.sh logger "已完成Bark日志推送设置！" 32
+            if [ -n "$push_Deer" ]; then
+                read -p "确认关闭PushDeer日志推送？(1/0) > " res
+                [ "$res" = 1 ] && {
+                    push_Deer=
+                    setconfig push_Deer
+                }
             else
-                echo -e "\033[31m输入错误，请重新输入！\033[0m"
-            fi
-            sleep 1
-        fi
-        log_pusher
-        ;;
-    4)
-        echo "-----------------------------------------------"
-        if [ -n "$push_Po" ]; then
-            read -p "确认关闭Pushover日志推送？(1/0) > " res
-            [ "$res" = 1 ] && {
-                push_Po=
-                push_Po_key=
-                setconfig push_Po
-                setconfig push_Po_key
-            }
-        else
-            #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-            echo -e "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m"
-            echo "-----------------------------------------------"
-            read -p "请输入你的User Key > " key
-            if [ -n "$key" ]; then
+                #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+                echo -e "请先前往 \033[32;4mhttp://www.pushdeer.com/official.html\033[0m 扫码安装快应用或下载APP"
+                echo -e "打开快应用/APP，并完成登陆"
+                echo -e "\033[33m切换到「设备」标签页，点击右上角的加号，注册当前设备\033[0m"
+                echo -e "\033[36m切换到「秘钥」标签页，点击右上角的加号，创建一个秘钥，并复制\033[0m"
                 echo "-----------------------------------------------"
-                echo -e "\033[33m请检查注册邮箱，完成账户验证\033[0m"
-                read -p "我已经验证完成(1/0) > "
-                echo "-----------------------------------------------"
-                echo -e "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
-                echo "-----------------------------------------------"
-                read -p "请输入你的API Token > " Token
-                if [ -n "$Token" ]; then
-                    push_Po=$Token
-                    push_Po_key=$key
-                    setconfig push_Po $Token
-                    setconfig push_Po_key $key
-                    ${CRASHDIR}/start.sh logger "已完成Passover日志推送设置！" 32
+                read -p "请输入你复制的秘钥 > " url
+                if [ -n "$url" ]; then
+                    push_Deer=$url
+                    setconfig push_Deer $url
+                    ${CRASHDIR}/start.sh logger "已完成PushDeer日志推送设置！" 32
                 else
                     echo -e "\033[31m输入错误，请重新输入！\033[0m"
                 fi
-            else
-                echo -e "\033[31m输入错误，请重新输入！\033[0m"
             fi
-        fi
-        sleep 1
-        log_pusher
-        ;;
-    5)
-        echo "-----------------------------------------------"
-        if [ -n "$push_PP" ]; then
-            read -p "确认关闭PushPlus日志推送？(1/0) > " res
-            [ "$res" = 1 ] && {
-                push_PP=
-                setconfig push_PP
-            }
-        else
-            #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-            echo -e "请先通过 \033[32;4mhttps://www.pushplus.plus/push1.html\033[0m 注册账号并获取\033[36mtoken\033[0m"
+            ;;
+        3)
             echo "-----------------------------------------------"
-            read -p "请输入你的token > " Token
-            if [ -n "$Token" ]; then
-                push_PP=$Token
-                setconfig push_PP $Token
-                ${CRASHDIR}/start.sh logger "已完成PushPlus日志推送设置！" 32
+            if [ -n "$push_bark" ]; then
+                read -p "确认关闭Bark日志推送？(1/0) > " res
+                [ "$res" = 1 ] && {
+                    push_bark=
+                    bark_param=
+                    setconfig push_bark
+                    setconfig bark_param
+                }
             else
-                echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+                echo -e "\033[33mBark推送仅支持IOS系统，其他平台请使用其他推送方式！\033[0m"
+                echo -e "\033[32m请安装Bark-IOS客户端，并在客户端中找到专属推送链接\033[0m"
+                echo "-----------------------------------------------"
+                read -p "请输入你的Bark推送链接 > " url
+                if [ -n "$url" ]; then
+                    push_bark=$url
+                    setconfig push_bark $url
+                    ${CRASHDIR}/start.sh logger "已完成Bark日志推送设置！" 32
+                else
+                    echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                fi
             fi
-        fi
-        sleep 1
-        log_pusher
-        ;;
-    6)
-        echo "-----------------------------------------------"
-        if [ -n "$push_SynoChat" ]; then
-            read -p "确认关闭SynoChat日志推送？(1/0) > " res
-            [ "$res" = 1 ] && {
-                push_SynoChat=
-                setconfig push_SynoChat
-            }
-        else
+            ;;
+        4)
             echo "-----------------------------------------------"
-            read -p "请输入你的Synology DSM主页地址 > " URL
-            echo "-----------------------------------------------"
-            read -p "请输入你的Synology Chat Token > " TOKEN
-            echo "-----------------------------------------------"
-            echo -e '请通过"你的群晖地址/webapi/entry.cgi?api=SYNO.Chat.External&method=user_list&version=2&token=你的TOKEN"获取user_id'
-            echo "-----------------------------------------------"
-            read -p "请输入你的user_id > " USERID
-            if [ -n "$URL" ]; then
-                push_SynoChat=$USERID
-                setconfig push_SynoChat $USERID
-                setconfig push_ChatURL $URL
-                setconfig push_ChatTOKEN $TOKEN
-                setconfig push_ChatUSERID $USERID
-                ${CRASHDIR}/start.sh logger "已完成SynoChat日志推送设置！" 32
+            if [ -n "$push_Po" ]; then
+                read -p "确认关闭Pushover日志推送？(1/0) > " res
+                [ "$res" = 1 ] && {
+                    push_Po=
+                    push_Po_key=
+                    setconfig push_Po
+                    setconfig push_Po_key
+                }
             else
-                echo -e "\033[31m输入错误，请重新输入！\033[0m"
-                setconfig push_ChatURL
-                setconfig push_ChatTOKEN
-                setconfig push_ChatUSERID
-                push_SynoChat=
-                setconfig push_SynoChat
+                #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+                echo -e "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m"
+                echo "-----------------------------------------------"
+                read -p "请输入你的User Key > " key
+                if [ -n "$key" ]; then
+                    echo "-----------------------------------------------"
+                    echo -e "\033[33m请检查注册邮箱，完成账户验证\033[0m"
+                    read -p "我已经验证完成(1/0) > "
+                    echo "-----------------------------------------------"
+                    echo -e "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
+                    echo "-----------------------------------------------"
+                    read -p "请输入你的API Token > " Token
+                    if [ -n "$Token" ]; then
+                        push_Po=$Token
+                        push_Po_key=$key
+                        setconfig push_Po $Token
+                        setconfig push_Po_key $key
+                        ${CRASHDIR}/start.sh logger "已完成Passover日志推送设置！" 32
+                    else
+                        echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                    fi
+                else
+                    echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                fi
             fi
-        fi
-        sleep 1
-        log_pusher
-        ;;
-    # 在menu.sh的case $num in代码块中添加
-    7)
-        echo "-----------------------------------------------"
-        if [ -n "$push_Gotify" ]; then
-            read -p "确认关闭Gotify日志推送？(1/0) > " res
-            [ "$res" = 1 ] && {
-                push_Gotify=
-                setconfig push_Gotify
-            }
-        else
-            echo -e "请先通过Gotify服务器获取推送URL"
-            echo -e "格式示例: https://gotify.example.com/message?token=你的应用令牌"
+            ;;
+        5)
             echo "-----------------------------------------------"
-            read -p "请输入你的Gotify推送URL > " url
-            if [ -n "$url" ]; then
-                push_Gotify=$url
-                setconfig push_Gotify "$url"
-                ${CRASHDIR}/start.sh logger "已完成Gotify日志推送设置！" 32
+            if [ -n "$push_PP" ]; then
+                read -p "确认关闭PushPlus日志推送？(1/0) > " res
+                [ "$res" = 1 ] && {
+                    push_PP=
+                    setconfig push_PP
+                }
             else
-                echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                #echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
+                echo -e "请先通过 \033[32;4mhttps://www.pushplus.plus/push1.html\033[0m 注册账号并获取\033[36mtoken\033[0m"
+                echo "-----------------------------------------------"
+                read -p "请输入你的token > " Token
+                if [ -n "$Token" ]; then
+                    push_PP=$Token
+                    setconfig push_PP $Token
+                    ${CRASHDIR}/start.sh logger "已完成PushPlus日志推送设置！" 32
+                else
+                    echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                fi
             fi
-        fi
+            ;;
+        6)
+            echo "-----------------------------------------------"
+            if [ -n "$push_SynoChat" ]; then
+                read -p "确认关闭SynoChat日志推送？(1/0) > " res
+                [ "$res" = 1 ] && {
+                    push_SynoChat=
+                    setconfig push_SynoChat
+                }
+            else
+                echo "-----------------------------------------------"
+                read -p "请输入你的Synology DSM主页地址 > " URL
+                echo "-----------------------------------------------"
+                read -p "请输入你的Synology Chat Token > " TOKEN
+                echo "-----------------------------------------------"
+                echo -e '请通过"你的群晖地址/webapi/entry.cgi?api=SYNO.Chat.External&method=user_list&version=2&token=你的TOKEN"获取user_id'
+                echo "-----------------------------------------------"
+                read -p "请输入你的user_id > " USERID
+                if [ -n "$URL" ]; then
+                    push_SynoChat=$USERID
+                    setconfig push_SynoChat $USERID
+                    setconfig push_ChatURL $URL
+                    setconfig push_ChatTOKEN $TOKEN
+                    setconfig push_ChatUSERID $USERID
+                    ${CRASHDIR}/start.sh logger "已完成SynoChat日志推送设置！" 32
+                else
+                    echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                    setconfig push_ChatURL
+                    setconfig push_ChatTOKEN
+                    setconfig push_ChatUSERID
+                    push_SynoChat=
+                    setconfig push_SynoChat
+                fi
+            fi
+            ;;
+        # 在menu.sh的case $num in代码块中添加
+        7)
+            echo "-----------------------------------------------"
+            if [ -n "$push_Gotify" ]; then
+                read -p "确认关闭Gotify日志推送？(1/0) > " res
+                [ "$res" = 1 ] && {
+                    push_Gotify=
+                    setconfig push_Gotify
+                }
+            else
+                echo -e "请先通过Gotify服务器获取推送URL"
+                echo -e "格式示例: https://gotify.example.com/message?token=你的应用令牌"
+                echo "-----------------------------------------------"
+                read -p "请输入你的Gotify推送URL > " url
+                if [ -n "$url" ]; then
+                    push_Gotify=$url
+                    setconfig push_Gotify "$url"
+                    ${CRASHDIR}/start.sh logger "已完成Gotify日志推送设置！" 32
+                else
+                    echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                fi
+            fi
+            ;;
+        a)
+            if [ -s ${TMPDIR}/ShellCrash.log ]; then
+                echo "-----------------------------------------------"
+                cat ${TMPDIR}/ShellCrash.log
+                exit 0
+            else
+                echo -e "\033[31m未找到相关日志！\033[0m"
+            fi
+            ;;
+        b)
+            [ "$task_push" = 1 ] && task_push='' || task_push=1
+            setconfig task_push $task_push
+            ;;
+        c)
+            read -p "请输入本设备自定义推送名称 > " device_name
+            setconfig device_name $device_name
+            ;;
+        d)
+            echo -e "\033[33m运行日志及任务日志均已清空！\033[0m"
+            rm -rf ${TMPDIR}/ShellCrash.log
+            ;;
+        *)
+            errornum
+            ;;
+        esac
         sleep 1
-        log_pusher
-        ;;
-    b)
-        [ "$task_push" = 1 ] && task_push='' || task_push=1
-        setconfig task_push $task_push
-        sleep 1
-        log_pusher
-        ;;
-    c)
-        read -p "请输入本设备自定义推送名称 > " device_name
-        setconfig device_name $device_name
-        sleep 1
-        log_pusher
-        ;;
-    d)
-        echo -e "\033[33m运行日志及任务日志均已清空！\033[0m"
-        rm -rf ${TMPDIR}/ShellCrash.log
-        sleep 1
-        log_pusher
-        ;;
-    *) errornum ;;
-    esac
+    done
 }
-setport() { #端口设置
+
+#端口设置
+setport() {
     . $CFG_PATH >/dev/null
     [ -z "$secret" ] && secret=未设置
     [ -z "$table" ] && table=100
@@ -1428,9 +1424,9 @@ set_firewall_area() { #防火墙模式设置
         fi
         echo "-----------------------------------------------"
         echo -e "$vm_des的容器/虚拟机网段为：\033[32m$vm_ipv4\033[0m"
-        echo -e "如未包含容器网段，请先运行容器再运行脚本或者手动设置网段"
+        echo -e "如未包含容器网段，请先运行���器再运行脚本或者手动设置网段"
         echo "-----------------------------------------------"
-        echo -e " 1 \033[32m启用劫持并使用默认网段\033[0m"
+        echo -e " 1 \033[32m启用劫持并使用默认��段\033[0m"
         echo -e " 2 \033[36m启用劫持并自定义网段\033[0m"
         echo -e " 3 \033[31m禁用劫持\033[0m"
         echo -e " 0 返回上级菜单"
@@ -1969,6 +1965,7 @@ autoSSH() {
     setconfig mi_autoSSH_pwd $mi_autoSSH_pwd
     sleep 1
 }
+
 uninstall() {
     read -p "确认卸载ShellCrash？(警告：该操作不可逆！)[1/0] > " res
     if [ "$res" = '1' ]; then
@@ -2034,6 +2031,7 @@ uninstall() {
         echo -e "\033[31m操作已取消！\033[0m"
     fi
 }
+
 tools() {
     ssh_tools() {
         stop_iptables() {
@@ -2215,85 +2213,78 @@ tools() {
 }
 #主菜单
 main_menu() {
-    #############################
-    ckstatus
-    #############################
-    echo -e " 1 \033[32m启动/重启\033[0m服务"
-    echo -e " 2 内核\033[33m功能设置\033[0m"
-    echo -e " 3 \033[31m停止\033[0m内核服务"
-    echo -e " 4 内核\033[36m启动设置\033[0m"
-    echo -e " 5 配置\033[33m自动任务\033[0m"
-    echo -e " 6 导入\033[32m配置文件\033[0m"
-    echo -e " 7 内核\033[31m进阶设置\033[0m"
-    echo -e " 8 \033[35m其他工具\033[0m"
-    echo -e " 9 \033[36m更新/卸载\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " 0 \033[0m退出脚本\033[0m"
-    read -p "请输入对应数字 > " num
-
-    case "$num" in
-    0)
-        exit
-        ;;
-    1)
-        start_service
-        exit
-        ;;
-    2)
-        checkcfg=$(cat $CFG_PATH)
-        normal_set
-        if [ -n "$PID" ]; then
-            checkcfg_new=$(cat $CFG_PATH)
-            [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-        fi
-        main_menu
-        ;;
-    3)
-        ${CRASHDIR}/start.sh stop
-        sleep 1
+    while true; do
+        #############################
+        ckstatus
+        #############################
+        echo -e " 1 \033[32m启动/重启\033[0m服务"
+        echo -e " 2 内核\033[33m功能设置\033[0m"
+        echo -e " 3 \033[31m停止\033[0m内核服务"
+        echo -e " 4 内核\033[36m启动设置\033[0m"
+        echo -e " 5 配置\033[33m自动任务\033[0m"
+        echo -e " 6 导入\033[32m配置文件\033[0m"
+        echo -e " 7 内核\033[31m进阶设置\033[0m"
+        echo -e " 8 \033[35m其他工具\033[0m"
+        echo -e " 9 \033[36m更新/卸载\033[0m"
         echo "-----------------------------------------------"
-        echo -e "\033[31m$corename服务已停止！\033[0m"
-        main_menu
-        ;;
-    4)
-        setboot
-        main_menu
-        ;;
-    5)
-        . ${CRASHDIR}/task/task.sh && task_menu
-        main_menu
-        ;;
-    6)
-        . ${CRASHDIR}/webget.sh && set_core_config
-        main_menu
-        ;;
-    7)
-        checkcfg=$(cat $CFG_PATH)
-        advanced_set
-        if [ -n "$PID" ]; then
-            checkcfg_new=$(cat $CFG_PATH)
-            [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-        fi
-        main_menu
-        ;;
-    8)
-        tools
-        main_menu
-        ;;
-    9)
-        checkcfg=$(cat $CFG_PATH)
-        . ${CRASHDIR}/webget.sh && update
-        if [ -n "$PID" ]; then
-            checkcfg_new=$(cat $CFG_PATH)
-            [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-        fi
-        main_menu
-        ;;
-    *)
-        errornum
-        exit
-        ;;
-    esac
+        echo -e " 0 \033[0m退出脚本\033[0m"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        1)
+            start_service
+            continue
+            ;;
+        2)
+            checkcfg=$(cat $CFG_PATH)
+            normal_set
+            if [ -n "$PID" ]; then
+                checkcfg_new=$(cat $CFG_PATH)
+                [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+            fi
+            ;;
+        3)
+            ${CRASHDIR}/start.sh stop
+            sleep 1
+            echo "-----------------------------------------------"
+            echo -e "\033[31m$corename服务已停止！\033[0m"
+            ;;
+        4)
+            setboot
+            ;;
+        5)
+            . ${CRASHDIR}/task/task.sh && task_menu
+            ;;
+        6)
+            . ${CRASHDIR}/webget.sh && set_core_config
+            ;;
+        7)
+            checkcfg=$(cat $CFG_PATH)
+            advanced_set
+            if [ -n "$PID" ]; then
+                checkcfg_new=$(cat $CFG_PATH)
+                [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+            fi
+            ;;
+        8)
+            tools
+            ;;
+        9)
+            checkcfg=$(cat $CFG_PATH)
+            . ${CRASHDIR}/webget.sh && update
+            if [ -n "$PID" ]; then
+                checkcfg_new=$(cat $CFG_PATH)
+                [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+            fi
+            ;;
+        0)
+            exit 0
+            ;;
+        *)
+            errornum
+            continue
+            ;;
+        esac
+    done
 }
 
 [ -z "$CRASHDIR" ] && {
