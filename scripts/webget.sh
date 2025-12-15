@@ -452,7 +452,7 @@ EOF
       "url": "${2}",
       "path": "./providers/${1}.yaml",
       "user_agent": "clash.meta;mihomo",
-      "update_interval": "24h",
+      "update_interval": "12h",
 EOF
 		fi
 		#通用部分生成
@@ -2352,7 +2352,7 @@ userguide(){
 	fi
 	#设置加密DNS
 	if [ -s $openssldir/certs/ca-certificates.crt ];then
-		dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
+		dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
 		dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
 		dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
 		setconfig dns_nameserver "'$dns_nameserver'"

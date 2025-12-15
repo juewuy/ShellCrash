@@ -51,7 +51,7 @@ getconfig() { #读取配置及全局变量
     ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
     ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
     #默认dns
-    [ -z "$dns_nameserver" ] && dns_nameserver='180.184.1.1, 1.2.4.8'
+    [ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5, 1.2.4.8'
     [ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
     [ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
     #自动生成ua
@@ -182,7 +182,7 @@ croncmd() { #定时任务工具
 }
 cronset() { #定时任务设置
     # 参数1代表要移除的关键字,参数2代表要添加的任务语句
-    tmpcron="$TMPDIR"/cron_$USER
+    tmpcron="$TMPDIR"/cron_tmp
     croncmd -l >"$tmpcron" 2>/dev/null
     sed -i "/$1/d" "$tmpcron"
     sed -i '/^$/d' "$tmpcron"
@@ -249,6 +249,59 @@ getlanip() { #获取局域网host地址
     #保留地址
     [ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
     [ -z "$reserve_ipv6" ] && reserve_ipv6="::/128 ::1/128 ::ffff:0:0/96 64:ff9b::/96 100::/64 2001::/32 2001:20::/28 2001:db8::/32 2002::/16 fe80::/10 ff00::/8"
+}
+parse_singbox_dns() { #singbox的dns分割工具
+    first_dns=$(echo "$1" | cut -d',' -f1 | cut -d' ' -f1)
+    type=""
+    server=""
+    port=""
+    case "$first_dns" in
+        *://*)
+            type="${first_dns%%://*}"
+            tmp="${first_dns#*://}"
+            ;;
+        *)
+            type="udp"
+            tmp="$first_dns"
+            ;;
+    esac
+    case "$tmp" in
+        \[*\]*)
+            server="${tmp%%]*}"
+            server="${server#[}"
+            port="${tmp#*\]}"
+            port="${port#:}"
+            ;;
+        *)
+            server="${tmp%%[:/]*}"
+            port="${tmp#*:}"
+            [ "$port" = "$tmp" ] && port=""
+            ;;
+    esac
+    if [ -z "$port" ]; then
+        case "$type" in
+            udp|tcp) port=53 ;;
+            doh|https) port=443 ;;
+            dot|tls) port=853 ;;
+            *) port=53 ;;
+        esac
+    fi
+    # 输出
+	echo '"type": "'"$type"'", "server": "'"$server"'", "server_port": '"$port"','
+}
+urlencode() {
+    local i c hex
+    LC_ALL=C
+    for i in $(printf '%s' "$1" | od -An -tx1); do
+        case "$i" in
+            2d|2e|5f|7e|3[0-9]|4[1-9A-Fa-f]|5[A-Fa-f]|6[1-9A-Fa-f]|7[0-9A-Ea-e])
+                printf "\\$(printf '%03o' "0x$i")"
+                ;;
+            *)
+                printf '%%%02X' "0x$i"
+                ;;
+        esac
+    done
 }
 #配置文件相关
 check_clash_config() { #检查clash配置文件
@@ -336,8 +389,8 @@ get_core_config() { #下载内核配置文件
     #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
     if [ -z "$Https" ]; then
         #Urlencord转码处理保留字符
-        Url=$(echo $Url | sed 's/;/\%3B/g; s|/|\%2F|g; s/?/\%3F/g; s/:/\%3A/g; s/@/\%40/g; s/=/\%3D/g; s/&/\%26/g')
-        Https="${Server}/sub?target=${target}&${Server_ua}=${user_agent}&insert=true&new_name=true&scv=true&udp=true&exclude=${exclude}&include=${include}&url=${Url}&config=${Config}"
+        urlencodeUrl="exclude=$(urlencode "$exclude")&include=$(urlencode "$include")&url=$(urlencode "$Url")&config=$(urlencode "$Config")"
+        Https="${Server}/sub?target=${target}&${Server_ua}=${user_agent}&insert=true&new_name=true&scv=true&udp=true&${urlencodeUrl}"
         url_type=true
     fi
     #输出
@@ -425,7 +478,7 @@ dns:
   ipv6: $dns_v6
   default-nameserver: [ $dns_resolver ]
   enhanced-mode: fake-ip
-  fake-ip-range: 28.0.0.1/8
+  fake-ip-range: 28.0.0.0/8
   fake-ip-range6: fc00::/16
   fake-ip-filter:
 EOF
@@ -438,7 +491,7 @@ EOF
         [ "$dns_mod" = "mix" ] && echo '    - "rule-set:cn"' >>"$TMPDIR"/dns.yaml
         #mix模式和route模式插入分流设置
         if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ]; then
-            [ "$dns_protect" = "OFF" ] && dns_final="$dns_fallback" || dns_final="$dns_nameserver"
+            [ "$dns_protect" != "OFF" ] && dns_final="$dns_fallback" || dns_final="$dns_nameserver"
             cat >>"$TMPDIR"/dns.yaml <<EOF
   respect-rules: true
   nameserver-policy: {'rule-set:cn': [ $dns_nameserver ]}
@@ -673,18 +726,6 @@ EOF
 EOF
     fi
     #生成dns.json
-    dns_direct_1st=$(echo $dns_nameserver | awk -F ',' '{print $1}')
-    dns_direct=$(echo $dns_direct_1st | sed 's|.*://||' | sed 's|/.*||')
-    dns_direct_type=$(echo "$dns_direct_1st" | awk -F '://' '{print $1}')
-    [ "$dns_direct_type" = "$dns_direct" ] && dns_direct_type="udp"
-    dns_proxy_1st=$(echo $dns_fallback | awk -F ',' '{print $1}')
-    dns_proxy=$(echo $dns_proxy_1st | sed 's|.*://||' | sed 's|/.*||')
-    dns_proxy_type=$(echo "$dns_proxy_1st" | awk -F '://' '{print $1}')
-    [ "$dns_proxy_type" = "$dns_proxy" ] && dns_proxy_type="udp"
-    dns_resolver_1st=$(echo $dns_resolver | awk -F ',' '{print $1}')
-    dns_resolverip=$(echo $dns_resolver_1st | sed 's|.*://||' | sed 's|/.*||')
-    dns_resolver_type=$(echo "$dns_resolver_1st" | awk -F '://' '{print $1}')
-    [ "$dns_resolver_type" = "$dns_resolverip" ] && dns_resolver_type="udp"
     [ "$ipv6_dns" = "已开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
     #获取detour出口
     auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//')
@@ -735,29 +776,26 @@ EOF
     "servers": [
       {
         "tag": "dns_proxy",
-        "type": "$dns_proxy_type",
-        "server": "$dns_proxy",
+        $(parse_singbox_dns "$dns_fallback")
 		"routing_mark": $routing_mark,
 		"detour": $auto_detour,
         "domain_resolver": "dns_resolver"
       },
       {
         "tag": "dns_direct",
-        "type": "$dns_direct_type",
-        "server": "$dns_direct",
+        $(parse_singbox_dns "$dns_nameserver")
 		"routing_mark": $routing_mark,
         "domain_resolver": "dns_resolver"
       },
       {
         "tag": "dns_fakeip",
         "type": "fakeip",
-        "inet4_range": "28.0.0.1/8",
+        "inet4_range": "28.0.0.0/8",
         "inet6_range": "fc00::/16"
       },
       {
         "tag": "dns_resolver",
-        "type": "$dns_resolver_type",
-        "server": "$dns_resolverip",
+        $(parse_singbox_dns "$dns_resolver")
 		"routing_mark": $routing_mark
       }
     ],
@@ -843,7 +881,7 @@ EOF
 }
 EOF
     if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
-        [ "ipv6_redir" = '已开启' ] && ipv6_address='"fdfe:dcba:9876::1/126",'
+        [ "ipv6_redir" = '已开启' ] && ipv6_address='"fe80::e5c5:2469:d09b:609a/64",'
         cat >>"$TMPDIR"/jsons/tun.json <<EOF
 {
   "inbounds": [
@@ -853,7 +891,7 @@ EOF
       "interface_name": "utun",
       "address": [
         $ipv6_address
-        "172.18.0.1/30"
+        "28.0.0.1/30"
       ],
       "auto_route": false,
       "stack": "system"
@@ -1056,7 +1094,7 @@ start_ipt_route() { #iptables-route通用工具
         fi
         #将所在链指定流量指向shellcrash表
         $1 $w -t $2 -I $3 -p $5 $ports -j $4
-        [ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 $w -t $2 -I $3 -p $5 -d 28.0.0.1/8 -j $4
+        [ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && $1 $w -t $2 -I $3 -p $5 -d 28.0.0.0/8 -j $4
         [ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "已开启" ] && [ "$1" = ip6tables ] && $1 $w -t $2 -I $3 -p $5 -d fc00::/16 -j $4
     }
     [ "$5" = "tcp" -o "$5" = "all" ] && proxy_set $1 $2 $3 $4 tcp
@@ -1291,10 +1329,12 @@ start_nft_route() { #nftables-route通用工具
     [ -z "$ports" ] && nft add rule inet shellcrash $1 tcp dport {"$mix_port, $redir_port, $tproxy_port"} return
     #过滤常用端口
     [ -n "$PORTS" ] && {
-        nft add rule inet shellcrash $1 ip daddr != {28.0.0.1/8} tcp dport != {$PORTS} return
+        nft add rule inet shellcrash $1 ip daddr != {28.0.0.0/8} tcp dport != {$PORTS} return
+		nft add rule inet shellcrash $1 ip daddr != {28.0.0.0/8} udp dport != {$PORTS} return
         nft add rule inet shellcrash $1 ip6 daddr != {fc00::/16} tcp dport != {$PORTS} return
+		nft add rule inet shellcrash $1 ip6 daddr != {fc00::/16} udp dport != {$PORTS} return
     }
-    #nft add rule inet shellcrash $1 ip saddr 28.0.0.1/8 return
+    #nft add rule inet shellcrash $1 ip saddr 28.0.0.0/8 return
     nft add rule inet shellcrash $1 ip daddr {$RESERVED_IP} return #过滤保留地址
     #过滤局域网设备
     [ "$1" = 'prerouting' ] && {
@@ -1543,24 +1583,24 @@ stop_firewall() { #还原防火墙配置
         $iptable -t nat -D OUTPUT -p tcp --dport 53 -j shellcrash_dns_out 2>/dev/null
         #redir
         $iptable -t nat -D PREROUTING -p tcp $ports -j shellcrash 2>/dev/null
-        $iptable -t nat -D PREROUTING -p tcp -d 28.0.0.1/8 -j shellcrash 2>/dev/null
+        $iptable -t nat -D PREROUTING -p tcp -d 28.0.0.0/8 -j shellcrash 2>/dev/null
         $iptable -t nat -D OUTPUT -p tcp $ports -j shellcrash_out 2>/dev/null
-        $iptable -t nat -D OUTPUT -p tcp -d 28.0.0.1/8 -j shellcrash_out 2>/dev/null
+        $iptable -t nat -D OUTPUT -p tcp -d 28.0.0.0/8 -j shellcrash_out 2>/dev/null
         #vm_dns
         $iptable -t nat -D PREROUTING -p tcp --dport 53 -j shellcrash_vm_dns 2>/dev/null
         $iptable -t nat -D PREROUTING -p udp --dport 53 -j shellcrash_vm_dns 2>/dev/null
         #vm_redir
         $iptable -t nat -D PREROUTING -p tcp $ports -j shellcrash_vm 2>/dev/null
-        $iptable -t nat -D PREROUTING -p tcp -d 28.0.0.1/8 -j shellcrash_vm 2>/dev/null
+        $iptable -t nat -D PREROUTING -p tcp -d 28.0.0.0/8 -j shellcrash_vm 2>/dev/null
         #TPROXY&tun
         $iptable -t mangle -D PREROUTING -p tcp $ports -j shellcrash_mark 2>/dev/null
         $iptable -t mangle -D PREROUTING -p udp $ports -j shellcrash_mark 2>/dev/null
-        $iptable -t mangle -D PREROUTING -p tcp -d 28.0.0.1/8 -j shellcrash_mark 2>/dev/null
-        $iptable -t mangle -D PREROUTING -p udp -d 28.0.0.1/8 -j shellcrash_mark 2>/dev/null
+        $iptable -t mangle -D PREROUTING -p tcp -d 28.0.0.0/8 -j shellcrash_mark 2>/dev/null
+        $iptable -t mangle -D PREROUTING -p udp -d 28.0.0.0/8 -j shellcrash_mark 2>/dev/null
         $iptable -t mangle -D OUTPUT -p tcp $ports -j shellcrash_mark_out 2>/dev/null
         $iptable -t mangle -D OUTPUT -p udp $ports -j shellcrash_mark_out 2>/dev/null
-        $iptable -t mangle -D OUTPUT -p tcp -d 28.0.0.1/8 -j shellcrash_mark_out 2>/dev/null
-        $iptable -t mangle -D OUTPUT -p udp -d 28.0.0.1/8 -j shellcrash_mark_out 2>/dev/null
+        $iptable -t mangle -D OUTPUT -p tcp -d 28.0.0.0/8 -j shellcrash_mark_out 2>/dev/null
+        $iptable -t mangle -D OUTPUT -p udp -d 28.0.0.0/8 -j shellcrash_mark_out 2>/dev/null
         $iptable -t mangle -D PREROUTING -m mark --mark $fwmark -p tcp -j TPROXY --on-port $tproxy_port 2>/dev/null
         $iptable -t mangle -D PREROUTING -m mark --mark $fwmark -p udp -j TPROXY --on-port $tproxy_port 2>/dev/null
         #tun
@@ -1729,10 +1769,7 @@ makehtml() { #生成面板跳转文件
         <h1>您还未安装本地面板</h1>
 		<h3>请在脚本更新功能中(9-4)安装<br>或者使用在线面板：</h3>
 		<h4>请复制当前地址/ui(不包括)前面的内容，填入url位置即可连接</h3>
-        <a href="https://metacubexd.pages.dev" style="font-size: 24px;">Meta XD面板(推荐)<br></a>
-        <a href="https://board.zash.run.place" style="font-size: 24px;">zashboard面板<br></a>
-        <a href="https://yacd.metacubex.one" style="font-size: 24px;">Meta YACD面板(推荐)<br></a>
-        <a href="https://yacd.haishan.me" style="font-size: 24px;">Clash YACD面板<br></a>
+        <a href="http://board.zash.run.place" style="font-size: 24px;">Zashboard面板(推荐)<br></a>
         <a style="font-size: 21px;"><br>如已安装，请使用Ctrl+F5强制刷新此页面！<br></a>
     </div>
 </body>
@@ -1764,7 +1801,7 @@ EOF
     compare "$TMPDIR"/shellcrash_pac "$BINDIR"/ui/pac
     [ "$?" = 0 ] && rm -rf "$TMPDIR"/shellcrash_pac || mv -f "$TMPDIR"/shellcrash_pac "$BINDIR"/ui/pac
 }
-core_check() {                                                                          #检查及下载内核文件
+core_check() { #检查及下载内核文件
     [ -n "$(tar --help 2>&1 | grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
     [ -n "$(find --help 2>&1 | grep -o size)" ] && find_para=' -size +2000'             #find命令兼容
     tar_core() {

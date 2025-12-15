@@ -694,7 +694,7 @@ setport() { #端口设置
     esac
 }
 setdns() { #DNS详细设置
-    [ -z "$dns_nameserver" ] && dns_nameserver='180.184.1.1, 1.2.4.8'
+    [ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5, 1.2.4.8'
     [ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
     [ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
     [ -z "$hosts_opt" ] && hosts_opt=已启用
@@ -811,7 +811,7 @@ setdns() { #DNS详细设置
         openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
         if [ -s "$openssldir/certs/ca-certificates.crt" ] || [ -s "/etc/ssl/certs/ca-certificates.crt" ] ||
             echo "$crashcore" | grep -qE 'meta|singbox'; then
-            dns_nameserver='https://doh.360.cn/dns-query, https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
+            dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
             dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
             dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
             setconfig dns_nameserver "'$dns_nameserver'"
