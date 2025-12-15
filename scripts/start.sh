@@ -1554,7 +1554,7 @@ start_firewall() { #路由规则总入口
     [ "$firewall_mod" = 'iptables' ] && start_iptables
     [ "$firewall_mod" = 'nftables' ] && start_nftables
     #修复部分虚拟机dns查询失败的问题
-    [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep '127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && [ -w /etc/resolv.conf ] && {
+    [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep '127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && [ "$systype" != 'container' ] && {
         line=$(grep -n 'nameserver' /etc/resolv.conf | awk -F: 'FNR==1{print $1}')
         sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf >/dev/null 2>&1
     }

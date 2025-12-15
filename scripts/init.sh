@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.3beta7fix
+version=1.9.3beta8
 
 setdir() {
     dir_avail() {
@@ -159,12 +159,12 @@ setconfig() { #脚本配置工具
     fi
 }
 #特殊固件识别及标记
-[ -f "/etc/storage/started_script.sh" ] && {
-    systype=Padavan #老毛子固件
+[ -f "/etc/storage/started_script.sh" ] && { #老毛子固件
+    systype=Padavan 
     initdir='/etc/storage/started_script.sh'
 }
-[ -d "/jffs" ] && {
-    systype=asusrouter #华硕固件
+[ -d "/jffs" ] && { #华硕固件
+    systype=asusrouter
     [ -f "/jffs/.asusrouter" ] && initdir='/jffs/.asusrouter'
     [ -d "/jffs/scripts" ] && initdir='/jffs/scripts/nat-start'
     #华硕启用jffs
@@ -173,7 +173,8 @@ setconfig() { #脚本配置工具
 }
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot   #NETGEAR设备
-
+#容器内环境
+grep -qE '/(docker|lxc|kubepods|crio|containerd)/' /proc/1/cgroup || [ -f /run/.containerenv ] || [ -f /.dockerenv ] && systype=container
 #检查环境变量
 [ -z "$CRASHDIR" -a -n "$clashdir" ] && CRASHDIR=$clashdir
 [ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && setdir
@@ -290,7 +291,6 @@ if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ]; then
     uci set firewall.ShellCrash.path="$CRASHDIR/misnap_init.sh"
     uci set firewall.ShellCrash.enabled='1'
     uci commit firewall
-    setconfig systype $systype
 else
     rm -rf ${CRASHDIR}/misnap_init.sh
 fi
@@ -303,6 +303,18 @@ fi
 #华硕下载大师启动额外设置
 [ -f "$dir/asusware.arm/etc/init.d/S50downloadmaster" ] && [ -z "$(grep 'ShellCrash' $dir/asusware.arm/etc/init.d/S50downloadmaster)" ] &&
     sed -i "/^PATH=/a\\$CRASHDIR/start.sh init & #ShellCrash初始化脚本" "$dir/asusware.arm/etc/init.d/S50downloadmaster"
+#容器环境额外设置
+[ "$systype" = 'container' ] && {
+	setconfig userguide '1'
+	setconfig crashcore 'meta'
+	setconfig redir_mod "混合模式"
+	setconfig dns_mod 'mix'
+	setconfig firewall_area '1'
+	setconfig firewall_mod 'nftables'
+	setconfig start_old '已开启'
+	echo "$CRASHDIR/menu.sh" >> /etc/profile
+}
+setconfig systype $systype
 #删除临时文件
 rm -rf /tmp/*rash*gz
 rm -rf /tmp/SC_tmp
@@ -359,8 +371,5 @@ sed -i "s/redir_mod=Nft基础/redir_mod=Redir模式/g" $configpath
 sed -i "s/redir_mod=Nft混合/redir_mod=Tproxy模式/g" $configpath
 sed -i "s/redir_mod=Tproxy混合/redir_mod=Tproxy模式/g" $configpath
 sed -i "s/redir_mod=纯净模式/firewall_area=4/g" $configpath
-
-#清理路由器空间
-[ -d /data/etc_bak ] && rm -rf /data/etc_bak
 
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"
