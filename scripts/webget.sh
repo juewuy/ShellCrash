@@ -2189,7 +2189,6 @@ update(){
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0)
-		i=
 		;;
 	1)
 	    setscripts
