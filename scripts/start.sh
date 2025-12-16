@@ -70,7 +70,7 @@ setconfig() { #脚本配置工具
     #参数1代表变量名，参数2代表变量值,参数3即文件路径
     [ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
     if grep -q "^${1}=" "$configpath"; then
-        sed -i "s#${1}=.*#${1}=${2}#g" "$configpath"
+        sed -i "s#^${1}=.*#${1}=${2}#g" "$configpath"
     else
         printf '%s=%s\n' "$1" "$2" >>"$configpath"
     fi
@@ -290,15 +290,16 @@ parse_singbox_dns() { #singbox的dns分割工具
 	echo '"type": "'"$type"'", "server": "'"$server"'", "server_port": '"$port"','
 }
 urlencode() {
-    local i c hex
     LC_ALL=C
-    for i in $(printf '%s' "$1" | od -An -tx1); do
-        case "$i" in
-            2d|2e|5f|7e|3[0-9]|4[1-9A-Fa-f]|5[A-Fa-f]|6[1-9A-Fa-f]|7[0-9A-Ea-e])
-                printf "\\$(printf '%03o' "0x$i")"
+    printf '%s' "$1" \
+    | hexdump -v -e '/1 "%02X\n"' \
+    | while read -r hex; do
+        case "$hex" in
+            2D|2E|5F|7E|3[0-9]|4[1-9A-F]|5[A-F]|6[1-9A-F]|7[0-9A-E])
+                printf "\\$(printf '%03o' "0x$hex")"
                 ;;
             *)
-                printf '%%%02X' "0x$i"
+                printf "%%%s" "$hex"
                 ;;
         esac
     done
@@ -389,7 +390,11 @@ get_core_config() { #下载内核配置文件
     #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
     if [ -z "$Https" ]; then
         #Urlencord转码处理保留字符
-        urlencodeUrl="exclude=$(urlencode "$exclude")&include=$(urlencode "$include")&url=$(urlencode "$Url")&config=$(urlencode "$Config")"
+        if ckcmd hexdump;then
+			urlencodeUrl="exclude=$(urlencode "$exclude")&include=$(urlencode "$include")&url=$(urlencode "$Url")&config=$(urlencode "$Config")"
+		else
+			urlencodeUrl="exclude=$exclude&include=$include&url=$Url&config=$Config"
+		fi
         Https="${Server}/sub?target=${target}&${Server_ua}=${user_agent}&insert=true&new_name=true&scv=true&udp=true&${urlencodeUrl}"
         url_type=true
     fi
@@ -402,7 +407,7 @@ get_core_config() { #下载内核配置文件
     core_config_new="$TMPDIR"/${target}_config.${format}
     rm -rf ${core_config_new}
     $0 webget "$core_config_new" "$Https" echoon rediron skipceron "$user_agent"
-    if [ "$?" = "1" ]; then
+    if [ "$?" != "0" ]; then
         if [ -z "$url_type" ]; then
             echo "-----------------------------------------------"
             logger "配置文件获取失败！" 31
@@ -410,7 +415,7 @@ get_core_config() { #下载内核配置文件
             echo "-----------------------------------------------"
             exit 1
         else
-            if [ "$retry" -ge 3 ]; then
+            if [ -n "$retry" ] && [ "$retry" -ge 3 ]; then
                 logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
                 echo -e "\033[32m也可用浏览器下载以上链接后，使用WinSCP手动上传到/tmp目录后执行crash命令本地导入！\033[0m"
                 exit 1
@@ -2164,48 +2169,51 @@ init)
     ;;
 webget)
     #设置临时代理
-    if [ -n "$(pidof CrashCore)" ]; then
-        [ -n "$authentication" ] && auth="$authentication@"
+    if pidof CrashCore >/dev/null; then
+		[ -n "$authentication" ] && auth="$authentication@" || auth=""
         export all_proxy="http://${auth}127.0.0.1:$mix_port"
-        url=$(echo $3 | sed 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
-    else
-        url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@#')
-    fi
+		url=$(printf '%s\n' "$3" |
+        sed -e 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' \
+            -e 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
+	else
+		url=$(printf '%s\n' "$3" |
+        sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@#')
+	fi
     #参数【$2】代表下载目录，【$3】代表在线地址
     #参数【$4】代表输出显示，【$5】不启用重定向
     #参数【$6】代表验证证书，【$7】使用自定义UA
     [ -n "$7" ] && agent="--user-agent \"$7\""
-    if curl --version >/dev/null 2>&1; then
+	if wget --version >/dev/null 2>&1; then
+		[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+		[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+        wget -Y on $agent $progress $redirect $certificate --timeout=3 -O "$2" "$url" && exit 0 #成功则退出否则重试
+		wget -Y off $agent $progress $redirect $certificate --timeout=5 -O "$2" "$3"
+		exit $?
+    elif curl --version >/dev/null 2>&1; then
         [ "$4" = "echooff" ] && progress='-s' || progress='-#'
         [ "$5" = "rediroff" ] && redirect='' || redirect='-L'
         [ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
-        [ -n "$7" ] && agent="--user-agent \"$7\""
         if curl --version | grep -q '^curl 8.' && ckcmd base64; then
-            auth_b64=$(echo -n "$authentication" | base64)
-            result=$(curl $agent -w %{http_code} --connect-timeout 3 --proxy-header "Proxy-Authorization: Basic $auth_b64" $progress $redirect $certificate -o "$2" "$url")
+            auth_b64=$(printf '%s' "$authentication" | base64)
+            result=$(curl $agent -w '%{http_code}' --connect-timeout 3 --proxy-header "Proxy-Authorization: Basic $auth_b64" $progress $redirect $certificate -o "$2" "$url")
         else
-            result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
+            result=$(curl $agent -w '%{http_code}' --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
         fi
-        [ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
-    else
-        if wget --version >/dev/null 2>&1; then
-            [ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
-            [ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
-            [ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-            [ -n "$7" ] && agent="--user-agent=\"$7\""
-            timeout='--timeout=5'
-        fi
-        [ "$4" = "echoon" ] && progress=''
+        [ "$result" = "200" ] && exit 0 #成功则退出否则重试
+		export all_proxy=""
+		result=$(curl $agent -w '%{http_code}' --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
+		[ "$result" = "200" ]
+		exit $?
+    elif ckcmd wget;then
         [ "$4" = "echooff" ] && progress='-q'
-        wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$url"
-        if [ "$?" != "0" ]; then
-            wget -Y off $agent $progress $redirect $certificate $timeout -O "$2" "$3"
-            [ "$?" = "0" ] && result="200"
-        else
-            result="200"
-        fi
+        wget -Y on $progress -O "$2" "$url" && exit 0 #成功则退出否则重试
+        wget -Y off $progress -O "$2" "$3"
+		exit $?
+	else
+		echo "找不到可用下载工具！！！请安装Curl或Wget！！！"
+		exit 1
     fi
-    [ "$result" = "200" ] && exit 0 || exit 1
     ;;
 *)
     "$1" "$2" "$3" "$4" "$5" "$6" "$7"
