@@ -174,9 +174,12 @@ setconfig() { #脚本配置工具
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot   #NETGEAR设备
 #容器内环境
-grep -qE '/(docker|lxc|kubepods|crio|containerd)/' /proc/1/cgroup || [ -f /run/.containerenv ] || [ -f /.dockerenv ] && systype=container
+grep -qE '/(docker|lxc|kubepods|crio|containerd)/' /proc/1/cgroup || [ -f /run/.containerenv ] || [ -f /.dockerenv ] && {
+	systype='container'
+	CRASHDIR='/etc/ShellCrash'
+}
 #检查环境变量
-[ -z "$CRASHDIR" -a -n "$clashdir" ] && CRASHDIR=$clashdir
+[ -z "$CRASHDIR" -a -n "$clashdir" ] && CRASHDIR="$clashdir"
 [ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && setdir
 #移动文件
 mkdir -p ${CRASHDIR}
