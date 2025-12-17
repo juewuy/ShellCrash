@@ -31,7 +31,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/private.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/private.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/private.mrs"
     interval: 86400
 
   trackerslist:
@@ -39,7 +39,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/trackerslist.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/trackerslist.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/trackerslist.mrs"
     interval: 86400
 
   microsoft-cn:
@@ -47,7 +47,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/microsoft-cn.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/microsoft-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/microsoft-cn.mrs"
     interval: 86400
 
   apple-cn:
@@ -55,7 +55,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/apple-cn.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/apple-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/apple-cn.mrs"
     interval: 86400
 
   google-cn:
@@ -63,7 +63,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/google-cn.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/google-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/google-cn.mrs"
     interval: 86400
 
   games-cn:
@@ -71,7 +71,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/games-cn.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/games-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games-cn.mrs"
     interval: 86400
 
   ai:
@@ -79,7 +79,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/ai.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/ai.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ai.mrs"
     interval: 86400
 
   networktest:
@@ -87,7 +87,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/networktest.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/networktest.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/networktest.mrs"
     interval: 86400
 
   proxy:
@@ -95,7 +95,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/proxy.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/proxy.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/proxy.mrs"
     interval: 86400
 
   cn:
@@ -103,7 +103,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/cn.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn-lite.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn-lite.mrs"
     interval: 86400
 
   privateip:
@@ -111,7 +111,7 @@ rule-providers:
     behavior: ipcidr
     format: mrs
     path: ./ruleset/privateip.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/privateip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/privateip.mrs"
     interval: 86400
 
   cnip:
@@ -119,7 +119,7 @@ rule-providers:
     behavior: ipcidr
     format: mrs
     path: ./ruleset/cnip.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cnip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
     interval: 86400
 
   telegramip:
@@ -127,7 +127,7 @@ rule-providers:
     behavior: ipcidr
     format: mrs
     path: ./ruleset/telegramip.mrs
-    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/telegramip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/telegramip.mrs"
     interval: 86400
 
 rules:
