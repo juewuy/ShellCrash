@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.3beta8fix
+version=1.9.3beta9
 
 setdir() {
     dir_avail() {
@@ -174,13 +174,11 @@ setconfig() { #脚本配置工具
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot   #NETGEAR设备
 #容器内环境
-grep -qE '/(docker|lxc|kubepods|crio|containerd)/' /proc/1/cgroup || [ -f /run/.containerenv ] || [ -f /.dockerenv ] && {
-	systype='container'
-	CRASHDIR='/etc/ShellCrash'
-}
+grep -qE '/(docker|lxc|kubepods|crio|containerd)/' /proc/1/cgroup || [ -f /run/.containerenv ] || [ -f /.dockerenv ] && systype='container'
 #检查环境变量
-[ -z "$CRASHDIR" -a -n "$clashdir" ] && CRASHDIR="$clashdir"
-[ -z "$CRASHDIR" -a -d /tmp/SC_tmp ] && setdir
+[ "$systype" = 'container' ] && CRASHDIR='/etc/ShellCrash'
+[ -z "$CRASHDIR" ] && [ -n "$clashdir" ] && CRASHDIR="$clashdir"
+[ -z "$CRASHDIR" ] && [ -d /tmp/SC_tmp ] && setdir
 #移动文件
 mkdir -p ${CRASHDIR}
 mv -f /tmp/SC_tmp/* ${CRASHDIR} 2>/dev/null
@@ -310,12 +308,19 @@ fi
 [ "$systype" = 'container' ] && {
 	setconfig userguide '1'
 	setconfig crashcore 'meta'
-	setconfig redir_mod "混合模式"
 	setconfig dns_mod 'mix'
 	setconfig firewall_area '1'
 	setconfig firewall_mod 'nftables'
-	setconfig start_old '已开启'
+	setconfig release_type 'master'
+	setconfig start_old '未开启'
 	echo "$CRASHDIR/menu.sh" >> /etc/profile
+	cat > /usr/bin/crash <<'EOF'
+#!/bin/sh
+CRASHDIR=${CRASHDIR:-/etc/ShellCrash}
+export CRASHDIR
+exec "$CRASHDIR/menu.sh" "$@"
+EOF
+    chmod 755 /usr/bin/crash	
 }
 setconfig systype $systype
 #删除临时文件
