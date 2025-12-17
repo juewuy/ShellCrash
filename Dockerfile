@@ -27,6 +27,8 @@ COPY ShellCrash.tar.gz /tmp/ShellCrash.tar.gz
 RUN set -eux; \
     mkdir -p /tmp/SC_tmp; \
     tar -zxf /tmp/ShellCrash.tar.gz -C /tmp/SC_tmp; \
+    export systype=container; \
+    export CRASHDIR=/etc/ShellCrash; \
     /bin/sh /tmp/SC_tmp/init.sh
 	
 #获取内核及s6文件
