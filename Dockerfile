@@ -7,14 +7,7 @@ ARG TARGETPLATFORM
 ARG TZ=Asia/Shanghai
 ARG S6_OVERLAY_V=v3.2.1.0
 
-RUN apk add --no-cache \
-    curl \
-    ca-certificates \
-    tar \
-	gzip \
-	xz \
-    tzdata \
-    dcron
+RUN apk add --no-cache curl tzdata
 
 # 时区
 RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
@@ -60,16 +53,12 @@ ARG TZ=Asia/Shanghai
 LABEL org.opencontainers.image.source="https://github.com/juewuy/ShellCrash"
 #安装依赖
 RUN apk add --no-cache \
-	tini \
-	openrc \
     wget \
     ca-certificates \
     tzdata \
     nftables \
     iproute2 \
     dcron
-#清理openrc
-RUN apk del openrc && rm -rf /etc/runlevels/* /run/openrc
 
 RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
     echo "${TZ}" > /etc/timezone
