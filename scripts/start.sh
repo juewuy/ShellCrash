@@ -16,8 +16,8 @@ getconfig() { #读取配置及全局变量
     #加载配置文件
     . "$CRASHDIR"/configs/ShellCrash.cfg >/dev/null
     #缺省值
-    [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod=Redir模式
-    [ -z "$redir_mod" ] && redir_mod=纯净模式
+    [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
+    [ -z "$redir_mod" ] && firewall_area='4'
     [ -z "$skip_cert" ] && skip_cert=已开启
     [ -z "$dns_mod" ] && dns_mod=fake-ip
     [ -z "$ipv6_redir" ] && ipv6_redir=未开启
@@ -70,7 +70,7 @@ setconfig() { #脚本配置工具
     #参数1代表变量名，参数2代表变量值,参数3即文件路径
     [ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
     if grep -q "^${1}=" "$configpath"; then
-        sed -i "s#${1}=.*#${1}=${2}#g" "$configpath"
+        sed -i "s#^${1}=.*#${1}=${2}#g" "$configpath"
     else
         printf '%s=%s\n' "$1" "$2" >>"$configpath"
     fi
@@ -290,15 +290,16 @@ parse_singbox_dns() { #singbox的dns分割工具
 	echo '"type": "'"$type"'", "server": "'"$server"'", "server_port": '"$port"','
 }
 urlencode() {
-    local i c hex
     LC_ALL=C
-    for i in $(printf '%s' "$1" | od -An -tx1); do
-        case "$i" in
-            2d|2e|5f|7e|3[0-9]|4[1-9A-Fa-f]|5[A-Fa-f]|6[1-9A-Fa-f]|7[0-9A-Ea-e])
-                printf "\\$(printf '%03o' "0x$i")"
+    printf '%s' "$1" \
+    | hexdump -v -e '/1 "%02X\n"' \
+    | while read -r hex; do
+        case "$hex" in
+            2D|2E|5F|7E|3[0-9]|4[1-9A-F]|5[A-F]|6[1-9A-F]|7[0-9A-E])
+                printf "\\$(printf '%03o' "0x$hex")"
                 ;;
             *)
-                printf '%%%02X' "0x$i"
+                printf "%%%s" "$hex"
                 ;;
         esac
     done
@@ -389,7 +390,11 @@ get_core_config() { #下载内核配置文件
     #如果传来的是Url链接则合成Https链接，否则直接使用Https链接
     if [ -z "$Https" ]; then
         #Urlencord转码处理保留字符
-        urlencodeUrl="exclude=$(urlencode "$exclude")&include=$(urlencode "$include")&url=$(urlencode "$Url")&config=$(urlencode "$Config")"
+        if ckcmd hexdump;then
+			urlencodeUrl="exclude=$(urlencode "$exclude")&include=$(urlencode "$include")&url=$(urlencode "$Url")&config=$(urlencode "$Config")"
+		else
+			urlencodeUrl="exclude=$exclude&include=$include&url=$Url&config=$Config"
+		fi
         Https="${Server}/sub?target=${target}&${Server_ua}=${user_agent}&insert=true&new_name=true&scv=true&udp=true&${urlencodeUrl}"
         url_type=true
     fi
@@ -402,7 +407,7 @@ get_core_config() { #下载内核配置文件
     core_config_new="$TMPDIR"/${target}_config.${format}
     rm -rf ${core_config_new}
     $0 webget "$core_config_new" "$Https" echoon rediron skipceron "$user_agent"
-    if [ "$?" = "1" ]; then
+    if [ "$?" != "0" ]; then
         if [ -z "$url_type" ]; then
             echo "-----------------------------------------------"
             logger "配置文件获取失败！" 31
@@ -410,7 +415,7 @@ get_core_config() { #下载内核配置文件
             echo "-----------------------------------------------"
             exit 1
         else
-            if [ "$retry" -ge 3 ]; then
+            if [ -n "$retry" ] && [ "$retry" -ge 3 ]; then
                 logger "无法获取配置文件，请检查链接格式以及网络连接状态！" 31
                 echo -e "\033[32m也可用浏览器下载以上链接后，使用WinSCP手动上传到/tmp目录后执行crash命令本地导入！\033[0m"
                 exit 1
@@ -565,10 +570,10 @@ EOF
     sed -i "/#自定义策略组/d" "$TMPDIR"/proxy-groups.yaml
     [ -n "$(grep -Ev '^#' "$CRASHDIR"/yamls/proxy-groups.yaml 2>/dev/null)" ] && {
         #获取空格数
-        space_name=$(grep -aE '^ *- name: ' "$TMPDIR"/proxy-groups.yaml | head -n 1 | grep -oE '^ *')
-        space_proxy=$(grep -A 1 'proxies:$' "$TMPDIR"/proxy-groups.yaml | grep -aE '^ *- ' | head -n 1 | grep -oE '^ *')
+        space_name=$(grep -aE '^ *- \{?name: ' "$TMPDIR"/proxy-groups.yaml | head -n 1 | grep -oE '^ *')
+        space_proxy="$space_name    "
         #合并自定义策略组到proxy-groups.yaml
-        cat "$CRASHDIR"/yamls/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" >"$TMPDIR"/proxy-groups_add.yaml
+        cat "$CRASHDIR"/yamls/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g"  | sed "s/^ *- {name: /${space_name}- {name: /g" >"$TMPDIR"/proxy-groups_add.yaml
         cat "$TMPDIR"/proxy-groups.yaml >>"$TMPDIR"/proxy-groups_add.yaml
         mv -f "$TMPDIR"/proxy-groups_add.yaml "$TMPDIR"/proxy-groups.yaml
         oldIFS="$IFS"
@@ -1463,10 +1468,10 @@ start_nft_wan() { #nftables公网防火墙
 }
 start_nftables() { #nftables配置总入口
     #初始化nftables
-    nft add table inet shellcrash
-    nft flush table inet shellcrash
+    nft add table inet shellcrash 2>/dev/null
+    nft flush table inet shellcrash 2>/dev/null
     #公网访问防火墙
-    start_nft_wan
+    [ "$systype" != 'container' ] && start_nft_wan
     #启动DNS劫持
     [ "$dns_no" != "已禁用" -a "$dns_redir" != "已开启" -a "$firewall_area" -le 3 ] && {
         [ "$lan_proxy" = true ] && start_nft_dns prerouting prerouting #局域网dns转发
@@ -1706,7 +1711,7 @@ stop_firewall() { #还原防火墙配置
     #还原防火墙文件
     [ -s /etc/init.d/firewall.bak ] && mv -f /etc/init.d/firewall.bak /etc/init.d/firewall
     #others
-    sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf
+    [ "$systype" != 'container' ] && sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf >/dev/null 2>&1
 }
 #启动相关
 web_save() { #最小化保存面板节点选择
@@ -2045,20 +2050,6 @@ hotupdate() { #热更新订阅
         put_save http://127.0.0.1:${db_port}/configs "{\"path\":\""$CRASHDIR"/config.$format\"}"
     rm -rf "$TMPDIR"/CrashCore
 }
-set_proxy() { #设置环境变量
-    if [ "$local_type" = "环境变量" ]; then
-        [ -w ~/.bashrc ] && profile=~/.bashrc
-        [ -w /etc/profile ] && profile=/etc/profile
-        echo 'export all_proxy=http://127.0.0.1:'"$mix_port" >>$profile
-        echo 'export ALL_PROXY=$all_proxy' >>$profile
-    fi
-}
-unset_proxy() { #卸载环境变量
-    [ -w ~/.bashrc ] && profile=~/.bashrc
-    [ -w /etc/profile ] && profile=/etc/profile
-    sed -i '/all_proxy/'d $profile
-    sed -i '/ALL_PROXY/'d $profile
-}
 
 getconfig #读取配置及全局变量
 
@@ -2068,7 +2059,7 @@ start)
     [ -n "$(pidof CrashCore)" ] && $0 stop #禁止多实例
     stop_firewall                          #清理路由策略
     #使用不同方式启动服务
-    if [ "$firewall_area" = "5" ]; then #主旁转发
+	if [ "$firewall_area" = "5" ]; then #主旁转发
         start_firewall
     elif [ "$start_old" = "已开启" ]; then
         bfstart && start_old
@@ -2081,14 +2072,13 @@ start)
             systemctl daemon-reload
             systemctl start shellcrash.service || start_error
         }
+    elif grep -q 's6' /proc/1/comm; then
+		bfstart && /command/s6-svc -u /run/service/shellcrash && afstart &
     elif rc-status -r >/dev/null 2>&1; then
         rc-service shellcrash stop >/dev/null 2>&1
         rc-service shellcrash start
     else
         bfstart && start_old
-    fi
-    if [ "$2" = "infinity" ]; then #增加容器自启方式，请将CMD设置为"$CRASHDIR"/start.sh start infinity
-        sleep infinity
     fi
     ;;
 stop)
@@ -2104,11 +2094,13 @@ stop)
         systemctl stop shellcrash.service >/dev/null 2>&1
     elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
         /etc/init.d/shellcrash stop >/dev/null 2>&1
+    elif grep -q 's6' /proc/1/comm; then
+		/command/s6-svc -d /run/service/shellcrash
+		stop_firewall
     elif rc-status -r >/dev/null 2>&1; then
         rc-service shellcrash stop >/dev/null 2>&1
     else
         stop_firewall #清理路由策略
-        unset_proxy   #禁用本机代理
     fi
     PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
     #清理缓存目录
@@ -2171,48 +2163,51 @@ init)
     ;;
 webget)
     #设置临时代理
-    if [ -n "$(pidof CrashCore)" ]; then
-        [ -n "$authentication" ] && auth="$authentication@"
+    if pidof CrashCore >/dev/null; then
+		[ -n "$authentication" ] && auth="$authentication@" || auth=""
         export all_proxy="http://${auth}127.0.0.1:$mix_port"
-        url=$(echo $3 | sed 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' | sed 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
-    else
-        url=$(echo $3 | sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@#')
-    fi
+		url=$(printf '%s\n' "$3" |
+        sed -e 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' \
+            -e 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
+	else
+		url=$(printf '%s\n' "$3" |
+        sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@#')
+	fi
     #参数【$2】代表下载目录，【$3】代表在线地址
     #参数【$4】代表输出显示，【$5】不启用重定向
     #参数【$6】代表验证证书，【$7】使用自定义UA
     [ -n "$7" ] && agent="--user-agent \"$7\""
-    if curl --version >/dev/null 2>&1; then
+	if wget --version >/dev/null 2>&1; then
+		[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
+		[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
+		[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
+        wget -Y on $agent $progress $redirect $certificate --timeout=3 -O "$2" "$url" && exit 0 #成功则退出否则重试
+		wget -Y off $agent $progress $redirect $certificate --timeout=5 -O "$2" "$3"
+		exit $?
+    elif curl --version >/dev/null 2>&1; then
         [ "$4" = "echooff" ] && progress='-s' || progress='-#'
         [ "$5" = "rediroff" ] && redirect='' || redirect='-L'
         [ "$6" = "skipceroff" ] && certificate='' || certificate='-k'
-        [ -n "$7" ] && agent="--user-agent \"$7\""
         if curl --version | grep -q '^curl 8.' && ckcmd base64; then
-            auth_b64=$(echo -n "$authentication" | base64)
-            result=$(curl $agent -w %{http_code} --connect-timeout 3 --proxy-header "Proxy-Authorization: Basic $auth_b64" $progress $redirect $certificate -o "$2" "$url")
+            auth_b64=$(printf '%s' "$authentication" | base64)
+            result=$(curl $agent -w '%{http_code}' --connect-timeout 3 --proxy-header "Proxy-Authorization: Basic $auth_b64" $progress $redirect $certificate -o "$2" "$url")
         else
-            result=$(curl $agent -w %{http_code} --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
+            result=$(curl $agent -w '%{http_code}' --connect-timeout 3 $progress $redirect $certificate -o "$2" "$url")
         fi
-        [ "$result" != "200" ] && export all_proxy="" && result=$(curl $agent -w %{http_code} --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
-    else
-        if wget --version >/dev/null 2>&1; then
-            [ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
-            [ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
-            [ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'
-            [ -n "$7" ] && agent="--user-agent=\"$7\""
-            timeout='--timeout=5'
-        fi
-        [ "$4" = "echoon" ] && progress=''
+        [ "$result" = "200" ] && exit 0 #成功则退出否则重试
+		export all_proxy=""
+		result=$(curl $agent -w '%{http_code}' --connect-timeout 5 $progress $redirect $certificate -o "$2" "$3")
+		[ "$result" = "200" ]
+		exit $?
+    elif ckcmd wget;then
         [ "$4" = "echooff" ] && progress='-q'
-        wget -Y on $agent $progress $redirect $certificate $timeout -O "$2" "$url"
-        if [ "$?" != "0" ]; then
-            wget -Y off $agent $progress $redirect $certificate $timeout -O "$2" "$3"
-            [ "$?" = "0" ] && result="200"
-        else
-            result="200"
-        fi
+        wget -Y on $progress -O "$2" "$url" && exit 0 #成功则退出否则重试
+        wget -Y off $progress -O "$2" "$3"
+		exit $?
+	else
+		echo "找不到可用下载工具！！！请安装Curl或Wget！！！"
+		exit 1
     fi
-    [ "$result" = "200" ] && exit 0 || exit 1
     ;;
 *)
     "$1" "$2" "$3" "$4" "$5" "$6" "$7"

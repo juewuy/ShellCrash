@@ -19,7 +19,7 @@ setconfig() {
     #参数1代表变量名，参数2代表变量值,参数3即文件路径
     [ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
     if grep -q "^${1}=" "$configpath"; then
-        sed -i "s#${1}=.*#${1}=${2}#g" "$configpath"
+        sed -i "s#^${1}=.*#${1}=${2}#g" "$configpath"
     else
         printf '%s=%s\n' "$1" "$2" >>"$configpath"
     fi
@@ -67,6 +67,8 @@ ckstatus() {
         [ -n "$(find /etc/rc.d -name '*shellcrash')" ] && autostart=enable || autostart=disable
     elif ckcmd systemctl; then
         [ "$(systemctl is-enabled shellcrash.service 2>&1)" = enabled ] && autostart=enable || autostart=disable
+	elif grep -q 's6' /proc/1/comm; then
+		[ -f /etc/s6-overlay/s6-rc.d/user/contents.d/afstart ] && autostart=enable || autostart=disable
     elif rc-status -r >/dev/null 2>&1; then
         rc-update show default | grep -q "shellcrash" && autostart=enable || autostart=disable
     else
@@ -1228,7 +1230,8 @@ setboot() { #启动相关设置
             # 禁止自启动：删除各系统的启动项
             [ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash >/dev/null 2>&1 && cd - >/dev/null
             ckcmd systemctl && systemctl disable shellcrash.service >/dev/null 2>&1
-            [rc-status -r >/dev/null 2>&1 && rc-update del shellcrash default >/dev/null
+			grep -q 's6' /proc/1/comm && rm -rf /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+            rc-status -r >/dev/null 2>&1 && rc-update del shellcrash default >/dev/null 2>&1
             touch ${CRASHDIR}/.dis_startup
             autostart=disable
             echo -e "\033[33m已禁止ShellCrash开机启动！\033[0m"
@@ -1236,7 +1239,8 @@ setboot() { #启动相关设置
             # 允许自启动：配置各系统的启动项
             [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
             ckcmd systemctl && systemctl enable shellcrash.service >/dev/null 2>&1
-            rc-status -r >/dev/null 2>&1 && rc-update add shellcrash default >/dev/null
+			grep -q 's6' /proc/1/comm && touch /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+            rc-status -r >/dev/null 2>&1 && rc-update add shellcrash default >/dev/null 2>&1
             rm -rf ${CRASHDIR}/.dis_startup
             autostart=enable
             echo -e "\033[32m已设置ShellCrash开机启动！\033[0m"
@@ -1248,11 +1252,13 @@ setboot() { #启动相关设置
             echo -e "\033[33m改为使用保守模式启动服务！！\033[0m"
             [ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash >/dev/null 2>&1 && cd - >/dev/null
             ckcmd systemctl && systemctl disable shellcrash.service >/dev/null 2>&1
+			grep -q 's6' /proc/1/comm && rm -rf /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+			rc-status -r >/dev/null 2>&1 && rc-update del shellcrash default >/dev/null 2>&1
             start_old=已开启
             setconfig start_old $start_old
             ${CRASHDIR}/start.sh stop
         else
-            if grep -qE 'procd|systemd' /proc/1/comm || rc-status -r >/dev/null 2>&1; then
+            if grep -qE 'procd|systemd|s6' /proc/1/comm || rc-status -r >/dev/null 2>&1; then
                 echo -e "\033[32m改为使用系统守护进程启动服务！！\033[0m"
                 ${CRASHDIR}/start.sh cronset "ShellCrash初始化"
                 start_old=未开启
@@ -1474,7 +1480,8 @@ set_redir_mod() { #代理模式设置
     }
     [ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
     [ -z "$firewall_area" ] && firewall_area=1
-    [ -z "$firewall_mod" ] && firewall_mod=未设置
+    [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
+    [ -z "$redir_mod" ] && redir_mod='纯净模式'
     firewall_area_dsc=$(echo "仅局域网 仅本机 局域网+本机 纯净模式 主-旁转发($bypass_host)" | cut -d' ' -f$firewall_area)
     echo "-----------------------------------------------"
     echo -e "当前代理模式为：\033[47;30m$redir_mod\033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"

@@ -1,0 +1,3 @@
+#!/command/execlineb -P
+fdmove -c 2 1
+exec crond -f -l 8

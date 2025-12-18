@@ -196,7 +196,7 @@ jobs:
           
       - name: Zip core by tar
         run: |      
-          for arch in amd64 armv5 armv7 arm64 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
+          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
             [ ! -f ./tmp/linux-${arch}/sing-box ] && continue
             mv -f ./tmp/linux-${arch}/sing-box ./tmp/CrashCore
             chmod +x ./tmp/CrashCore

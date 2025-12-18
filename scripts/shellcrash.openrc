@@ -68,7 +68,6 @@ stop() {
 
     # 清理 firewall、proxy
     "$CRASHDIR/start.sh" stop_firewall
-    "$CRASHDIR/start.sh" unset_proxy
 
     eend $?
 }
