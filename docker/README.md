@@ -18,7 +18,9 @@ docker run -d \
   shellcrash:latest
 ```
 
-### 容器管理
+------
+
+## Container Management（容器管理）
 
 首次部署完成后，请务必使用以下命令进入容器完成设置（导入配置文件，允许开机启动，及启动内核服务），之后也可用此命令进入容器sh环境进行管理：
 
@@ -34,7 +36,7 @@ docker exec -it shellcrash sh -l
 
 ### 1. 创建 macvlan 网络
 
-> 此处请根据实际网络环境调整参数，如之前已创建可忽略。
+此处请根据实际网络环境调整参数，如之前已创建可忽略。
 
 ```shell
 docker network create \
@@ -44,8 +46,6 @@ docker network create \
   -o parent=eth0 \
   macvlan_lan
 ```
-
-------
 
 ### 2. 启动容器（旁路由模式）
 
@@ -62,9 +62,7 @@ docker run -d \
   shellcrash:latest
 ```
 
-------
-
-### 3.配置需要路由的设备
+### 3. 配置需要路由的设备
 
 将需要路由的设备IPV4网关与DNS均指向启动容器时指定的IP地址如：192.168.31.222
 
@@ -76,13 +74,13 @@ docker run -d \
 
 推荐使用 volume 挂载以持久化 ShellCrash 配置。
 
-### 创建宿主机目录
+### 1. 创建宿主机目录
 
 ```shell
 mkdir -p /root/ShellCrash
 ```
 
-### 启用持久化
+### 2. 启用持久化
 
 将命令粘贴到你的实际容器启动命令中间，例如：
 
@@ -95,7 +93,40 @@ docker run -d \
 
 ------
 
-## Notes
+
+
+------
+
+## Compose Deployment（Compose部署）
+
+### 1. 创建宿主机目录并进入目录
+
+```shell
+mkdir -p /root/ShellCrash
+cd /root/ShellCrash
+```
+
+### 2. 下载Compose模版
+
+```shell
+curl -sSL https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev/docker/compose.yml -O
+```
+
+### 3. 根据本地环境修改Compose模版
+
+```shell
+vi compose.yml #或者使用其他文本编辑器
+```
+
+### 4. 运行服务
+
+```shell
+docker compose up -d
+```
+
+------
+
+### Notes
 
 - 旁路由模式需要宿主机支持 `TUN`
 - macvlan 网络下宿主机默认无法直接访问容器 IP

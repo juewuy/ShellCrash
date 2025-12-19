@@ -21,4 +21,11 @@ services:
     
 networks:
   macvlan_lan:
-    external: true
+    name: macvlan_lan
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 192.168.31.0/24
+          gateway: 192.168.31.1
