@@ -295,7 +295,7 @@ urlencode() {
     | hexdump -v -e '/1 "%02X\n"' \
     | while read -r hex; do
         case "$hex" in
-            2D|2E|5F|7E|3[0-9]|4[1-9A-F]|5[A-F]|6[1-9A-F]|7[0-9A-E])
+            2D|2E|5F|7E|3[0-9]|4[1-9A-F]|5[0-9A]|6[1-9A-F]|7[0-9A-E])
                 printf "\\$(printf '%03o' "0x$hex")"
                 ;;
             *)
@@ -558,7 +558,7 @@ EOF
         fi
     fi
     #分割配置文件
-    yaml_char='proxies proxy-groups proxy-providers rules rule-providers'
+    yaml_char='proxies proxy-groups proxy-providers rules rule-providers sub-rules listeners'
     for char in $yaml_char; do
         sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $core_config >"$TMPDIR"/${char}.yaml
     done
@@ -836,11 +836,9 @@ EOF
 	"default_domain_resolver": "dns_resolver",
     "default_mark": $routing_mark,
 	"rules": [
-	  { "inbound": [ "dns-in" ], "action": "sniff", "timeout": "500ms" },
+	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
 	  $tailscale_set
 	  $sniffer_set
-      { "protocol": "dns", "action": "hijack-dns" },
-	  { "inbound": [ "dns-in" ], "action": "reject" },
       { "clash_mode": "Direct" , "outbound": "DIRECT" },
       { "clash_mode": "Global" , "outbound": "GLOBAL" }
 	]
@@ -2073,7 +2071,10 @@ start)
             systemctl start shellcrash.service || start_error
         }
     elif grep -q 's6' /proc/1/comm; then
-		bfstart && /command/s6-svc -u /run/service/shellcrash && afstart &
+		bfstart && /command/s6-svc -u /run/service/shellcrash && {
+			[ ! -f "$CRASHDIR"/.dis_startup ] && touch /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+			afstart &
+		}
     elif rc-status -r >/dev/null 2>&1; then
         rc-service shellcrash stop >/dev/null 2>&1
         rc-service shellcrash start
@@ -2177,7 +2178,7 @@ webget)
     #参数【$4】代表输出显示，【$5】不启用重定向
     #参数【$6】代表验证证书，【$7】使用自定义UA
     [ -n "$7" ] && agent="--user-agent \"$7\""
-	if wget --version >/dev/null 2>&1; then
+	if wget --help 2>&1 | grep -q 'show-progress' >/dev/null 2>&1; then
 		[ "$4" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 		[ "$5" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
 		[ "$6" = "skipceroff" ] && certificate='' || certificate='--no-check-certificate'

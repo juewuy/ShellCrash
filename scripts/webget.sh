@@ -523,7 +523,7 @@ EOF
 	#调用内核测试
 	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
 	if [ "$?" = 0 ];then
-		echo -e "\033[32m配置文件生成成功！\033[0m"
+		echo -e "\033[32m配置文件生成成功！如果启动超时建议更新里手动安装Singbox-srs数据库常用包！\033[0m"
 		mkdir -p ${CRASHDIR}/jsons
 		mv -f ${TMPDIR}/config.json ${CRASHDIR}/jsons/config.json
 		rm -rf ${TMPDIR}/providers
@@ -934,7 +934,7 @@ gen_core_config_link(){ #在线生成工具
 		echo -e " 0 \033[31m撤销输入并返回上级菜单\033[0m"
 		echo "-----------------------------------------------"
 		read -p "请直接输入第${i}个链接或对应数字选项 > " link
-		link=$(echo $link | sed 's/\&/%26/g')   #处理分隔符
+		link=$(echo $link | sed 's/\&/\\&/g')   #处理分隔符
 		test=$(echo $link | grep "://")
 		link=`echo ${link/\#*/''}`   #删除链接附带的注释内容
 		link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
