@@ -12,9 +12,10 @@ gateway(){
 	echo -e " 2 配置Telegram专属控制机器人"
 	echo -e " 3 配置DDNS自动域名"
 	[ "$disoverride" != "1" ] && {
-		echo -e " 4 自定义公网入站节点"
-		echo -e " 5 配置\033[32mTailscale内网穿透\033[0m(限Singbox)"
-		echo -e " 6 配置\033[32mWireguard客户端\033[0m"
+		echo -e " 4 自定义\033[32m公网Vmess入站\033[0m节点"
+		echo -e " 5 自定义\033[32m公网ShadowSocks入站\033[0m节点"
+		echo -e " 6 配置\033[32mTailscale内网穿透\033[0m(限Singbox)"
+		echo -e " 7 配置\033[32mWireguard客户端\033[0m"
 	}
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -34,10 +35,14 @@ gateway(){
 		gateway
 	;;
 	4)
-		set_listeners
+		set_vmess
 		gateway
 	;;
 	5)
+		set_shadowsocks
+		gateway
+	;;
+	6)
 		if echo "$crashcore" | grep -q 'sing';then
 			set_tailscale
 		else
@@ -47,7 +52,7 @@ gateway(){
 		fi
 		gateway
 	;;
-	6)
+	7)
 		set_wireguard
 		gateway
 	;;
@@ -179,7 +184,75 @@ set_bot_tg(){
 set_ddns(){
 	echo
 }
-
+set_vmess(){
+	echo -----------------------------------------------
+	echo -e "\033[31m注意：\033[0m启动内核服务后会自动开放相应端口公网访问，请谨慎使用！"
+	echo -----------------------------------------------
+	echo -e " 1 \033[32m启用/关闭\033[0mVmess入站	\033[32m$vms_service\033[0m"
+	echo -----------------------------------------------
+	echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$vms_port\033[0m"
+	echo -e " 3 设置\033[33mWS-path(可选)\033[0m：	\033[33m$vms_ws_path\033[0m"
+	echo -e " 4 设置\033[36m秘钥-uuid\033[0m：	\033[36m$vms_uuid\033[0m"
+	echo -e " 5 一键生成\033[32m随机秘钥\033[0m"
+	echo -e " 0 返回上级菜单 \033[0m"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	case "$num" in
+	0) ;;
+	1)
+		if [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
+			[ "$vms_service" = ON ] && vms_service=OFF || vms_service=ON
+			setconfig vms_service "$vms_service"
+		else
+			echo -e "\033[31m请先完成必选设置！\033[0m"
+			sleep 1
+		fi
+		set_vmess
+	;;
+	2)
+		read -p "请输入端口号(输入0删除) > " text
+		[ "$text" = 0 ] && unset vms_port
+		if sh "$CRASHDIR"/libs/check_port.sh "$text"; then
+			vms_port="$text"
+			setconfig vms_port "$text" "$CFG"
+		else
+			sleep 1
+		fi
+		set_vmess
+	;;
+	3)
+		read -p "请输入ws-path路径(输入0删除) > " text
+		[ "$text" = 0 ] && unset vms_ws_path
+		if echo "$text" |grep -qE '^/';then
+			vms_ws_path="$text"
+			setconfig vms_ws_path "$text" "$CFG"
+		else
+			echo -e "\033[31m不是合法的path路径，必须以【/】开头！\033[0m"
+			sleep 1
+		fi
+		set_vmess
+	;;
+	4)
+		read -p "请输入UUID(输入0删除) > " text
+		[ "$text" = 0 ] && unset vms_uuid
+		if echo "$text" |grep -qiE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';then
+			vms_uuid="$text"
+			setconfig vms_uuid "$text" "$CFG"
+		else
+			echo -e "\033[31m不是合法的UUID格式，请重新输入或使用随机生成功能！\033[0m"
+			sleep 1
+		fi
+		set_vmess
+	;;
+	5)
+		vms_uuid=$(cat /proc/sys/kernel/random/uuid)
+		setconfig vms_uuid "$vms_uuid" "$CFG"
+		sleep 1
+		set_vmess
+	;;
+	*) errornum ;;
+	esac		
+}
 set_tailscale(){
 	[ -n "$ts_auth_key" ] && ts_auth_key_info='*********'
 	echo -----------------------------------------------
@@ -226,7 +299,6 @@ set_tailscale(){
 	*) errornum ;;
 	esac		
 }
-
 set_wireguard(){
 	[ -n "$wg_public_key" ] && wgp_key_info='*********' || unset wgp_key_info
 	[ -n "$wg_private_key" ] && wgv_key_info='*********' || unset wgv_key_info
@@ -298,3 +370,4 @@ set_wireguard(){
 	*) errornum ;;
 	esac		
 }
+

@@ -569,10 +569,10 @@ setport() { #端口设置
         elif [ -n "$(netstat -ntul | grep ":$portx ")" ]; then
             echo -e "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
             inputport
-        else
+		else
             setconfig $xport $portx
             echo -e "\033[32m设置成功！！！\033[0m"
-            setport
+			setport
         fi
     }
     echo "-----------------------------------------------"
@@ -1868,7 +1868,7 @@ advanced_set() { #进阶设置
     echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
     echo -e "\033[33m如您并不了解ShellCrash的运行机制，请勿更改本页面功能！\033[0m"
     echo "-----------------------------------------------"
-    #echo -e " 2 配置Meta特性"
+    echo -e " 1 访问与控制"
     echo -e " 3 配置公网及局域网防火墙"
     [ "$disoverride" != "1" ] && {
         echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
@@ -1882,7 +1882,7 @@ advanced_set() { #进阶设置
     case "$num" in
     0) ;;
 	1)
-		. "$CRASHDIR"/components/gateway.sh && gateway
+		. "$CRASHDIR"/menus/gateway.sh && gateway
 		advanced_set
 	;;
     3)
