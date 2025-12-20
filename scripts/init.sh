@@ -256,8 +256,7 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 [ -w /etc/profile ] && profile=/etc/profile
 set_profile() {
     [ -z "$my_alias" ] && my_alias=crash
-    sed -i "/alias crash=*/"d "$1"
-    sed -i "/alias ${my_alias}=*/"d "$1"
+    sed -i "/ShellCrash\/menu.sh/"d "$profile"
     echo "alias ${my_alias}=\"$shtype $CRASHDIR/menu.sh\"" >>"$1" #设置快捷命令环境变量
     sed -i '/export CRASHDIR=*/'d "$1"
     echo "export CRASHDIR=\"$CRASHDIR\"" >>"$1" #设置路径环境变量

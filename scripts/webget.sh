@@ -1333,7 +1333,10 @@ getcore(){ #下载内核文件
 		rm -rf ${TMPDIR}/core_new.tar.gz
 		[ -z "$custcorelink" ] && error_down
 	else
-		[ -n "$(pidof CrashCore)" ] && ${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
+		[ -n "$(pidof CrashCore)" ] && {
+			${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
+			rm -rf "$TMPDIR"/CrashCore #删除缓存内核防止缓存空间不足
+		}
 		[ -f ${TMPDIR}/core_new.tar.gz ] && {
 			mkdir -p ${TMPDIR}/core_tmp
 			[ "$BINDIR" = "$TMPDIR" ] && rm -rf ${TMPDIR}/CrashCore #小闪存模式防止空间不足

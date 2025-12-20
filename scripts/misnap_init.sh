@@ -3,6 +3,7 @@
 
 CRASHDIR="$(uci get firewall.ShellCrash.path | sed 's/\/misnap_init.sh//')"
 profile=/etc/profile
+. "$CRASHDIR"/configs/ShellCrash.cfg
 
 autoSSH(){
 	#自动开启SSH
@@ -55,12 +56,11 @@ init(){
 	done
 	sleep 20
 	#初始化环境变量
-	sed -i "/alias crash/d" $profile
-	sed -i "/alias clash/d" $profile
-	sed -i "/export CRASHDIR/d" $profile
-	echo "alias crash=\"sh $CRASHDIR/menu.sh\"" >>$profile
-	echo "alias clash=\"sh $CRASHDIR/menu.sh\"" >>$profile
-	echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
+    [ -z "$my_alias" ] && my_alias=crash
+    sed -i "/ShellCrash\/menu.sh/"d "$profile"
+    echo "alias ${my_alias}=\"sh $CRASHDIR/menu.sh\"" >>"$profile"
+	sed -i "/export CRASHDIR/d" "$profile"
+	echo "export CRASHDIR=\"$CRASHDIR\"" >>"$profile"
 	autoSSH #软固化功能
 	auto_clean #自动清理
 	#设置init.d服务
