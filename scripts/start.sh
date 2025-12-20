@@ -617,6 +617,16 @@ EOF
             IFS="$oldIFS"
         done
     }
+    #添加自定义入站
+	[ "$vms_service" = ON ] || [ "$sss_service" = ON ] && {
+		. "$CRASHDIR"/configs/gateway.cfg
+		. "$CRASHDIR"/libs/meta_listeners.sh
+	}
+    #生成自定义出站
+	[ "$wg_service" = ON ] && {
+		. "$CRASHDIR"/configs/gateway.cfg
+		. "$CRASHDIR"/libs/meta_proxies.sh
+	}
     #节点绕过功能支持
     sed -i "/#节点绕过/d" "$TMPDIR"/rules.yaml
     [ "$proxies_bypass" = "已启用" ] && {
@@ -692,10 +702,10 @@ modify_json() { #修饰singbox1.13配置文件
         cat "$TMPDIR"/format.json | sed -n '/^  "providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
     }
     cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
-    #生成log.json
+    #生成endpoints.json
 	[ "$ts_service" = ON ] || [ "$wg_service" = ON ] && {
 		. "$CRASHDIR"/configs/gateway.cfg
-		. "$CRASHDIR"/components/endpoints.sh
+		. "$CRASHDIR"/libs/sb_endpoints.sh
 	}
 	#生成log.json
     cat >"$TMPDIR"/jsons/log.json <<EOF
@@ -891,6 +901,11 @@ EOF
   ]
 }
 EOF
+    #inbounds.json添加自定义入站
+	[ "$vms_service" = ON ] || [ "$sss_service" = ON ] && {
+		. "$CRASHDIR"/configs/gateway.cfg
+		. "$CRASHDIR"/libs/sb_inbounds.sh
+	}
     if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
         [ "ipv6_redir" = '已开启' ] && ipv6_address='"fe80::e5c5:2469:d09b:609a/64",'
         cat >>"$TMPDIR"/jsons/tun.json <<EOF

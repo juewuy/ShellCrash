@@ -23,9 +23,8 @@ EOF
 }
 
 [ "$wg_service" = ON ] && {
-	echo "$crashcore" | grep -q 'singbox' && {
-		[ -n "$wg_ipv6" ] && wg_ipv6_add=", \"$wg_ipv6\""
-		cat >"$TMPDIR"/jsons/wireguard.json <<EOF
+	[ -n "$wg_ipv6" ] && wg_ipv6_add=", \"$wg_ipv6\""
+	cat >"$TMPDIR"/jsons/wireguard.json <<EOF
 {
   "endpoints": [
 	{
@@ -48,22 +47,4 @@ EOF
   ]
 }
 EOF
-	}
-	#meta内核wg生成
-	echo "$crashcore" | grep -q 'meta' && {
-		cat >"$TMPDIR"/yamls/wireguard.yaml <<EOF
-- name: "wg"
-  type: wireguard
-  private-key: $wg_private_key
-  server: $wg_server
-  port: $wg_port
-  ip: $wg_ipv4
-  ipv6: $wg_ipv6
-  public-key: $wg_public_key
-  allowed-ips: ['0.0.0.0/0', '::/0']
-  pre-shared-key: $wg_pre_shared_key
-  mtu: 1420
-  udp: true
-EOF
-	}
 }

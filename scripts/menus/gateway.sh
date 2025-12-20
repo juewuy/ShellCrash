@@ -4,7 +4,7 @@
 CFG="$CRASHDIR"/configs/gateway.cfg
 . "$CFG"
 
-gateway(){
+gateway(){ #访问与控制主菜单
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
 	echo -----------------------------------------------
@@ -182,11 +182,11 @@ set_bot_tg(){
 	esac		
 }
 set_ddns(){
-	echo
+	echo 等待施工
 }
 set_vmess(){
 	echo -----------------------------------------------
-	echo -e "\033[31m注意：\033[0m启动内核服务后会自动开放相应端口公网访问，请谨慎使用！"
+	echo -e "\033[31m注意：\033[0m启动内核服务后会自动开放相应端口公网访问，请谨慎使用！\n      脚本只提供基础功能，更多需求请使用自定义配置文件功能！"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m启用/关闭\033[0mVmess入站	\033[32m$vms_service\033[0m"
 	echo -----------------------------------------------
@@ -249,6 +249,109 @@ set_vmess(){
 		setconfig vms_uuid "$vms_uuid" "$CFG"
 		sleep 1
 		set_vmess
+	;;
+	*) errornum ;;
+	esac		
+}
+set_shadowsocks(){
+	[ -z "$sss_cipher" ] && sss_cipher='xchacha20-ietf-poly1305'
+	echo -----------------------------------------------
+	echo -e "\033[31m注意：\033[0m启动内核服务后会自动开放相应端口公网访问，请谨慎使用！\n      脚本只提供基础功能，更多需求请使用自定义配置文件功能！"
+	echo -----------------------------------------------
+	echo -e " 1 \033[32m启用/关闭\033[0mShadowSocks入站	\033[32m$sss_service\033[0m"
+	echo -----------------------------------------------
+	echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$sss_port\033[0m"
+	echo -e " 3 选择\033[33m加密协议\033[0m：	\033[33m$sss_cipher\033[0m"
+	echo -e " 4 设置\033[36mpassword\033[0m：	\033[36m$sss_pwd\033[0m"
+	echo -e " 0 返回上级菜单 \033[0m"
+	echo -----------------------------------------------
+	read -p "请输入对应数字 > " num
+	case "$num" in
+	0) ;;
+	1)
+		if [ -n "$sss_port" ] && [ -n "$sss_pwd" ];then
+			[ "$sss_service" = ON ] && sss_service=OFF || sss_service=ON
+			setconfig sss_service "$sss_service"
+		else
+			echo -e "\033[31m请先完成必选设置！\033[0m"
+			sleep 1
+		fi
+		set_shadowsocks
+	;;
+	2)
+		read -p "请输入端口号(输入0删除) > " text
+		[ "$text" = 0 ] && unset sss_port
+		if sh "$CRASHDIR"/libs/check_port.sh "$text"; then
+			sss_port="$text"
+			setconfig sss_port "$text" "$CFG"
+		else
+			sleep 1
+		fi
+		set_shadowsocks
+	;;
+	3)
+		echo -----------------------------------------------
+		echo -e " 1 \033[32mxchacha20-ietf-poly1305\033[0m"
+		echo -e " 2 \033[32mchacha20-ietf-poly1305\033[0m"
+		echo -e " 3 \033[32maes-128-gcm\033[0m"
+		echo -e " 4 \033[32maes-256-gcm\033[0m"
+		ckcmd openssl && {
+			echo -----------------------------------------------
+			echo -e "\033[31m注意：\033[0m2022系列加密必须使用OpenSSL随机生成的password！"
+			echo -e " 5 \033[32m2022-blake3-chacha20-poly1305\033[0m"
+			echo -e " 6 \033[32m2022-blake3-aes-128-gcm\033[0m"
+			echo -e " 7 \033[32m2022-blake3-aes-256-gcm\033[0m"
+		}
+		echo -----------------------------------------------
+		echo -e " 0 返回上级菜单"
+		read -p "请选择要使用的加密协议 > " num
+		case "$num" in
+		1)
+			sss_cipher=xchacha20-ietf-poly1305
+			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+		;;
+		2)
+			sss_cipher=chacha20-ietf-poly1305
+			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+		;;
+		3)
+			sss_cipher=aes-128-gcm
+			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+		;;
+		4)
+			sss_cipher=aes-256-gcm
+			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+		;;
+		5)
+			sss_cipher=2022-blake3-chacha20-poly1305
+			sss_pwd=$(openssl rand --base64 32)
+		;;
+		6)
+			sss_cipher=2022-blake3-aes-128-gcm
+			sss_pwd=$(openssl rand --base64 16)
+		;;
+		7)
+			sss_cipher=2022-blake3-aes-256-gcm
+			sss_pwd=$(openssl rand --base64 32)
+		;;
+		*)
+		;;
+		esac
+		setconfig sss_cipher "$sss_cipher" "$CFG"
+		setconfig sss_pwd "$sss_pwd" "$CFG"
+		set_shadowsocks
+	;;
+	4)
+		if echo "$sss_cipher" |grep -q '2022-blake3';then
+			echo -e "\033[31m注意：\033[0m2022系列加密必须使用脚本随机生成的password！"
+			sleep 1
+		else
+			read -p "请输入秘钥(输入0删除) > " text
+			[ "$text" = 0 ] && unset sss_pwd
+			sss_pwd="$text"
+			setconfig sss_pwd "$text" "$CFG"
+		fi
+		set_shadowsocks
 	;;
 	*) errornum ;;
 	esac		
