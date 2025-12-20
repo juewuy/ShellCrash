@@ -2148,12 +2148,11 @@ init)
             profile=$(cat /etc/profile | grep -oE '\-f.*jffs.*profile' | awk '{print $2}')
         fi
     fi
-    sed -i "/alias crash/d" $profile
-    sed -i "/alias clash/d" $profile
-    sed -i "/export CRASHDIR/d" $profile
-    echo "alias crash=\"$CRASHDIR/menu.sh\"" >>$profile
-    echo "alias clash=\"$CRASHDIR/menu.sh\"" >>$profile
-    echo "export CRASHDIR=\"$CRASHDIR\"" >>$profile
+    [ -z "$my_alias" ] && my_alias=crash
+    sed -i "/ShellCrash\/menu.sh/"d "$profile"
+    echo "alias ${my_alias}=\"sh $CRASHDIR/menu.sh\"" >>"$profile"
+    sed -i "/export CRASHDIR/d" "$profile"
+    echo "export CRASHDIR=\"$CRASHDIR\"" >>"$profile"
     [ -f "$CRASHDIR"/.dis_startup ] && cronset "保守模式守护进程" || $0 start
     ;;
 webget)
