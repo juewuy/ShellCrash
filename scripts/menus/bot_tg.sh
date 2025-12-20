@@ -1,45 +1,25 @@
 #!/bin/sh
 
+. "$CRASHDIR"/configs/ShellCrash.cfg
 . "$CRASHDIR"/configs/gateway.cfg
+. "$CRASHDIR"/libs/web_json.sh
+
 OFFSET=0
 API="https://api.telegram.org/bot$TG_TOKEN"
 STATE_FILE="/tmp/ShellCrash/tgbot_state"
 LOGFILE="/tmp/ShellCrash/tgbot.log"
 
 ### --- 基础函数 --- ###
-setproxy(){
-	[ -n "$(pidof CrashCore)" ] && {
-		[ -n "$authentication" ] && auth="$authentication@"
-		[ -z "$mix_port" ] && mix_port=7890
-		export https_proxy="http://${auth}127.0.0.1:$mix_port"
-	}
-}
-webget() {
-	setproxy
-	if curl --version >/dev/null 2>&1; then
-		curl -kfsSl --connect-timeout 3 $1 2>/dev/null
-	else
-		wget -Y on -q --timeout=3 -O - $1
-	fi
-}
-webpost() {
-	setproxy
-	if curl --version >/dev/null 2>&1; then
-		curl -kfsSl -X POST --connect-timeout 3 -H "Content-Type: application/json; charset=utf-8" "$1" -d "$2" >/dev/null 2>&1
-	else
-		wget -Y on -q --timeout=3 --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1"
-	fi
-}
 send_msg() {
     TEXT="$1"
-	webpost "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\"}"
+	web_json_post "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\"}"
 }
 send_help(){
     TEXT=$(cat <<EOF
 进群讨论：
-https://t.me/+RKujv98Gbx5zGY-P
+https://t.me/+6AElkMDzwPxmMmM1
 项目地址：
-https://github.com/juewuy/ShellCrash
+https://github.com/juewuy/ShellClash
 相关教程：
 https://juewuy.github.io
 请喝咖啡：
@@ -93,7 +73,7 @@ EOF
 EOF
 )
 
-webpost "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\",\"reply_markup\":$MENU}"
+web_json_post "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\",\"reply_markup\":$MENU}"
 
 }
 
@@ -129,7 +109,7 @@ do_set_sub() {
 ### --- 轮询主进程 --- ###
 polling(){
 	while true; do
-		UPDATES=$(webget "$API/getUpdates?timeout=25&offset=$OFFSET")
+		UPDATES=$(web_json_get "$API/getUpdates?timeout=25&offset=$OFFSET")
 
 		echo "$UPDATES" | grep -q '"update_id"' || continue
 
@@ -205,6 +185,6 @@ polling(){
 
 	done
 }
-
+send_menu
 polling
 

@@ -2,6 +2,7 @@
 # Copyright (C) Juewuy
 
 CFG="$CRASHDIR"/configs/gateway.cfg
+touch "$CFG"
 . "$CFG"
 
 gateway(){ #访问与控制主菜单
@@ -9,13 +10,13 @@ gateway(){ #访问与控制主菜单
 	echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
 	echo -----------------------------------------------
 	echo -e " 1 配置公网访问防火墙"
-	echo -e " 2 配置Telegram专属控制机器人"
+	echo -e " 2 配置Telegram专属控制机器人		\033[32m$bot_tg_service\033[0m"
 	echo -e " 3 配置DDNS自动域名"
 	[ "$disoverride" != "1" ] && {
-		echo -e " 4 自定义\033[32m公网Vmess入站\033[0m节点"
-		echo -e " 5 自定义\033[32m公网ShadowSocks入站\033[0m节点"
-		echo -e " 6 配置\033[32mTailscale内网穿透\033[0m(限Singbox)"
-		echo -e " 7 配置\033[32mWireguard客户端\033[0m"
+		echo -e " 4 自定义\033[33m公网Vmess入站\033[0m节点		\033[32m$vms_service\033[0m"
+		echo -e " 5 自定义\033[33m公网ShadowSocks入站\033[0m节点	\033[32m$sss_service\033[0m"
+		echo -e " 6 配置\033[36mTailscale内网穿透\033[0m(限Singbox)	\033[32m$ts_service\033[0m"
+		echo -e " 7 配置\033[36mWireguard客户端\033[0m(限Singbox)	\033[32m$wg_service\033[0m"
 	}
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo -----------------------------------------------
@@ -48,12 +49,16 @@ gateway(){ #访问与控制主菜单
 		else
 			echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
 			sleep 1
-			checkupdate && setcore
 		fi
 		gateway
 	;;
 	7)
-		set_wireguard
+		if echo "$crashcore" | grep -q 'sing';then
+			set_wireguard
+		else
+			echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
+			sleep 1
+		fi
 		gateway
 	;;
 	*) errornum ;;
@@ -112,10 +117,9 @@ set_bot_tg_init(){
 	echo -----------------------------------------------
 	read -p "我已经发送完成(1/0) > " res
 	if [ "$res" = 1 ]; then
-		url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
-		[ -n "$authentication" ] && auth="$authentication@"
-		export https_proxy="http://${auth}127.0.0.1:$mix_port"
-		chat=$(webget $url_tg | tail -n -1)
+		. "$CRASHDIR"/libs/web_json.sh #加载web工具
+		bot_api=https://api.telegram.org/bot$TOKEN
+		chat=$(web_json_get "$bot_api/getUpdates" | tail -n -1)
 		[ -n "$chat" ] && chat_ID=$(echo $chat | grep -oE '"id":.*,"is_bot":false' | sed s'/"id"://'g | sed s'/,"is_bot":false//'g)
 		[ -z "$chat_ID" ] && {
 			echo -e "\033[31m无法获取对话ID，请确认使用的不是已经被绑定的机器人，或手动输入ChatID！\033[0m"
@@ -126,15 +130,19 @@ set_bot_tg_init(){
 			setconfig TG_TOKEN $TOKEN "$CFG"
 			setconfig TG_CHATID $chat_ID "$CFG"
 			#设置机器人快捷命令
-			curl -s -X POST "https://api.telegram.org/bot$TOKEN/setMyCommands" \
-			  -H "Content-Type: application/json" \
-			  -d '{
-					"commands": [
-					  {"command": "crash", "description": "呼出ShellCrash菜单"},
-					  {"command": "help",  "description": "查看帮助"}
-					]
-				  }'
-			echo -e "\033[32m已完成Telegram机器人设置！\033[0m"
+			JSON=$(cat <<EOF
+{
+  "commands": [
+    {"command": "crash", "description": "呼出ShellCrash菜单"},
+    {"command": "help",  "description": "查看帮助"}
+  ]
+}
+EOF
+)
+			TEXT='已完成Telegram机器人设置！'
+			web_json_post "$bot_api/setMyCommands" "$JSON"
+			web_json_post "$bot_api/sendMessage" '{"chat_id":"'"$chat_ID"'","text":"'"$TEXT"'","parse_mode":"Markdown"}'
+			echo -e "\033[32m$TEXT\033[0m"
 			return 0
 		else
 			echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
@@ -143,12 +151,13 @@ set_bot_tg_init(){
 	fi
 }
 set_bot_tg_service(){
+	PID=$(pidof /bin/sh "$CRASHDIR"/menus/bot_tg.sh)
 	if [ "$bot_tg_service" = ON ];then
 		bot_tg_service=OFF
-		PID=$(pidof bot_tg.sh) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
+		[ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
 	else
 		bot_tg_service=ON
-		[ -z "$(pidof bot_tg.sh)" ] && "$CRASHDIR"/components/bot_tg.sh &
+		[ -z "$PID" ] && "$CRASHDIR"/menus/bot_tg.sh &
 	fi
 	setconfig bot_tg_service "$bot_tg_service"
 }
@@ -172,9 +181,12 @@ set_bot_tg(){
 		else
 			set_bot_tg_init && set_bot_tg_service
 		fi
+		sleep 1
+		set_bot_tg
 	;;
 	2)
 		set_bot_tg_init && set_bot_tg_service
+		set_bot_tg
 	;;
 	*)
 		errornum

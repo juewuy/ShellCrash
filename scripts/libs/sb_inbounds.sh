@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 [ "$vms_service" = ON ] && {
-	[ -n "$vms_ws_path" ] && transport=', "transport": { "type": "ws", "path": '"$vms_ws_path"' }'
+	[ -n "$vms_ws_path" ] && transport=', "transport": { "type": "ws", "path": "'"$vms_ws_path"'" }'
 	cat >"$TMPDIR"/jsons/vmess-in.json <<EOF
 {
   "inbounds": [

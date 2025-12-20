@@ -666,7 +666,7 @@ EOF
     for char in $yaml_char; do #将额外配置文件合并
         [ -s "$TMPDIR"/${char}.yaml ] && {
             sed -i "1i\\${char}:" "$TMPDIR"/${char}.yaml
-            yaml_add="$yaml_add "$TMPDIR"/${char}.yaml"
+            yaml_add="$yaml_add $TMPDIR/${char}.yaml"
         }
     done
     #合并完整配置文件
@@ -2023,6 +2023,8 @@ afstart() { #启动后
             line=$(grep -En "fw.* start" /etc/init.d/firewall | cut -d ":" -f 1)
             sed -i "${line}a\\. "$CRASHDIR"/task/affirewall" /etc/init.d/firewall
         } &
+		#启动TG机器人
+		[ "$bot_tg_service" = ON ] && "$CRASHDIR"/menus/bot_tg.sh &
     else
         start_error
         $0 stop
@@ -2120,6 +2122,7 @@ stop)
         stop_firewall #清理路由策略
     fi
     PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
+	PID=$(pidof /bin/sh "$CRASHDIR"/menus/bot_tg.sh) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
     #清理缓存目录
     rm -rf "$TMPDIR"/CrashCore
     ;;
