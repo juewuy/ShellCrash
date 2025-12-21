@@ -1873,9 +1873,9 @@ clash_check() { #clash启动前检查
         core_exchange meta '当前内核不支持非root用户启用本机代理'
     core_check
     #预下载GeoIP数据库并排除存在自定义数据库链接的情况
-    [ -n "$(grep -oEi 'geoip' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geoip:|mmdb:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo Country.mmdb cn_mini.mmdb
+    [ -n "$(grep -oEi 'geoip:' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geoip:|mmdb:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo Country.mmdb cn_mini.mmdb
     #预下载GeoSite数据库并排除存在自定义数据库链接的情况
-    [ -n "$(grep -oEi 'geosite' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo GeoSite.dat geosite.dat
+    [ -n "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo GeoSite.dat geosite.dat
     #预下载cn.mrs数据库
     [ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*cn')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/cn.mrs mrs_geosite_cn.mrs
     return 0
