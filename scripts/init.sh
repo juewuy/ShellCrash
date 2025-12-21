@@ -222,9 +222,9 @@ fi
 #修饰文件及版本号
 command -v bash >/dev/null 2>&1 && shtype=bash
 [ -x /bin/ash ] && shtype=ash
-for file in start.sh task.sh menu.sh; do
+for file in start.sh menus/task.sh menu.sh; do
     sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file} 2>/dev/null
-    chmod 755 ${CRASHDIR}/${file} 2>/dev/null
+    chmod +x ${CRASHDIR}/${file} 2>/dev/null
 done
 setconfig versionsh_l $version
 #生成用于执行启动服务的变量文件
@@ -339,7 +339,6 @@ for file in fake_ip_filter mac web_save servers.list fake_ip_filter.list fallbac
     mv -f ${CRASHDIR}/$file ${CRASHDIR}/configs/$file 2>/dev/null
 done
 #配置文件改名
-mv -f ${CRASHDIR}/mark ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 mv -f ${CRASHDIR}/configs/ShellClash.cfg ${CRASHDIR}/configs/ShellCrash.cfg 2>/dev/null
 #数据库改名
 mv -f ${CRASHDIR}/geosite.dat ${CRASHDIR}/GeoSite.dat 2>/dev/null
@@ -355,7 +354,7 @@ mv -f ${CRASHDIR}/clash ${CRASHDIR}/CrashCore 2>/dev/null
 for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh; do
     mv -f ${CRASHDIR}/$file ${CRASHDIR}/tools/$file 2>/dev/null
 done
-for file in cron task.sh task.list; do
+for file in cron task.list; do
     mv -f ${CRASHDIR}/$file ${CRASHDIR}/task/$file 2>/dev/null
 done
 #旧版文件清理
@@ -364,9 +363,10 @@ sed -i '/shellclash/d' /etc/passwd
 sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash
 rm -rf ${CRASHDIR}/rules
+rm -rf "$CRASHDIR/task/task.sh"
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
 for file in CrashCore clash.sh getdate.sh core.new clashservice log shellcrash.service mark? mark.bak; do
-    rm -rf ${CRASHDIR}/$file
+    rm -rf "$CRASHDIR/$file"
 done
 #旧版变量改名
 sed -i "s/clashcore/crashcore/g" $configpath

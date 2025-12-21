@@ -10,6 +10,9 @@ CRASHDIR=$(
 . "$CRASHDIR"/configs/command.env >/dev/null 2>&1
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && . "$CRASHDIR"/init.sh >/dev/null 2>&1
 [ ! -f "$TMPDIR" ] && mkdir -p "$TMPDIR"
+#加载工具
+. "$CRASHDIR"/libs/set_config.sh
+. "$CRASHDIR"/libs/check_cmd.sh
 
 #脚本内部工具
 getconfig() { #读取配置及全局变量
@@ -66,18 +69,7 @@ getconfig() { #读取配置及全局变量
     }
     [ "$user_agent" = "none" ] && unset user_agent
 }
-setconfig() { #脚本配置工具
-    #参数1代表变量名，参数2代表变量值,参数3即文件路径
-    [ -z "$3" ] && configpath="$CRASHDIR"/configs/ShellCrash.cfg || configpath="${3}"
-    if grep -q "^${1}=" "$configpath"; then
-        sed -i "s#^${1}=.*#${1}=${2}#g" "$configpath"
-    else
-        printf '%s=%s\n' "$1" "$2" >>"$configpath"
-    fi
-}
-ckcmd() { #检查命令是否存在
-    command -v sh >/dev/null 2>&1 && command -v "$1" >/dev/null 2>&1 || type "$1" >/dev/null 2>&1
-}
+
 ckgeo() { #查找及下载Geo数据文件
     [ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
     find --help 2>&1 | grep -q size && find_para=' -size +20' #find命令兼容

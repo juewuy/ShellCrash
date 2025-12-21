@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ash
 # Copyright (C) Juewuy
 
 #加载全局变量

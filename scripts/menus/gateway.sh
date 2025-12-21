@@ -1,17 +1,14 @@
 #!/bin/sh
 # Copyright (C) Juewuy
-
-CFG="$CRASHDIR"/configs/gateway.cfg
-touch "$CFG"
-. "$CFG"
+. "$GT_CFG_PATH"
 
 gateway(){ #访问与控制主菜单
 	echo -----------------------------------------------
 	echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
 	echo -----------------------------------------------
-	echo -e " 1 配置公网访问防火墙"
-	echo -e " 2 配置Telegram专属控制机器人		\033[32m$bot_tg_service\033[0m"
-	echo -e " 3 配置DDNS自动域名"
+	echo -e " 1 配置\033[33m公网访问防火墙\033[0m"
+	echo -e " 2 配置\033[36mTelegram专属控制机器人\033[0m		\033[32m$bot_tg_service\033[0m"
+	echo -e " 3 配置\033[36mDDNS自动域名\033[0m"
 	[ "$disoverride" != "1" ] && {
 		echo -e " 4 自定义\033[33m公网Vmess入站\033[0m节点		\033[32m$vms_service\033[0m"
 		echo -e " 5 自定义\033[33m公网ShadowSocks入站\033[0m节点	\033[32m$sss_service\033[0m"
@@ -32,7 +29,7 @@ gateway(){ #访问与控制主菜单
 		gateway
 	;;
 	3)
-		set_ddns
+		. "$CRASHDIR"/menus/ddns.sh && ddns_menu
 		gateway
 	;;
 	4)
@@ -193,9 +190,6 @@ set_bot_tg(){
 	;;
 	esac		
 }
-set_ddns(){
-	echo 等待施工
-}
 set_vmess(){
 	echo -----------------------------------------------
 	echo -e "\033[31m注意：\033[0m启动内核服务后会自动开放相应端口公网访问，请谨慎使用！\n      脚本只提供基础功能，更多需求请使用自定义配置文件功能！"
@@ -224,7 +218,8 @@ set_vmess(){
 	2)
 		read -p "请输入端口号(输入0删除) > " text
 		[ "$text" = 0 ] && unset vms_port
-		if sh "$CRASHDIR"/menus/check_port.sh "$text"; then
+		. "$CRASHDIR"/menus/check_port.sh
+		if check_port "$text"; then
 			vms_port="$text"
 			setconfig vms_port "$text" "$CFG"
 		else
@@ -293,7 +288,8 @@ set_shadowsocks(){
 	2)
 		read -p "请输入端口号(输入0删除) > " text
 		[ "$text" = 0 ] && unset sss_port
-		if sh "$CRASHDIR"/menus/check_port.sh "$text"; then
+		. "$CRASHDIR"/menus/check_port.sh
+		if check_port "$text"; then
 			sss_port="$text"
 			setconfig sss_port "$text" "$CFG"
 		else
