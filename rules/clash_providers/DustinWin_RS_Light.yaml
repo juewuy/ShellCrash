@@ -1,19 +1,20 @@
 #DustinWin-ruleset轻量规则
 proxy-groups:
-  - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, 👉 手动选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🎯 全球直连, type: select, proxies: [DIRECT, 🚀 节点选择]}
   - {name: 🧱 代理域名, type: select, proxies: [🚀 节点选择, DIRECT]}
   - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}, 🎯 全球直连]}
 
-  - {name: 👑 高级节点, type: url-test, tolerance: 50, include-all-providers: true, filter: "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"}
-  - {name: 📉 省流节点, type: url-test, tolerance: 100, include-all-providers: true, filter: "(0\\.[1-5]|低倍率|省流|大流量)"}
-  - {name: ♻️ 自动选择, type: url-test, tolerance: 100, include-all-providers: true}
-  - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all-providers: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
-  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all-providers: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)"}
-  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 50, include-all-providers: true, filter: "(?i)(🇯🇵|日|jp|japan)"}
-  - {name: 🇸🇬 新加坡节点, type: url-test, tolerance: 50, include-all-providers: true, filter: "(?i)(🇸🇬|新|sg|singapore)"}
-  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 100, include-all-providers: true, filter: "(?i)(🇺🇸|美|us|unitedstates|united states)"}
+  - {name: 👑 高级节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"}
+  - {name: 📉 省流节点, type: url-test, tolerance: 100, include-all: true, filter: "(0\\.[1-5]|低倍率|省流|大流量)"}
+  - {name: ♻️ 自动选择, type: url-test, tolerance: 100, include-all: true}
+  - {name: 👉 手动选择, type: select, include-all: true}
+  - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
+  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)"}
+  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇯🇵|日|jp|japan)"}
+  - {name: 🇸🇬 新加坡节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新|sg|singapore)"}
+  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 100, include-all: true, filter: "(?i)(🇺🇸|美|us|unitedstates|united states)"}
 
 rule-providers:
   cn:
