@@ -224,7 +224,7 @@ set_vmess(){
 	2)
 		read -p "请输入端口号(输入0删除) > " text
 		[ "$text" = 0 ] && unset vms_port
-		if sh "$CRASHDIR"/libs/check_port.sh "$text"; then
+		if sh "$CRASHDIR"/menus/check_port.sh "$text"; then
 			vms_port="$text"
 			setconfig vms_port "$text" "$CFG"
 		else
@@ -293,7 +293,7 @@ set_shadowsocks(){
 	2)
 		read -p "请输入端口号(输入0删除) > " text
 		[ "$text" = 0 ] && unset sss_port
-		if sh "$CRASHDIR"/libs/check_port.sh "$text"; then
+		if sh "$CRASHDIR"/menus/check_port.sh "$text"; then
 			sss_port="$text"
 			setconfig sss_port "$text" "$CFG"
 		else

@@ -622,11 +622,6 @@ EOF
 		. "$CRASHDIR"/configs/gateway.cfg
 		. "$CRASHDIR"/libs/meta_listeners.sh
 	}
-    #生成自定义出站
-	[ "$wg_service" = ON ] && {
-		. "$CRASHDIR"/configs/gateway.cfg
-		. "$CRASHDIR"/libs/meta_proxies.sh
-	}
     #节点绕过功能支持
     sed -i "/#节点绕过/d" "$TMPDIR"/rules.yaml
     [ "$proxies_bypass" = "已启用" ] && {
@@ -1913,7 +1908,7 @@ singbox_check() { #singbox启动前检查
     return 0
 }
 network_check() { #检查是否联网
-    for text in 223.5.5.5 dns.alidns.com doh.pub doh.360.cn; do
+    for text in 223.5.5.5 1.2.4.8 dns.alidns.com doh.pub; do
         ping -c 3 $text >/dev/null 2>&1 && return 0
         sleep 5
     done
