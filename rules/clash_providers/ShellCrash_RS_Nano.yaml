@@ -1,6 +1,6 @@
-#Ruleset极简规则
+#ShellCrash-ruleset极简规则
 proxy-groups:
-  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all-providers: true}
+  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all: true}
   - {name: 🎯 全球直连, type: select, proxies: [DIRECT, 🚀 节点选择]}
 rule-providers:
   cn:
