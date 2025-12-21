@@ -569,10 +569,10 @@ setport() { #端口设置
         elif [ -n "$(netstat -ntul | grep ":$portx ")" ]; then
             echo -e "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
             inputport
-        else
+		else
             setconfig $xport $portx
             echo -e "\033[32m设置成功！！！\033[0m"
-            setport
+			setport
         fi
     }
     echo "-----------------------------------------------"
@@ -895,46 +895,7 @@ setipv6() { #ipv6设置
     esac
 }
 setfirewall() { #防火墙设置
-    set_cust_host_ipv4() {
-        [ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="未启用"
 
-        echo "-----------------------------------------------"
-        echo -e "当前默认透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ' && echo) \033[0m"
-        echo -e "当前已添加的自定义网段为:\033[36m$cust_host_ipv4\033[0m"
-        echo "-----------------------------------------------"
-        echo -e " 1 移除所有自定义网段"
-        echo -e " 2 使用自定义网段覆盖默认网段	\033[36m$replace_default_host_ipv4\033[0m"
-        echo -e " 0 返回上级菜单"
-        read -p "请输入对应的序号或需要额外添加的网段 > " text
-        case "$text" in
-        2)
-            if [ "$replace_default_host_ipv4" == "未启用" ]; then
-                replace_default_host_ipv4="已启用"
-            else
-                replace_default_host_ipv4="未启用"
-            fi
-            setconfig replace_default_host_ipv4 "$replace_default_host_ipv4"
-            set_cust_host_ipv4
-            ;;
-        1)
-            unset cust_host_ipv4
-            setconfig cust_host_ipv4
-            set_cust_host_ipv4
-            ;;
-        0) ;;
-        *)
-            if [ -n "$(echo $text | grep -Eo '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}'$)" -a -z "$(echo $cust_host_ipv4 | grep "$text")" ]; then
-                cust_host_ipv4="$cust_host_ipv4 $text"
-                setconfig cust_host_ipv4 "'$cust_host_ipv4'"
-            else
-                echo "-----------------------------------------------"
-                echo -e "\033[31m请输入正确的网段地址！\033[0m"
-            fi
-            sleep 1
-            set_cust_host_ipv4
-            ;;
-        esac
-    }
     [ -z "$public_support" ] && public_support=未开启
     [ -z "$public_mixport" ] && public_mixport=未开启
     [ -z "$ipv6_dns" ] && ipv6_dns=已开启
@@ -1868,7 +1829,7 @@ advanced_set() { #进阶设置
     echo -e "\033[30;47m欢迎使用进阶模式菜单：\033[0m"
     echo -e "\033[33m如您并不了解ShellCrash的运行机制，请勿更改本页面功能！\033[0m"
     echo "-----------------------------------------------"
-    #echo -e " 2 配置Meta特性"
+    echo -e " 1 访问与控制"
     echo -e " 3 配置公网及局域网防火墙"
     [ "$disoverride" != "1" ] && {
         echo -e " 4 启用域名嗅探:	\033[36m$sniffer\033[0m	————用于流媒体及防DNS污染"
@@ -1881,10 +1842,14 @@ advanced_set() { #进阶设置
     read -p "请输入对应数字 > " num
     case "$num" in
     0) ;;
+	1)
+		. "$CRASHDIR"/menus/gateway.sh && gateway
+		advanced_set
+	;;
     3)
         setfirewall
         advanced_set
-        ;;
+	;;
     4)
         echo "-----------------------------------------------"
         if [ "$sniffer" = "未启用" ]; then
@@ -1906,7 +1871,7 @@ advanced_set() { #进阶设置
         echo -e "\033[32m设置成功！\033[0m"
         sleep 1
         advanced_set
-        ;;
+	;;
     5)
         if [ -n "$(pidof CrashCore)" ]; then
             echo "-----------------------------------------------"
@@ -1920,7 +1885,7 @@ advanced_set() { #进阶设置
             setport
         fi
         advanced_set
-        ;;
+	;;
     9)
         echo -e " 1 备份脚本设置"
         echo -e " 2 还原脚本设置"
@@ -1951,7 +1916,7 @@ advanced_set() { #进阶设置
         fi
         echo -e "\033[33m请重新启动脚本！\033[0m"
         exit 0
-        ;;
+	;;
     *) errornum ;;
     esac
 }
@@ -2248,7 +2213,7 @@ main_menu() {
         ;;
     2)
         checkcfg=$(cat $CFG_PATH)
-        normal_set
+        . "$CRASHDIR"/menus/normal_set.sh && normal_set
         if [ -n "$PID" ]; then
             checkcfg_new=$(cat $CFG_PATH)
             [ "$checkcfg" != "$checkcfg_new" ] && checkrestart

@@ -295,7 +295,7 @@ urlencode() {
     | hexdump -v -e '/1 "%02X\n"' \
     | while read -r hex; do
         case "$hex" in
-                2D|2E|5F|7E|3[0-9]|4[1-9A-F]|5[0-9A]|6[1-9A-F]|7[0-9A-E])
+            2D|2E|5F|7E|3[0-9]|4[1-9A-F]|5[0-9A]|6[1-9A-F]|7[0-9A-E])
                 printf "\\$(printf '%03o' "0x$hex")"
                 ;;
             *)
@@ -617,6 +617,11 @@ EOF
             IFS="$oldIFS"
         done
     }
+    #添加自定义入站
+	[ "$vms_service" = ON ] || [ "$sss_service" = ON ] && {
+		. "$CRASHDIR"/configs/gateway.cfg
+		. "$CRASHDIR"/libs/meta_listeners.sh
+	}
     #节点绕过功能支持
     sed -i "/#节点绕过/d" "$TMPDIR"/rules.yaml
     [ "$proxies_bypass" = "已启用" ] && {
@@ -656,7 +661,7 @@ EOF
     for char in $yaml_char; do #将额外配置文件合并
         [ -s "$TMPDIR"/${char}.yaml ] && {
             sed -i "1i\\${char}:" "$TMPDIR"/${char}.yaml
-            yaml_add="$yaml_add "$TMPDIR"/${char}.yaml"
+            yaml_add="$yaml_add $TMPDIR/${char}.yaml"
         }
     done
     #合并完整配置文件
@@ -692,7 +697,12 @@ modify_json() { #修饰singbox1.13配置文件
         cat "$TMPDIR"/format.json | sed -n '/^  "providers":/,/^  "[a-z]/p' | sed '$d' >>"$TMPDIR"/jsons/providers.json
     }
     cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
-    #生成log.json
+    #生成endpoints.json
+	[ "$ts_service" = ON ] || [ "$wg_service" = ON ] && {
+		. "$CRASHDIR"/configs/gateway.cfg
+		. "$CRASHDIR"/libs/sb_endpoints.sh
+	}
+	#生成log.json
     cat >"$TMPDIR"/jsons/log.json <<EOF
 { "log": { "level": "info", "timestamp": true } }
 EOF
@@ -825,6 +835,7 @@ EOF
     #生成add_route.json
     #域名嗅探配置
     [ "$sniffer" = "已启用" ] && sniffer_set='{ "inbound": [ "redirect-in", "tproxy-in", "tun-in" ], "action": "sniff", "timeout": "500ms" },'
+	[ "advertise_exit_node" = true ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
     cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {
@@ -832,6 +843,7 @@ EOF
     "default_mark": $routing_mark,
 	"rules": [
 	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
+	  $tailscale_set
 	  $sniffer_set
       { "clash_mode": "Direct" , "outbound": "DIRECT" },
       { "clash_mode": "Global" , "outbound": "GLOBAL" }
@@ -884,6 +896,11 @@ EOF
   ]
 }
 EOF
+    #inbounds.json添加自定义入站
+	[ "$vms_service" = ON ] || [ "$sss_service" = ON ] && {
+		. "$CRASHDIR"/configs/gateway.cfg
+		. "$CRASHDIR"/libs/sb_inbounds.sh
+	}
     if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
         [ "ipv6_redir" = '已开启' ] && ipv6_address='"fe80::e5c5:2469:d09b:609a/64",'
         cat >>"$TMPDIR"/jsons/tun.json <<EOF
@@ -1891,7 +1908,7 @@ singbox_check() { #singbox启动前检查
     return 0
 }
 network_check() { #检查是否联网
-    for text in 223.5.5.5 dns.alidns.com doh.pub doh.360.cn; do
+    for text in 223.5.5.5 1.2.4.8 dns.alidns.com doh.pub; do
         ping -c 3 $text >/dev/null 2>&1 && return 0
         sleep 5
     done
@@ -2001,6 +2018,8 @@ afstart() { #启动后
             line=$(grep -En "fw.* start" /etc/init.d/firewall | cut -d ":" -f 1)
             sed -i "${line}a\\. "$CRASHDIR"/task/affirewall" /etc/init.d/firewall
         } &
+		#启动TG机器人
+		[ "$bot_tg_service" = ON ] && "$CRASHDIR"/menus/bot_tg.sh &
     else
         start_error
         $0 stop
@@ -2098,6 +2117,7 @@ stop)
         stop_firewall #清理路由策略
     fi
     PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
+	PID=$(pidof /bin/sh "$CRASHDIR"/menus/bot_tg.sh) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
     #清理缓存目录
     rm -rf "$TMPDIR"/CrashCore
     ;;
