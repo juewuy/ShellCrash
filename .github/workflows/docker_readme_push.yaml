@@ -1,0 +1,24 @@
+name: Update Docker Hub Description
+
+on:
+  push:
+    paths:
+      - 'docker/README.md'
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout。
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/shellcrash
+          readme-filepath: ./docker/README.md

@@ -1,4 +1,4 @@
-//Ruleset极简规则
+//ShellCrash-ruleset极简规则
 {
   "outbounds": [
     { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ {providers_tags}, "DIRECT" ], "use_all_providers": true },

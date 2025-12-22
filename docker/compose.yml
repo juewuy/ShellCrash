@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  shellclash:
+    image: shellclash:latest
+    container_name: shellclash
+    networks:
+      macvlan_lan:
+        ipv4_address: 192.168.31.222
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - "/dev/net/tun:/dev/net/tun"
+    sysctls:
+      net.ipv4.ip_forward: 1
+    volumes:
+      - /etc/ShellCrash:/root/ShellCrash
+    restart: unless-stopped
+    
+networks:
+  macvlan_lan:
+    name: macvlan_lan
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 192.168.31.0/24
+          gateway: 192.168.31.1

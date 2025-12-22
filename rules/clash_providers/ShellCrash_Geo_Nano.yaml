@@ -1,6 +1,6 @@
-#ShellCrash-GeoIP极简规则
+#ShellCrash-geosite极简规则
 proxy-groups:
-  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all-providers: true}
+  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all: true}
   - {name: 🎯 全球直连, type: select, proxies: [DIRECT, 🚀 节点选择]}
 rules:
   - GEOIP,cn,🎯 全球直连
