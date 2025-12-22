@@ -518,183 +518,6 @@ log_pusher() {
     *) errornum ;;
     esac
 }
-#新手引导
-userguide(){
-
-	forwhat(){
-		echo "-----------------------------------------------"
-		echo -e "\033[30;46m 欢迎使用ShellCrash新手引导！ \033[0m"
-		echo "-----------------------------------------------"
-		echo -e "\033[33m请先选择你的使用环境： \033[0m"
-		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
-		echo "-----------------------------------------------"
-		echo -e " 1 \033[32m路由设备配置局域网透明代理\033[0m"
-		echo -e " 2 \033[36mLinux设备仅配置本机代理\033[0m"
-		[ -f "$CFG_PATH.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
-		echo "-----------------------------------------------"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		1)
-			#设置运行模式
-			redir_mod="混合模式"
-			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && {
-				if grep -qE '^TPROXY$' /proc/net/ip_tables_targets || modprobe xt_TPROXY >/dev/null 2>&1; then
-					redir_mod="Tproxy模式"
-				else
-					redir_mod="Redir模式"
-				fi
-			}
-			setconfig crashcore "meta"
-			setconfig redir_mod "$redir_mod"
-			setconfig dns_mod mix
-			setconfig firewall_area '1'
-			#默认启用绕过CN-IP
-			setconfig cn_ip_route 已开启
-			#自动识别IPV6
-			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {
-				setconfig ipv6_redir 已开启
-				setconfig ipv6_support 已开启
-				setconfig ipv6_dns 已开启
-				setconfig cn_ipv6_route 已开启
-			}
-			#设置开机启动
-			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
-			ckcmd systemctl && [ "$(cat /proc/1/comm)" = "systemd" ] && systemctl enable shellcrash.service > /dev/null 2>&1
-			rm -rf "$CRASHDIR"/.dis_startup
-			autostart=enable
-			#检测IP转发
-			if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
-				echo "-----------------------------------------------"
-				echo -e "\033[33m检测到你的设备尚未开启ip转发，局域网设备将无法正常连接网络，是否立即开启？\033[0m"
-				read -p "是否开启？(1/0) > " res
-				[ "$res" = 1 ] && {
-					echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
-					sysctl -w net.ipv4.ip_forward=1
-				} && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！" || echo "开启失败！请自行谷歌查找当前设备的开启方法！"
-			fi
-			#禁止docker启用的net.bridge.bridge-nf-call-iptables
-			sysctl -w net.bridge.bridge-nf-call-iptables=0 > /dev/null 2>&1
-			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 > /dev/null 2>&1
-			;;
-		2)
-			setconfig redir_mod "Redir模式"
-			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && setconfig crashcore "clash"
-			setconfig common_ports "未开启"
-			setconfig firewall_area '2'
-		    ;;
-		3)
-			mv -f $CFG_PATH.bak $CFG_PATH
-			echo -e "\033[32m脚本设置已还原！\033[0m"
-			echo -e "\033[33m请重新启动脚本！\033[0m"
-			exit 0
-			;;
-		*)
-			errornum
-			forwhat
-			;;
-		esac
-	}
-	forwhat
-	#检测小内存模式
-	dir_size=$(dir_avail "$CRASHDIR")
-	if [ "$dir_size" -lt 10240 ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[33m检测到你的安装目录空间不足10M，是否开启小闪存模式？\033[0m"
-		echo -e "\033[0m开启后核心及数据库文件将被下载到内存中，这将占用一部分内存空间\033[0m"
-		echo -e "\033[0m每次开机后首次运行服务时都会自动的重新下载相关文件\033[0m"
-		echo "-----------------------------------------------"
-		read -p "是否开启？(1/0) > " res
-		[ "$res" = 1 ] && {
-			BINDIR=/tmp/ShellCrash
-			setconfig BINDIR /tmp/ShellCrash "$CRASHDIR"/configs/command.env
-		}
-	fi
-	#检测及下载根证书
-	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
-	[ ! -d "$openssldir/certs" ] && openssldir=/etc/ssl
-	if [ -d $openssldir/certs -a ! -f $openssldir/certs/ca-certificates.crt ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
-		echo "-----------------------------------------------"
-		read -p "是否下载并安装根证书？(1/0) > " res
-		[ "$res" = 1 ] && checkupdate && getcrt
-	fi
-	#设置加密DNS
-	if [ -s $openssldir/certs/ca-certificates.crt ];then
-		dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
-		dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
-		dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
-		setconfig dns_nameserver "'$dns_nameserver'"
-		setconfig dns_fallback "'$dns_fallback'"
-		setconfig dns_resolver "'$dns_resolver'"
-	fi
-	#开启公网访问
-	sethost(){
-		read -p "请输入你的公网IP地址 > " host
-		echo $host | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-		if [ -z "$host" ];then
-			echo -e "\033[31m请输入正确的IP地址！\033[0m"
-			sethost
-		fi
-	}
-	if ckcmd systemctl;then
-		echo "-----------------------------------------------"
-		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
-		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
-		echo -e "\033[31m此功能会增加暴露风险请谨慎使用！\033[0m"
-		echo -e "vps设备可能还需要额外在服务商后台开启相关端口"
-		read -p "现在开启？(1/0) > " res
-		if [ "$res" = 1 ];then
-			read -p "请先设置面板访问秘钥 > " secret
-			read -p "请先修改Socks服务端口(1-65535) > " mix_port
-			read -p "请先设置Socks服务密码(账号默认为crash) > " sec
-			[ -z "$sec" ] && authentication=crash:$sec
-			host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
-			if [ -z "$host" ];then
-				sethost
-			fi
-			public_support=已开启
-			setconfig secret $secret
-			setconfig mix_port $mix_port
-			setconfig host $host
-			setconfig public_support $public_support
-			setconfig authentication "'$authentication'"
-		fi
-	fi
-	#启用推荐的自动任务配置
-	. "$CRASHDIR"/task/task.sh && task_recom
-	#小米设备软固化
-	if [ "$systype" = "mi_snapshot" ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
-		read -p "是否启用软固化功能？(1/0) > " res
-		[ "$res" = 1 ] && mi_autoSSH
-	fi
-	#提示导入订阅或者配置文件
-	[ ! -s "$CRASHDIR"/yamls/config.yaml -a ! -s "$CRASHDIR"/jsons/config.json ] && {
-		echo "-----------------------------------------------"
-		echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
-		echo -e "\033[0m你必须拥有一份配置文件才能运行服务！\033[0m"
-		echo "-----------------------------------------------"
-		read -p "现在开始导入？(1/0) > " res
-		[ "$res" = 1 ] && inuserguide=1 && {
-			if [ -f "$CRASHDIR"/v2b_api.sh ];then
-				. "$CRASHDIR"/v2b_api.sh
-			else
-				set_core_config
-			fi
-			set_core_config
-			inuserguide=""
-		}
-	}
-	#回到主界面
-	echo "-----------------------------------------------"
-	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
-	echo "-----------------------------------------------"
-	read -p "立即启动服务？(1/0) > " res
-	[ "$res" = 1 ] && start_core && sleep 2
-	main_menu
-}
 #测试菜单
 testcommand(){
 	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
@@ -882,3 +705,180 @@ debug(){
 	esac
 }
 
+#新手引导
+userguide(){
+
+	forwhat(){
+		echo "-----------------------------------------------"
+		echo -e "\033[30;46m 欢迎使用ShellCrash新手引导！ \033[0m"
+		echo "-----------------------------------------------"
+		echo -e "\033[33m请先选择你的使用环境： \033[0m"
+		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
+		echo "-----------------------------------------------"
+		echo -e " 1 \033[32m路由设备配置局域网透明代理\033[0m"
+		echo -e " 2 \033[36mLinux设备仅配置本机代理\033[0m"
+		[ -f "$CFG_PATH.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
+		echo "-----------------------------------------------"
+		read -p "请输入对应数字 > " num
+		case "$num" in
+		1)
+			#设置运行模式
+			redir_mod="混合模式"
+			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && {
+				if grep -qE '^TPROXY$' /proc/net/ip_tables_targets || modprobe xt_TPROXY >/dev/null 2>&1; then
+					redir_mod="Tproxy模式"
+				else
+					redir_mod="Redir模式"
+				fi
+			}
+			setconfig crashcore "meta"
+			setconfig redir_mod "$redir_mod"
+			setconfig dns_mod mix
+			setconfig firewall_area '1'
+			#默认启用绕过CN-IP
+			setconfig cn_ip_route 已开启
+			#自动识别IPV6
+			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {
+				setconfig ipv6_redir 已开启
+				setconfig ipv6_support 已开启
+				setconfig ipv6_dns 已开启
+				setconfig cn_ipv6_route 已开启
+			}
+			#设置开机启动
+			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
+			ckcmd systemctl && [ "$(cat /proc/1/comm)" = "systemd" ] && systemctl enable shellcrash.service > /dev/null 2>&1
+			rm -rf "$CRASHDIR"/.dis_startup
+			autostart=enable
+			#检测IP转发
+			if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
+				echo "-----------------------------------------------"
+				echo -e "\033[33m检测到你的设备尚未开启ip转发，局域网设备将无法正常连接网络，是否立即开启？\033[0m"
+				read -p "是否开启？(1/0) > " res
+				[ "$res" = 1 ] && {
+					echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
+					sysctl -w net.ipv4.ip_forward=1
+				} && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！" || echo "开启失败！请自行谷歌查找当前设备的开启方法！"
+			fi
+			#禁止docker启用的net.bridge.bridge-nf-call-iptables
+			sysctl -w net.bridge.bridge-nf-call-iptables=0 > /dev/null 2>&1
+			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 > /dev/null 2>&1
+			;;
+		2)
+			setconfig redir_mod "Redir模式"
+			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && setconfig crashcore "clash"
+			setconfig common_ports "未开启"
+			setconfig firewall_area '2'
+		    ;;
+		3)
+			mv -f $CFG_PATH.bak $CFG_PATH
+			echo -e "\033[32m脚本设置已还原！\033[0m"
+			echo -e "\033[33m请重新启动脚本！\033[0m"
+			exit 0
+			;;
+		*)
+			errornum
+			forwhat
+			;;
+		esac
+	}
+	forwhat
+	#检测小内存模式
+	dir_size=$(dir_avail "$CRASHDIR")
+	if [ "$dir_size" -lt 10240 ];then
+		echo "-----------------------------------------------"
+		echo -e "\033[33m检测到你的安装目录空间不足10M，是否开启小闪存模式？\033[0m"
+		echo -e "\033[0m开启后核心及数据库文件将被下载到内存中，这将占用一部分内存空间\033[0m"
+		echo -e "\033[0m每次开机后首次运行服务时都会自动的重新下载相关文件\033[0m"
+		echo "-----------------------------------------------"
+		read -p "是否开启？(1/0) > " res
+		[ "$res" = 1 ] && {
+			BINDIR=/tmp/ShellCrash
+			setconfig BINDIR /tmp/ShellCrash "$CRASHDIR"/configs/command.env
+		}
+	fi
+	#检测及下载根证书
+	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
+	[ ! -d "$openssldir/certs" ] && openssldir=/etc/ssl
+	if [ -d $openssldir/certs -a ! -f $openssldir/certs/ca-certificates.crt ];then
+		echo "-----------------------------------------------"
+		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
+		echo "-----------------------------------------------"
+		read -p "是否下载并安装根证书？(1/0) > " res
+		[ "$res" = 1 ] && checkupdate && getcrt
+	fi
+	#设置加密DNS
+	if [ -s $openssldir/certs/ca-certificates.crt ];then
+		dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
+		dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
+		dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
+		setconfig dns_nameserver "'$dns_nameserver'"
+		setconfig dns_fallback "'$dns_fallback'"
+		setconfig dns_resolver "'$dns_resolver'"
+	fi
+	#开启公网访问
+	sethost(){
+		read -p "请输入你的公网IP地址 > " host
+		echo $host | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+		if [ -z "$host" ];then
+			echo -e "\033[31m请输入正确的IP地址！\033[0m"
+			sethost
+		fi
+	}
+	if ckcmd systemctl;then
+		echo "-----------------------------------------------"
+		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
+		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
+		echo -e "\033[31m此功能会增加暴露风险请谨慎使用！\033[0m"
+		echo -e "vps设备可能还需要额外在服务商后台开启相关端口"
+		read -p "现在开启？(1/0) > " res
+		if [ "$res" = 1 ];then
+			read -p "请先设置面板访问秘钥 > " secret
+			read -p "请先修改Socks服务端口(1-65535) > " mix_port
+			read -p "请先设置Socks服务密码(账号默认为crash) > " sec
+			[ -z "$sec" ] && authentication=crash:$sec
+			host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
+			if [ -z "$host" ];then
+				sethost
+			fi
+			public_support=已开启
+			setconfig secret $secret
+			setconfig mix_port $mix_port
+			setconfig host $host
+			setconfig public_support $public_support
+			setconfig authentication "'$authentication'"
+		fi
+	fi
+	#启用推荐的自动任务配置
+	. "$CRASHDIR"/task/task.sh && task_recom
+	#小米设备软固化
+	if [ "$systype" = "mi_snapshot" ];then
+		echo "-----------------------------------------------"
+		echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
+		read -p "是否启用软固化功能？(1/0) > " res
+		[ "$res" = 1 ] && mi_autoSSH
+	fi
+	#提示导入订阅或者配置文件
+	[ ! -s "$CRASHDIR"/yamls/config.yaml -a ! -s "$CRASHDIR"/jsons/config.json ] && {
+		echo "-----------------------------------------------"
+		echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
+		echo -e "\033[0m你必须拥有一份配置文件才能运行服务！\033[0m"
+		echo "-----------------------------------------------"
+		read -p "现在开始导入？(1/0) > " res
+		[ "$res" = 1 ] && inuserguide=1 && {
+			if [ -f "$CRASHDIR"/v2b_api.sh ];then
+				. "$CRASHDIR"/v2b_api.sh
+			else
+				set_core_config
+			fi
+			set_core_config
+			inuserguide=""
+		}
+	}
+	#回到主界面
+	echo "-----------------------------------------------"
+	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
+	echo "-----------------------------------------------"
+	read -p "立即启动服务？(1/0) > " res
+	[ "$res" = 1 ] && start_core && sleep 2
+	main_menu
+}

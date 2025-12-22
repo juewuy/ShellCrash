@@ -9,9 +9,9 @@ settings() { #功能设置
     echo "-----------------------------------------------"
     echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
     echo "-----------------------------------------------"
-    echo -e " 1 设置代理模式:	\033[36m$redir_mod\033[0m"
-	echo -e " 2 设置DNS模式：	\033[36m$dns_mod\033[0m"
-	echo -e " 3 设置各类流量过滤"
+    echo -e " 1 代理模式设置:	\033[36m$redir_mod\033[0m"
+	echo -e " 2 DNS设置：		\033[36m$dns_mod\033[0m"
+	echo -e " 3 透明路由流量过滤"
     [ "$disoverride" != "1" ] && {
         echo -e " 4 跳过证书验证：	\033[36m$skip_cert\033[0m"
 		echo -e " 5 启用域名嗅探:	\033[36m$sniffer\033[0m"
@@ -224,13 +224,12 @@ set_redir_mod() { #代理模式设置
         set_redir_mod
 	;;
     5)
-        redir_mod=TCP旁路转发
+        redir_mod='TCP旁路转发'
         set_redir_config
         set_redir_mod
 	;;
     6)
-        redir_mod=T &
-        U旁路转发
+        redir_mod='T&U旁路转发'
         set_redir_config
         set_redir_mod
 	;;
@@ -915,17 +914,13 @@ set_firewall_vm(){
 	esac
 	setconfig vm_redir $vm_redir
 	setconfig vm_ipv4 "'$vm_ipv4'"
-	sleep 1
-	set_redir_mod
 }
 set_ipv6() { #ipv6设置
     [ -z "$ipv6_redir" ] && ipv6_redir=未开启
     [ -z "$ipv6_dns" ] && ipv6_dns=已开启
-    [ -z "$cn_ipv6_route" ] && cn_ipv6_route=未开启
     echo "-----------------------------------------------"
     echo -e " 1 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量"
     [ "$disoverride" != "1" ] && echo -e " 2 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"
-    echo -e " 3 CNV6绕过内核:  \033[36m$cn_ipv6_route\033[0m  ——优化性能，不兼容fake-ip"
     echo -e " 0 返回上级菜单"
     echo "-----------------------------------------------"
     read -p "请输入对应数字 > " num
@@ -946,22 +941,6 @@ set_ipv6() { #ipv6设置
     2)
         [ "$ipv6_dns" = "未开启" ] && ipv6_dns=已开启 || ipv6_dns=未开启
         setconfig ipv6_dns $ipv6_dns
-        set_ipv6
-	;;
-    3)
-        if [ "$ipv6_redir" = "未开启" ]; then
-            ipv6_support=已开启
-            ipv6_redir=已开启
-            setconfig ipv6_redir $ipv6_redir
-            setconfig ipv6_support $ipv6_support
-        fi
-        if [ -n "$(ipset -v 2>/dev/null)" ] || [ "$firewall_mod" = nftables ]; then
-            [ "$cn_ipv6_route" = "未开启" ] && cn_ipv6_route=已开启 || cn_ipv6_route=未开启
-            setconfig cn_ipv6_route $cn_ipv6_route
-        else
-            echo -e "\033[31m当前设备缺少ipset模块或防火墙未使用nftables，无法启用绕过功能！！\033[0m"
-            sleep 1
-        fi
         set_ipv6
 	;;
     *)

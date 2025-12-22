@@ -331,7 +331,7 @@ main_menu() {
 	;;
     2)
         checkcfg=$(cat "$CFG_PATH")
-        . "$CRASHDIR"/menus/settings.sh && settings
+        . "$CRASHDIR"/menus/2-settings.sh && settings
         if [ -n "$PID" ]; then
             checkcfg_new=$(cat "$CFG_PATH")
             [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
@@ -346,22 +346,22 @@ main_menu() {
         main_menu
 	;;
     4)
-        . "$CRASHDIR"/menus/setboot.sh && setboot
+        . "$CRASHDIR"/menus/4-setboot.sh && setboot
         main_menu
 	;;
     5)
-        . "$CRASHDIR"/menus/task.sh && task_menu
+        . "$CRASHDIR"/menus/5-task.sh && task_menu
         main_menu
 	;;
     6)
-        . "$CRASHDIR"/menus/core_config.sh && set_core_config
+        . "$CRASHDIR"/menus/6-core_config.sh && set_core_config
         main_menu
 	;;
     7)
 		GT_CFG_PATH="$CRASHDIR"/configs/gateway.cfg
 		touch "$GT_CFG_PATH"
         checkcfg=$(cat $GT_CFG_PATH)
-        . "$CRASHDIR"/menus/gateway.sh && gateway
+        . "$CRASHDIR"/menus/7-gateway.sh && gateway
         if [ -n "$PID" ]; then
             checkcfg_new=$(cat $GT_CFG_PATH)
             [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
@@ -369,12 +369,12 @@ main_menu() {
         main_menu
 	;;
     8)
-        . "$CRASHDIR"/menus/tools.sh && tools
+        . "$CRASHDIR"/menus/8-tools.sh && tools
         main_menu
 	;;
     9)
         checkcfg=$(cat "$CFG_PATH")
-        . "$CRASHDIR"/menus/upgrade.sh && upgrade
+        . "$CRASHDIR"/menus/9-upgrade.sh && upgrade
         if [ -n "$PID" ]; then
             checkcfg_new=$(cat "$CFG_PATH")
             [ "$checkcfg" != "$checkcfg_new" ] && checkrestart

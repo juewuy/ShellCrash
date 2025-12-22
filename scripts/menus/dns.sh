@@ -129,7 +129,6 @@ set_dns_adv() { #DNS详细设置
     echo -e " 3 修改\033[33m解析DNS\033[0m(必须是IP,用于解析其他DNS)"
     echo -e " 4 DNS防泄漏：  \033[36m$dns_protect\033[0m	———启用时少量网站可能连接卡顿"
     echo -e " 5 hosts优化：  \033[36m$hosts_opt\033[0m	———调用本机hosts并劫持NTP服务"
-    #echo -e " 6 Dnsmasq转发：\033[36m$dns_redir\033[0m	———不推荐使用"
     echo -e " 7 禁用DNS劫持：\033[36m$dns_no\033[0m	———搭配第三方DNS使用"
     echo -e " 8 一键配置\033[32m加密DNS\033[0m"
     echo -e " 9 \033[33m重置\033[0m默认DNS配置"

@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 . "$GT_CFG_PATH"
+. "$CRASHDIR"/menus/check_port.sh
 
 gateway(){ #访问与控制主菜单
 	echo -----------------------------------------------
@@ -15,13 +16,13 @@ gateway(){ #访问与控制主菜单
 		echo -e " 6 配置\033[36mTailscale内网穿透\033[0m(限Singbox)	\033[32m$ts_service\033[0m"
 		echo -e " 7 配置\033[36mWireguard客户端\033[0m(限Singbox)	\033[32m$wg_service\033[0m"
 	}
-	echo -e " 0 返回上级菜单 \033[0m"
+	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
 	1)
-		set_pub_fw
+		set_fw_wan
 		gateway
 	;;
 	2)
@@ -61,43 +62,58 @@ gateway(){ #访问与控制主菜单
 	*) errornum ;;
 	esac
 }
-set_pub_fw() { #公网防火墙设置
-	[ -z "$public_support" ] && public_support=未开启
-	[ -z "$public_mixport" ] && public_mixport=未开启
+set_fw_wan() { #公网防火墙设置
+	[ -z "$fw_wan" ] && fw_wan=ON
 	echo -----------------------------------------------
-	echo -e " 1 公网访问Dashboard面板:	\033[36m$public_support\033[0m"
-	echo -e " 2 公网访问Socks/Http代理:	\033[36m$public_mixport\033[0m"
+	echo -e "\033[31m注意：\033[0m如在vps运行，还需在vps安全策略对相关端口同时放行"
+	[ -n "$fw_wan_ports" ] && 
+	echo -e "当前放行端口：\033[36m$fw_wan_ports\033[0m"
+	echo -e "默认拦截端口：\033[33m$dns_port,$mix_port,$db_port\033[0m"
+	echo -----------------------------------------------
+	echo -e " 1 启用/关闭公网防火墙:	\033[36m$fw_wan\033[0m"
+	echo -e " 2 添加放行端口(可包含默认拦截端口)"
+	echo -e " 3 移除指定放行端口"
+	echo -e " 0 返回上级菜单"
 	echo -----------------------------------------------
 	read -p "请输入对应数字 > " num
 	case $num in
 	1)
-		if [ "$public_support" = "未开启" ]; then
-			public_support=已开启
-		else
-			public_support=未开启
-		fi
-		setconfig public_support $public_support
-		setfirewall
-		;;
+		[ "$fw_wan" = ON ] && fw_wan=OFF || fw_wan=ON
+		setconfig ts_service "$ts_service"
+		set_fw_wan
+	;;
 	2)
-		if [ "$public_mixport" = "未开启" ]; then
-			if [ "$mix_port" = "7890" -o -z "$authentication" ]; then
-				echo -----------------------------------------------
-				echo -e "\033[33m为了安全考虑，请先修改默认Socks/Http端口并设置代理密码\033[0m"
-				sleep 1
-				setport
+		port_count=$(echo "$fw_wan_ports" | awk -F',' '{print NF}' )
+		if [ "$port_count" -ge 10 ];then
+			echo -e "\033[31m最多支持设置放行10个端口，请先减少一些！\033[0m"
+		else
+			read -p "请输入要放行的端口号 > " port
+			if echo ",$fw_wan_ports," | grep -q ",$port,";then	
+				echo -e "\033[31m输入错误！请勿重复添加！\033[0m"
+			elif [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
 			else
-				public_mixport=已开启
+				fw_wan_ports=$(echo "$fw_wan_ports,$port" | sed "s/^,//")
+				setconfig fw_wan_ports "$fw_wan_ports"
+			fi
+		fi
+		sleep 1
+		set_fw_wan
+	;;
+	3)
+		read -p "请输入要移除的端口号 > " port
+		if echo ",$fw_wan_ports," | grep -q ",$port,";then	
+			if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
+			else
+				fw_wan_ports=$(echo ",$fw_wan_ports," | sed "s/,$port//; s/^,//; s/,$//")
+				setconfig fw_wan_ports "$fw_wan_ports"
 			fi
 		else
-			public_mixport=未开启
+			echo -e "\033[31m输入错误！请输入已添加过的端口！\033[0m"
 		fi
-		setconfig public_mixport $public_mixport
-		setfirewall
-		;;
-	3)
-		set_cust_host_ipv4
-		setfirewall
+		sleep 1
+		set_fw_wan
 		;;
 	*)
 		errornum
@@ -192,7 +208,7 @@ set_bot_tg(){
 }
 set_vmess(){
 	echo -----------------------------------------------
-	echo -e "\033[31m注意：\033[0m启动内核服务后会自动开放相应端口公网访问，请谨慎使用！\n      脚本只提供基础功能，更多需求请使用自定义配置文件功能！"
+	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m启用/关闭\033[0mVmess入站	\033[32m$vms_service\033[0m"
 	echo -----------------------------------------------
@@ -218,10 +234,11 @@ set_vmess(){
 	2)
 		read -p "请输入端口号(输入0删除) > " text
 		[ "$text" = 0 ] && unset vms_port
-		. "$CRASHDIR"/menus/check_port.sh
 		if check_port "$text"; then
 			vms_port="$text"
 			setconfig vms_port "$text" "$CFG"
+			fw_wan_ports=$(echo "$fw_wan_ports,$vms_port" | sed "s/^,//")
+			setconfig fw_wan_ports "$fw_wan_ports"
 		else
 			sleep 1
 		fi
@@ -263,7 +280,7 @@ set_vmess(){
 set_shadowsocks(){
 	[ -z "$sss_cipher" ] && sss_cipher='xchacha20-ietf-poly1305'
 	echo -----------------------------------------------
-	echo -e "\033[31m注意：\033[0m启动内核服务后会自动开放相应端口公网访问，请谨慎使用！\n      脚本只提供基础功能，更多需求请使用自定义配置文件功能！"
+	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m启用/关闭\033[0mShadowSocks入站	\033[32m$sss_service\033[0m"
 	echo -----------------------------------------------
@@ -288,10 +305,11 @@ set_shadowsocks(){
 	2)
 		read -p "请输入端口号(输入0删除) > " text
 		[ "$text" = 0 ] && unset sss_port
-		. "$CRASHDIR"/menus/check_port.sh
 		if check_port "$text"; then
 			sss_port="$text"
 			setconfig sss_port "$text" "$CFG"
+			fw_wan_ports=$(echo "$fw_wan_ports,$sss_port" | sed "s/^,//")
+			setconfig fw_wan_ports "$fw_wan_ports"
 		else
 			sleep 1
 		fi
