@@ -253,17 +253,15 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 [ -z "$profile" ] && profile=/etc/profile
 set_profile() {
     [ -z "$my_alias" ] && my_alias=crash
-    sed -i "/ShellCrash\/menu.sh/"d "$profile"
+    sed -i "/ShellCrash\/menu.sh/"d "$1"
     echo "alias ${my_alias}=\"$shtype $CRASHDIR/menu.sh\"" >>"$1" #设置快捷命令环境变量
     sed -i '/export CRASHDIR=*/'d "$1"
     echo "export CRASHDIR=\"$CRASHDIR\"" >>"$1" #设置路径环境变量
-    . "$1" >/dev/null 2>&1
 }
 if [ -n "$profile" ]; then
     set_profile "$profile"
-    #适配zsh、bash环境变量
-    zsh --version >/dev/null 2>&1 && [ -z "$(cat ~/.zshrc 2>/dev/null | grep CRASHDIR)" ] && set_profile '~/.zshrc' 2>/dev/null
-	bash --version >/dev/null 2>&1 && [ -z "$(cat ~/.bashrc 2>/dev/null | grep CRASHDIR)" ] && set_profile '~/.bashrc' 2>/dev/null
+    #适配zsh环境变量
+    zsh --version >/dev/null 2>&1 && [ -z "$(cat $HOME/.zshrc 2>/dev/null | grep CRASHDIR)" ] && set_profile '$HOME/.zshrc'
     setconfig my_alias "$my_alias"
 else
     echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
