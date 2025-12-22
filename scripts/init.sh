@@ -1,8 +1,6 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-version=1.9.3pre2
-
 setdir() {
     dir_avail() {
         df $2 $1 | awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' | grep -E 'Ava|可用' | awk '{print $2}'
@@ -252,8 +250,7 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 #设置环境变量
 [ -w /opt/etc/profile ] && profile=/opt/etc/profile
 [ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
-[ -w ~/.bashrc ] && profile=~/.bashrc
-[ -w /etc/profile ] && profile=/etc/profile
+[ -z "$profile" ] && profile=/etc/profile
 set_profile() {
     [ -z "$my_alias" ] && my_alias=crash
     sed -i "/ShellCrash\/menu.sh/"d "$profile"
@@ -264,8 +261,9 @@ set_profile() {
 }
 if [ -n "$profile" ]; then
     set_profile "$profile"
-    #适配zsh环境变量
+    #适配zsh、bash环境变量
     zsh --version >/dev/null 2>&1 && [ -z "$(cat ~/.zshrc 2>/dev/null | grep CRASHDIR)" ] && set_profile '~/.zshrc' 2>/dev/null
+	bash --version >/dev/null 2>&1 && [ -z "$(cat ~/.bashrc 2>/dev/null | grep CRASHDIR)" ] && set_profile '~/.bashrc' 2>/dev/null
     setconfig my_alias "$my_alias"
 else
     echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
@@ -379,4 +377,4 @@ sed -i "s/redir_mod=Nft混合/redir_mod=Tproxy模式/g" $configpath
 sed -i "s/redir_mod=Tproxy混合/redir_mod=Tproxy模式/g" $configpath
 sed -i "s/redir_mod=纯净模式/firewall_area=4/g" $configpath
 
-echo -e "\033[32m脚本初始化完成,请输入\033[30;47m crash \033[0;33m命令开始使用！\033[0m"
+echo -e "\033[32m脚本初始化完成,请输入\033[30;47m $my_alias \033[0;33m命令开始使用！\033[0m"
