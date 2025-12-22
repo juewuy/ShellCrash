@@ -51,7 +51,7 @@ ckstatus() {
     else
         . "$CRASHDIR"/init.sh >/dev/null 2>&1
     fi
-    versionsh=$(cat "$CRASHDIR"/init.sh | grep -E ^version= | head -n 1 | sed 's/version=//')
+    versionsh=$(cat "$CRASHDIR"/version)
     [ -n "$versionsh" ] && versionsh_l=$versionsh
     #服务器缺省地址
     [ -z "$mix_port" ] && mix_port=7890
@@ -265,13 +265,11 @@ uninstall() {
             echo -e "\033[31m环境变量配置有误，请尝试手动移除安装目录！\033[0m"
             sleep 1
         fi
-        #移除其他内容
-        [ -w ~/.bashrc ] && profile=~/.bashrc
-        [ -w /etc/profile ] && profile=/etc/profile
-        sed -i "/alias $my_alias=*/"d $profile
-        sed -i '/alias crash=*/'d $profile
-        sed -i '/export CRASHDIR=*/'d $profile
-        sed -i '/export crashdir=*/'d $profile
+        #移除其他内容      
+        sed -i "/alias $my_alias=*/"d /etc/profile 2>/dev/null
+        sed -i '/alias crash=*/'d /etc/profile 2>/dev/null
+        sed -i '/export CRASHDIR=*/'d /etc/profile 2>/dev/null
+        sed -i '/export crashdir=*/'d /etc/profile 2>/dev/null
         [ -w ~/.zshrc ] && {
             sed -i "/alias $my_alias=*/"d ~/.zshrc
             sed -i '/export CRASHDIR=*/'d ~/.zshrc

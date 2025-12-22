@@ -14,7 +14,11 @@ dir_avail() {
     df $2 $1 | awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' | grep -E 'Ava|可用' | awk '{print $2}'
 }
 ckcmd() { #检查命令
-    command -v sh >/dev/null 2>&1 && command -v "$1" || type "$1"
+    if command -v sh >/dev/null 2>&1;then
+        command -v "$1" >/dev/null 2>&1
+    else
+        type "$1" >/dev/null 2>&1
+    fi
 }
 webget() {
     #参数【$1】代表下载目录，【$2】代表在线地址
@@ -59,7 +63,7 @@ set_alias() {
     *) my_alias=$res ;;
     esac
     cmd=$(ckcmd "$my_alias" | grep 'menu.sh')
-    ckcmd "$my_alias" >/dev/null 2>&1 && [ -z "$cmd" ] && {
+    ckcmd "$my_alias" && [ -z "$cmd" ] && {
         $echo "\033[33m此别名和当前系统内置命令/别名冲突，请换一个！\033[0m"
         sleep 1
         set_alias
