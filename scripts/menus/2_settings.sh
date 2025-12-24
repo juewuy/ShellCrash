@@ -695,6 +695,7 @@ set_adv_config() { #端口设置
     [ -z "$secret" ] && secret=未设置
     [ -z "$table" ] && table=100
     [ -z "$authentication" ] && auth=未设置 || auth=******
+	[ -z "$multiport" ] && multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
     inputport() {
         read -p "请输入端口号(1-65535) > " portx
 		. "$CRASHDIR"/menus/check_port.sh #加载测试函数

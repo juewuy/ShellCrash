@@ -77,8 +77,7 @@ upgrade(){
 	    upgrade
 	    ;;
 	9)
-	    uninstall
-	    exit
+	    . "$CRASHDIR"/menus/uninstall.sh && uninstall
 	    ;;
 	99)
 		echo "-----------------------------------------------"

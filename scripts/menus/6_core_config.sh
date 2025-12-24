@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+YAMLSDIR="$CRASHDIR"/yamls
+JSONSDIR="$CRASHDIR"/jsons
+
 #导入订阅、配置文件相关
 setrules(){ #自定义规则
 	set_rule_type(){
@@ -43,7 +46,7 @@ setrules(){ #自定义规则
 				rule_group_set=$(echo $rule_group|cut -d'#' -f$num)
 				rule_all="- ${rule_type_set},${rule_state_set},${rule_group_set}"
 				[ -n "$(echo IP-CIDR SRC-IP-CIDR IP-CIDR6|grep "$rule_type_set")" ] && rule_all="${rule_all},no-resolve"
-				echo $rule_all >> $YAMLSDIR/rules.yaml
+				echo "$rule_all" >> "$YAMLSDIR"/rules.yaml
 				echo "-----------------------------------------------"
 				echo -e "\033[32m添加成功！\033[0m"
 			fi
@@ -55,8 +58,8 @@ setrules(){ #自定义规则
 	}
 	del_rule_type(){
 		echo -e "输入对应数字即可移除相应规则:"
-		sed -i '/^ *$/d; /^#/d' $YAMLSDIR/rules.yaml
-		cat $YAMLSDIR/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
+		sed -i '/^ *$/d; /^#/d' "$YAMLSDIR"/rules.yaml
+		cat "$YAMLSDIR"/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
 		echo "-----------------------------------------------"
 		echo -e " 0 返回上级菜单"
 		read -p "请输入对应数字 > " num
@@ -64,8 +67,8 @@ setrules(){ #自定义规则
 		0)	;;
 		'')	;;
 		*)
-			if [ "$num" -le "$(wc -l < $YAMLSDIR/rules.yaml)" ];then
-				sed -i "${num}d" $YAMLSDIR/rules.yaml
+			if [ "$num" -le "$(wc -l < "$YAMLSDIR"/rules.yaml)" ];then
+				sed -i "${num}d" "$YAMLSDIR"/rules.yaml
 				sleep 1
 				del_rule_type
 			else
@@ -100,7 +103,7 @@ setrules(){ #自定义规则
 	;;
 	2)
 		echo "-----------------------------------------------"
-		if [ -s $YAMLSDIR/rules.yaml ];then
+		if [ -s "$YAMLSDIR"/rules.yaml ];then
 			del_rule_type
 		else
 			echo -e "请先添加自定义规则！"
@@ -110,7 +113,7 @@ setrules(){ #自定义规则
 	;;
 	3)
 		read -p "确认清空全部自定义规则？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $YAMLSDIR/rules.yaml
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' "$YAMLSDIR"/rules.yaml
 		setrules
 	;;
 	4)
@@ -154,7 +157,7 @@ setgroups(){ #自定义clash策略组
 		fi
 		set_group_add
 		#添加自定义策略组
-		cat >> $YAMLSDIR/proxy-groups.yaml <<EOF
+		cat >> "$YAMLSDIR"/proxy-groups.yaml <<EOF
   - name: $new_group_name
     type: $new_group_type
     $new_group_url
@@ -162,7 +165,7 @@ setgroups(){ #自定义clash策略组
     proxies:
      - DIRECT
 EOF
-		sed -i "/^ *$/d" $YAMLSDIR/proxy-groups.yaml
+		sed -i "/^ *$/d" "$YAMLSDIR"/proxy-groups.yaml
 		echo "-----------------------------------------------"
 		echo -e "\033[32m添加成功！\033[0m"
 
@@ -207,18 +210,18 @@ EOF
 	1)
 		group_type="select url-test fallback load-balance"
 		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
-		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat "$YAMLSDIR"/proxy-groups.yaml "$YAMLSDIR"/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_group_type
 		setgroups
 	;;
 	2)
 		echo "-----------------------------------------------"
-		cat $YAMLSDIR/proxy-groups.yaml
+		cat "$YAMLSDIR"/proxy-groups.yaml
 		setgroups
 	;;
 	3)
 		read -p "确认清空全部自定义策略组？(1/0) > " res
-		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > $YAMLSDIR/proxy-groups.yaml
+		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > "$YAMLSDIR"/proxy-groups.yaml
 		setgroups
 	;;
 	*)
@@ -259,7 +262,7 @@ setproxies(){ #自定义clash节点
 				rule_group_add="${rule_group_add}#${rule_group_set}"
 			done
 			if [ -n "$rule_group_add" ];then
-				echo "- {$proxy_state_set}$rule_group_add" >> $YAMLSDIR/proxies.yaml
+				echo "- {$proxy_state_set}$rule_group_add" >> "$YAMLSDIR"/proxies.yaml
 				echo "-----------------------------------------------"
 				echo -e "\033[32m添加成功！\033[0m"
 				unset rule_group_add
@@ -284,21 +287,21 @@ setproxies(){ #自定义clash节点
 	;;
 	1)
 		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		proxy_group="$(cat $YAMLSDIR/proxy-groups.yaml $YAMLSDIR/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+		proxy_group="$(cat "$YAMLSDIR"/proxy-groups.yaml "$YAMLSDIR"/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
 		set_proxy_type
 		setproxies
 	;;
 	2)
 		echo "-----------------------------------------------"
-		sed -i '/^ *$/d' $YAMLSDIR/proxies.yaml 2>/dev/null
-		if [ -s $YAMLSDIR/proxies.yaml ];then
+		sed -i '/^ *$/d' "$YAMLSDIR"/proxies.yaml 2>/dev/null
+		if [ -s "$YAMLSDIR"/proxies.yaml ];then
 			echo -e "当前已添加的自定义节点为:"
-			cat $YAMLSDIR/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
+			cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
 			echo "-----------------------------------------------"
 			echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
 			read -p "请输入对应数字 > " num
-			if [ $num -le $(cat $YAMLSDIR/proxies.yaml | grep -Ev '^#' | wc -l) ];then
-				sed -i "$num{/^\s*[^#]/d}" $YAMLSDIR/proxies.yaml
+			if [ $num -le $(cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | wc -l) ];then
+				sed -i "$num{/^\s*[^#]/d}" "$YAMLSDIR"/proxies.yaml
 			else
 				errornum
 			fi
@@ -310,7 +313,7 @@ setproxies(){ #自定义clash节点
 	;;
 	3)
 		read -p "确认清空全部自定义节点？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' $YAMLSDIR/proxies.yaml 2>/dev/null
+		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' "$YAMLSDIR"/proxies.yaml 2>/dev/null
 		setproxies
 	;;
 	4)
@@ -699,12 +702,12 @@ setproviders(){ #自定义providers
 }
 
 set_clash_adv(){ #自定义clash高级规则
-		[ ! -f $YAMLSDIR/user.yaml ] && cat > $YAMLSDIR/user.yaml <<EOF
+		[ ! -f "$YAMLSDIR"/user.yaml ] && cat > "$YAMLSDIR"/user.yaml <<EOF
 #用于编写自定义设定(可参考https://lancellc.gitbook.io/clash/clash-config-file/general 或 https://docs.metacubex.one/function/general)
 #端口之类请在脚本中修改，否则不会加载
 #port: 7890
 EOF
-		[ ! -f $YAMLSDIR/others.yaml ] && cat > $YAMLSDIR/others.yaml <<EOF
+		[ ! -f "$YAMLSDIR"/others.yaml ] && cat > "$YAMLSDIR"/others.yaml <<EOF
 #用于编写自定义的锚点、入站、proxy-providers、sub-rules、rule-set、script等功能
 #可参考 https://github.com/MetaCubeX/Clash.Meta/blob/Meta/docs/config.yaml 或 https://lancellc.gitbook.io/clash/clash-config-file/an-example-configuration-file
 #此处内容会被添加在配置文件的“proxy-group：”模块的末尾与“rules：”模块之前的位置
@@ -1018,7 +1021,7 @@ set_core_config_link(){ #直接导入配置
 set_core_config(){ #配置文件功能
 	[ -z "$rule_link" ] && rule_link=1
 	[ -z "$server_link" ] && server_link=1
-	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
+	echo "$crashcore" | grep -q 'singbox' && config_path="$JSONSDIR"/config.json || config_path="$YAMLSDIR"/config.yaml
 	echo "-----------------------------------------------"
 	echo -e "\033[30;47m ShellCrash配置文件管理\033[0m"
 	echo "-----------------------------------------------"
