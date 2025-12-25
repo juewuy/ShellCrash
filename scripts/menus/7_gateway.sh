@@ -151,13 +151,15 @@ set_bot_tg_init(){
 	fi
 }
 set_bot_tg_service(){
-	PID=$(pidof /bin/sh "$CRASHDIR"/menus/bot_tg.sh)
 	if [ "$bot_tg_service" = ON ];then
 		bot_tg_service=OFF
-		[ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
+		[ -f "$TMPDIR/bot_tg.pid" ] && kill -TERM -"$(cat "$TMPDIR/bot_tg.pid")" && rm -f "$TMPDIR/bot_tg.pid"
 	else
 		bot_tg_service=ON
-		[ -n "$(pidof CrashCore)" ] && [ -z "$PID" ] && "$CRASHDIR"/menus/bot_tg.sh &
+		[ -n "$(pidof CrashCore)" ] && {
+			setsid sh "$CRASHDIR/menus/bot_tg.sh" &
+			echo $! > "$TMPDIR/bot_tg.pid"
+		}
 	fi
 	setconfig bot_tg_service "$bot_tg_service"
 }

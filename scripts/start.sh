@@ -49,12 +49,12 @@ start)
     elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
         /etc/init.d/shellcrash start
     elif [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
-        bfstart && {
-            FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
-            [ -f $FragmentPath ] && setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
-            systemctl daemon-reload
-            systemctl start shellcrash.service || . "$CRASHDIR"/starts/start_error.sh
-        }
+		FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
+		[ -f $FragmentPath ] && {
+			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
+			systemctl daemon-reload
+		}
+		systemctl start shellcrash.service || . "$CRASHDIR"/starts/start_error.sh
     elif grep -q 's6' /proc/1/comm; then
 		bfstart && /command/s6-svc -u /run/service/shellcrash && {
 			[ ! -f "$CRASHDIR"/.dis_startup ] && touch /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
@@ -75,9 +75,8 @@ stop)
     cronset '运行时每'
     cronset '流媒体预解析'
 	#停止tg机器人
-	PID=$(pidof /bin/sh "$CRASHDIR"/menus/bot_tg.sh) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
+	[ -f "$TMPDIR/bot_tg.pid" ] && kill -TERM -"$(cat "$TMPDIR/bot_tg.pid")" && rm -f "$TMPDIR/bot_tg.pid"
     #多种方式结束进程
-
     if [ "$start_old" != "已开启" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
         systemctl stop shellcrash.service >/dev/null 2>&1
     elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then

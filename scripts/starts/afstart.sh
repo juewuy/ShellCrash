@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/sh
 # Copyright (C) Juewuy
 
 #初始化目录
@@ -51,7 +51,10 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 		sed -i "${line}a\\. $CRASHDIR/task/affirewall" /etc/init.d/firewall
 	} &
 	#启动TG机器人
-	[ "$bot_tg_service" = ON ] && "$CRASHDIR"/menus/bot_tg.sh &
+	[ "$bot_tg_service" = ON ] && {
+		setsid sh "$CRASHDIR/menus/bot_tg.sh" &
+		echo $! > "$TMPDIR/bot_tg.pid"
+	}
 else
 	. "$CRASHDIR"/starts/start_error.sh
 	"$CRASHDIR"/start.sh stop

@@ -1,0 +1,73 @@
+#!/sbin/openrc-run
+
+# 服务名
+name="shellcrash"
+description="Custom proxy service for ShellCrash"
+#获取目录
+CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
+[ -z "$CRASHDIR" ] && CRASHDIR=$(cat ~/.bashrc | grep CRASHDIR | awk -F "\"" '{print $2}')
+source ${CRASHDIR}/configs/command.env #加载启动命令和启动目录
+
+# PID 文件
+pidfile="/run/shellcrash.pid"
+
+depend() {
+    #need net
+    after firewall
+}
+
+start() {
+    ebegin "Starting ShellCrash service"
+
+    # 如果 firewal_area=5 则运行主旁转发脚本
+    if grep -q 'firewall_area=5' "$CRASHDIR/configs/ShellCrash.cfg" 2>/dev/null; then
+        "$CRASHDIR"/starts/fw_start.sh
+        eend $? "Firewall start failed"
+        return
+    fi
+	
+    # 确定运行用户：shellcrash 或 root
+    if grep -q 'shellcrash:x:0:7890' /etc/passwd; then
+        runuser="shellcrash"
+    else
+        runuser="root"
+    fi
+
+    # 必要文件检测
+    "$CRASHDIR"/starts/bfstart.sh
+    if [ "$?" != "0" ]; then
+        eend 1 "bfstart check failed"
+        return
+    fi
+
+    # 启动主程序（自动守护 + 自动重启）
+    supervise-daemon "${name}" \
+        --pidfile "${pidfile}" \
+        --user "${runuser}" \
+        --respawn-max 0 \
+        --respawn-delay 3 \
+        --start ${COMMAND%% *} -- ${COMMAND#* }
+
+    ret=$?
+    eend $ret
+    [ $ret -ne 0 ] && return
+
+    # 启动后操作
+    "$CRASHDIR"/starts/afstart.sh &
+}
+
+stop() {
+    ebegin "Stopping ShellCrash service"
+
+    # 停止后台进程
+    start-stop-daemon --stop \
+        --pidfile "${pidfile}" \
+        --retry 5
+
+    rm -f "${pidfile}"
+
+    # 清理 firewall、proxy
+    "$CRASHDIR"/starts/fw_stop.sh
+
+    eend $?
+}

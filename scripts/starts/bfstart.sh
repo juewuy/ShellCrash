@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/sh
 # Copyright (C) Juewuy
 
 [ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
@@ -132,5 +132,5 @@ fi
 #清理debug日志
 rm -rf /tmp/ShellCrash/debug.log
 rm -rf "$CRASHDIR"/debug.log
-return 0
+exit 0
 

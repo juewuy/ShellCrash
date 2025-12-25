@@ -1,8 +1,10 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-#还原防火墙配置
-. "$CRASHDIR"/configs/ShellCrash.cfg
+#初始化目录
+[ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
+. "$CRASHDIR"/libs/get_config.sh
+. "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/starts/fw_getlanip.sh && getlanip #获取局域网host地址
 #缺省值
 [ -z "$common_ports" ] && common_ports='已开启'

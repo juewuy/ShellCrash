@@ -1,0 +1,19 @@
+[Unit]
+Description=ShellCrash Core
+After=network.target
+
+[Service]
+Type=simple
+User=shellcrash
+StandardOutput=null
+ExecStartPre=/etc/ShellCrash/starts/bfstart.sh
+ExecStart=/etc/ShellCrash/CrashCore run -D /etc/ShellCrash -C /tmp/ShellCrash/jsons >/dev/null
+ExecStartPost=/etc/ShellCrash/starts/afstart.sh
+ExecStopPost=/etc/ShellCrash/starts/fw_stop.sh
+Restart=on-abnormal
+RestartSec=10s
+LimitNOFILE=infinity
+
+
+[Install]
+WantedBy=multi-user.target
