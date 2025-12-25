@@ -78,7 +78,8 @@ setrules(){ #自定义规则
 		esac
 	}
 	get_rule_group(){
-		"$CRASHDIR"/start.sh get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector|URLTest|LoadBalance"' | grep -aoE '"name":.*"now":".*",' | awk -F '"' '{print "#"$4}' | tr -d '\n'
+		. "$CRASHDIR"/libs/web_save.sh
+		get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector|URLTest|LoadBalance"' | grep -aoE '"name":.*"now":".*",' | awk -F '"' '{print "#"$4}' | tr -d '\n'
 	}
 	echo "-----------------------------------------------"
 	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
@@ -377,10 +378,10 @@ EOF
 		ln -sf ${provider_temp_file} ${TMPDIR}/provider_temp_file
 	else
 		echo -e "\033[33m正在获取在线模版！\033[0m"
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/provider_temp_file rules/${coretype}_providers/${provider_temp_file}
+		get_bin ${TMPDIR}/provider_temp_file rules/${coretype}_providers/${provider_temp_file}
 		[ -z "$(grep -o 'rules' ${TMPDIR}/provider_temp_file)" ] && {
 			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
-			setserver
+			. "$CRASHDIR"/menus/9_upgrade.sh && setserver
 			setproviders
 		}
 	fi
@@ -412,14 +413,14 @@ EOF
 	cut -c 1- ${TMPDIR}/providers/providers.yaml ${TMPDIR}/providers/proxy-groups.yaml ${TMPDIR}/providers/rules.yaml > ${TMPDIR}/config.yaml
 	rm -rf ${TMPDIR}/providers
 	#调用内核测试
-	. "$CRASHDIR"/libs/core_webget.sh && core_find && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
+	. "$CRASHDIR"/libs/core_tools.sh && core_find && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
 		mkdir -p ${CRASHDIR}/yamls
 		mv -f ${TMPDIR}/config.yaml ${CRASHDIR}/yamls/config.yaml
 		read -p "是否立即启动/重启服务？(1/0) > " res
 		[ "$res" = 1 ] && {
-			start_core && $CRASHDIR/start.sh cronset '更新订阅'
+			start_core && cronset '更新订阅'
 			exit
 		}
 	else
@@ -474,10 +475,10 @@ EOF
 		ln -sf ${provider_temp_file} ${TMPDIR}/provider_temp_file
 	else
 		echo -e "\033[33m正在获取在线模版！\033[0m"
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/provider_temp_file rules/${coretype}_providers/${provider_temp_file}
+		get_bin ${TMPDIR}/provider_temp_file rules/${coretype}_providers/${provider_temp_file}
 		[ -z "$(grep -o 'route' ${TMPDIR}/provider_temp_file)" ] && {
 			echo -e "\033[31m下载失败，请尝试更换安装源！\033[0m"
-			setserver
+			. "$CRASHDIR"/menus/9_upgrade.sh && setserver
 			setproviders
 		}
 	fi
@@ -514,7 +515,7 @@ EOF
 	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" > ${TMPDIR}/providers/outbounds.json
 	rm -rf ${TMPDIR}/provider_temp_file
 	#调用内核测试
-	. "$CRASHDIR"/libs/core_webget.sh && core_find && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
+	. "$CRASHDIR"/libs/core_tools.sh && core_find && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！如果启动超时建议更新里手动安装Singbox-srs数据库常用包！\033[0m"
 		mkdir -p ${CRASHDIR}/jsons
@@ -522,7 +523,7 @@ EOF
 		rm -rf ${TMPDIR}/providers
 		read -p "是否立即启动/重启服务？(1/0) > " res
 		[ "$res" = 1 ] && {
-			start_core && $CRASHDIR/start.sh cronset '更新订阅'
+			start_core && cronset '更新订阅'
 			exit
 		}
 	else
@@ -532,6 +533,8 @@ EOF
 	fi
 }
 setproviders(){ #自定义providers
+	. "$CRASHDIR"/libs/set_cron.sh
+	. "$CRASHDIR"/libs/web_get_bin.sh 
 	#获取模版名称
 	if [ -z "$(grep "provider_temp_${coretype}" ${CRASHDIR}/configs/ShellCrash.cfg)" ];then
 		provider_temp_des=$(sed -n "1 p" ${CRASHDIR}/configs/${coretype}_providers.list | awk '{print $1}')

@@ -73,7 +73,8 @@ rm -rf "$CRASHDIR"/starts/shellcrash.openrc
 #修饰文件及版本号
 command -v bash >/dev/null 2>&1 && shtype=bash
 [ -x /bin/ash ] && shtype=ash
-for file in start.sh starts/bfstart.sh starts/afstart.sh menu.sh menus/task_cmd.sh; do
+#批量授权
+for file in start.sh starts/bfstart.sh starts/afstart.sh menu.sh menus/task_cmd.sh menus/bot_tg.sh; do
     sed -i "s|/bin/sh|/bin/$shtype|" "$CRASHDIR/$file" 2>/dev/null
     chmod +x "$CRASHDIR/$file" 2>/dev/null
 done
@@ -190,10 +191,6 @@ mv -f "$CRASHDIR"/ruleset/geosite-cn.mrs "$CRASHDIR"/ruleset/cn.mrs 2>/dev/null
 #数据库移动
 mv -f "$CRASHDIR"/*.srs "$CRASHDIR"/ruleset/ 2>/dev/null
 mv -f "$CRASHDIR"/*.mrs "$CRASHDIR"/ruleset/ 2>/dev/null
-#内核改名
-mv -f "$CRASHDIR"/clash "$CRASHDIR"/CrashCore 2>/dev/null
-#内核压缩
-[ -f "$CRASHDIR"/CrashCore ] && tar -zcf "$CRASHDIR"/CrashCore.tar.gz -C "$CRASHDIR" CrashCore
 for file in dropbear_rsa_host_key authorized_keys tun.ko ShellDDNS.sh; do
     mv -f "$CRASHDIR"/"$file" "$CRASHDIR"/tools/"$file" 2>/dev/null
 done

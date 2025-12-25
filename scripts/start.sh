@@ -74,6 +74,8 @@ stop)
     cronset '保守模式守护进程'
     cronset '运行时每'
     cronset '流媒体预解析'
+	#停止tg机器人
+	PID=$(pidof /bin/sh "$CRASHDIR"/menus/bot_tg.sh) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
     #多种方式结束进程
 
     if [ "$start_old" != "已开启" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
@@ -89,7 +91,6 @@ stop)
         stop_firewall #清理路由策略
     fi
     PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
-	PID=$(pidof /bin/sh "$CRASHDIR"/menus/bot_tg.sh) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
     #清理缓存目录
     rm -rf "$TMPDIR"/CrashCore
     ;;

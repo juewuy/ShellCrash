@@ -226,10 +226,10 @@ main_menu() {
     7)
 		GT_CFG_PATH="$CRASHDIR"/configs/gateway.cfg
 		touch "$GT_CFG_PATH"
-        checkcfg=$(cat $GT_CFG_PATH)
+        checkcfg=$(cat "$CFG_PATH" "$GT_CFG_PATH")
         . "$CRASHDIR"/menus/7_gateway.sh && gateway
         if [ -n "$PID" ]; then
-            checkcfg_new=$(cat $GT_CFG_PATH)
+            checkcfg_new=$(cat "$CFG_PATH" "$GT_CFG_PATH")
             [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
         fi
         main_menu

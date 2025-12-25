@@ -2,11 +2,12 @@
 # Copyright (C) Juewuy
 . "$GT_CFG_PATH"
 . "$CRASHDIR"/menus/check_port.sh
+. "$CRASHDIR"/libs/gen_base64.sh
 
 gateway(){ #访问与控制主菜单
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 1 配置\033[33m公网访问防火墙\033[0m"
 	echo -e " 2 配置\033[36mTelegram专属控制机器人\033[0m		\033[32m$bot_tg_service\033[0m"
 	echo -e " 3 配置\033[36mDDNS自动域名\033[0m"
@@ -17,7 +18,7 @@ gateway(){ #访问与控制主菜单
 		echo -e " 7 配置\033[36mWireguard客户端\033[0m(限Singbox)	\033[32m$wg_service\033[0m"
 	}
 	echo -e " 0 返回上级菜单"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
@@ -64,17 +65,17 @@ gateway(){ #访问与控制主菜单
 }
 set_fw_wan() { #公网防火墙设置
 	[ -z "$fw_wan" ] && fw_wan=ON
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m如在vps运行，还需在vps安全策略对相关端口同时放行"
 	[ -n "$fw_wan_ports" ] && 
 	echo -e "当前放行端口：\033[36m$fw_wan_ports\033[0m"
 	echo -e "默认拦截端口：\033[33m$dns_port,$mix_port,$db_port\033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 1 启用/关闭公网防火墙:	\033[36m$fw_wan\033[0m"
 	echo -e " 2 添加放行端口(可包含默认拦截端口)"
 	echo -e " 3 移除指定放行端口"
 	echo -e " 0 返回上级菜单"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case $num in
 	1)
@@ -120,30 +121,11 @@ set_fw_wan() { #公网防火墙设置
 		;;
 	esac
 }
-set_bot_tg_init(){
-	echo -----------------------------------------------
-	echo -e "请先通过 \033[32;4mhttps://t.me/BotFather\033[0m 申请TG机器人并获取其\033[36mAPI TOKEN\033[0m"
-	echo -----------------------------------------------
-	read -p "请输入你获取到的API TOKEN > " TOKEN
-	echo -----------------------------------------------
-	echo -e "请向\033[32m你申请的机器人\033[31m而不是BotFather\033[0m，发送任意几条消息！"
-	echo -----------------------------------------------
-	read -p "我已经发送完成(1/0) > " res
-	if [ "$res" = 1 ]; then
-		. "$CRASHDIR"/libs/web_json.sh #加载web工具
-		bot_api=https://api.telegram.org/bot$TOKEN
-		chat=$(web_json_get "$bot_api/getUpdates" | tail -n -1)
-		[ -n "$chat" ] && chat_ID=$(echo $chat | grep -oE '"id":.*,"is_bot":false' | sed s'/"id"://'g | sed s'/,"is_bot":false//'g)
-		[ -z "$chat_ID" ] && {
-			echo -e "\033[31m无法获取对话ID，请确认使用的不是已经被绑定的机器人，或手动输入ChatID！\033[0m"
-			echo -e "通常访问 $url_tg 即可看到ChatID，也可以尝试其他方法\033[0m"
-			read -p "请手动输入ChatID > " chat_ID
-		}
-		if [ -n "$chat_ID" ]; then
-			setconfig TG_TOKEN $TOKEN "$CFG"
-			setconfig TG_CHATID $chat_ID "$CFG"
-			#设置机器人快捷命令
-			JSON=$(cat <<EOF
+set_bot_tg_config(){
+	setconfig TG_TOKEN "$TOKEN" "$GT_CFG_PATH"
+	setconfig TG_CHATID "$chat_ID" "$GT_CFG_PATH"
+	#设置机器人快捷命令
+	JSON=$(cat <<EOF
 {
   "commands": [
     {"command": "crash", "description": "呼出ShellCrash菜单"},
@@ -152,15 +134,20 @@ set_bot_tg_init(){
 }
 EOF
 )
-			TEXT='已完成Telegram机器人设置！'
-			web_json_post "$bot_api/setMyCommands" "$JSON"
-			web_json_post "$bot_api/sendMessage" '{"chat_id":"'"$chat_ID"'","text":"'"$TEXT"'","parse_mode":"Markdown"}'
-			echo -e "\033[32m$TEXT\033[0m"
-			return 0
-		else
-			echo -e "\033[31m无法获取对话ID，请重新配置！\033[0m"
-			return 1
-		fi
+	TEXT='已完成Telegram机器人设置！'
+	. "$CRASHDIR"/libs/web_json.sh
+	bot_api="https://api.telegram.org/bot$TOKEN"
+	web_json_post "$bot_api/setMyCommands" "$JSON"
+	web_json_post "$bot_api/sendMessage" '{"chat_id":"'"$chat_ID"'","text":"'"$TEXT"'","parse_mode":"Markdown"}'
+	echo -e "\033[32m$TEXT\033[0m"
+}
+set_bot_tg_init(){
+	. "$CRASHDIR"/menus/bot_tg_bind.sh && private_bot && set_bot
+	if [ "$?" = 0 ]; then
+		set_bot_tg_config
+		return 0
+	else
+		return 1
 	fi
 }
 set_bot_tg_service(){
@@ -170,35 +157,44 @@ set_bot_tg_service(){
 		[ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
 	else
 		bot_tg_service=ON
-		[ -z "$PID" ] && "$CRASHDIR"/menus/bot_tg.sh &
+		[ -n "$(pidof CrashCore)" ] && [ -z "$PID" ] && "$CRASHDIR"/menus/bot_tg.sh &
 	fi
 	setconfig bot_tg_service "$bot_tg_service"
 }
 set_bot_tg(){
 	[ -n "$ts_auth_key" ] && ts_auth_key_info='已设置'
-	echo -----------------------------------------------
+	[ -n "$TG_CHATID" ] && TG_CHATID_info='已绑定'
+	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m由于网络环境原因，此机器人仅限服务启动时运行！"
-	echo -e "此机器人与推送机器人互不影响，请尽量不要设置成同一机器人"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 1 启用/关闭TG-BOT服务	\033[32m$bot_tg_service\033[0m"
-	echo -e " 2 TG-BOT绑定设置"
+	echo -e " 2 TG-BOT绑定设置	\033[32m$TG_CHATID_info\033[0m"
 	echo -e " 0 返回上级菜单 \033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
 	1)
-		. "$CFG"
+		. "$GT_CFG_PATH"
 		if [ -n "$TG_CHATID" ];then
 			set_bot_tg_service
 		else
-			set_bot_tg_init && set_bot_tg_service
+			echo -e "\033[31m请先绑定TG-BOT！\033[0m"
 		fi
 		sleep 1
 		set_bot_tg
 	;;
 	2)
-		set_bot_tg_init && set_bot_tg_service
+		if [ -n "$chat_ID" ] && [ -n "$push_TG" ] && [ "$push_TG" != 'publictoken' ]; then
+			read -p "检测到已经绑定了TG推送BOT，是否直接使用？(1/0) > " res
+			if [ "$res" = 1 ]; then
+				TOKEN="$push_TG"
+				set_bot_tg_config
+				set_bot_tg
+				return
+			fi
+		fi
+		set_bot_tg_init
 		set_bot_tg
 	;;
 	*)
@@ -207,17 +203,19 @@ set_bot_tg(){
 	esac		
 }
 set_vmess(){
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 1 \033[32m启用/关闭\033[0mVmess入站	\033[32m$vms_service\033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$vms_port\033[0m"
 	echo -e " 3 设置\033[33mWS-path(可选)\033[0m：	\033[33m$vms_ws_path\033[0m"
 	echo -e " 4 设置\033[36m秘钥-uuid\033[0m：	\033[36m$vms_uuid\033[0m"
 	echo -e " 5 一键生成\033[32m随机秘钥\033[0m"
+	gen_base64 1 >/dev/null 2>&1 &&
+	echo -e " 6 一键生成分享链接"
 	echo -e " 0 返回上级菜单 \033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
@@ -233,10 +231,12 @@ set_vmess(){
 	;;
 	2)
 		read -p "请输入端口号(输入0删除) > " text
-		[ "$text" = 0 ] && unset vms_port
-		if check_port "$text"; then
+		if [ "$text" = 0 ];then
+			vms_port=''
+			setconfig vms_port "" "$GT_CFG_PATH"
+		elif check_port "$text"; then
 			vms_port="$text"
-			setconfig vms_port "$text" "$CFG"
+			setconfig vms_port "$text" "$GT_CFG_PATH"
 			fw_wan_ports=$(echo "$fw_wan_ports,$vms_port" | sed "s/^,//")
 			setconfig fw_wan_ports "$fw_wan_ports"
 		else
@@ -246,10 +246,12 @@ set_vmess(){
 	;;
 	3)
 		read -p "请输入ws-path路径(输入0删除) > " text
-		[ "$text" = 0 ] && unset vms_ws_path
-		if echo "$text" |grep -qE '^/';then
+		if [ "$text" = 0 ];then
+			vms_ws_path=''
+			setconfig vms_ws_path "" "$GT_CFG_PATH"
+		elif echo "$text" |grep -qE '^/';then
 			vms_ws_path="$text"
-			setconfig vms_ws_path "$text" "$CFG"
+			setconfig vms_ws_path "$text" "$GT_CFG_PATH"
 		else
 			echo -e "\033[31m不是合法的path路径，必须以【/】开头！\033[0m"
 			sleep 1
@@ -258,10 +260,12 @@ set_vmess(){
 	;;
 	4)
 		read -p "请输入UUID(输入0删除) > " text
-		[ "$text" = 0 ] && unset vms_uuid
-		if echo "$text" |grep -qiE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';then
+		if [ "$text" = 0 ];then
+			vms_uuid=''
+			setconfig vms_uuid "" "$GT_CFG_PATH"
+		elif echo "$text" |grep -qiE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';then
 			vms_uuid="$text"
-			setconfig vms_uuid "$text" "$CFG"
+			setconfig vms_uuid "$text" "$GT_CFG_PATH"
 		else
 			echo -e "\033[31m不是合法的UUID格式，请重新输入或使用随机生成功能！\033[0m"
 			sleep 1
@@ -270,7 +274,34 @@ set_vmess(){
 	;;
 	5)
 		vms_uuid=$(cat /proc/sys/kernel/random/uuid)
-		setconfig vms_uuid "$vms_uuid" "$CFG"
+		setconfig vms_uuid "$vms_uuid" "$GT_CFG_PATH"
+		sleep 1
+		set_vmess
+	;;
+	6)
+		read -p "请输入本机公网IP(4/6)或域名 > " host_wan
+		if [ -n "$host_wan" ] && [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
+			[ -n "$vms_ws_path" ] && vms_net=ws
+			vms_json=$(cat <<EOF
+{
+  "v": "2",
+  "ps": "ShellCrash_vms_in",
+  "add": "$host_wan",
+  "port": "$vms_port",
+  "id": "$vms_uuid",
+  "aid": "0",
+  "type": "auto",
+  "net": "$vms_net",
+  "path": "$vms_ws_path"
+}
+EOF
+)
+			vms_link="vmess://$(gen_base64 "$vms_json")"
+			echo "-----------------------------------------------"
+			echo -e "你的分享链接是(请勿随意分享给他人):\n\033[32m$vms_link\033[0m"
+		else
+			echo -e "\033[31m请先完成必选设置！\033[0m"
+		fi
 		sleep 1
 		set_vmess
 	;;
@@ -279,16 +310,18 @@ set_vmess(){
 }
 set_shadowsocks(){
 	[ -z "$sss_cipher" ] && sss_cipher='xchacha20-ietf-poly1305'
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 1 \033[32m启用/关闭\033[0mShadowSocks入站	\033[32m$sss_service\033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$sss_port\033[0m"
 	echo -e " 3 选择\033[33m加密协议\033[0m：	\033[33m$sss_cipher\033[0m"
 	echo -e " 4 设置\033[36mpassword\033[0m：	\033[36m$sss_pwd\033[0m"
+	gen_base64 1 >/dev/null 2>&1 &&
+	echo -e " 5 一键生成分享链接"
 	echo -e " 0 返回上级菜单 \033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
@@ -304,10 +337,12 @@ set_shadowsocks(){
 	;;
 	2)
 		read -p "请输入端口号(输入0删除) > " text
-		[ "$text" = 0 ] && unset sss_port
-		if check_port "$text"; then
+		if [ "$text" = 0 ];then
+			sss_port=''
+			setconfig sss_port "" "$GT_CFG_PATH"
+		elif check_port "$text"; then
 			sss_port="$text"
-			setconfig sss_port "$text" "$CFG"
+			setconfig sss_port "$text" "$GT_CFG_PATH"
 			fw_wan_ports=$(echo "$fw_wan_ports,$sss_port" | sed "s/^,//")
 			setconfig fw_wan_ports "$fw_wan_ports"
 		else
@@ -316,55 +351,55 @@ set_shadowsocks(){
 		set_shadowsocks
 	;;
 	3)
-		echo -----------------------------------------------
+		echo "-----------------------------------------------"
 		echo -e " 1 \033[32mxchacha20-ietf-poly1305\033[0m"
 		echo -e " 2 \033[32mchacha20-ietf-poly1305\033[0m"
 		echo -e " 3 \033[32maes-128-gcm\033[0m"
 		echo -e " 4 \033[32maes-256-gcm\033[0m"
-		ckcmd openssl && {
-			echo -----------------------------------------------
-			echo -e "\033[31m注意：\033[0m2022系列加密必须使用OpenSSL随机生成的password！"
+		gen_random 1 >/dev/null && {
+			echo "-----------------------------------------------"
+			echo -e "\033[31m注意：\033[0m2022系列加密必须使用随机生成的password！"
 			echo -e " 5 \033[32m2022-blake3-chacha20-poly1305\033[0m"
 			echo -e " 6 \033[32m2022-blake3-aes-128-gcm\033[0m"
 			echo -e " 7 \033[32m2022-blake3-aes-256-gcm\033[0m"
 		}
-		echo -----------------------------------------------
+		echo "-----------------------------------------------"
 		echo -e " 0 返回上级菜单"
 		read -p "请选择要使用的加密协议 > " num
 		case "$num" in
 		1)
 			sss_cipher=xchacha20-ietf-poly1305
-			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+			sss_pwd=$(gen_random 16)
 		;;
 		2)
 			sss_cipher=chacha20-ietf-poly1305
-			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+			sss_pwd=$(gen_random 16)
 		;;
 		3)
 			sss_cipher=aes-128-gcm
-			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+			sss_pwd=$(gen_random 16)
 		;;
 		4)
 			sss_cipher=aes-256-gcm
-			sss_pwd=$(cat /proc/sys/kernel/random/uuid)
+			sss_pwd=$(gen_random 16)
 		;;
 		5)
 			sss_cipher=2022-blake3-chacha20-poly1305
-			sss_pwd=$(openssl rand --base64 32)
+			sss_pwd=$(gen_random 32)
 		;;
 		6)
 			sss_cipher=2022-blake3-aes-128-gcm
-			sss_pwd=$(openssl rand --base64 16)
+			sss_pwd=$(gen_random 16)
 		;;
 		7)
 			sss_cipher=2022-blake3-aes-256-gcm
-			sss_pwd=$(openssl rand --base64 32)
+			sss_pwd=$(gen_random 32)
 		;;
 		*)
 		;;
 		esac
-		setconfig sss_cipher "$sss_cipher" "$CFG"
-		setconfig sss_pwd "$sss_pwd" "$CFG"
+		setconfig sss_cipher "$sss_cipher" "$GT_CFG_PATH"
+		setconfig sss_pwd "$sss_pwd" "$GT_CFG_PATH"
 		set_shadowsocks
 	;;
 	4)
@@ -375,8 +410,20 @@ set_shadowsocks(){
 			read -p "请输入秘钥(输入0删除) > " text
 			[ "$text" = 0 ] && unset sss_pwd
 			sss_pwd="$text"
-			setconfig sss_pwd "$text" "$CFG"
+			setconfig sss_pwd "$text" "$GT_CFG_PATH"
 		fi
+		set_shadowsocks
+	;;
+	5)
+		read -p "请输入本机公网IP(4/6)或域名 > " text
+		if [ -n "$text" ] && [ -n "$sss_port" ] && [ -n "$sss_pwd" ];then
+			ss_link="ss://$(gen_base64 "$sss_cipher":"$sss_pwd")@${text}:${sss_port}#ShellCrash_ss_in"
+			echo "-----------------------------------------------"
+			echo -e "你的分享链接是(请勿随意分享给他人):\n\033[32m$ss_link\033[0m"
+		else
+			echo -e "\033[31m请先完成必选设置！\033[0m"
+		fi
+		sleep 1
 		set_shadowsocks
 	;;
 	*) errornum ;;
@@ -384,18 +431,18 @@ set_shadowsocks(){
 }
 set_tailscale(){
 	[ -n "$ts_auth_key" ] && ts_auth_key_info='*********'
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译Tailscale模块\n如需使用请先前往自定义内核更新完整版内核文件！"
 	echo -e "创建秘钥:\033[32;4mhttps://login.tailscale.com/admin/settings/keys\033[0m"
 	echo -e "访问非本机目标需允许通告:\033[32;4mhttps://login.tailscale.com\033[0m"
 	echo -e "访问非本机目标需在终端设置使用Subnet或EXIT-NODE模式"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 1 \033[32m启用/关闭\033[0mTailscale服务	\033[32m$ts_service\033[0m"
 	echo -e " 2 设置\033[36m秘钥\033[0m(Auth Key)		$ts_auth_key_info"
 	echo -e " 3 通告路由\033[33m内网地址\033[0m(Subnet)	\033[36m$ts_subnet\033[0m"
 	echo -e " 4 通告路由\033[31m全部流量\033[0m(EXIT-NODE)	\033[36m$ts_exit_node\033[0m"
 	echo -e " 0 返回上级菜单 \033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
@@ -412,17 +459,17 @@ set_tailscale(){
 	2)
 		read -p "请输入秘钥(输入0删除) > " text
 		[ "$text" = 0 ] && unset ts_auth_key ts_auth_key_info || ts_auth_key="$text"
-		[ -n "$ts_auth_key" ] && setconfig ts_auth_key "$ts_auth_key" "$CFG"
+		setconfig ts_auth_key "$ts_auth_key" "$GT_CFG_PATH"
 		set_tailscale
 	;;
 	3)
 		[ "$ts_subnet" = true ] && ts_subnet=false || ts_subnet=true
-		setconfig ts_subnet "$ts_subnet" "$CFG"
+		setconfig ts_subnet "$ts_subnet" "$GT_CFG_PATH"
 		set_tailscale
 	;;
 	4)
 		[ "$ts_exit_node" = true ] && ts_exit_node=false || ts_exit_node=true
-		setconfig ts_exit_node "$ts_exit_node" "$CFG"
+		setconfig ts_exit_node "$ts_exit_node" "$GT_CFG_PATH"
 		set_tailscale
 	;;
 	*) errornum ;;
@@ -432,21 +479,21 @@ set_wireguard(){
 	[ -n "$wg_public_key" ] && wgp_key_info='*********' || unset wgp_key_info
 	[ -n "$wg_private_key" ] && wgv_key_info='*********' || unset wgv_key_info
 	[ -n "$wg_pre_shared_key" ] && wgpsk_key_info='*********' || unset wgpsk_key_info
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译WireGuard模块\n如需使用请先前往自定义内核更新完整版内核文件！"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 1 \033[32m启用/关闭\033[0mWireguard服务	\033[32m$wg_service\033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 2 设置\033[36mEndpoint地址\033[0m：		\033[36m$wg_server\033[0m"
 	echo -e " 3 设置\033[36mEndpoint端口\033[0m：		\033[36m$wg_port\033[0m"
 	echo -e " 4 设置\033[36m公钥-PublicKey\033[0m：		\033[36m$wgp_key_info\033[0m"
 	echo -e " 5 设置\033[36m密钥-PresharedKey\033[0m：	\033[36m$wgpsk_key_info\033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	echo -e " 6 设置\033[33m私钥-PrivateKey\033[0m：	\033[33m$wgv_key_info\033[0m"
 	echo -e " 7 设置\033[33m组网IPV4地址\033[0m：		\033[33m$wg_ipv4\033[0m"
 	echo -e " 8 可选\033[33m组网IPV6地址\033[0m：	\033[33m$wg_ipv6\033[0m"
 	echo -e " 0 返回上级菜单 \033[0m"
-	echo -----------------------------------------------
+	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
@@ -466,31 +513,31 @@ set_wireguard(){
 		case "$num" in
 		2)
 			wg_server="$text"
-			setconfig wg_server "$text" "$CFG"
+			setconfig wg_server "$text" "$GT_CFG_PATH"
 		;;
 		3)
 			wg_port="$text"
-			setconfig wg_port "$text" "$CFG"
+			setconfig wg_port "$text" "$GT_CFG_PATH"
 		;;
 		4)
 			wg_public_key="$text"
-			setconfig wg_public_key "$text" "$CFG"
+			setconfig wg_public_key "$text" "$GT_CFG_PATH"
 		;;
 		5)
 			wg_pre_shared_key="$text"
-			setconfig wg_pre_shared_key "$text" "$CFG"
+			setconfig wg_pre_shared_key "$text" "$GT_CFG_PATH"
 		;;
 		6)
 			wg_private_key="$text"
-			setconfig wg_private_key "$text" "$CFG"
+			setconfig wg_private_key "$text" "$GT_CFG_PATH"
 		;;
 		7)
 			wg_ipv4="$text"
-			setconfig wg_ipv4 "$text" "$CFG"
+			setconfig wg_ipv4 "$text" "$GT_CFG_PATH"
 		;;
 		8)
 			wg_ipv6="$text"
-			setconfig wg_ipv6 "$text" "$CFG"
+			setconfig wg_ipv6 "$text" "$GT_CFG_PATH"
 		;;
 
 		esac
