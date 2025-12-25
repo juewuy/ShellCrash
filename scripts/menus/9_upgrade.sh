@@ -1,38 +1,144 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+. "$CRASHDIR"/libs/check_dir_avail.sh
+
 error_down(){
 	echo -e  "\033[33m请尝试切换至其他安装源后重新下载！\033[0m"
 	echo -e  "或者参考 \033[32;4mhttps://juewuy.github.io/bdaz\033[0m 进行本地安装！"
 	sleep 1
 }
-dir_avail(){
-	df -h >/dev/null 2>&1 && h=$2
-	df $h $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep -E 'Ava|可用' |awk '{print $2}'
+#主界面
+upgrade(){
+    echo "-----------------------------------------------"
+	echo -ne "\033[32m正在检查更新！\033[0m\r"
+	checkupdate
+	[ -z "$core_v" ] && core_v=$crashcore
+	core_v_new=$(eval echo \$"$crashcore"_v)
+	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
+	echo "-----------------------------------------------"
+	echo -e "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
+	[ "$(dir_avail "$CRASHDIR")" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
+		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
+		sleep 1
 	}
-
-#下载更新相关
-getscripts(){ #更新脚本文件
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/ShellCrash.tar.gz ShellCrash.tar.gz
+	echo "-----------------------------------------------"
+	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
+	echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
+	echo -e " 3 更新\033[32m数据库文件\033[0m	> \033[32m$GeoIP_v\033[0m"
+	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
+	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
+	echo "-----------------------------------------------"
+	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
+	echo -e " 8 \033[32m配置自动更新\033[0m"
+	echo -e " 9 \033[31m卸载ShellCrash\033[0m"
+	echo "-----------------------------------------------"
+	echo -e "99 \033[36m鸣谢！\033[0m"
+	echo "-----------------------------------------------"
+	echo -e " 0 返回上级菜单"
+	echo "-----------------------------------------------"
+	read -p "请输入对应数字 > " num
+	case "$num" in
+	0)
+		;;
+	1)
+	    setscripts
+		;;
+	2)
+	    setcore
+		upgrade
+	    ;;
+	3)
+		setgeo
+		upgrade
+	    ;;
+	4)
+		setdb
+		upgrade
+		;;
+	5)
+	    setcrt
+	    upgrade
+	    ;;
+	6)
+	    echo "-----------------------------------------------"
+	    echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
+	    echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
+	    sleep 2
+	    upgrade
+	    ;;
+	7)
+	    setserver
+	    upgrade
+	    ;;
+	8)
+	    . "$CRASHDIR"/task/task.sh && task_add
+	    upgrade
+	    ;;
+	9)
+	    . "$CRASHDIR"/menus/uninstall.sh && uninstall
+	    ;;
+	99)
+		echo "-----------------------------------------------"
+		echo -e "感谢：\033[32mClash项目 \033[0m作者\033[36m Dreamacro\033[0m"
+		echo -e "感谢：\033[32msing-box项目 \033[0m作者\033[36m SagerNet\033[0m 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
+		echo -e "感谢：\033[32mMetaCubeX项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
+		echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
+		echo -e "感谢：\033[32mzashboard项目 \033[0m作者\033[36m Zephyruso\033[0m 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
+		echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
+		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m PuerNya\033[0m 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
+		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m reF1nd\033[0m 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
+		echo -e "感谢：\033[32mDustinWin相关项目 \033[0m作者\033[36m DustinWin\033[0m 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
+		echo "-----------------------------------------------"
+		echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
+		echo "-----------------------------------------------"
+		sleep 2
+		upgrade
+	    ;;
+	*)
+	    errornum
+		;;
+	esac
+}
+#检查更新
+checkupdate(){
+	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/version_new version echooff
+	[ "$?" = "0" ] && {
+		version_new=$(cat "$TMPDIR"/version_new)
+		"$CRASHDIR"/start.sh get_bin "$TMPDIR"/version_new bin/version echooff
+	}
+	if [ "$?" = "0" ];then
+		. "$TMPDIR"/version_new 2>/dev/null
+	else
+		echo -e "\033[31m检查更新失败！请尝试切换其他安装源！\033[0m"
+		setserver
+		[ "$checkupdate" = false ] || checkupdate
+	fi
+	rm -rf "$TMPDIR"/version_new
+}
+#更新脚本
+getscripts(){ 
+	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/ShellCrash.tar.gz ShellCrash.tar.gz
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
 		error_down
 	else
-		${CRASHDIR}/start.sh stop 2>/dev/null
+		"$CRASHDIR"/start.sh stop 2>/dev/null
 		#解压
 		echo "-----------------------------------------------"
 		echo "开始解压文件！"
-		mkdir -p ${CRASHDIR} > /dev/null
-		tar -zxf "${TMPDIR}/ShellCrash.tar.gz" ${tar_para} -C ${CRASHDIR}/
+		mkdir -p "$CRASHDIR" > /dev/null
+		tar -zxf ""$TMPDIR"/ShellCrash.tar.gz" ${tar_para} -C "$CRASHDIR"/
 		if [ $? -ne 0 ];then
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
 		else
-			. ${CRASHDIR}/init.sh >/dev/null
+			. "$CRASHDIR"/init.sh >/dev/null
 			echo -e "\033[32m脚本更新成功！\033[0m"
 		fi
 	fi
-	rm -rf ${TMPDIR}/ShellCrash.tar.gz
+	rm -rf "$TMPDIR"/ShellCrash.tar.gz
 	exit
 }
 setscripts(){
@@ -52,7 +158,7 @@ setscripts(){
 		exit;
 	fi
 }
-
+#更新内核
 getcpucore(){ #自动获取内核架构
 	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
 	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
@@ -121,7 +227,7 @@ switch_core(){ #clash与singbox内核切换
 				geodate_v='geoip_cn_v geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v'
 			}
 			for text in ${geodate} ;do
-				rm -rf ${CRASHDIR}/${text}
+				rm -rf "$CRASHDIR"/${text}
 			done
 			for text in ${geodate_v} ;do
 				setconfig "$text"
@@ -133,7 +239,7 @@ switch_core(){ #clash与singbox内核切换
 	else
 		COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 	fi
-	setconfig COMMAND "$COMMAND" ${CRASHDIR}/configs/command.env && . ${CRASHDIR}/configs/command.env
+	setconfig COMMAND "$COMMAND" "$CRASHDIR"/configs/command.env && . "$CRASHDIR"/configs/command.env
 }
 getcore(){ #下载内核文件
 	[ -z "$crashcore" ] && crashcore=meta
@@ -146,53 +252,53 @@ getcore(){ #下载内核文件
 		zip_type=$(echo $custcorelink | grep -oE 'tar.gz$')
 		[ -z "$zip_type" ] && zip_type=$(echo $custcorelink | grep -oE 'gz$')
 		if [ -n "$zip_type" ];then
-			${CRASHDIR}/start.sh webget ${TMPDIR}/core_new.${zip_type} "$custcorelink"
+			"$CRASHDIR"/start.sh webget "$TMPDIR"/core_new.${zip_type} "$custcorelink"
 		else
 			echo -e "\033[31m链接不是以.tar.gz或.gz结尾！下载已取消！\033[0m"
 			exit
 		fi
 	else
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/core_new.tar.gz bin/${crashcore}/${core_new}-linux-${cpucore}.tar.gz
+		"$CRASHDIR"/start.sh get_bin "$TMPDIR"/core_new.tar.gz bin/${crashcore}/${core_new}-linux-${cpucore}.tar.gz
 	fi
 	if [ "$?" = "1" ];then
 		echo -e "\033[31m核心文件下载失败！\033[0m"
-		rm -rf ${TMPDIR}/core_new.tar.gz
+		rm -rf "$TMPDIR"/core_new.tar.gz
 		[ -z "$custcorelink" ] && error_down
 	else
 		[ -n "$(pidof CrashCore)" ] && {
-			${CRASHDIR}/start.sh stop #停止内核服务防止内存不足
+			"$CRASHDIR"/start.sh stop #停止内核服务防止内存不足
 			rm -rf "$TMPDIR"/CrashCore #删除缓存内核防止缓存空间不足
 		}
-		[ -f ${TMPDIR}/core_new.tar.gz ] && {
-			mkdir -p ${TMPDIR}/core_tmp
-			[ "$BINDIR" = "$TMPDIR" ] && rm -rf ${TMPDIR}/CrashCore #小闪存模式防止空间不足
-			tar -zxf "${TMPDIR}/core_new.tar.gz" ${tar_para} -C ${TMPDIR}/core_tmp/
-			for file in $(find ${TMPDIR}/core_tmp 2>/dev/null);do
-				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file ${TMPDIR}/core_new
+		[ -f "$TMPDIR"/core_new.tar.gz ] && {
+			mkdir -p "$TMPDIR"/core_tmp
+			[ "$BINDIR" = "$TMPDIR" ] && rm -rf "$TMPDIR"/CrashCore #小闪存模式防止空间不足
+			tar -zxf ""$TMPDIR"/core_new.tar.gz" ${tar_para} -C "$TMPDIR"/core_tmp/
+			for file in $(find "$TMPDIR"/core_tmp 2>/dev/null);do
+				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file "$TMPDIR"/core_new
 			done
-			rm -rf ${TMPDIR}/core_tmp
+			rm -rf "$TMPDIR"/core_tmp
 		}
-		[ -f ${TMPDIR}/core_new.gz ] && gunzip ${TMPDIR}/core_new.gz && rm -rf ${TMPDIR}/core_new.gz
-		chmod +x ${TMPDIR}/core_new
+		[ -f "$TMPDIR"/core_new.gz ] && gunzip "$TMPDIR"/core_new.gz && rm -rf "$TMPDIR"/core_new.gz
+		chmod +x "$TMPDIR"/core_new
 		[ "$crashcore" = unknow ] && setcoretype
 		if echo "$crashcore" | grep -q 'singbox';then
-			core_v=$(${TMPDIR}/core_new version 2>/dev/null | grep version | awk '{print $3}')
+			core_v=$("$TMPDIR"/core_new version 2>/dev/null | grep version | awk '{print $3}')
 		else
-			core_v=$(${TMPDIR}/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
+			core_v=$("$TMPDIR"/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
 		fi
 		if [ -z "$core_v" ];then
 			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
-			rm -rf ${TMPDIR}/core_new
-			rm -rf ${TMPDIR}/core_new.tar.gz
+			rm -rf "$TMPDIR"/core_new
+			rm -rf "$TMPDIR"/core_new.tar.gz
 			setcpucore
 		else
 			echo -e "\033[32m$crashcore核心下载成功！\033[0m"
 			sleep 1
-			mv -f ${TMPDIR}/core_new ${TMPDIR}/CrashCore
-			if [ -f ${TMPDIR}/core_new.tar.gz ];then
-				mv -f ${TMPDIR}/core_new.tar.gz ${BINDIR}/CrashCore.tar.gz
+			mv -f "$TMPDIR"/core_new "$TMPDIR"/CrashCore
+			if [ -f "$TMPDIR"/core_new.tar.gz ];then
+				mv -f "$TMPDIR"/core_new.tar.gz "$BINDIR"/CrashCore.tar.gz
 			else
-				tar -zcf ${BINDIR}/CrashCore.tar.gz ${tar_para} -C ${TMPDIR} CrashCore
+				tar -zcf "$BINDIR"/CrashCore.tar.gz ${tar_para} -C "$TMPDIR" CrashCore
 			fi
 			setconfig crashcore $crashcore
 			setconfig core_v $core_v
@@ -206,23 +312,23 @@ setcustcore(){ #自定义内核
 		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
 		#通过githubapi获取内核信息
 		echo -e "\033[32m正在获取内核文件链接！\033[0m"
-		${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
+		"$CRASHDIR"/start.sh webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
 		if [ "$?" = 0 ];then
-			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-			release_date=$(cat ${TMPDIR}/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
-			update_date=$(cat ${TMPDIR}/github_api | grep '"updated_at":' | head -n 1 | awk -F '"' '{print $4}')
+			release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+			release_date=$(cat "$TMPDIR"/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
+			update_date=$(cat "$TMPDIR"/github_api | grep '"updated_at":' | head -n 1 | awk -F '"' '{print $4}')
 			[ -n "$(echo $cpucore | grep mips)" ] && cpu_type=mips || cpu_type=$cpucore
-			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$"  | sed 's/"//' > ${TMPDIR}/core.list
-			rm -rf ${TMPDIR}/github_api
+			cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$"  | sed 's/"//' > "$TMPDIR"/core.list
+			rm -rf "$TMPDIR"/github_api
 			#
-			if [ -s ${TMPDIR}/core.list ];then
+			if [ -s "$TMPDIR"/core.list ];then
 				echo "-----------------------------------------------"
 				echo -e "内核版本：\033[36m$release_tag\033[0m"
 				echo -e "发布时间：\033[33m$release_date\033[0m"
 				echo -e "更新时间：\033[32m$update_date\033[0m"
 				echo "-----------------------------------------------"
 				echo -e "\033[33m请确认内核信息并选择：\033[0m"
-				cat ${TMPDIR}/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
+				cat "$TMPDIR"/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
 				echo -e " 0 返回上级菜单"
 				echo "-----------------------------------------------"
 				read -p "请输入对应数字 > " num
@@ -231,8 +337,8 @@ setcustcore(){ #自定义内核
 					setcustcore
 				;;
 				[1-9]|[1-9][0-9])
-					if [ "$num" -le "$(wc -l < ${TMPDIR}/core.list)" ];then
-						custcorelink=$(sed -n "$num"p ${TMPDIR}/core.list)
+					if [ "$num" -le "$(wc -l < "$TMPDIR"/core.list)" ];then
+						custcorelink=$(sed -n "$num"p "$TMPDIR"/core.list)
 						getcore
 					else
 						errornum
@@ -250,7 +356,7 @@ setcustcore(){ #自定义内核
 			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
 			sleep 1
 		fi
-		rm -rf ${TMPDIR}/core.list
+		rm -rf "$TMPDIR"/core.list
 	}
 	[ -z "$cpucore" ] && getcpucore
 	echo "-----------------------------------------------"
@@ -331,7 +437,7 @@ setcustcore(){ #自定义内核
 setcore(){ #内核选择菜单
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow"
-	[ ! -f ${CRASHDIR}/CrashCore.tar.gz -o ! -f ${BINDIR}/CrashCore.tar.gz ] && crashcore="未安装核心"
+	[ ! -f "$CRASHDIR"/CrashCore.tar.gz -o ! -f "$BINDIR"/CrashCore.tar.gz ] && crashcore="未安装核心"
 	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
 	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 	###
@@ -404,12 +510,12 @@ setcore(){ #内核选择菜单
 	;;
 	esac
 }
-
+#数据库
 getgeo(){ #下载Geo文件
 	#生成链接
 	echo "-----------------------------------------------"
 	echo 正在从服务器获取数据库文件…………
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/${geoname} bin/geodata/$geotype
+	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/${geoname} bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -420,11 +526,11 @@ getgeo(){ #下载Geo文件
 			[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
 		}
 		if echo "$geoname" | grep -Eq '.tar.gz';then
-			tar -zxf ${TMPDIR}/${geoname} ${tar_para} -C ${BINDIR}/${geofile} > /dev/null
-			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/${geoname} && exit 1
-			rm -rf ${TMPDIR}/${geoname}
+			tar -zxf "$TMPDIR"/${geoname} ${tar_para} -C "$BINDIR"/${geofile} > /dev/null
+			[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf "$TMPDIR"/${geoname} && exit 1
+			rm -rf "$TMPDIR"/${geoname}
 		else
-			mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
+			mv -f "$TMPDIR"/${geoname} "$BINDIR"/${geofile}${geoname}
 		fi
 		echo "-----------------------------------------------"
 		echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
@@ -437,7 +543,7 @@ setcustgeo(){ #下载自定义数据库文件
 	getcustgeo(){
 		echo "-----------------------------------------------"
 		echo "正在获取数据库文件…………"
-		${CRASHDIR}/start.sh webget ${TMPDIR}/$geoname $custgeolink
+		"$CRASHDIR"/start.sh webget "$TMPDIR"/$geoname $custgeolink
 		if [ "$?" = "1" ];then
 			echo "-----------------------------------------------"
 			echo -e "\033[31m文件下载失败！\033[0m"
@@ -447,7 +553,7 @@ setcustgeo(){ #下载自定义数据库文件
 				geofile='ruleset/'
 				[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
 			}
-			mv -f ${TMPDIR}/${geoname} ${BINDIR}/${geofile}${geoname}
+			mv -f "$TMPDIR"/${geoname} "$BINDIR"/${geofile}${geoname}
 			echo "-----------------------------------------------"
 			echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
 		fi
@@ -455,17 +561,17 @@ setcustgeo(){ #下载自定义数据库文件
 	}
 	checkcustgeo(){
 		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
-		[ ! -s ${TMPDIR}/geo.list ] && {
+		[ ! -s "$TMPDIR"/geo.list ] && {
 			echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
-			${CRASHDIR}/start.sh webget ${TMPDIR}/github_api https://api.github.com/repos/${project}/releases/${api_url}
-			release_tag=$(cat ${TMPDIR}/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-			cat ${TMPDIR}/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > ${TMPDIR}/geo.list
-			rm -rf ${TMPDIR}/github_api
+			"$CRASHDIR"/start.sh webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
+			release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+			cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > "$TMPDIR"/geo.list
+			rm -rf "$TMPDIR"/github_api
 		}
-		if [ -s ${TMPDIR}/geo.list ];then
+		if [ -s "$TMPDIR"/geo.list ];then
 			echo -e "请选择需要更新的数据库文件："
 			echo "-----------------------------------------------"
-			cat ${TMPDIR}/geo.list | awk '{print " "NR" "$1}'
+			cat "$TMPDIR"/geo.list | awk '{print " "NR" "$1}'
 			echo -e " 0 返回上级菜单"
 			echo "-----------------------------------------------"
 			read -p "请输入对应数字 > " num
@@ -473,8 +579,8 @@ setcustgeo(){ #下载自定义数据库文件
 			0)
 			;;
 			[1-99])
-				if [ "$num" -le "$(wc -l < ${TMPDIR}/geo.list)" ];then
-					geotype=$(sed -n "$num"p ${TMPDIR}/geo.list)
+				if [ "$num" -le "$(wc -l < "$TMPDIR"/geo.list)" ];then
+					geotype=$(sed -n "$num"p "$TMPDIR"/geo.list)
 					[ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
 					[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
 					[ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
@@ -494,7 +600,7 @@ setcustgeo(){ #下载自定义数据库文件
 			sleep 1
 		fi
 	}
-	rm -rf ${TMPDIR}/geo.list
+	rm -rf "$TMPDIR"/geo.list
 	echo "-----------------------------------------------"
 	echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
 	echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
@@ -555,7 +661,7 @@ setcustgeo(){ #下载自定义数据库文件
 	;;
 	esac
 }
-setgeo(){ #数据库选择菜单
+setgeo(){ 
 	. $CFG_PATH > /dev/null
 	[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
 	echo "-----------------------------------------------"
@@ -628,12 +734,12 @@ setgeo(){ #数据库选择菜单
 		read -p "确认清理？[1/0] > " res
 		[ "$res" = '1' ] && {
 			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db;do
-				rm -rf "$CRASHDIR"/$file
+				rm -rf $CRASHDIR/$file
 			done
 			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v mrs_v srs_v;do
 				setconfig $var
 			done
-			rm -rf "$CRASHDIR"/ruleset/*
+			rm -rf $CRASHDIR/ruleset/*
 			echo -e "\033[33m所有数据库文件均已清理！\033[0m"
 			sleep 1
 		}
@@ -644,12 +750,12 @@ setgeo(){ #数据库选择菜单
 	;;
 esac
 }
-
-getdb(){ #下载Dashboard文件
+#Dashboard
+getdb(){ 
 	dblink="${update_url}/"
 	echo "-----------------------------------------------"
 	echo 正在连接服务器获取安装文件…………
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
+	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
 	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -659,8 +765,8 @@ getdb(){ #下载Dashboard文件
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		mkdir -p $dbdir > /dev/null
-		tar -zxf "${TMPDIR}/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
-		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf ${TMPDIR}/clashfm.tar.gz && exit 1
+		tar -zxf ""$TMPDIR"/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
+		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf "$TMPDIR"/clashfm.tar.gz && exit 1
 		#修改默认host和端口
 		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "zashboard" ];then
 			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
@@ -674,21 +780,21 @@ getdb(){ #下载Dashboard文件
 		setconfig hostdir "'$hostdir'"
 		echo "-----------------------------------------------"
 		echo -e "\033[32m面板安装成功！\033[36m如未生效，请使用【Ctrl+F5】强制刷新浏览器！！！\033[0m"
-		rm -rf ${TMPDIR}/clashdb.tar.gz
+		rm -rf "$TMPDIR"/clashdb.tar.gz
 	fi
 	sleep 1
 }
 setdb(){
 	dbdir(){
-		if [ -f /www/clash/CNAME -o -f ${CRASHDIR}/ui/CNAME ];then
+		if [ -f /www/clash/CNAME -o -f "$CRASHDIR"/ui/CNAME ];then
 			echo "-----------------------------------------------"
 			echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
 			echo "-----------------------------------------------"
 			read -p "是否升级/覆盖安装？[1/0] > " res
 			if [ "$res" = 1 ]; then
-				rm -rf ${BINDIR}/ui
+				rm -rf "$BINDIR"/ui
 				[ -f /www/clash/CNAME ] && rm -rf /www/clash && dbdir=/www/clash
-				[ -f ${CRASHDIR}/ui/CNAME ] && rm -rf ${CRASHDIR}/ui && dbdir=${CRASHDIR}/ui
+				[ -f "$CRASHDIR"/ui/CNAME ] && rm -rf "$CRASHDIR"/ui && dbdir="$CRASHDIR"/ui
 				getdb
 			else
 				setdb
@@ -705,7 +811,7 @@ setdb(){
 			read -p "请输入对应数字 > " num
 
 			if [ "$num" = '1' ]; then
-				dbdir=${CRASHDIR}/ui
+				dbdir="$CRASHDIR"/ui
 				hostdir=":$db_port/ui"
 				getdb
 			elif [ "$num" = '2' ]; then
@@ -717,7 +823,7 @@ setdb(){
 				echo -e "\033[33m安装已取消！\033[0m"
 			fi
 		else
-				dbdir=${CRASHDIR}/ui
+				dbdir="$CRASHDIR"/ui
 				hostdir=":$db_port/ui"
 				getdb
 		fi
@@ -774,8 +880,8 @@ setdb(){
 		read -p "确认卸载本地面板？(1/0) > " res
 		if [ "$res" = 1 ];then
 			rm -rf /www/clash
-			rm -rf ${CRASHDIR}/ui
-			rm -rf ${BINDIR}/ui
+			rm -rf "$CRASHDIR"/ui
+			rm -rf "$BINDIR"/ui
 			echo "-----------------------------------------------"
 			echo -e "\033[31m面板已经卸载！\033[0m"
 			sleep 1
@@ -786,22 +892,22 @@ setdb(){
 		;;
 	esac
 }
-
-getcrt(){ #下载根证书文件
+#根证书
+getcrt(){
 	echo "-----------------------------------------------"
 	echo "正在连接服务器获取安装文件…………"
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/ca-certificates.crt bin/fix/ca-certificates.crt
+	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/ca-certificates.crt bin/fix/ca-certificates.crt
 	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
 		echo -e "\033[31m文件下载失败！\033[0m"
 		error_down
 	else
 		echo "-----------------------------------------------"
-		[ "$systype" = 'mi_snapshot' ] && cp -f ${TMPDIR}/ca-certificates.crt "$CRASHDIR"/tools #镜像化设备特殊处理
+		[ "$systype" = 'mi_snapshot' ] && cp -f "$TMPDIR"/ca-certificates.crt $CRASHDIR/tools #镜像化设备特殊处理
 		[ -f $openssldir/certs ] && rm -rf $openssldir/certs #如果certs不是目录而是文件则删除并创建目录
 		mkdir -p $openssldir/certs
-		mv -f ${TMPDIR}/ca-certificates.crt $crtdir
-		${CRASHDIR}/start.sh webget /dev/null https://baidu.com echooff rediron skipceroff
+		mv -f "$TMPDIR"/ca-certificates.crt $crtdir
+		"$CRASHDIR"/start.sh webget /dev/null https://baidu.com echooff rediron skipceroff
 		if [ "$?" = "1" ];then
 			export CURL_CA_BUNDLE=$crtdir
 			echo "export CURL_CA_BUNDLE=$crtdir" >> /etc/profile
@@ -844,11 +950,11 @@ setcrt(){
 #安装源
 setserver(){
 	[ -z "$release_type" ] && release_name=未指定
-	[ -n "$release_type" ] && release_name=${release_type}'(回退)'
+	[ -n "$release_type" ] && release_name="$release_type(回退)"
 	[ "$release_type" = stable ] && release_name=稳定版
 	[ "$release_type" = master ] && release_name=公测版
 	[ "$release_type" = dev ] && release_name=开发版
-	[ -n "$url_id" ] && url_name=$(grep "$url_id" ${CRASHDIR}/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name=$update_url
+	[ -n "$url_id" ] && url_name=$(grep "$url_id" "$CRASHDIR"/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name="$update_url"
 	saveserver(){
 		#写入配置文件
 		setconfig update_url "'$update_url'"
@@ -861,7 +967,7 @@ setserver(){
 	echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
 	echo -e "当前版本：\033[4;33m$release_name\033[0m 当前源：\033[4;32m$url_name\033[0m"
 	echo "-----------------------------------------------"
-	grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | awk '{print " "NR" "$2}'
+	grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | awk '{print " "NR" "$2}'
 	echo "-----------------------------------------------"
 	echo -e " a 切换至\033[32m稳定版-stable\033[0m"
 	echo -e " b 切换至\033[36m公测版-master\033[0m"
@@ -877,13 +983,13 @@ setserver(){
 		checkupdate=false
 	;;
 	[1-99])
-		url_id_new=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
+		url_id_new=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
 		if [ -z "$url_id_new" ];then
 			errornum
 			sleep 1
 			setserver
 		elif [ "$url_id_new" -ge 200 ];then
-			update_url=$(grep -E "^1|$release_name" ${CRASHDIR}/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+			update_url=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
 			url_id=''
 			saveserver
 		else
@@ -934,16 +1040,16 @@ setserver(){
 		echo "-----------------------------------------------"
 		if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
 			echo -ne "\033[32m正在获取版本信息！\033[0m\r"
-			${CRASHDIR}/start.sh get_bin ${TMPDIR}/release_version bin/release_version
+			"$CRASHDIR"/start.sh get_bin "$TMPDIR"/release_version bin/release_version
 			if [ "$?" = "0" ];then
 				echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
-				cat ${TMPDIR}/release_version | awk '{print " "NR" "$1}'
+				cat "$TMPDIR"/release_version | awk '{print " "NR" "$1}'
 				echo -e " 0 返回上级菜单"
 				read -p "请输入对应数字 > " num
 				if [ -z "$num" -o "$num" = 0 ]; then
 					setserver
-				elif [ $num -le $(cat ${TMPDIR}/release_version 2>/dev/null | awk 'END{print NR}') ]; then
-					release_type=$(cat ${TMPDIR}/release_version | awk '{print $1}' | sed -n "$num"p)
+				elif [ $num -le $(cat "$TMPDIR"/release_version 2>/dev/null | awk 'END{print NR}') ]; then
+					release_type=$(cat "$TMPDIR"/release_version | awk '{print $1}' | sed -n "$num"p)
 					update_url=''
 					saveserver
 				else
@@ -958,7 +1064,7 @@ setserver(){
 				sleep 1
 				setserver
 			fi
-			rm -rf ${TMPDIR}/release_version
+			rm -rf "$TMPDIR"/release_version
 		else
 			echo -e "\033[31m当前源不支持版本回退，请尝试更换其他安装源！\033[0m"
 			sleep 1
@@ -970,480 +1076,3 @@ setserver(){
 	;;
 	esac
 }
-#检查更新
-checkupdate(){
-	${CRASHDIR}/start.sh get_bin ${TMPDIR}/version_new version echooff
-	[ "$?" = "0" ] && {
-		version_new=$(cat ${TMPDIR}/version_new)
-		${CRASHDIR}/start.sh get_bin ${TMPDIR}/version_new bin/version echooff
-	}
-	if [ "$?" = "0" ];then
-		. ${TMPDIR}/version_new 2>/dev/null
-	else
-		echo -e "\033[31m检查更新失败！请尝试切换其他安装源！\033[0m"
-		setserver
-		[ "$checkupdate" = false ] || checkupdate
-	fi
-	rm -rf ${TMPDIR}/version_new
-}
-update(){
-    echo "-----------------------------------------------"
-	echo -ne "\033[32m正在检查更新！\033[0m\r"
-	checkupdate
-	[ -z "$core_v" ] && core_v=$crashcore
-	core_v_new=$(eval echo \$${crashcore}_v)
-	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "当前目录(\033[32m${CRASHDIR}\033[0m)剩余空间：\033[36m$(dir_avail ${CRASHDIR} -h)\033[0m"
-	[ "$(dir_avail ${CRASHDIR})" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
-		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
-		sleep 1
-	}
-	echo "-----------------------------------------------"
-	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
-	echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
-	echo -e " 3 更新\033[32m数据库文件\033[0m	> \033[32m$GeoIP_v\033[0m"
-	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
-	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
-	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
-	echo "-----------------------------------------------"
-	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
-	echo -e " 8 \033[32m配置自动更新\033[0m"
-	echo -e " 9 \033[31m卸载ShellCrash\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "99 \033[36m鸣谢！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-		;;
-	1)
-	    setscripts
-		;;
-	2)
-	    setcore
-	    ;;
-	3)
-		setgeo
-		update
-	    ;;
-	4)
-		setdb
-		update
-		;;
-	5)
-	    setcrt
-	    update
-	    ;;
-	6)
-	    echo "-----------------------------------------------"
-	    echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
-	    echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
-	    sleep 2
-	    update
-	    ;;
-	7)
-	    setserver
-	    update
-	    ;;
-	8)
-	    . ${CRASHDIR}/task/task.sh && task_add
-	    update
-	    ;;
-	9)
-	    uninstall
-	    exit
-	    ;;
-	99)
-		echo "-----------------------------------------------"
-		echo -e "感谢：\033[32mClash项目 \033[0m作者\033[36m Dreamacro\033[0m"
-		echo -e "感谢：\033[32msing-box项目 \033[0m作者\033[36m SagerNet\033[0m 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
-		echo -e "感谢：\033[32mMetaCubeX项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
-		echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
-		echo -e "感谢：\033[32mzashboard项目 \033[0m作者\033[36m Zephyruso\033[0m 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
-		echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
-		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m PuerNya\033[0m 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
-		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m reF1nd\033[0m 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
-		echo -e "感谢：\033[32mDustinWin相关项目 \033[0m作者\033[36m DustinWin\033[0m 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
-		echo "-----------------------------------------------"
-		echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
-		echo "-----------------------------------------------"
-		sleep 2
-		update
-	    ;;
-	*)
-	    errornum
-		;;
-	esac
-}
-#新手引导
-userguide(){
-
-	forwhat(){
-		echo "-----------------------------------------------"
-		echo -e "\033[30;46m 欢迎使用ShellCrash新手引导！ \033[0m"
-		echo "-----------------------------------------------"
-		echo -e "\033[33m请先选择你的使用环境： \033[0m"
-		echo -e "\033[0m(你之后依然可以在设置中更改各种配置)\033[0m"
-		echo "-----------------------------------------------"
-		echo -e " 1 \033[32m路由设备配置局域网透明代理\033[0m"
-		echo -e " 2 \033[36mLinux设备仅配置本机代理\033[0m"
-		[ -f "$CFG_PATH.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
-		echo "-----------------------------------------------"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		1)
-			#设置运行模式
-			redir_mod="混合模式"
-			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && {
-				if grep -qE '^TPROXY$' /proc/net/ip_tables_targets || modprobe xt_TPROXY >/dev/null 2>&1; then
-					redir_mod="Tproxy模式"
-				else
-					redir_mod="Redir模式"
-				fi
-			}
-			setconfig crashcore "meta"
-			setconfig redir_mod "$redir_mod"
-			setconfig dns_mod mix
-			setconfig firewall_area '1'
-			#默认启用绕过CN-IP
-			setconfig cn_ip_route 已开启
-			#自动识别IPV6
-			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {
-				setconfig ipv6_redir 已开启
-				setconfig ipv6_support 已开启
-				setconfig ipv6_dns 已开启
-				setconfig cn_ipv6_route 已开启
-			}
-			#设置开机启动
-			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
-			ckcmd systemctl && [ "$(cat /proc/1/comm)" = "systemd" ] && systemctl enable shellcrash.service > /dev/null 2>&1
-			rm -rf ${CRASHDIR}/.dis_startup
-			autostart=enable
-			#检测IP转发
-			if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ];then
-				echo "-----------------------------------------------"
-				echo -e "\033[33m检测到你的设备尚未开启ip转发，局域网设备将无法正常连接网络，是否立即开启？\033[0m"
-				read -p "是否开启？(1/0) > " res
-				[ "$res" = 1 ] && {
-					echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
-					sysctl -w net.ipv4.ip_forward=1
-				} && echo "已成功开启ipv4转发，如未正常开启，请手动重启设备！" || echo "开启失败！请自行谷歌查找当前设备的开启方法！"
-			fi
-			#禁止docker启用的net.bridge.bridge-nf-call-iptables
-			sysctl -w net.bridge.bridge-nf-call-iptables=0 > /dev/null 2>&1
-			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 > /dev/null 2>&1
-			;;
-		2)
-			setconfig redir_mod "Redir模式"
-			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && setconfig crashcore "clash"
-			setconfig common_ports "未开启"
-			setconfig firewall_area '2'
-		    ;;
-		3)
-			mv -f $CFG_PATH.bak $CFG_PATH
-			echo -e "\033[32m脚本设置已还原！\033[0m"
-			echo -e "\033[33m请重新启动脚本！\033[0m"
-			exit 0
-			;;
-		*)
-			errornum
-			forwhat
-			;;
-		esac
-	}
-	forwhat
-	#检测小内存模式
-	dir_size=$(dir_avail ${CRASHDIR})
-	if [ "$dir_size" -lt 10240 ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[33m检测到你的安装目录空间不足10M，是否开启小闪存模式？\033[0m"
-		echo -e "\033[0m开启后核心及数据库文件将被下载到内存中，这将占用一部分内存空间\033[0m"
-		echo -e "\033[0m每次开机后首次运行服务时都会自动的重新下载相关文件\033[0m"
-		echo "-----------------------------------------------"
-		read -p "是否开启？(1/0) > " res
-		[ "$res" = 1 ] && {
-			BINDIR=/tmp/ShellCrash
-			setconfig BINDIR /tmp/ShellCrash ${CRASHDIR}/configs/command.env
-		}
-	fi
-	#检测及下载根证书
-	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
-	[ ! -d "$openssldir/certs" ] && openssldir=/etc/ssl
-	if [ -d $openssldir/certs -a ! -f $openssldir/certs/ca-certificates.crt ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
-		echo "-----------------------------------------------"
-		read -p "是否下载并安装根证书？(1/0) > " res
-		[ "$res" = 1 ] && checkupdate && getcrt
-	fi
-	#设置加密DNS
-	if [ -s $openssldir/certs/ca-certificates.crt ];then
-		dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
-		dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
-		dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
-		setconfig dns_nameserver "'$dns_nameserver'"
-		setconfig dns_fallback "'$dns_fallback'"
-		setconfig dns_resolver "'$dns_resolver'"
-	fi
-	#开启公网访问
-	sethost(){
-		read -p "请输入你的公网IP地址 > " host
-		echo $host | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-		if [ -z "$host" ];then
-			echo -e "\033[31m请输入正确的IP地址！\033[0m"
-			sethost
-		fi
-	}
-	if ckcmd systemctl;then
-		echo "-----------------------------------------------"
-		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
-		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
-		echo -e "\033[31m此功能会增加暴露风险请谨慎使用！\033[0m"
-		echo -e "vps设备可能还需要额外在服务商后台开启相关端口"
-		read -p "现在开启？(1/0) > " res
-		if [ "$res" = 1 ];then
-			read -p "请先设置面板访问秘钥 > " secret
-			read -p "请先修改Socks服务端口(1-65535) > " mix_port
-			read -p "请先设置Socks服务密码(账号默认为crash) > " sec
-			[ -z "$sec" ] && authentication=crash:$sec
-			host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
-			if [ -z "$host" ];then
-				sethost
-			fi
-			public_support=已开启
-			setconfig secret $secret
-			setconfig mix_port $mix_port
-			setconfig host $host
-			setconfig public_support $public_support
-			setconfig authentication "'$authentication'"
-		fi
-	fi
-	#启用推荐的自动任务配置
-	. ${CRASHDIR}/task/task.sh && task_recom
-	#小米设备软固化
-	if [ "$systype" = "mi_snapshot" ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
-		read -p "是否启用软固化功能？(1/0) > " res
-		[ "$res" = 1 ] && autoSSH
-	fi
-	#提示导入订阅或者配置文件
-	[ ! -s "$CRASHDIR"/yamls/config.yaml -a ! -s "$CRASHDIR"/jsons/config.json ] && {
-		echo "-----------------------------------------------"
-		echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
-		echo -e "\033[0m你必须拥有一份配置文件才能运行服务！\033[0m"
-		echo "-----------------------------------------------"
-		read -p "现在开始导入？(1/0) > " res
-		[ "$res" = 1 ] && inuserguide=1 && {
-			if [ -f "$CRASHDIR"/v2b_api.sh ];then
-				. "$CRASHDIR"/v2b_api.sh
-			else
-				set_core_config
-			fi
-			set_core_config
-			inuserguide=""
-		}
-	}
-	#回到主界面
-	echo "-----------------------------------------------"
-	echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
-	echo "-----------------------------------------------"
-	read -p "立即启动服务？(1/0) > " res
-	[ "$res" = 1 ] && start_core && sleep 2
-	main_menu
-}
-#测试菜单
-debug(){
-	echo "$crashcore" | grep -q 'singbox' && config_tmp="$TMPDIR"/jsons || config_tmp="$TMPDIR"/config.yaml
-	echo "-----------------------------------------------"
-	echo -e "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m"
-	echo -e "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m"
-	echo -e "如长时间运行后台监测，日志等级推荐error！防止文件过大！"
-	echo -e "你也可以通过：\033[33mcrash -s debug 'warning'\033[0m 命令使用其他日志等级"
-	echo "-----------------------------------------------"
-	echo -e " 1 仅测试\033[32m$config_tmp\033[0m配置文件可用性"
-	echo -e " 2 前台运行\033[32m$config_tmp\033[0m配置文件,不配置防火墙劫持(\033[33m使用Ctrl+C手动停止\033[0m)"
-	echo -e " 3 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[31merror\033[0m"
-	echo -e " 4 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[32minfo\033[0m"
-	echo -e " 5 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[33mdebug\033[0m"
-	echo -e " 6 后台运行完整启动流程,并配置防火墙劫持,且将错误日志打印到闪存：\033[32m$CRASHDIR/debug.log\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 8 后台运行完整启动流程,输出执行错误并查找上下文,之后关闭进程"
-	[ -s "$TMPDIR"/jsons/inbounds.json ] && echo -e " 9 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
-	echo "-----------------------------------------------"
-	echo " 0 返回上级目录！"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
-		"$CRASHDIR"/start.sh stop
-		"$CRASHDIR"/start.sh bfstart
-		if echo "$crashcore" | grep -q 'singbox' ;then
-			"$TMPDIR"/CrashCore run -D "$BINDIR" -C "$TMPDIR"/jsons &
-			{ sleep 4 ; kill $! >/dev/null 2>&1 & }
-			wait
-		else
-			${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
-		fi
-		rm -rf ${TMPDIR}/CrashCore
-		echo "-----------------------------------------------"
-		exit
-	;;
-	2)
-		"$CRASHDIR"/start.sh stop
-		"$CRASHDIR"/start.sh bfstart
-		$COMMAND
-		rm -rf ${TMPDIR}/CrashCore
-		echo "-----------------------------------------------"
-		exit
-	;;
-	3)
-		"$CRASHDIR"/start.sh debug error
-		main_menu
-	;;
-	4)
-		"$CRASHDIR"/start.sh debug info
-		main_menu
-	;;
-	5)
-		"$CRASHDIR"/start.sh debug debug
-		main_menu
-	;;
-	6)
-		echo -e "频繁写入闪存会导致闪存寿命降低，如非遇到会导致设备死机或重启的bug，请勿使用此功能！"
-		read -p "是否继续？(1/0) > " res
-		[ "$res" = 1 ] && "$CRASHDIR"/start.sh debug debug flash
-		main_menu
-	;;
-	8)
-		$0 -d
-		main_menu
-	;;
-	9)
-		${CRASHDIR}/start.sh core_check && "$TMPDIR"/CrashCore merge "$TMPDIR"/debug.json -C "$TMPDIR"/jsons && echo -e "\033[32m合并成功！\033[0m"
-		rm -rf ${TMPDIR}/CrashCore
-		main_menu
-	;;
-	*)
-		errornum
-	;;
-	esac
-}
-testcommand(){
-	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
-	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
-	echo "-----------------------------------------------"
-	echo " 1 Debug模式运行内核"
-	echo " 2 查看系统DNS端口(:53)占用 "
-	echo " 3 测试ssl加密(aes-128-gcm)跑分"
-	echo " 4 查看ShellCrash相关路由规则"
-	echo " 5 查看内核配置文件前40行"
-	echo " 6 测试代理服务器连通性(google.tw)"
-	echo "-----------------------------------------------"
-	echo " 0 返回上级目录！"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-		main_menu
-		;;
-	1)
-		debug
-		testcommand
-	    ;;
-	2)
-		echo "-----------------------------------------------"
-		netstat -ntulp |grep 53
-		echo "-----------------------------------------------"
-		echo -e "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
-		exit;
-	    ;;
-	3)
-		echo "-----------------------------------------------"
-		openssl speed -multi 4 -evp aes-128-gcm
-		echo "-----------------------------------------------"
-		exit;
-	    ;;
-	4)
-		if [ "$firewall_mod" = "nftables" ];then
-			nft list table inet shellcrash
-		else
-			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 -o "$vm_redir" = "已开启" ] && {
-				echo "----------------Redir+DNS---------------------"
-				iptables -t nat -L PREROUTING --line-numbers
-				iptables -t nat -L shellcrash_dns --line-numbers
-				[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && iptables -t nat -L shellcrash --line-numbers
-				[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
-					echo "----------------Tun/Tproxy-------------------"
-					iptables -t mangle -L PREROUTING --line-numbers
-					iptables -t mangle -L shellcrash_mark --line-numbers
-				}
-			}
-			[ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && {
-				echo "-------------OUTPUT-Redir+DNS----------------"
-				iptables -t nat -L OUTPUT --line-numbers
-				iptables -t nat -L shellcrash_dns_out --line-numbers
-				[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && iptables -t nat -L shellcrash_out --line-numbers
-				[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
-					echo "------------OUTPUT-Tun/Tproxy---------------"
-					iptables -t mangle -L OUTPUT --line-numbers
-					iptables -t mangle -L shellcrash_mark_out --line-numbers
-				}
-			}
-			[ "$ipv6_redir" = "已开启" ] && {
-				[ "$firewall_area" = 1 -o "$firewall_area" = 3 ] && {
-					ip6tables -t nat -L >/dev/null 2>&1 && {
-						echo "-------------IPV6-Redir+DNS-------------------"
-						ip6tables -t nat -L PREROUTING --line-numbers
-						ip6tables -t nat -L shellcrashv6_dns --line-numbers
-						[ -n "$(echo $redir_mod | grep -E 'Redir模式|混合模式')" ] && ip6tables -t nat -L shellcrashv6 --line-numbers
-					}
-					[ -n "$(echo $redir_mod | grep -E 'Tproxy模式|混合模式|Tun模式')" ] && {
-						echo "-------------IPV6-Tun/Tproxy------------------"
-						ip6tables -t mangle -L PREROUTING --line-numbers
-						ip6tables -t mangle -L shellcrashv6_mark --line-numbers
-					}
-				}
-			}
-			[ "$vm_redir" = "已开启" ] && {
-						echo "-------------vm-Redir-------------------"
-						iptables -t nat -L shellcrash_vm --line-numbers
-						iptables -t nat -L shellcrash_vm_dns --line-numbers
-			}
-		fi
-		exit;
-	    ;;
-	5)
-		echo "-----------------------------------------------"
-		sed -n '1,40p' ${config_path}
-		echo "-----------------------------------------------"
-		exit;
-		;;
-	6)
-		echo "注意：依赖curl(不支持wget)，且测试结果不保证一定准确！"
-		delay=`curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' & { sleep 3 ; kill $! >/dev/null 2>&1 & }` > /dev/null 2>&1
-		delay=`echo |awk "{print $delay*1000}"` > /dev/null 2>&1
-		echo "-----------------------------------------------"
-		if [ `echo ${#delay}` -gt 1 ];then
-			echo -e "\033[32m连接成功！响应时间为："$delay" ms\033[0m"
-		else
-			echo -e "\033[31m连接超时！请重试或检查节点配置！\033[0m"
-		fi
-		main_menu
-		;;
-	*)
-		errornum
-		main_menu
-	    ;;
-	esac
-}
-
-case "$1" in
-	*)
-		$1
-	;;
-esac

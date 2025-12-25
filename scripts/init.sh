@@ -189,9 +189,8 @@ mkdir -p ${CRASHDIR}/configs
 [ -w /etc/systemd/system ] && sysdir=/etc/systemd/system
 if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
     #设为init.d方式启动
-    cp -f ${CRASHDIR}/shellcrash.procd /etc/init.d/shellcrash
+    cp -f ${CRASHDIR}/starts/shellcrash.procd /etc/init.d/shellcrash
     chmod 755 /etc/init.d/shellcrash
-    rm -rf ${CRASHDIR}/shellcrash.openrc
 elif [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
     #创建shellcrash用户
     userdel shellcrash 2>/dev/null
@@ -204,23 +203,27 @@ elif [ -n "$sysdir" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; 
         echo "shellcrash:x:0:7890::/home/shellcrash:/bin/sh" >>/etc/passwd
     fi
     #配置systemd
-    mv -f ${CRASHDIR}/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
+    mv -f ${CRASHDIR}/starts/shellcrash.service $sysdir/shellcrash.service 2>/dev/null
     sed -i "s%/etc/ShellCrash%$CRASHDIR%g" $sysdir/shellcrash.service
     systemctl daemon-reload
+	rm -rf ${CRASHDIR}/starts/shellcrash.procd
 elif rc-status -r >/dev/null 2>&1; then
     #设为openrc方式启动
-    cp -f ${CRASHDIR}/shellcrash.openrc /etc/init.d/shellcrash
+    mv -f ${CRASHDIR}/starts/shellcrash.openrc /etc/init.d/shellcrash
     chmod 755 /etc/init.d/shellcrash
-    rm -rf ${CRASHDIR}/shellcrash.procd
+    rm -rf ${CRASHDIR}/starts/shellcrash.procd
 else
     #设为保守模式启动
     setconfig start_old 已开启
+	rm -rf ${CRASHDIR}/starts/shellcrash.procd
 fi
+rm -rf ${CRASHDIR}/starts/shellcrash.service
+rm -rf ${CRASHDIR}/starts/shellcrash.openrc
 
 #修饰文件及版本号
 command -v bash >/dev/null 2>&1 && shtype=bash
 [ -x /bin/ash ] && shtype=ash
-for file in start.sh menus/task.sh menu.sh; do
+for file in start.sh menus/5-task.sh menu.sh; do
     sed -i "s|/bin/sh|/bin/$shtype|" ${CRASHDIR}/${file} 2>/dev/null
     chmod +x ${CRASHDIR}/${file} 2>/dev/null
 done
@@ -279,16 +282,16 @@ fi
 [ -f "/etc/storage/started_script.sh" ] && mount -t tmpfs -o remount,rw,size=45M tmpfs /tmp #增加/tmp空间以适配新的内核压缩方式
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ]; then
-    chmod 755 ${CRASHDIR}/misnap_init.sh
+    chmod 755 ${CRASHDIR}/starts/snapshot_init.sh
     uci delete firewall.ShellClash 2>/dev/null
     uci delete firewall.ShellCrash 2>/dev/null
     uci set firewall.ShellCrash=include
     uci set firewall.ShellCrash.type='script'
-    uci set firewall.ShellCrash.path="$CRASHDIR/misnap_init.sh"
+    uci set firewall.ShellCrash.path="$CRASHDIR/starts/snapshot_init.sh"
     uci set firewall.ShellCrash.enabled='1'
     uci commit firewall
 else
-    rm -rf ${CRASHDIR}/misnap_init.sh
+    rm -rf ${CRASHDIR}/starts/snapshot_init.sh
 fi
 #华硕USB启动额外设置
 [ "$usb_status" = "1" ] && {
@@ -361,7 +364,7 @@ rm -rf /etc/init.d/clash
 rm -rf ${CRASHDIR}/rules
 rm -rf "$CRASHDIR/task/task.sh"
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
-for file in CrashCore clash.sh getdate.sh core.new clashservice log shellcrash.service mark? mark.bak; do
+for file in CrashCore clash.sh getdate.sh core.new clashservice log mark? mark.bak; do
     rm -rf "$CRASHDIR/$file"
 done
 #旧版变量改名
