@@ -1,0 +1,11 @@
+. "$CRASHDIR"/configs/command.env >/dev/null 2>&1
+. "$CRASHDIR"/configs/ShellCrash.cfg
+
+[ -z "$mix_port" ] && mix_port=7890
+[ -z "$redir_port" ] && redir_port=7892
+[ -z "$tproxy_port" ] && tproxy_port=7893
+[ -z "$db_port" ] && db_port=9999
+[ -z "$dns_port" ] && dns_port=1053
+[ -z "$fwmark" ] && fwmark=$redir_port
+routing_mark=$((fwmark + 2))
+[ -z "$table" ] && table=100

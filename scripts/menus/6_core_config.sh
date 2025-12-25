@@ -412,7 +412,7 @@ EOF
 	cut -c 1- ${TMPDIR}/providers/providers.yaml ${TMPDIR}/providers/proxy-groups.yaml ${TMPDIR}/providers/rules.yaml > ${TMPDIR}/config.yaml
 	rm -rf ${TMPDIR}/providers
 	#调用内核测试
-	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
+	. "$CRASHDIR"/libs/core_webget.sh && core_find && ${TMPDIR}/CrashCore -t -d ${BINDIR} -f ${TMPDIR}/config.yaml
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
 		mkdir -p ${CRASHDIR}/yamls
@@ -514,7 +514,7 @@ EOF
 	cat ${TMPDIR}/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" > ${TMPDIR}/providers/outbounds.json
 	rm -rf ${TMPDIR}/provider_temp_file
 	#调用内核测试
-	${CRASHDIR}/start.sh core_check && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
+	. "$CRASHDIR"/libs/core_webget.sh && core_find && ${TMPDIR}/CrashCore merge ${TMPDIR}/config.json -C ${TMPDIR}/providers
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！如果启动超时建议更新里手动安装Singbox-srs数据库常用包！\033[0m"
 		mkdir -p ${CRASHDIR}/jsons
@@ -895,8 +895,8 @@ gen_link_ele(){ #在线生成节点筛选
 	fi
 	setconfig include "'$include'"
 }
-get_core_config(){ #调用工具下载
-	${CRASHDIR}/start.sh get_core_config
+jump_core_config(){ #调用工具下载
+	. "$CRASHDIR"/starts/core_config.sh && get_core_config
 	if [ "$?" = 0 ];then
 		if [ "$inuserguide" != 1 ];then
 			read -p "是否启动服务以使配置文件生效？(1/0) > " res
@@ -949,7 +949,7 @@ gen_core_config_link(){ #在线生成工具
 				setconfig Https
 				setconfig Url "'$Url_link'"
 				#获取在线yaml文件
-				get_core_config
+				jump_core_config
 			else
 				echo "-----------------------------------------------"
 				echo -e "\033[31m请先输入订阅或分享链接！\033[0m"
@@ -1004,7 +1004,7 @@ set_core_config_link(){ #直接导入配置
 				setconfig Https "'$link'"
 				setconfig Url
 				#获取在线yaml文件
-				get_core_config
+				jump_core_config
 			else
 				set_core_config_link
 			fi
@@ -1117,7 +1117,7 @@ set_core_config(){ #配置文件功能
 			echo "-----------------------------------------------"
 			read -p "确认更新配置文件？[1/0] > " res
 			if [ "$res" = '1' ]; then
-				get_core_config
+				jump_core_config
 			else
 				set_core_config
 			fi

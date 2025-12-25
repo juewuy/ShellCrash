@@ -16,6 +16,7 @@ set_dns_mod() { #DNS模式设置
         echo -e " 4 route模式：     \033[32m防污染防泄露，全真实IP\033[0m"
         echo -e "                   cn域名realip其他dns2proxy分流"
     fi
+	echo "-----------------------------------------------"
     [ "$dns_mod" = "fake-ip" ] || [ "$dns_mod" = "mix" ] &&
     echo -e " 8 管理Fake-ip过滤列表"
     echo -e " 9 \033[36mDNS进阶设置\033[0m"

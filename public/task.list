@@ -3,9 +3,9 @@
 101#$CRASHDIR/start.sh start#启动ShellCrash服务
 102#$CRASHDIR/start.sh stop#停止ShellCrash服务
 103#$CRASHDIR/start.sh restart#重启ShellCrash服务
-104#$CRASHDIR/start.sh update_config#更新在线订阅并重启服务
-105#$CRASHDIR/start.sh hotupdate#热更新在线订阅(不重启)
-106#$CRASHDIR/start.sh web_save#自动保存面板配置
+104#$CRASHDIR/task/task.sh update_config#更新在线订阅并重启服务
+105#$CRASHDIR/task/task.sh hotupdate#热更新在线订阅(不重启)
+106#$CRASHDIR/task/task.sh web_save_auto#自动保存面板配置
 107#$CRASHDIR/task/task.sh ntp#自动同步ntp时间
 
 111#$CRASHDIR/task/task.sh update_core#自动更新内核

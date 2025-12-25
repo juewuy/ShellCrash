@@ -2,6 +2,8 @@
 # Copyright (C) Juewuy
 
 . "$CRASHDIR"/libs/check_dir_avail.sh
+. "$CRASHDIR"/libs/check_cpucore.sh
+. "$CRASHDIR"/libs/web_get_bin.sh
 
 error_down(){
 	echo -e  "\033[33m请尝试切换至其他安装源后重新下载！\033[0m"
@@ -103,10 +105,10 @@ upgrade(){
 }
 #检查更新
 checkupdate(){
-	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/version_new version echooff
+	get_bin "$TMPDIR"/version_new version echooff
 	[ "$?" = "0" ] && {
 		version_new=$(cat "$TMPDIR"/version_new)
-		"$CRASHDIR"/start.sh get_bin "$TMPDIR"/version_new bin/version echooff
+		get_bin "$TMPDIR"/version_new bin/version echooff
 	}
 	if [ "$?" = "0" ];then
 		. "$TMPDIR"/version_new 2>/dev/null
@@ -119,7 +121,7 @@ checkupdate(){
 }
 #更新脚本
 getscripts(){ 
-	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/ShellCrash.tar.gz ShellCrash.tar.gz
+	get_bin "$TMPDIR"/ShellCrash.tar.gz ShellCrash.tar.gz
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
 		error_down
@@ -159,19 +161,6 @@ setscripts(){
 	fi
 }
 #更新内核
-getcpucore(){ #自动获取内核架构
-	cputype=$(uname -ms | tr ' ' '_' | tr '[A-Z]' '[a-z]')
-	[ -n "$(echo $cputype | grep -E "linux.*armv.*")" ] && cpucore="armv5"
-	[ -n "$(echo $cputype | grep -E "linux.*armv7.*")" ] && [ -n "$(cat /proc/cpuinfo | grep vfp)" ] && [ ! -d /jffs ] && cpucore="armv7"
-	[ -n "$(echo $cputype | grep -E "linux.*aarch64.*|linux.*armv8.*")" ] && cpucore="arm64"
-	[ -n "$(echo $cputype | grep -E "linux.*86.*")" ] && cpucore="386"
-	[ -n "$(echo $cputype | grep -E "linux.*86_64.*")" ] && cpucore="amd64"
-	if [ -n "$(echo $cputype | grep -E "linux.*mips.*")" ];then
-		mipstype=$(echo -n I | hexdump -o 2>/dev/null | awk '{ print substr($2,6,1); exit}') #通过判断大小端判断mips或mipsle
-		[ "$mipstype" = "0" ] && cpucore="mips-softfloat" || cpucore="mipsle-softfloat"
-	fi
-	[ -n "$cpucore" ] && setconfig cpucore $cpucore
-}
 setcpucore(){ #手动设置内核架构
 	cpucore_list="armv5 armv7 arm64 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
 	echo "-----------------------------------------------"
@@ -234,85 +223,41 @@ switch_core(){ #clash与singbox内核切换
 			done
 		}
 	}
-	if echo "$crashcore" | grep -q 'singbox';then
-		COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
-	else
-		COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
-	fi
-	setconfig COMMAND "$COMMAND" "$CRASHDIR"/configs/command.env && . "$CRASHDIR"/configs/command.env
 }
 getcore(){ #下载内核文件
+	. "$CRASHDIR"/libs/core_tools.sh #调用下载工具
 	[ -z "$crashcore" ] && crashcore=meta
-	[ -z "$cpucore" ] && getcpucore
+	[ -z "$cpucore" ] && check_cpucore
+	[ "$crashcore" = unknow ] && setcoretype
 	echo "$crashcore" | grep -q 'singbox' && core_new=singbox || core_new=clash
 	#获取在线内核文件
 	echo "-----------------------------------------------"
 	echo "正在在线获取$crashcore核心文件……"
-	if [ -n "$custcorelink" ];then
-		zip_type=$(echo $custcorelink | grep -oE 'tar.gz$')
-		[ -z "$zip_type" ] && zip_type=$(echo $custcorelink | grep -oE 'gz$')
-		if [ -n "$zip_type" ];then
-			"$CRASHDIR"/start.sh webget "$TMPDIR"/core_new.${zip_type} "$custcorelink"
-		else
-			echo -e "\033[31m链接不是以.tar.gz或.gz结尾！下载已取消！\033[0m"
-			exit
-		fi
-	else
-		"$CRASHDIR"/start.sh get_bin "$TMPDIR"/core_new.tar.gz bin/${crashcore}/${core_new}-linux-${cpucore}.tar.gz
-	fi
-	if [ "$?" = "1" ];then
+	core_webget 
+	case "$?" in
+	0)
+		echo -e "\033[32m$crashcore核心下载成功！\033[0m"
+		sleep 1
+		switch_core
+	;;
+	1)
 		echo -e "\033[31m核心文件下载失败！\033[0m"
-		rm -rf "$TMPDIR"/core_new.tar.gz
 		[ -z "$custcorelink" ] && error_down
-	else
-		[ -n "$(pidof CrashCore)" ] && {
-			"$CRASHDIR"/start.sh stop #停止内核服务防止内存不足
-			rm -rf "$TMPDIR"/CrashCore #删除缓存内核防止缓存空间不足
-		}
-		[ -f "$TMPDIR"/core_new.tar.gz ] && {
-			mkdir -p "$TMPDIR"/core_tmp
-			[ "$BINDIR" = "$TMPDIR" ] && rm -rf "$TMPDIR"/CrashCore #小闪存模式防止空间不足
-			tar -zxf ""$TMPDIR"/core_new.tar.gz" ${tar_para} -C "$TMPDIR"/core_tmp/
-			for file in $(find "$TMPDIR"/core_tmp 2>/dev/null);do
-				[ -f $file ] && [ -n "$(echo $file | sed 's#.*/##' | grep -iE '(CrashCore|sing|meta|mihomo|clash|premium)')" ] && mv -f $file "$TMPDIR"/core_new
-			done
-			rm -rf "$TMPDIR"/core_tmp
-		}
-		[ -f "$TMPDIR"/core_new.gz ] && gunzip "$TMPDIR"/core_new.gz && rm -rf "$TMPDIR"/core_new.gz
-		chmod +x "$TMPDIR"/core_new
-		[ "$crashcore" = unknow ] && setcoretype
-		if echo "$crashcore" | grep -q 'singbox';then
-			core_v=$("$TMPDIR"/core_new version 2>/dev/null | grep version | awk '{print $3}')
-		else
-			core_v=$("$TMPDIR"/core_new -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
-		fi
-		if [ -z "$core_v" ];then
-			echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
-			rm -rf "$TMPDIR"/core_new
-			rm -rf "$TMPDIR"/core_new.tar.gz
-			setcpucore
-		else
-			echo -e "\033[32m$crashcore核心下载成功！\033[0m"
-			sleep 1
-			mv -f "$TMPDIR"/core_new "$TMPDIR"/CrashCore
-			if [ -f "$TMPDIR"/core_new.tar.gz ];then
-				mv -f "$TMPDIR"/core_new.tar.gz "$BINDIR"/CrashCore.tar.gz
-			else
-				tar -zcf "$BINDIR"/CrashCore.tar.gz ${tar_para} -C "$TMPDIR" CrashCore
-			fi
-			setconfig crashcore $crashcore
-			setconfig core_v $core_v
-			setconfig custcorelink $custcorelink
-			switch_core
-		fi
-	fi
+	;;
+	*)
+		echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
+		rm -rf ${TMPDIR}/core_new
+		rm -rf ${TMPDIR}/core_new.tar.gz
+		setcpucore
+	;;
+	esac
 }
 setcustcore(){ #自定义内核
 	checkcustcore(){
 		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
 		#通过githubapi获取内核信息
 		echo -e "\033[32m正在获取内核文件链接！\033[0m"
-		"$CRASHDIR"/start.sh webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
+		webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
 		if [ "$?" = 0 ];then
 			release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
 			release_date=$(cat "$TMPDIR"/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
@@ -358,7 +303,7 @@ setcustcore(){ #自定义内核
 		fi
 		rm -rf "$TMPDIR"/core.list
 	}
-	[ -z "$cpucore" ] && getcpucore
+	[ -z "$cpucore" ] && check_cpucore
 	echo "-----------------------------------------------"
 	echo -e "\033[36m此处内核通常源自互联网采集，此处致谢各位开发者！\033[0m"
 	echo -e "\033[33m自定义内核未经过完整适配，使用出现问题请自行解决！\033[0m"
@@ -426,7 +371,7 @@ setcustcore(){ #自定义内核
 	a)
 		read -p "请输入自定义内核的链接地址(必须是以.tar.gz或.gz结尾的压缩文件) > " link
 		[ -n "$link" ] && custcorelink="$link"
-		crashcore=unknow
+		setcoretype
 		getcore
 	;;
 	*)
@@ -437,12 +382,11 @@ setcustcore(){ #自定义内核
 setcore(){ #内核选择菜单
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow"
-	[ ! -f "$CRASHDIR"/CrashCore.tar.gz -o ! -f "$BINDIR"/CrashCore.tar.gz ] && crashcore="未安装核心"
 	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
 	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 	###
 	echo "-----------------------------------------------"
-	[ -z "$cpucore" ] && getcpucore
+	[ -z "$cpucore" ] && check_cpucore
 	echo -e "当前内核：\033[42;30m $crashcore \033[47;30m$core_v\033[0m"
 	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
@@ -515,7 +459,7 @@ getgeo(){ #下载Geo文件
 	#生成链接
 	echo "-----------------------------------------------"
 	echo 正在从服务器获取数据库文件…………
-	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/${geoname} bin/geodata/$geotype
+	get_bin "$TMPDIR"/${geoname} bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -543,7 +487,7 @@ setcustgeo(){ #下载自定义数据库文件
 	getcustgeo(){
 		echo "-----------------------------------------------"
 		echo "正在获取数据库文件…………"
-		"$CRASHDIR"/start.sh webget "$TMPDIR"/$geoname $custgeolink
+		webget "$TMPDIR"/$geoname $custgeolink
 		if [ "$?" = "1" ];then
 			echo "-----------------------------------------------"
 			echo -e "\033[31m文件下载失败！\033[0m"
@@ -563,7 +507,7 @@ setcustgeo(){ #下载自定义数据库文件
 		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
 		[ ! -s "$TMPDIR"/geo.list ] && {
 			echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
-			"$CRASHDIR"/start.sh webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
+			webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
 			release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
 			cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > "$TMPDIR"/geo.list
 			rm -rf "$TMPDIR"/github_api
@@ -755,7 +699,7 @@ getdb(){
 	dblink="${update_url}/"
 	echo "-----------------------------------------------"
 	echo 正在连接服务器获取安装文件…………
-	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
+	get_bin "$TMPDIR"/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
 	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -896,7 +840,7 @@ setdb(){
 getcrt(){
 	echo "-----------------------------------------------"
 	echo "正在连接服务器获取安装文件…………"
-	"$CRASHDIR"/start.sh get_bin "$TMPDIR"/ca-certificates.crt bin/fix/ca-certificates.crt
+	get_bin "$TMPDIR"/ca-certificates.crt bin/fix/ca-certificates.crt
 	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
 		echo -e "\033[31m文件下载失败！\033[0m"
@@ -907,7 +851,7 @@ getcrt(){
 		[ -f $openssldir/certs ] && rm -rf $openssldir/certs #如果certs不是目录而是文件则删除并创建目录
 		mkdir -p $openssldir/certs
 		mv -f "$TMPDIR"/ca-certificates.crt $crtdir
-		"$CRASHDIR"/start.sh webget /dev/null https://baidu.com echooff rediron skipceroff
+		webget /dev/null https://baidu.com echooff rediron skipceroff
 		if [ "$?" = "1" ];then
 			export CURL_CA_BUNDLE=$crtdir
 			echo "export CURL_CA_BUNDLE=$crtdir" >> /etc/profile
@@ -1040,7 +984,7 @@ setserver(){
 		echo "-----------------------------------------------"
 		if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
 			echo -ne "\033[32m正在获取版本信息！\033[0m\r"
-			"$CRASHDIR"/start.sh get_bin "$TMPDIR"/release_version bin/release_version
+			get_bin "$TMPDIR"/release_version bin/release_version
 			if [ "$?" = "0" ];then
 				echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
 				cat "$TMPDIR"/release_version | awk '{print " "NR" "$1}'

@@ -276,7 +276,7 @@ log_pusher() {
                         chat=$(wget -Y on -q -O - $url_tg)
                     fi
                     [ -n "$chat" ] && chat_ID=$(echo $chat | sed 's/"update_id":/{\n"update_id":/g' | grep "$public_key" | head -n1 | grep -oE '"id":.*,"is_bot' | sed s'/"id"://' | sed s'/,"is_bot//')
-                    [ -z "$chat_ID" ] && {
+                    [ -z "$chat_ID" ] && [ "$TOKEN" != 'publictoken' ] && {
                         echo -e "\033[31m无法获取对话ID，请返回重新设置或手动输入ChatID！\033[0m"
                         echo -e "通常访问 \033[32;4m$url_tg\033[0m \n\033[36m即可看到ChatID\033[0m"
                         read -p "请手动输入ChatID > " chat_ID
@@ -695,8 +695,8 @@ debug(){
 		main_menu
 	;;
 	9)
-		"$CRASHDIR"/start.sh core_check && "$TMPDIR"/CrashCore merge "$TMPDIR"/debug.json -C "$TMPDIR"/jsons && echo -e "\033[32m合并成功！\033[0m"
-		rm -rf "$TMPDIR"/CrashCore
+		. "$CRASHDIR"/libs/core_webget.sh && core_find && "$TMPDIR"/CrashCore merge "$TMPDIR"/debug.json -C "$TMPDIR"/jsons && echo -e "\033[32m合并成功！\033[0m"
+		[ "$TMPDIR" = "$BINDIR" ] && rm -rf "$TMPDIR"/CrashCore
 		main_menu
 	;;
 	*)

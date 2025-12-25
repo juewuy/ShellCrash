@@ -28,16 +28,7 @@ start_core() {
     elif [ -s $core_config -o -n "$Url" -o -n "$Https" ]; then
         "$CRASHDIR"/start.sh start
         #设置循环检测以判定服务启动是否成功
-        i=1
-        while [ -z "$test" -a "$i" -lt 30 ]; do
-            sleep 1
-            if curl --version >/dev/null 2>&1; then
-                test=$(curl -s -H "Authorization: Bearer $secret" http://127.0.0.1:${db_port}/configs | grep -o port)
-            else
-                test=$(wget -q --header="Authorization: Bearer $secret" -O - http://127.0.0.1:${db_port}/configs | grep -o port)
-            fi
-            i=$((i + 1))
-        done
+		. "$CRASHDIR"/libs/start_wait.sh
         [ -n "$test" -o -n "$(pidof CrashCore)" ] && startover
     else
         echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"

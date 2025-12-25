@@ -7,14 +7,14 @@ CRASHDIR=$(
 )
 CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 #加载执行目录，失败则初始化
-. "$CRASHDIR"/configs/command.env 2>/dev/null
+. "$CRASHDIR"/libs/get_config.sh
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && . "$CRASHDIR"/init.sh >/dev/null 2>&1
 [ ! -f "$TMPDIR" ] && mkdir -p "$TMPDIR"
-[ -n "$(tar --help 2>&1 | grep -o 'no-same-owner')" ] && tar_para='--no-same-owner' #tar命令兼容
 
 #通用工具
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/check_cmd.sh
+. "$CRASHDIR"/menus/1_start.sh
 errornum() {
     echo "-----------------------------------------------"
     echo -e "\033[31m请输入正确的字母或数字！\033[0m"
@@ -51,12 +51,6 @@ ckstatus() { #脚本启动前检查
     fi
     versionsh=$(cat "$CRASHDIR"/version)
     [ -n "$versionsh" ] && versionsh_l=$versionsh
-    #服务器缺省地址
-    [ -z "$mix_port" ] && mix_port=7890
-    [ -z "$redir_port" ] && redir_port=7892
-    [ -z "$fwmark" ] && fwmark=$redir_port
-    [ -z "$db_port" ] && db_port=9999
-    [ -z "$dns_port" ] && dns_port=1053
     [ -z "$redir_mod" ] && redir_mod=纯净模式
     #获取本机host地址
     [ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
@@ -132,29 +126,22 @@ ckstatus() { #脚本启动前检查
     #检查执行权限
     [ ! -x "$CRASHDIR"/start.sh ] && chmod +x "$CRASHDIR"/start.sh
     #检查/tmp内核文件
-    for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -Ev ".*(gz|zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box|meta.*'); do
-        chmod +x /tmp/$file
+    for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -Ev ".*(zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box|meta.*'); do
         echo -e "发现可用的内核文件： \033[36m/tmp/$file\033[0m "
         read -p "是否加载(会停止当前服务)？(1/0) > " res
         [ "$res" = 1 ] && {
-            "$CRASHDIR"/start.sh stop
-            core_v=$(/tmp/$file -v 2>/dev/null | head -n 1 | sed 's/ linux.*//;s/.* //')
-            [ -z "$core_v" ] && core_v=$(/tmp/$file version 2>/dev/null | grep -Eo 'version .*' | sed 's/version //')
-            if [ -n "$core_v" ]; then
-                . "$CRASHDIR"/menus/9_upgrade.sh && setcoretype &&
-                    mv -f /tmp/$file "$TMPDIR"/CrashCore &&
-                    tar -zcf "$BINDIR"/CrashCore.tar.gz ${tar_para} -C "$TMPDIR" CrashCore &&
-                    echo -e "\033[32m内核加载完成！\033[0m " &&
-                    setconfig crashcore $crashcore &&
-                    setconfig core_v $core_v &&
-                    switch_core
-                sleep 1
+			zip_type=$(echo "$file" | grep -oE 'tar.gz$|upx$|gz$')
+			. "$CRASHDIR"/menus/9_upgrade.sh && setcoretype
+			. "$CRASHDIR"/libs/core_tools.sh && core_check "/tmp/$file"
+            if [ "$?" = 0 ]; then
+				echo -e "\033[32m内核加载完成！\033[0m "
+				switch_core
             else
                 echo -e "\033[33m检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！\033[0m"
-                rm -rf /tmp/$file
-                echo -e "\033[33m内核文件已移除，请认真检查后重新上传！\033[0m"
-                sleep 2
+                rm -rf /tmp/"$file"
+                echo -e "\033[33m内核文件已移除，请认真检查后重新上传！\033[0m"       
             fi
+			sleep 1
         }
         echo "-----------------------------------------------"
     done
@@ -205,7 +192,7 @@ main_menu() {
         exit
 	;;
     1)
-        . "$CRASHDIR"/menus/1_start.sh && start_service
+        start_service
         exit
 	;;
     2)
@@ -279,7 +266,7 @@ case "$1" in
 		"$CRASHDIR"/start.sh $2 $3 $4 $5 $6
     ;;
 	-i)
-		. "$CRASHDIR"/init.sh
+		. "$CRASHDIR"/init.sh 2>/dev/null
     ;;
 	-st)
 		shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash

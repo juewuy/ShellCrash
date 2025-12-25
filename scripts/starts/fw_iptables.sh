@@ -130,6 +130,8 @@ start_ipt_dns() { #iptables-dns通用工具
     "$1" $w -t nat -I "$2" -p udp --dport 53 -j "$3"
 }
 start_ipt_wan() { #iptables公网防火墙
+	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
+	ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
 	ipt_wan_accept(){
 		$iptable -I INPUT -p "$1" -m multiport --dports "$fw_wan_ports" -j ACCEPT
 		ckcmd ip6tables && $ip6table -I INPUT -p "$1" -m multiport --dports "$fw_wan_ports" -j ACCEPT

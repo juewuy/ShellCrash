@@ -5,6 +5,7 @@ settings() { #功能设置
     #获取设置默认显示
     [ -z "$skip_cert" ] && skip_cert=已开启
 	[ -z "$sniffer" ] && sniffer=未启用
+	[ -z "$dns_mod" ] && dns_mod='redir_host'
     #
     echo "-----------------------------------------------"
     echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
@@ -38,7 +39,7 @@ settings() { #功能设置
         settings
 	;;
     2)
-        set_dns_mod
+		. "$CRASHDIR"/menus/dns.sh && set_dns_mod
         sleep 1
         settings
 	;;
@@ -272,69 +273,6 @@ set_redir_mod() { #代理模式设置
         sleep 1
         setconfig firewall_mod $firewall_mod
         set_redir_mod
-	;;
-    *)
-        errornum
-	;;
-    esac
-}
-set_dns_mod() { #DNS模式设置
-    echo "-----------------------------------------------"
-    echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
-    echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " 1 fake-ip模式：   响应快，\033[33m兼容性较差\033[0m"
-    echo -e "                   不支持CN-IP绕过功能"
-    echo -e " 2 redir_host模式：\033[33m不安全，易被污染\033[0m"
-    echo -e "                   建议搭配第三方DNS服务使用"
-    if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
-        echo -e " 3 mix混合模式：   \033[32m防污染防泄露，响应快，推荐！\033[0m"
-        echo -e "                   cn域名realip其他fakeip分流"
-        echo -e " 4 route模式：     \033[32m防污染防泄露，全真实IP\033[0m"
-        echo -e "                   cn域名realip其他dns2proxy分流"
-    fi
-    echo -e " 9 \033[36mDNS进阶设置\033[0m"
-    echo " 0 返回上级菜单"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0) ;;
-    1)
-        dns_mod=fake-ip
-        setconfig dns_mod $dns_mod
-        echo "-----------------------------------------------"
-        echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-	;;
-    2)
-        dns_mod=redir_host
-        setconfig dns_mod $dns_mod
-        echo "-----------------------------------------------"
-        echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-	;;
-    3)
-        if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
-            dns_mod=mix
-            setconfig dns_mod $dns_mod
-            echo "-----------------------------------------------"
-            echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-        else
-            echo -e "\033[31m当前内核不支持的功能！！！\033[0m"
-            sleep 1
-        fi
-	;;
-    4)
-        if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
-            dns_mod=route
-            setconfig dns_mod $dns_mod
-            echo "-----------------------------------------------"
-            echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-        else
-            echo -e "\033[31m当前内核不支持的功能！！！\033[0m"
-            sleep 1
-        fi
-	;;
-    9)
-        setdns
-        set_dns_mod
 	;;
     *)
         errornum
@@ -830,7 +768,7 @@ set_adv_config() { #端口设置
 set_firewall_area() { #代理范围设置
     [ -z "$vm_redir" ] && vm_redir='未开启'
     echo "-----------------------------------------------"
-    echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请单独启用6！"
+    echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请单独启用！"
     echo -e "\033[33m如你使用了第三方DNS如smartdns等，请勿启用本机代理或使用shellcrash用户执行！\033[0m"
     echo "-----------------------------------------------"
     echo -e " 1 \033[32m仅代理局域网流量\033[0m"

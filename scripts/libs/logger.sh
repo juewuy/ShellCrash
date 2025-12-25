@@ -1,6 +1,7 @@
 #日志工具
 #$1日志内容$2显示颜色$3是否推送
 logger() { 
+	TMPDIR=/tmp/ShellCrash
     [ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
     log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
     echo "$log_text" >>"$TMPDIR"/ShellCrash.log
