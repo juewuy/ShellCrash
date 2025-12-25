@@ -48,6 +48,9 @@ ckcmd iptables && {
 	$iptable -D FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT 2>/dev/null
 	#公网访问
 	$iptable -D INPUT -i lo -j ACCEPT 2>/dev/null
+	for ip in $host_ipv4; do
+		$iptable -D INPUT -s $ip -j ACCEPT 2>/dev/null
+	done
 	$iptable -D INPUT -p tcp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
 	$iptable -D INPUT -p udp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
 	$iptable -D INPUT -p tcp -m multiport --dports "$mix_port,$db_port,$dns_port" -j REJECT 2>/dev/null
@@ -95,6 +98,9 @@ ckcmd ip6tables && {
 	$ip6table -D FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT 2>/dev/null
 	#公网访问
 	$ip6table -D INPUT -i lo -j ACCEPT 2>/dev/null
+	for ip in $host_ipv6; do
+		$ip6table -D INPUT -s $ip -j ACCEPT 2>/dev/null
+	done
 	$ip6table -D INPUT -p tcp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
 	$ip6table -D INPUT -p udp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
 	$ip6table -D INPUT -p tcp -m multiport --dports "$mix_port,$db_port,$dns_port" -j REJECT 2>/dev/null

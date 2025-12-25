@@ -1,11 +1,14 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
+RESERVED_IP=$(echo $reserve_ipv4 | sed 's/ /, /g')
+RESERVED_IP6=$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')
+
 start_nft_route() { #nftables-route通用工具
     #$1:name  $2:hook(prerouting/output)  $3:type(nat/mangle/filter)  $4:priority(-100/-150)
     [ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
-    RESERVED_IP=$(echo $reserve_ipv4 | sed 's/ /, /g')
-    HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
     [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
     [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
     #添加新链
@@ -62,8 +65,6 @@ start_nft_route() { #nftables-route通用工具
     }
     #局域网ipv6支持
     if [ "$ipv6_redir" = "已开启" -a "$1" = 'prerouting' -a "$firewall_area" != 5 ]; then
-        RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
-        HOST_IP6="$(echo $host_ipv6 | sed 's/ /, /g')"
         #过滤保留地址及本机地址
         nft add rule inet shellcrash $1 ip6 daddr {$RESERVED_IP6} return
         #仅代理本机局域网网段流量
@@ -99,8 +100,6 @@ start_nft_route() { #nftables-route通用工具
     #nft add rule inet shellcrash local_tproxy log prefix \"pre\" level debug
 }
 start_nft_dns() { #nftables-dns
-    HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
-    HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
     [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
     [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
     nft add chain inet shellcrash "$1"_dns { type nat hook $2 priority -100 \; }
@@ -136,6 +135,8 @@ start_nft_wan() { #nftables公网防火墙
 	}
 	#端口拦截
 	reject_ports="{ $mix_port, $db_port, $dns_port }"
+	nft add rule inet shellcrash input ip saddr {$HOST_IP} accept
+	nft add rule inet shellcrash input ip6 saddr {$HOST_IP6} accept
 	nft add rule inet shellcrash input tcp dport $reject_ports reject
 	nft add rule inet shellcrash input udp dport $reject_ports reject
 }

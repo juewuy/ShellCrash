@@ -149,6 +149,13 @@ start_ipt_wan() { #iptables公网防火墙
 		ipt_wan_accept tcp
 		ipt_wan_accept udp
 	}
+	#局域网请求放行
+	for ip in $host_ipv4; do
+		$iptable -I INPUT -s $ip -j ACCEPT
+	done
+	ckcmd ip6tables && for ip in $host_ipv6; do
+		$ip6table -I INPUT -s $ip -j ACCEPT
+	done
 	#本机请求全放行
 	$iptable -I INPUT -i lo -j ACCEPT
 	ckcmd ip6tables && $ip6table -I INPUT -i lo -j ACCEPT
