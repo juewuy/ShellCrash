@@ -8,40 +8,41 @@
 
 #代理组
 proxy-groups:
-  - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, ✨ 自动选择（去高倍率）, 🛠️ 手动切换, ⚖️ 负载均衡, 🚑 故障转移, 🎯 全球直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, ✨ 自动选择（去高倍率）, 🛠️ 手动切换, ⚖️ 负载均衡, 🚑 故障转移, 🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🛠️ 手动切换, type: select, include-all: true, exclude-type: direct}
   - {name: ♻️ 自动选择, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-type: direct}
   - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-type: direct, filter: "(?i)^(?!.*(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))).*"}
   - {name: ⚖️ 负载均衡, type: load-balance, interval: 1800, include-all: true, exclude-type: direct, hidden: true}
   - {name: 🚑 故障转移, type: fallback, interval: 1800, include-all: true, exclude-type: direct, hidden: true}
 
-  - {name: 🤖 AI 平台, type: select, proxies: [🚀 节点选择, 🤖 AI节点（过滤港澳）, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🤖 AI 平台, type: select, proxies: [🚀 节点选择, 🤖 AI节点（过滤港澳）, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🤖 AI节点（过滤港澳）, type: url-test, interval: 3600, tolerance: 50, include-all: true, filter: "(?i)^(?!.*(🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)).*", hidden: true}
-  - {name: 📢 谷歌推送, type: select, proxies: [🚀 节点选择, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🎬 奈飞视频, type: select, proxies: [🚀 节点选择, 🎬 奈飞节点, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 📢 谷歌推送, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🎬 奈飞视频, type: select, proxies: [🚀 节点选择, 🎬 奈飞节点, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🎬 奈飞节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(NF|奈飞|解锁|Netflix|NETFLIX|Media)", hidden: true}
-  - {name: ▶️ 油管视频, type: select, proxies: [🚀 节点选择, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🌍 国外媒体, type: select, proxies: [🚀 节点选择, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🌐 国际流量, type: select, proxies: [🚀 节点选择, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🎮 国外游戏, type: select, proxies: [🚀 节点选择, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: ▶️ 油管视频, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🌍 国外媒体, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🌐 国际流量, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🎮 国外游戏, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
 
-  - {name: 🕹 国内游戏, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
-  - {name: 🦾 Steam平台, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🪟 微软服务, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🍎 苹果服务, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🇬 谷歌服务, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🧲 BT下载, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 📈 网络测速, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: ↔️ 直连软件, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
-  - {name: 🀄️ 国内直连, type: select, proxies: [🎯 全球直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
+  - {name: 🕹 国内游戏, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
+  - {name: 🦾 Steam平台, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🪟 微软服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🍎 苹果服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🇬 谷歌服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🧲 BT下载, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 📈 网络测速, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: ↔️ 直连软件, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
+  - {name: 🀄️ 国内直连, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
 
-  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 全球直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
 
-  - {name: 🛑 广告拦截, type: select, proxies: [🔴 全球拦截, 🎯 全球直连]}
+  - {name: 🛑 广告拦截, type: select, proxies: [🔴 拦截, 🟢 放行]}
   - {name: 🔒 私有网络, type: select, proxies: [DIRECT], hidden: true}
-  - {name: 🔴 全球拦截, type: select, proxies: [REJECT], hidden: true}
-  - {name: 🎯 全球直连, type: select, proxies: [DIRECT], hidden: true}
+  - {name: 🔴 拦截, type: select, proxies: [REJECT], hidden: true}
+  - {name: 🟢 放行, type: select, proxies: [PASS], hidden: true}
+  - {name: 🎯 本地直连, type: select, proxies: [DIRECT], hidden: true}
 
   - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
   - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)"}
