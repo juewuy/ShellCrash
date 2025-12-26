@@ -5,13 +5,33 @@
 . "$CRASHDIR"/configs/gateway.cfg
 . "$CRASHDIR"/configs/ShellCrash.cfg
 
-OFFSET=0
+TMPDIR='/tmp/ShellCrash'
 API="https://api.telegram.org/bot$TG_TOKEN"
-STATE_FILE="/tmp/ShellCrash/tgbot_state"
-LOGFILE="/tmp/ShellCrash/tgbot.log"
+STATE_FILE="$TMPDIR/tgbot_state"
+LOGFILE="$TMPDIR/tgbot.log"
+OFFSET=0
 
 ### --- 基础函数 --- ###
-send_msg() {
+web_get(){
+	setproxy
+	if curl1 --version >/dev/null 2>&1; then
+		curl -kfsSl --connect-timeout 3 "$1" 
+	else
+		wget -Y on -q --timeout=3 -O - "$1"
+	fi
+}
+web_download(){
+	setproxy
+	if curl --version >/dev/null 2>&1; then
+		curl -kfsSl "$1" -o "$2"
+	else
+		wget -Y on -q --timeout=3 -O "$2" "$1"
+	fi
+}
+web_upload(){
+	curl -ksSfl -X POST --connect-timeout 20 "$API/sendDocument" -F "chat_id=$TG_CHATID" -F "document=@$1" >/dev/null
+}
+send_msg(){
     TEXT="$1"
 	web_json_post "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\"}"
 }
@@ -32,57 +52,49 @@ EOF
 )
 	send_msg "$TEXT"
 }
-send_menu() {
+send_menu(){
 	#获取运行状态
 	PID=$(pidof CrashCore | awk '{print $NF}')
 	if [ -n "$PID" ]; then
-		run=正在运行
+		run='🟢正在运行'
 		running_status
 	else
-		run=未运行
+		run='🟡未运行'
 	fi
 	corename=$(echo $crashcore | sed 's/singboxr/SingBoxR/' | sed 's/singbox/SingBox/' | sed 's/clash/Clash/' | sed 's/meta/Mihomo/')
     TEXT=$(cat <<EOF
-*欢迎使用ShellCrash！*                版本：$versionsh_l
-$corename服务$run               【*$redir_mod*】
-内存占用：$VmRSS                    已运行：$day$time
+*欢迎使用ShellCrash！*_${versionsh_l}_
+$corename服务$run
+【*$redir_mod*】内存占用：$VmRSS
+已运行：$day$time
 请选择操作：
 EOF
 )
-
     MENU=$(cat <<EOF
 {
   "inline_keyboard":[
     [
-      {"text":"▶ 启用劫持","callback_data":"start_redir"},
-      {"text":"■ 纯净模式","callback_data":"stop_redir"},
-      {"text":"🔄 重启内核","callback_data":"restart"}
+      {"text":"✈️ 启用劫持","callback_data":"start_redir"},
+      {"text":"💧 纯净模式","callback_data":"stop_redir"},
+      {"text":"🕹 重启服务","callback_data":"restart"}
     ],
     [
       {"text":"📄 查看日志","callback_data":"readlog"},
-	  {"text":"🔃 文件传输","callback_data":"transport"},
-      {"text":"🌀 添加订阅","callback_data":"set_sub"}
+	  {"text":"🔃 文件传输","callback_data":"transport"}
     ]
   ]
 }
 EOF
 )
-
 web_json_post "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\",\"reply_markup\":$MENU}"
-
 }
-send_transport_menu() {
-    TEXT=$(cat <<EOF
-请选择需要上传或下载的具体文件：
-EOF
-)
-	core_config=config.yaml
+### --- 文件传输 --- ###
+send_transport_menu(){ 
+    TEXT='请选择需要上传或下载的具体文件：'
 	if echo "$crashcore" | grep -q 'singbox';then
-		core_config=config.json
-		ccdir=jsons
+		config_type=json
 	else
-		core_config=config.yaml
-		ccdir=yamls
+		config_type=yaml
 	fi
 
 	if curl -h >/dev/null 2>&1;then
@@ -90,9 +102,10 @@ EOF
 	[
       {"text":"📥 下载日志","callback_data":"ts_get_log"},
       {"text":"💾 备份设置","callback_data":"ts_get_bak"},
-      {"text":"⬇️ $core_config","callback_data":"ts_get_ccf"}
+      {"text":"⬇️ 下载配置","callback_data":"ts_get_ccf"}
     ],
-EOF)
+EOF
+)
 	else
 		CURL_KB='[{"text":"⚠️ 因当前设备缺少curl应用，仅支持上传功能！","callback_data":"noop"}],'
 	fi
@@ -101,9 +114,9 @@ EOF)
   "inline_keyboard":[
 	$CURL_KB
     [
-      {"text":"📤 上传内核","callback_data":"ts_up_core"},
+      {"text":"🪐 上传内核","callback_data":"ts_up_core"},
 	  {"text":"🔄 还原设置","callback_data":"ts_up_bak"},
-      {"text":"⬆️ $core_config","callback_data":"ts_up_ccf"}
+      {"text":"⬆️ 上传配置","callback_data":"ts_up_ccf"}
     ]
   ]
 }
@@ -113,67 +126,108 @@ EOF
 web_json_post "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\",\"reply_markup\":$MENU}"
 
 }
-upload_file(){
-	curl -k -X POST --connect-timeout 20 "$API/sendDocument" -F "chat_id=$TG_CHATID" -F "document=@$1" 
+process_file(){
+	case "$FILE_TYPE" in
+		1)
+			. "$CRASHDIR"/libs/core_tools.sh
+			core_check "$TMPDIR/$FILE_NAME" && res='成功!即将重启服务！' || res='失败,请仔细检查文件或重试！'
+			send_msg "内核更新$res"
+			sleep 2
+			"$CRASHDIR"/start.sh start
+		;;
+		2)
+			tar -zxf "$TMPDIR/$FILE_NAME" -C "$CRASHDIR"/configs && res='配置文件已还原，请手动重启服务！' || res='解压还原失败,请仔细检查文件或重试！'
+			send_msg "$res"
+		;;
+		3)
+			mv -f "$TMPDIR/$FILE_NAME" "$CRASHDIR/${config_type}s/" && res='配置文件已上传，请手动重启服务！' || res='上传失败,请仔细检查文件或重试！'
+			send_msg "$res"
+		;;
+	esac
+	rm -f "$TMPDIR/$FILE_NAME"
+	send_menu
+}
+download_file(){
+	FILE_NAME=$(echo "$UPDATES" | sed 's/"callback_query".*//g' | grep -o '"file_name":"[^"]*"' | head -n1 | sed 's/.*:"//;s/"$//' | grep -E '\.(gz|upx|json|yaml)$')
+	if [ -n "$FILE_NAME" ];then
+		FILE_PATH=$(web_get "$API/getFile?file_id=$FILE_ID" | grep -o '"file_path":"[^"]*"' | sed 's/.*:"//;s/"$//')
+		API_FILE="https://api.telegram.org/file/bot$TG_TOKEN"
+		web_download "$API_FILE/$FILE_PATH" "$TMPDIR/$FILE_NAME"
+		if [ "$?" = 0 ];then
+			process_file
+		else
+			send_msg "网络错误，上传失败！请重试！"
+		fi
+	else
+		send_msg "文件格式不匹配，上传失败！"
+	fi
+	OFFSET=$((OFFSET + 1))
+	continue
 }
 ### --- 具体操作函数 --- ###
-do_start_fw() {
+do_start_fw(){
 	[ -z "$redir_mod_bf" ] && redir_mod_bf='Redir模式'
 	redir_mod=$redir_mod_bf
 	setconfig redir_mod $redir_mod
 	"$CRASHDIR"/start.sh start_firewall
     echo "ShellCrash 透明路由*$redir_mod_bf*已启用！" > "$LOGFILE"
 }
-do_stop_fw() {
+do_stop_fw(){
 	redir_mod_bf=$redir_mod
 	redir_mod='纯净模式'
 	setconfig redir_mod $redir_mod
 	"$CRASHDIR"/start.sh stop_firewall
     echo "ShellCrash 已切换到纯净模式！" > "$LOGFILE"
 }
-do_restart() {
+do_restart(){
     "$CRASHDIR"/start.sh restart
     echo "ShellCrash 服务已重启！" > "$LOGFILE"
 }
-do_set_sub() {
+do_set_sub(){
     #echo "$1" "$2" >> "$CRASHDIR"/configs/providers.cfg
     echo "错误，还未完成的功能！" > "$LOGFILE"
 
 }
-transport(){
+transport(){ #文件传输
 	case "$CALLBACK" in
 		"ts_get_log")
-			upload_file '/tmp/ShellCrash/ShellCrash.log'
-			sleep 3
+			web_upload "$TMPDIR"/ShellCrash.log
 			send_menu 
 		;;
 		"ts_get_bak")
 			now=$(date +%Y%m%d_%H%M%S)
-			FILE="$CRASHDIR"/configs_"$now".tar.gz
-			tar -zcf "$FILE" "$CRASHDIR"/configs/
-			upload_file "$FILE"
+			FILE="$TMPDIR/configs_$now.tar.gz"
+			tar -zcf "$FILE" -C "$CRASHDIR/configs/" .
+			web_upload "$FILE"
 			rm -rf "$FILE"
-			sleep 3
 			send_menu 
 		;;
 		"ts_get_ccf")
-			upload_file "$CRASHDIR/$ccdir/$core_config"
-			sleep 3
+			FILE="$TMPDIR/$config_type.tar.gz"
+			tar -zcf "$FILE" -C "$CRASHDIR/${config_type}s/" .
+			web_upload "$FILE"
+			rm -rf "$FILE"
 			send_menu 
 		;;
-		ts_up_core)
-			send_msg  "请发送需要上传的文件："
+		"ts_up_core")
+			FILE_TYPE=1
+			send_msg  "请发送需要上传的内核，必须是以tar.gz,.gz或.upx结尾的【${corename}】内核！"
+		;;
+		"ts_up_bak")
+			FILE_TYPE=2
+			send_msg  "请发送需要还原的备份文件，必须是【.tar.gz】格式！"
+		;;
+		"ts_up_ccf")
+			FILE_TYPE=3
+			send_msg  "请发送需要上传的配置文件，必须是【.${config_type}】格式，支持自定义配置文件"
 		;;
 	esac
 }
-download_file(){
-	FILE_PATH=$(web_json_get "$API/getFile?file_id=$FILE_ID" | grep -o '"file_path":"[^"]*"' | sed 's/.*:"//;s/"$//')
-	echo $FILE_PATH
-}
+
 ### --- 轮询主进程 --- ###
 polling(){
 	while true; do
-		UPDATES=$(web_json_get "$API/getUpdates?timeout=25&offset=$OFFSET")
+		UPDATES=$(web_get "$API/getUpdates?timeout=25&offset=$OFFSET")
 
 		echo "$UPDATES" | grep -q '"update_id"' || continue
 
@@ -214,7 +268,7 @@ polling(){
 				continue
 			;;
 			"readlog")
-				send_msg  "📄 日志内容如下(已过滤任务日志)：\n\`\`\`$(grep -v '任务' /tmp/ShellCrash/ShellCrash.log |tail -n 20)\`\`\`"
+				send_msg  "📄 日志内容如下(已过滤任务日志)：\n\`\`\`$(grep -v '任务' $TMPDIR/ShellCrash.log |tail -n 20)\`\`\`"
 				sleep 3
 				send_menu 
 				continue
@@ -259,6 +313,8 @@ polling(){
 
 	done
 }
+
 send_menu
+
 polling
 
