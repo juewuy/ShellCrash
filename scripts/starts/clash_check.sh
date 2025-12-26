@@ -16,6 +16,6 @@ clash_check() { #clash启动前检查
     #预下载GeoSite数据库并排除存在自定义数据库链接的情况
     [ -n "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && check_geo GeoSite.dat geosite.dat
     #预下载cn.mrs数据库
-    [ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*cn')" ] || [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && check_geo ruleset/cn.mrs mrs_geosite_cn.mrs
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '^[[:space:]]*cn:$' "$CRASHDIR"/yamls/*.yaml && ckgeo ruleset/cn.mrs mrs_geosite_cn.mrs
     return 0
 }

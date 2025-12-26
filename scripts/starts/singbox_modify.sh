@@ -130,8 +130,7 @@ EOF
     #防泄露设置
     [ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
     #生成add_rule_set.json
-    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] &&
-        [ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] &&
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '"tag" *:[[:space:]]*"cn"' "$CRASHDIR"/jsons/*.json &&
         cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
