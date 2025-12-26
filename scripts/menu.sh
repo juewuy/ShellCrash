@@ -14,7 +14,9 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 #通用工具
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/check_cmd.sh
+. "$CRASHDIR"/libs/check_autostart.sh
 . "$CRASHDIR"/menus/1_start.sh
+. "$CRASHDIR"/menus/running_status.sh
 errornum() {
     echo "-----------------------------------------------"
     echo -e "\033[31m请输入正确的字母或数字！\033[0m"
@@ -66,19 +68,7 @@ ckstatus() { #脚本启动前检查
         hostdir=":$db_port/ui"
     fi
     #开机自启检测
-    if [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
-        [ -n "$(find /etc/rc.d -name '*shellcrash')" ] && autostart=enable || autostart=disable
-    elif ckcmd systemctl; then
-        [ "$(systemctl is-enabled shellcrash.service 2>&1)" = enabled ] && autostart=enable || autostart=disable
-	elif grep -q 's6' /proc/1/comm; then
-		[ -f /etc/s6-overlay/s6-rc.d/user/contents.d/afstart ] && autostart=enable || autostart=disable
-    elif rc-status -r >/dev/null 2>&1; then
-        rc-update show default | grep -q "shellcrash" && autostart=enable || autostart=disable
-    else
-        [ -f "$CRASHDIR"/.dis_startup ] && autostart=disable || autostart=enable
-    fi
-    #开机自启描述
-    if [ "$autostart" = "enable" ]; then
+    if check_autostart; then
         auto="\033[32m已设置开机启动！\033[0m"
         auto1="\033[36m禁用\033[0mShellCrash开机启动"
     else
@@ -89,16 +79,7 @@ ckstatus() { #脚本启动前检查
     PID=$(pidof CrashCore | awk '{print $NF}')
     if [ -n "$PID" ]; then
         run="\033[32m正在运行（$redir_mod）\033[0m"
-        VmRSS=$(cat /proc/$PID/status | grep -w VmRSS | awk 'unit="MB" {printf "%.2f %s\n", $2/1000, unit}')
-        #获取运行时长
-        touch "$TMPDIR"/crash_start_time #用于延迟启动的校验
-        start_time=$(cat "$TMPDIR"/crash_start_time)
-        if [ -n "$start_time" ]; then
-            time=$(($(date +%s) - start_time))
-            day=$((time / 86400))
-            [ "$day" = "0" ] && day='' || day="$day天"
-            time=$(date -u -d @${time} +%H小时%M分%S秒)
-        fi
+        running_status
     elif [ "$firewall_area" = 5 ] && [ -n "$(ip route list table 100)" ]; then
         run="\033[32m已设置（$redir_mod）\033[0m"
     else
@@ -112,7 +93,7 @@ ckstatus() { #脚本启动前检查
     #输出状态
     echo "-----------------------------------------------"
     echo -e "\033[30;46m欢迎使用ShellCrash！\033[0m		版本：$versionsh_l"
-    echo -e "$corename服务"$run"，"$auto""
+    echo -e "$corename服务$run，$auto"
     if [ -n "$PID" ]; then
         echo -e "当前内存占用：\033[44m"$VmRSS"\033[0m，已运行：\033[46;30m"$day"\033[44;37m"$time"\033[0m"
     fi

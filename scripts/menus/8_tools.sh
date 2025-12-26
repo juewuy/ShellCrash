@@ -558,6 +558,8 @@ testcommand(){
 						iptables -t nat -L shellcrash_vm --line-numbers
 						iptables -t nat -L shellcrash_vm_dns --line-numbers
 			}
+			echo "----------------本机防火墙---------------------"
+			iptables -L INPUT --line-numbers
 		fi
 		exit;
 	    ;;
@@ -753,16 +755,6 @@ userguide(){
 			setconfig BINDIR /tmp/ShellCrash "$CRASHDIR"/configs/command.env
 		}
 	fi
-	#检测及下载根证书
-	openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
-	[ ! -d "$openssldir/certs" ] && openssldir=/etc/ssl
-	if [ -d $openssldir/certs -a ! -f $openssldir/certs/ca-certificates.crt ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[33m当前设备未找到根证书文件\033[0m"
-		echo "-----------------------------------------------"
-		read -p "是否下载并安装根证书？(1/0) > " res
-		[ "$res" = 1 ] && checkupdate && getcrt
-	fi
 	#设置加密DNS
 	if [ -s $openssldir/certs/ca-certificates.crt ];then
 		dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
@@ -772,41 +764,8 @@ userguide(){
 		setconfig dns_fallback "'$dns_fallback'"
 		setconfig dns_resolver "'$dns_resolver'"
 	fi
-	#开启公网访问
-	sethost(){
-		read -p "请输入你的公网IP地址 > " host
-		echo $host | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-		if [ -z "$host" ];then
-			echo -e "\033[31m请输入正确的IP地址！\033[0m"
-			sethost
-		fi
-	}
-	if ckcmd systemctl;then
-		echo "-----------------------------------------------"
-		echo -e "\033[32m是否开启公网访问Dashboard面板及socks服务？\033[0m"
-		echo -e "注意当前设备必须有公网IP才能从公网正常访问"
-		echo -e "\033[31m此功能会增加暴露风险请谨慎使用！\033[0m"
-		echo -e "vps设备可能还需要额外在服务商后台开启相关端口"
-		read -p "现在开启？(1/0) > " res
-		if [ "$res" = 1 ];then
-			read -p "请先设置面板访问秘钥 > " secret
-			read -p "请先修改Socks服务端口(1-65535) > " mix_port
-			read -p "请先设置Socks服务密码(账号默认为crash) > " sec
-			[ -z "$sec" ] && authentication=crash:$sec
-			host=$(curl ip.sb  2>/dev/null | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
-			if [ -z "$host" ];then
-				sethost
-			fi
-			public_support=已开启
-			setconfig secret $secret
-			setconfig mix_port $mix_port
-			setconfig host $host
-			setconfig public_support $public_support
-			setconfig authentication "'$authentication'"
-		fi
-	fi
 	#启用推荐的自动任务配置
-	. "$CRASHDIR"/task/task.sh && task_recom
+	. "$CRASHDIR"/menus/task.sh && task_recom
 	#小米设备软固化
 	if [ "$systype" = "mi_snapshot" ];then
 		echo "-----------------------------------------------"
@@ -822,12 +781,7 @@ userguide(){
 		echo "-----------------------------------------------"
 		read -p "现在开始导入？(1/0) > " res
 		[ "$res" = 1 ] && inuserguide=1 && {
-			if [ -f "$CRASHDIR"/v2b_api.sh ];then
-				. "$CRASHDIR"/v2b_api.sh
-			else
-				set_core_config
-			fi
-			set_core_config
+			. "$CRASHDIR"/menus/6_core_config.sh && set_core_config
 			inuserguide=""
 		}
 	}

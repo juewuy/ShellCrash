@@ -74,7 +74,7 @@ rm -rf "$CRASHDIR"/starts/shellcrash.openrc
 command -v bash >/dev/null 2>&1 && shtype=bash
 [ -x /bin/ash ] && shtype=ash
 #批量授权
-for file in start.sh starts/bfstart.sh starts/afstart.sh menu.sh menus/task_cmd.sh menus/bot_tg.sh; do
+for file in start.sh starts/bfstart.sh starts/afstart.sh starts/fw_stop.sh menu.sh menus/task_cmd.sh menus/bot_tg.sh; do
     sed -i "s|/bin/sh|/bin/$shtype|" "$CRASHDIR/$file" 2>/dev/null
     chmod +x "$CRASHDIR/$file" 2>/dev/null
 done

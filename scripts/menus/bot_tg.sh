@@ -1,8 +1,9 @@
 #!/bin/sh
 
-. "$CRASHDIR"/configs/ShellCrash.cfg
-. "$CRASHDIR"/configs/gateway.cfg
 . "$CRASHDIR"/libs/web_json.sh
+. "$CRASHDIR"/menus/running_status.sh
+. "$CRASHDIR"/configs/gateway.cfg
+. "$CRASHDIR"/configs/ShellCrash.cfg
 
 OFFSET=0
 API="https://api.telegram.org/bot$TG_TOKEN"
@@ -36,18 +37,11 @@ send_menu() {
 	PID=$(pidof CrashCore | awk '{print $NF}')
 	if [ -n "$PID" ]; then
 		run=正在运行
-		VmRSS=$(cat /proc/$PID/status | grep -w VmRSS | awk 'unit="MB" {printf "%.2f %s\n", $2/1000, unit}')
-		start_time=$(cat /tmp/ShellCrash/crash_start_time)
-		if [ -n "$start_time" ]; then
-			time=$(($(date +%s) - start_time))
-			day=$((time / 86400))
-			[ "$day" = "0" ] && day='' || day="$day天"
-			time=$(date -u -d @${time} +%H小时%M分%S秒)
-		fi
-	corename=$(echo $crashcore | sed 's/singboxr/SingBoxR/' | sed 's/singbox/SingBox/' | sed 's/clash/Clash/' | sed 's/meta/Mihomo/')
+		running_status
 	else
 		run=未运行
 	fi
+	corename=$(echo $crashcore | sed 's/singboxr/SingBoxR/' | sed 's/singbox/SingBox/' | sed 's/clash/Clash/' | sed 's/meta/Mihomo/')
     TEXT=$(cat <<EOF
 *欢迎使用ShellCrash！*                版本：$versionsh_l
 $corename服务$run               【*$redir_mod*】
@@ -56,7 +50,7 @@ $corename服务$run               【*$redir_mod*】
 EOF
 )
 
-    MENU=$(cat <<'EOF'
+    MENU=$(cat <<EOF
 {
   "inline_keyboard":[
     [
@@ -65,8 +59,9 @@ EOF
       {"text":"🔄 重启内核","callback_data":"restart"}
     ],
     [
-      {"text":"🌀 热更新订阅","callback_data":"refresh"},
-      {"text":"📝 添加订阅","callback_data":"set_sub"}
+      {"text":"📄 查看日志","callback_data":"readlog"},
+	  {"text":"🔃 文件传输","callback_data":"transport"},
+      {"text":"🌀 添加订阅","callback_data":"set_sub"}
     ]
   ]
 }
@@ -76,7 +71,51 @@ EOF
 web_json_post "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\",\"reply_markup\":$MENU}"
 
 }
+send_transport_menu() {
+    TEXT=$(cat <<EOF
+请选择需要上传或下载的具体文件：
+EOF
+)
+	core_config=config.yaml
+	if echo "$crashcore" | grep -q 'singbox';then
+		core_config=config.json
+		ccdir=jsons
+	else
+		core_config=config.yaml
+		ccdir=yamls
+	fi
 
+	if curl -h >/dev/null 2>&1;then
+		CURL_KB=$(cat <<EOF
+	[
+      {"text":"📥 下载日志","callback_data":"ts_get_log"},
+      {"text":"💾 备份设置","callback_data":"ts_get_bak"},
+      {"text":"⬇️ $core_config","callback_data":"ts_get_ccf"}
+    ],
+EOF)
+	else
+		CURL_KB='[{"text":"⚠️ 因当前设备缺少curl应用，仅支持上传功能！","callback_data":"noop"}],'
+	fi
+    MENU=$(cat <<EOF
+{
+  "inline_keyboard":[
+	$CURL_KB
+    [
+      {"text":"📤 上传内核","callback_data":"ts_up_core"},
+	  {"text":"🔄 还原设置","callback_data":"ts_up_bak"},
+      {"text":"⬆️ $core_config","callback_data":"ts_up_ccf"}
+    ]
+  ]
+}
+EOF
+)
+
+web_json_post "$API/sendMessage" "{\"chat_id\":\"$TG_CHATID\",\"text\":\"$TEXT\",\"parse_mode\":\"Markdown\",\"reply_markup\":$MENU}"
+
+}
+upload_file(){
+	curl -k -X POST --connect-timeout 20 "$API/sendDocument" -F "chat_id=$TG_CHATID" -F "document=@$1" 
+}
 ### --- 具体操作函数 --- ###
 do_start_fw() {
 	[ -z "$redir_mod_bf" ] && redir_mod_bf='Redir模式'
@@ -96,16 +135,41 @@ do_restart() {
     "$CRASHDIR"/start.sh restart
     echo "ShellCrash 服务已重启！" > "$LOGFILE"
 }
-do_refresh() {
-    "$CRASHDIR"/start.sh hotupdate
-	echo "ShellCrash 已完成热更新订阅！" > "$LOGFILE"
-}
 do_set_sub() {
     #echo "$1" "$2" >> "$CRASHDIR"/configs/providers.cfg
     echo "错误，还未完成的功能！" > "$LOGFILE"
 
 }
-
+transport(){
+	case "$CALLBACK" in
+		"ts_get_log")
+			upload_file '/tmp/ShellCrash/ShellCrash.log'
+			sleep 3
+			send_menu 
+		;;
+		"ts_get_bak")
+			now=$(date +%Y%m%d_%H%M%S)
+			FILE="$CRASHDIR"/configs_"$now".tar.gz
+			tar -zcf "$FILE" "$CRASHDIR"/configs/
+			upload_file "$FILE"
+			rm -rf "$FILE"
+			sleep 3
+			send_menu 
+		;;
+		"ts_get_ccf")
+			upload_file "$CRASHDIR/$ccdir/$core_config"
+			sleep 3
+			send_menu 
+		;;
+		ts_up_core)
+			send_msg  "请发送需要上传的文件："
+		;;
+	esac
+}
+download_file(){
+	FILE_PATH=$(web_json_get "$API/getFile?file_id=$FILE_ID" | grep -o '"file_path":"[^"]*"' | sed 's/.*:"//;s/"$//')
+	echo $FILE_PATH
+}
 ### --- 轮询主进程 --- ###
 polling(){
 	while true; do
@@ -118,8 +182,10 @@ polling(){
 		
 		### --- 处理按钮事件 --- ###
 		CALLBACK=$(echo "$UPDATES" | grep -o '"data":"[^"]*"' | head -n1 | sed 's/.*:"//;s/"$//')
-
-		case "$CALLBACK" in
+		FILE_ID=$(echo "$UPDATES" | sed 's/"callback_query".*//g' | grep -o '"file_id":"[^"]*"' | head -n1 | sed 's/.*:"//;s/"$//')
+		
+		[ -n "$FILE_ID" ] && download_file
+		[ -n "$CALLBACK" ] && case "$CALLBACK" in
 			"start_redir")
 				if [ "$redir_mod" = '纯净模式' ];then
 					do_start_fw
@@ -129,7 +195,7 @@ polling(){
 				fi
 				send_menu 
 				continue
-				;;
+			;;
 			"stop_redir")
 				if [ "$redir_mod" != '纯净模式' ];then
 					do_stop_fw
@@ -139,25 +205,33 @@ polling(){
 				fi
 				send_menu 
 				continue
-				;;
+			;;
 			"restart")
 				do_restart
 				send_msg  "🔄 服务已重启"
 				sleep 10
 				send_menu 
 				continue
-				;;
-			"refresh")
-				do_refresh
-				send_msg  "🌀 刷新完成：\n$(cat "$LOGFILE")"
+			;;
+			"readlog")
+				send_msg  "📄 日志内容如下(已过滤任务日志)：\n\`\`\`$(grep -v '任务' /tmp/ShellCrash/ShellCrash.log |tail -n 20)\`\`\`"
+				sleep 3
 				send_menu 
 				continue
-				;;
+			;;
+			"transport")
+				send_transport_menu
+				continue
+			;;
 			"set_sub")
 				echo "await_sub" > "$STATE_FILE"
 				send_msg  "✏ 请输入新的订阅链接："
 				continue
-				;;
+			;;
+			ts_*)
+				transport
+				continue
+			;;
 		esac
 
 

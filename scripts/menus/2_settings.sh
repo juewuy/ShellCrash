@@ -10,9 +10,9 @@ settings() { #功能设置
     echo "-----------------------------------------------"
     echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
     echo "-----------------------------------------------"
-    echo -e " 1 代理模式设置:	\033[36m$redir_mod\033[0m"
+    echo -e " 1 路由模式设置:	\033[36m$redir_mod\033[0m"
 	echo -e " 2 DNS设置：		\033[36m$dns_mod\033[0m"
-	echo -e " 3 透明路由流量过滤"
+	echo -e " 3 透明路由\033[32m流量过滤\033[0m"
     [ "$disoverride" != "1" ] && {
         echo -e " 4 跳过证书验证：	\033[36m$skip_cert\033[0m"
 		echo -e " 5 启用域名嗅探:	\033[36m$sniffer\033[0m"
@@ -136,7 +136,7 @@ settings() { #功能设置
     esac
 }
 
-set_redir_mod() { #代理模式设置
+set_redir_mod() { #路由模式设置
     set_redir_config() {
         setconfig redir_mod $redir_mod
         setconfig dns_mod $dns_mod
@@ -149,7 +149,7 @@ set_redir_mod() { #代理模式设置
     [ -z "$redir_mod" ] && redir_mod='纯净模式'
     firewall_area_dsc=$(echo "仅局域网 仅本机 局域网+本机 纯净模式 主-旁转发($bypass_host)" | cut -d' ' -f$firewall_area)
     echo "-----------------------------------------------"
-    echo -e "当前代理模式为：\033[47;30m$redir_mod\033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
+    echo -e "当前路由模式为：\033[47;30m$redir_mod\033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
     echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
     echo "-----------------------------------------------"
     [ $firewall_area -le 3 ] && {
@@ -164,8 +164,8 @@ set_redir_mod() { #代理模式设置
         echo -e " 6 \033[36mT&U旁路转发\033[0m：    转发TCP&UDP流量至旁路由"
         echo "-----------------------------------------------"
     }
-    echo -e " 7 设置代理范围：	\033[47;30m$firewall_area_dsc\033[0m"
-    echo -e " 8 容器/虚拟机代理：	\033[47;30m$vm_redir\033[0m"
+    echo -e " 7 设置路由劫持范围：	\033[47;30m$firewall_area_dsc\033[0m"
+    echo -e " 8 容器/虚拟机劫持：	\033[47;30m$vm_redir\033[0m"
     echo -e " 9 切换防火墙应用：	\033[47;30m$firewall_mod\033[0m"
 	echo "-----------------------------------------------"
     echo " 0 返回上级菜单"
@@ -677,7 +677,7 @@ set_adv_config() { #端口设置
         else
             if [ "$local_proxy" = "已开启" -a "$local_type" = "环境变量" ]; then
                 echo "-----------------------------------------------"
-                echo -e "\033[33m请先禁用本机代理功能或使用增强模式！\033[0m"
+                echo -e "\033[33m请先禁用本机劫持功能或使用增强模式！\033[0m"
                 sleep 1
             else
                 authentication=$(echo $input | grep :)
@@ -718,7 +718,7 @@ set_adv_config() { #端口设置
         echo -e "多个端口请用小写逗号分隔，例如：\033[33m143,80,443\033[0m"
         echo -e "输入 0 重置为默认端口"
         echo "-----------------------------------------------"
-        read -p "请输入需要指定代理的端口 > " multiport
+        read -p "请输入需要指定劫持的端口 > " multiport
         if [ -n "$multiport" ]; then
             [ "$multiport" = "0" ] && multiport="22,80,143,194,443,465,587,853,993,995,5222,8080,8443"
             common_ports=已开启
@@ -765,16 +765,16 @@ set_adv_config() { #端口设置
 	;;
     esac
 }
-set_firewall_area() { #代理范围设置
+set_firewall_area() { #路由范围设置
     [ -z "$vm_redir" ] && vm_redir='未开启'
     echo "-----------------------------------------------"
     echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请单独启用！"
-    echo -e "\033[33m如你使用了第三方DNS如smartdns等，请勿启用本机代理或使用shellcrash用户执行！\033[0m"
+    echo -e "\033[33m如你使用了第三方DNS如smartdns等，请勿启用本机劫持或使用shellcrash用户执行！\033[0m"
     echo "-----------------------------------------------"
-    echo -e " 1 \033[32m仅代理局域网流量\033[0m"
-    echo -e " 2 \033[36m仅代理本机流量\033[0m"
-    echo -e " 3 \033[32m代理局域网+本机流量\033[0m"
-    echo -e " 4 不配置流量代理(纯净模式)\033[0m"
+    echo -e " 1 \033[32m仅劫持局域网流量\033[0m"
+    echo -e " 2 \033[36m仅劫持本机流量\033[0m"
+    echo -e " 3 \033[32m劫持局域网+本机流量\033[0m"
+    echo -e " 4 不配置流量劫持(纯净模式)\033[0m"
     #echo -e " 5 \033[33m转发局域网流量到旁路由设备\033[0m"
     echo -e " 0 返回上级菜单"
     echo "-----------------------------------------------"
@@ -816,7 +816,7 @@ set_firewall_area() { #代理范围设置
 }
 set_firewall_vm(){
 	if [ -n "$vm_ipv4" ]; then
-		vm_des='当前代理'
+		vm_des='当前劫持'
 	else
 		vm_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'brd' | grep -E 'docker|podman|virbr|vnet|ovs|vmbr|veth|vmnic|vboxnet|lxcbr|xenbr|vEthernet' | sed 's/.*inet.//g' | sed 's/ br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ')
 		vm_des='当前获取到'
@@ -825,9 +825,9 @@ set_firewall_vm(){
 	echo -e "$vm_des的容器/虚拟机网段为：\033[32m$vm_ipv4\033[0m"
 	echo -e "如未包含容器网段，请先运行容器再运行脚本或者手动设置网段"
 	echo "-----------------------------------------------"
-	echo -e " 1 \033[32m启用代理并使用默认网段\033[0m"
-	echo -e " 2 \033[36m启用代理并自定义网段\033[0m"
-	echo -e " 3 \033[31m禁用代理\033[0m"
+	echo -e " 1 \033[32m启用劫持并使用默认网段\033[0m"
+	echo -e " 2 \033[36m启用劫持并自定义网段\033[0m"
+	echo -e " 3 \033[31m禁用劫持\033[0m"
 	echo -e " 0 返回上级菜单"
 	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
@@ -858,7 +858,7 @@ set_ipv6() { #ipv6设置
     [ -z "$ipv6_redir" ] && ipv6_redir=未开启
     [ -z "$ipv6_dns" ] && ipv6_dns=已开启
     echo "-----------------------------------------------"
-    echo -e " 1 ipv6透明代理:  \033[36m$ipv6_redir\033[0m  ——代理ipv6流量"
+    echo -e " 1 ipv6透明路由:  \033[36m$ipv6_redir\033[0m  ——劫持ipv6流量"
     [ "$disoverride" != "1" ] && echo -e " 2 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"
     echo -e " 0 返回上级菜单"
     echo "-----------------------------------------------"

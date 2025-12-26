@@ -4,12 +4,13 @@
 . "$CRASHDIR"/menus/check_port.sh
 . "$CRASHDIR"/libs/gen_base64.sh
 
-gateway(){ #访问与控制主菜单
+#访问与控制主菜单
+gateway(){
 	echo "-----------------------------------------------"
 	echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
 	echo "-----------------------------------------------"
-	echo -e " 1 配置\033[33m公网访问防火墙\033[0m"
-	echo -e " 2 配置\033[36mTelegram专属控制机器人\033[0m		\033[32m$bot_tg_service\033[0m"
+	echo -e " 1 配置\033[33m公网访问防火墙			\033[32m$fw_wan\033[0m"
+	echo -e " 2 配置\033[36mTelegram专属控制机器人		\033[32m$bot_tg_service\033[0m"
 	echo -e " 3 配置\033[36mDDNS自动域名\033[0m"
 	[ "$disoverride" != "1" ] && {
 		echo -e " 4 自定义\033[33m公网Vmess入站\033[0m节点		\033[32m$vms_service\033[0m"
@@ -63,7 +64,8 @@ gateway(){ #访问与控制主菜单
 	*) errornum ;;
 	esac
 }
-set_fw_wan() { #公网防火墙设置
+#公网防火墙
+set_fw_wan() {
 	[ -z "$fw_wan" ] && fw_wan=ON
 	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m如在vps运行，还需在vps安全策略对相关端口同时放行"
@@ -80,7 +82,7 @@ set_fw_wan() { #公网防火墙设置
 	case $num in
 	1)
 		[ "$fw_wan" = ON ] && fw_wan=OFF || fw_wan=ON
-		setconfig ts_service "$ts_service"
+		setconfig fw_wan "$fw_wan"
 		set_fw_wan
 	;;
 	2)
@@ -121,6 +123,7 @@ set_fw_wan() { #公网防火墙设置
 		;;
 	esac
 }
+#tg_BOT相关
 set_bot_tg_config(){
 	setconfig TG_TOKEN "$TOKEN" "$GT_CFG_PATH"
 	setconfig TG_CHATID "$chat_ID" "$GT_CFG_PATH"
@@ -204,6 +207,7 @@ set_bot_tg(){
 	;;
 	esac		
 }
+#自定义入站
 set_vmess(){
 	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
@@ -431,6 +435,7 @@ set_shadowsocks(){
 	*) errornum ;;
 	esac		
 }
+#自定义端点
 set_tailscale(){
 	[ -n "$ts_auth_key" ] && ts_auth_key_info='*********'
 	echo "-----------------------------------------------"
