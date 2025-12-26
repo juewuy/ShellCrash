@@ -633,7 +633,7 @@ EOF
         mv -f "$TMPDIR"/rules.add "$TMPDIR"/rules.yaml
     }
     #mix和route模式生成rule-providers
-    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -q 'cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '^[[:space:]]*cn:$' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
         space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *') #获取空格数
         [ -z "$space" ] && space='  '
         echo "${space}cn: {type: http, behavior: domain, format: mrs, path: ./ruleset/cn.mrs, url: https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@update/bin/geodata/mrs_geosite_cn.mrs}" >>"$TMPDIR"/rule-providers.yaml
@@ -762,7 +762,7 @@ EOF
     [ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
     #生成add_rule_set.json
     [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] &&
-        [ -z "$(cat "$CRASHDIR"/jsons/*.json | grep -Ei '"tag" *: *"cn"')" ] &&
+        ! grep -Eq '"tag" *:[[:space:]]*"cn"' "$CRASHDIR"/jsons/*.json &&
         cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
@@ -1877,17 +1877,15 @@ clash_check() { #clash启动前检查
     #预下载GeoSite数据库并排除存在自定义数据库链接的情况
     [ -n "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && [ -z "$(grep -oEi 'geosite:' "$CRASHDIR"/yamls/*.yaml)" ] && ckgeo GeoSite.dat geosite.dat
     #预下载cn.mrs数据库
-    [ -n "$(cat "$CRASHDIR"/yamls/*.yaml | grep -oEi 'rule_set.*cn')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/cn.mrs mrs_geosite_cn.mrs
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '^[[:space:]]*cn:$' "$CRASHDIR"/yamls/*.yaml && ckgeo ruleset/cn.mrs mrs_geosite_cn.mrs
     return 0
 }
 singbox_check() { #singbox启动前检查
     #检测singboxr专属功能
     [ "$crashcore" != "singboxr" ] && [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oE '"shadowsocksr"|"providers"')" ] && core_exchange singboxr 'singboxr内核专属功能'
     core_check
-    #预下载geoip-cn.srs数据库
-    [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"geoip-cn"')" ] && ckgeo ruleset/geoip-cn.srs srs_geoip_cn.srs
     #预下载cn.srs数据库
-    [ -n "$(cat "$CRASHDIR"/jsons/*.json | grep -oEi '"rule_set" *: *"cn"')" -o "$dns_mod" = "mix" ] && ckgeo ruleset/cn.srs srs_geosite_cn.srs
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '"tag" *:[[:space:]]*"cn"' "$CRASHDIR"/jsons/*.json && ckgeo ruleset/cn.srs srs_geosite_cn.srs
     return 0
 }
 network_check() { #检查是否联网
