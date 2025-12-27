@@ -8,7 +8,7 @@ USE_PROCD=1
 #获取目录
 CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
 [ -z "$CRASHDIR" ] && CRASHDIR=$(cat ~/.bashrc | grep CRASHDIR | awk -F "\"" '{print $2}')
-source "$CRASHDIR"/configs/command.env #加载启动命令和启动目录
+. "$CRASHDIR"/configs/command.env #加载启动命令和启动目录
 
 start_service() {
 	if [ -n "$(cat $CRASHDIR/configs/ShellCrash.cfg | grep 'firewall_area=5')" ]; then
@@ -33,6 +33,7 @@ start_service() {
 	fi
 }
 stop_service() {
+	killall bot_tg.sh 2>/dev/null
 	procd_close_instance
 	"$CRASHDIR"/starts/fw_stop.sh
 }
