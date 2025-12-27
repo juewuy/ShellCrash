@@ -102,7 +102,10 @@ start_nft_route() { #nftables-route通用工具
     #nft add rule inet shellcrash local_tproxy log prefix \"pre\" level debug
 }
 start_nft_dns() { #nftables-dns
-	[ "$1" = 'prerouting' ] && HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+	[ "$1" = 'prerouting' ] && {
+		HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+		HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
+	}
     [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
     [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
     nft add chain inet shellcrash "$1"_dns { type nat hook $2 priority -100 \; }
@@ -128,6 +131,8 @@ start_nft_dns() { #nftables-dns
     nft add rule inet shellcrash "$1"_dns tcp dport 53 redirect to ${dns_port}
 }
 start_nft_wan() { #nftables公网防火墙
+	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
+	HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
     nft add chain inet shellcrash input { type filter hook input priority -100 \; }
     nft add rule inet shellcrash input iif lo accept #本机请求全放行
 	#端口放行
