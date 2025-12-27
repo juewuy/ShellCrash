@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-network_check() { #检查是否联网
+check_network() { #检查是否联网
     for text in 223.5.5.5 1.2.4.8 dns.alidns.com doh.pub; do
         ping -c 3 $text >/dev/null 2>&1 && return 0
         sleep 5

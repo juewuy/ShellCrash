@@ -666,7 +666,7 @@ debug(){
 
 #新手引导
 userguide(){
-
+	. "$CRASHDIR"/libs/check_dir_avail.sh
 	forwhat(){
 		echo "-----------------------------------------------"
 		echo -e "\033[30;46m 欢迎使用ShellCrash新手引导！ \033[0m"
@@ -765,7 +765,7 @@ userguide(){
 		setconfig dns_resolver "'$dns_resolver'"
 	fi
 	#启用推荐的自动任务配置
-	. "$CRASHDIR"/menus/task.sh && task_recom
+	. "$CRASHDIR"/menus/5_task.sh && task_recom
 	#小米设备软固化
 	if [ "$systype" = "mi_snapshot" ];then
 		echo "-----------------------------------------------"

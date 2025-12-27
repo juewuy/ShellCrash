@@ -70,7 +70,7 @@ EOF
 
 routing_mark=$((fwmark + 2))
 #检测网络连接
-[ "$network_check" != "已禁用" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && . "$CRASHDIR"/starts/network_check && network_check
+[ "$network_check" != "已禁用" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && . "$CRASHDIR"/starts/check_network.sh && check_network
 [ ! -d "$BINDIR"/ui ] && mkdir -p "$BINDIR"/ui
 [ -z "$crashcore" ] && crashcore=meta
 #执行条件任务
