@@ -55,6 +55,7 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 		setsid sh "$CRASHDIR/menus/bot_tg.sh" &
 		echo $! > "$TMPDIR/bot_tg.pid"
 	}
+	exit 0
 else
 	. "$CRASHDIR"/starts/start_error.sh
 	"$CRASHDIR"/start.sh stop
