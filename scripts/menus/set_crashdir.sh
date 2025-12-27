@@ -2,6 +2,7 @@
 # Copyright (C) Juewuy
 
 . /tmp/SC_tmp/libs/check_dir_avail.sh
+[ -n "$(echo -e | grep e)" ] && echo=echo || echo='echo -e'
 
 set_crashdir() {
     set_usb_dir() {

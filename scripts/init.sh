@@ -128,11 +128,18 @@ fi
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ]; then
     chmod 755 "$CRASHDIR"/starts/snapshot_init.sh
-    uci delete firewall.ShellClash 2>/dev/null
+	if [ "$systype" = "mi_snapshot" ];then
+		path="/data/shellcrash_init.sh"
+		setconfig CRASHDIR "$CRASHDIR" "$CRASHDIR"/starts/snapshot_init.sh
+		mv -f "$CRASHDIR"/starts/snapshot_init.sh "$path"
+	else
+		path="$CRASHDIR"/starts/snapshot_init.sh
+	fi
+    uci delete firewall.auto_ssh 2>/dev/null
     uci delete firewall.ShellCrash 2>/dev/null
     uci set firewall.ShellCrash=include
     uci set firewall.ShellCrash.type='script'
-    uci set firewall.ShellCrash.path="$CRASHDIR/starts/snapshot_init.sh"
+    uci set firewall.ShellCrash.path="$path"
     uci set firewall.ShellCrash.enabled='1'
     uci commit firewall
 else
@@ -205,7 +212,7 @@ sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash
 rm -rf "$CRASHDIR"/rules
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
-for file in CrashCore clash.sh getdate.sh core.new clashservice log mark? mark.bak; do
+for file in tools webget.sh misnap_init.sh core.new; do
     rm -rf "$CRASHDIR/$file"
 done
 #旧版变量改名

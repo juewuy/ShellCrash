@@ -40,7 +40,7 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 			cronset '2fjdi124dd12s' "$line"
 		done <"$CRASHDIR"/task/running
 	}
-	[ "$start_old" = "已开启" ] && cronset '保守模式守护进程' "* * * * * test -z \"\$(pidof CrashCore)\" && $CRASHDIR/start.sh daemon #ShellCrash保守模式守护进程"
+	[ "$start_old" = "已开启" ] && cronset '保守模式守护进程' "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh shellcrash #ShellCrash保守模式守护进程"
 	#加载条件任务
 	[ -s "$CRASHDIR"/task/afstart ] && { . "$CRASHDIR"/task/afstart; } &
 	[ -s "$CRASHDIR"/task/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
@@ -51,10 +51,7 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 		sed -i "${line}a\\. $CRASHDIR/task/affirewall" /etc/init.d/firewall
 	} &
 	#启动TG机器人
-	[ "$bot_tg_service" = ON ] && {
-		setsid sh "$CRASHDIR/menus/bot_tg.sh" &
-		echo $! > "$TMPDIR/bot_tg.pid"
-	}
+	[ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_start
 	exit 0
 else
 	. "$CRASHDIR"/starts/start_error.sh

@@ -25,15 +25,11 @@ stop_firewall(){
 	"$CRASHDIR"/starts/fw_stop.sh
 }
 #保守模式启动
-start_old(){
-    #使用传统后台执行二进制文件的方式执行
-    if ckcmd su && [ -n "$(grep 'shellcrash:x:0:7890' /etc/passwd)" ]; then
-        su shellcrash -c "$COMMAND >/dev/null 2>&1" &
-    else
-        ckcmd nohup && local nohup=nohup
-        $nohup $COMMAND >/dev/null 2>&1 &
-    fi
-    afstart &
+start_l(){
+	bfstart && {
+		. "$CRASHDIR"/starts/start_legacy.sh
+		start_legacy "$COMMAND" 'shellcrash'	
+	} && afstart &
 }
 
 case "$1" in
@@ -45,10 +41,10 @@ start)
 	if [ "$firewall_area" = "5" ]; then #主旁转发
         . "$CRASHDIR"/starts/fw_start.sh
     elif [ "$start_old" = "已开启" ]; then
-        bfstart && start_old
-    elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
+        start_l
+    elif [ -f /etc/rc.common ] && grep -q 'procd' /proc/1/comm; then
         /etc/init.d/shellcrash start
-    elif [ "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
+    elif [ "$USER" = "root" ] && grep -q 'systemd' /proc/1/comm; then
 		FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
 		[ -f $FragmentPath ] && {
 			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
@@ -64,7 +60,7 @@ start)
         rc-service shellcrash stop >/dev/null 2>&1
         rc-service shellcrash start
     else
-        bfstart && start_old
+        start_l
     fi
     ;;
 stop)
@@ -75,11 +71,14 @@ stop)
     cronset '运行时每'
     cronset '流媒体预解析'
 	#停止tg机器人
-	[ -f "$TMPDIR/bot_tg.pid" ] && kill -TERM -"$(cat "$TMPDIR/bot_tg.pid")" && rm -f "$TMPDIR/bot_tg.pid"
+	. "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
     #多种方式结束进程
-    if [ "$start_old" != "已开启" -a "$USER" = "root" -a "$(cat /proc/1/comm)" = "systemd" ]; then
+	if [ -f "$TMPDIR/shellcrash.pid" ];then
+		kill -TERM "$(cat "$TMPDIR/shellcrash.pid")"
+		rm -f "$TMPDIR/shellcrash.pid"
+    elif [ "$USER" = "root" ] && grep -q 'systemd' /proc/1/comm; then
         systemctl stop shellcrash.service >/dev/null 2>&1
-    elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
+    elif [ -f /etc/rc.common ] && grep -q 'procd' /proc/1/comm; then
         /etc/init.d/shellcrash stop >/dev/null 2>&1
     elif grep -q 's6' /proc/1/comm; then
 		/command/s6-svc -d /run/service/shellcrash
@@ -89,7 +88,7 @@ stop)
     else
         stop_firewall #清理路由策略
     fi
-    PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 $PID >/dev/null 2>&1
+    PID=$(pidof CrashCore) && [ -n "$PID" ] && ckcmd killall && killall CrashCore >/dev/null
     #清理缓存目录
     rm -rf "$TMPDIR"/CrashCore
     ;;

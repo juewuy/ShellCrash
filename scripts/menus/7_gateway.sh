@@ -81,7 +81,12 @@ set_fw_wan() {
 	read -p "请输入对应数字 > " num
 	case $num in
 	1)
-		[ "$fw_wan" = ON ] && fw_wan=OFF || fw_wan=ON
+		if [ "$fw_wan" = ON ];then
+			read -p "确认关闭防火墙？这会带来极大的安全隐患！(1/0) > " res
+			[ "$res" = 1 ] && fw_wan=OFF || fw_wan=ON
+		else
+			fw_wan=ON
+		fi
 		setconfig fw_wan "$fw_wan"
 		set_fw_wan
 	;;
@@ -156,13 +161,10 @@ set_bot_tg_init(){
 set_bot_tg_service(){
 	if [ "$bot_tg_service" = ON ];then
 		bot_tg_service=OFF
-		[ -f "$TMPDIR/bot_tg.pid" ] && kill -TERM -"$(cat "$TMPDIR/bot_tg.pid")" && rm -f "$TMPDIR/bot_tg.pid"
+		. "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
 	else
 		bot_tg_service=ON
-		[ -n "$(pidof CrashCore)" ] && {
-			setsid sh "$CRASHDIR/menus/bot_tg.sh" &
-			echo $! > "$TMPDIR/bot_tg.pid"
-		}
+		[ -n "$(pidof CrashCore)" ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_start
 	fi
 	setconfig bot_tg_service "$bot_tg_service"
 }

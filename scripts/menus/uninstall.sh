@@ -54,8 +54,6 @@ uninstall() {
         userdel -r shellcrash 2>/dev/null
         nvram set script_usbmount="" 2>/dev/null
         nvram commit 2>/dev/null
-        uci delete firewall.ShellCrash 2>/dev/null
-        uci commit firewall 2>/dev/null
         echo "-----------------------------------------------"
         echo -e "\033[36m已卸载ShellCrash相关文件！有缘再会！\033[0m"
         echo -e "\033[33m请手动关闭当前窗口以重置环境变量！\033[0m"
