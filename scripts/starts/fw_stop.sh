@@ -133,10 +133,7 @@ ip route flush table $table 2>/dev/null
 ip -6 rule del fwmark $fwmark table $((table + 1)) 2>/dev/null
 ip -6 route flush table $((table + 1)) 2>/dev/null
 #重置nftables相关规则
-ckcmd nft && {
-	nft flush table inet shellcrash >/dev/null 2>&1
-	nft delete table inet shellcrash >/dev/null 2>&1
-}
+ckcmd nft && nft delete table inet shellcrash >/dev/null 2>&1
 #还原防火墙文件
 [ -s /etc/init.d/firewall.bak ] && mv -f /etc/init.d/firewall.bak /etc/init.d/firewall
 #others

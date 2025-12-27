@@ -75,7 +75,7 @@ upgrade(){
 	    upgrade
 	    ;;
 	8)
-	    . "$CRASHDIR"/task/task.sh && task_add
+	    . "$CRASHDIR"/menus/5_task.sh && task_add
 	    upgrade
 	    ;;
 	9)

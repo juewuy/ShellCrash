@@ -1,14 +1,28 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
-HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
 RESERVED_IP=$(echo $reserve_ipv4 | sed 's/ /, /g')
 RESERVED_IP6=$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')
 
+add_ip6_route(){
+	#过滤保留地址及本机地址
+	nft add rule inet shellcrash $1 ip6 daddr {$RESERVED_IP6} return
+	#仅代理本机局域网网段流量
+	nft add rule inet shellcrash $1 ip6 saddr != {$HOST_IP6} return
+	#绕过CN_IPV6
+	[ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f "$BINDIR"/cn_ipv6.txt ] && {
+		CN_IP6=$(awk '{printf "%s, ",$1}' "$BINDIR"/cn_ipv6.txt)
+		[ -n "$CN_IP6" ] && {
+			nft add set inet shellcrash cn_ip6 { type ipv6_addr \; flags interval \; }
+			nft add element inet shellcrash cn_ip6 { $CN_IP6 }
+			nft add rule inet shellcrash $1 ip6 daddr @cn_ip6 return
+		}
+	}
+}
 start_nft_route() { #nftables-route通用工具
     #$1:name  $2:hook(prerouting/output)  $3:type(nat/mangle/filter)  $4:priority(-100/-150)
     [ "$common_ports" = "已开启" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
+	[ "$1" = 'prerouting' ] && HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
     [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
     [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
     #添加新链
@@ -61,31 +75,19 @@ start_nft_route() { #nftables-route通用工具
     #绕过CN-IP
     [ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f "$BINDIR"/cn_ip.txt ] && {
         CN_IP=$(awk '{printf "%s, ",$1}' "$BINDIR"/cn_ip.txt)
-        [ -n "$CN_IP" ] && nft add rule inet shellcrash $1 ip daddr {$CN_IP} return
-    }
+        [ -n "$CN_IP" ] && {
+			nft add set inet shellcrash cn_ip { type ipv4_addr \; flags interval \; }
+			nft add element inet shellcrash cn_ip { $CN_IP }
+			nft add rule inet shellcrash $1 ip daddr @cn_ip return
+		}
+	}
     #局域网ipv6支持
     if [ "$ipv6_redir" = "已开启" -a "$1" = 'prerouting' -a "$firewall_area" != 5 ]; then
-        #过滤保留地址及本机地址
-        nft add rule inet shellcrash $1 ip6 daddr {$RESERVED_IP6} return
-        #仅代理本机局域网网段流量
-        nft add rule inet shellcrash $1 ip6 saddr != {$HOST_IP6} return
-        #绕过CN_IPV6
-        [ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f "$BINDIR"/cn_ipv6.txt ] && {
-            CN_IP6=$(awk '{printf "%s, ",$1}' "$BINDIR"/cn_ipv6.txt)
-            [ -n "$CN_IP6" ] && nft add rule inet shellcrash $1 ip6 daddr {$CN_IP6} return
-        }
+		HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
+        add_ip6_route "$1"
     elif [ "$ipv6_redir" = "已开启" -a "$1" = 'output' -a \( "$firewall_area" = 2 -o "$firewall_area" = 3 \) ]; then
-        RESERVED_IP6="$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')"
         HOST_IP6="::1, $(echo $host_ipv6 | sed 's/ /, /g')"
-        #过滤保留地址及本机地址
-        nft add rule inet shellcrash $1 ip6 daddr {$RESERVED_IP6} return
-        #仅代理本机局域网网段流量
-        nft add rule inet shellcrash $1 ip6 saddr != {$HOST_IP6} return
-        #绕过CN_IPV6
-        [ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" -a -f "$BINDIR"/cn_ipv6.txt ] && {
-            CN_IP6=$(awk '{printf "%s, ",$1}' "$BINDIR"/cn_ipv6.txt)
-            [ -n "$CN_IP6" ] && nft add rule inet shellcrash $1 ip6 daddr {$CN_IP6} return
-        }
+		add_ip6_route "$1"
     else
         nft add rule inet shellcrash $1 meta nfproto ipv6 return
     fi
@@ -100,6 +102,7 @@ start_nft_route() { #nftables-route通用工具
     #nft add rule inet shellcrash local_tproxy log prefix \"pre\" level debug
 }
 start_nft_dns() { #nftables-dns
+	[ "$1" = 'prerouting' ] && HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
     [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
     [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
     nft add chain inet shellcrash "$1"_dns { type nat hook $2 priority -100 \; }
@@ -196,14 +199,14 @@ start_nftables() { #nftables配置总入口
     [ "$quic_rj" = '已启用' -a "$lan_proxy" = true ] && {
         [ "$redir_mod" = "Tproxy模式" ] && {
             nft add chain inet shellcrash quic_rj { type filter hook input priority 0 \; }
-            [ -n "$CN_IP" ] && nft add rule inet shellcrash quic_rj ip daddr {$CN_IP} return
-            [ -n "$CN_IP6" ] && nft add rule inet shellcrash quic_rj ip6 daddr {$CN_IP6} return
+            [ -n "$CN_IP" ] && nft add rule inet shellcrash quic_rj ip daddr @cn_ip return
+            [ -n "$CN_IP6" ] && nft add rule inet shellcrash quic_rj ip6 daddr @cn_ip6 return
             nft add rule inet shellcrash quic_rj udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
         }
         [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
             nft insert rule inet fw4 forward oifname "utun" udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
-            [ -n "$CN_IP" ] && nft insert rule inet fw4 forward oifname "utun" ip daddr {$CN_IP} return
-            [ -n "$CN_IP6" ] && nft insert rule inet fw4 forward oifname "utun" ip6 daddr {$CN_IP6} return
+            [ -n "$CN_IP" ] && nft insert rule inet fw4 forward oifname "utun" ip daddr @cn_ip return
+            [ -n "$CN_IP6" ] && nft insert rule inet fw4 forward oifname "utun" ip6 daddr @cn_ip6 return
         }
     }
 }

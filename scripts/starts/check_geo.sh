@@ -1,4 +1,6 @@
 
+. "$CRASHDIR"/libs/set_config.sh
+
 check_geo() { #查找及下载Geo数据文件
     [ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
     find --help 2>&1 | grep -q size && find_para=' -size +20' #find命令兼容

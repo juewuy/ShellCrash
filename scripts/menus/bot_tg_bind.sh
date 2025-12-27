@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. "$CRASHDIR"/libs/web_json.sh
+. "$CRASHDIR"/libs/web_get_lite.sh
 
 private_bot() {
 	echo "-----------------------------------------------"
@@ -28,7 +28,7 @@ set_bot() {
 	echo "-----------------------------------------------"
 	read -p "我已经发送完成(1/0) > " res
 	if [ "$res" = 1 ]; then
-		chat=$(web_json_get $url_tg 2>/dev/null)
+		chat=$(web_get_lite $url_tg 2>/dev/null)
 		[ -n "$chat" ] && chat_ID=$(echo $chat | sed 's/"update_id":/{\n"update_id":/g' | grep "$public_key" | head -n1 | grep -oE '"id":.*,"is_bot' | sed s'/"id"://' | sed s'/,"is_bot//')
 		[ -z "$chat_ID" ] && [ "$TOKEN" != 'publictoken' ] && {
 			echo -e "\033[31m无法获取对话ID，请返回重新设置或手动输入ChatID！\033[0m"

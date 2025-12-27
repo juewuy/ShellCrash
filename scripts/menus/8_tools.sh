@@ -514,7 +514,7 @@ testcommand(){
 	    ;;
 	4)
 		if [ "$firewall_mod" = "nftables" ];then
-			nft list table inet shellcrash
+			nft list table inet shellcrash | sed '/set cn_ip {/,/}/d;/set cn_ip6 {/,/}/d;/^[[:space:]]*}/d'
 		else
 			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 -o "$vm_redir" = "已开启" ] && {
 				echo "----------------Redir+DNS---------------------"

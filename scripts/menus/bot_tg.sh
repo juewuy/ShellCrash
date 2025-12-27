@@ -1,6 +1,8 @@
 #!/bin/sh
 
+[ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
 . "$CRASHDIR"/libs/web_json.sh
+. "$CRASHDIR"/libs/web_get_lite.sh
 . "$CRASHDIR"/menus/running_status.sh
 . "$CRASHDIR"/configs/gateway.cfg
 . "$CRASHDIR"/configs/ShellCrash.cfg
@@ -12,14 +14,6 @@ LOGFILE="$TMPDIR/tgbot.log"
 OFFSET=0
 
 ### --- 基础函数 --- ###
-web_get(){
-	setproxy
-	if curl1 --version >/dev/null 2>&1; then
-		curl -kfsSl --connect-timeout 3 "$1" 
-	else
-		wget -Y on -q --timeout=3 -O - "$1"
-	fi
-}
 web_download(){
 	setproxy
 	if curl --version >/dev/null 2>&1; then
@@ -150,7 +144,7 @@ process_file(){
 download_file(){
 	FILE_NAME=$(echo "$UPDATES" | sed 's/"callback_query".*//g' | grep -o '"file_name":"[^"]*"' | head -n1 | sed 's/.*:"//;s/"$//' | grep -E '\.(gz|upx|json|yaml)$')
 	if [ -n "$FILE_NAME" ];then
-		FILE_PATH=$(web_get "$API/getFile?file_id=$FILE_ID" | grep -o '"file_path":"[^"]*"' | sed 's/.*:"//;s/"$//')
+		FILE_PATH=$(web_get_lite "$API/getFile?file_id=$FILE_ID" | grep -o '"file_path":"[^"]*"' | sed 's/.*:"//;s/"$//')
 		API_FILE="https://api.telegram.org/file/bot$TG_TOKEN"
 		web_download "$API_FILE/$FILE_PATH" "$TMPDIR/$FILE_NAME"
 		if [ "$?" = 0 ];then
@@ -227,10 +221,13 @@ transport(){ #文件传输
 ### --- 轮询主进程 --- ###
 polling(){
 	while true; do
-		UPDATES=$(web_get "$API/getUpdates?timeout=25&offset=$OFFSET")
+		UPDATES=$(web_get_lite "$API/getUpdates?timeout=25&offset=$OFFSET")
 
-		echo "$UPDATES" | grep -q '"update_id"' || continue
-
+		echo "$UPDATES" | grep -q '"update_id"' || {
+			sleep 10 #防止网络不佳时疯狂请求
+			continue
+		}
+		
 		OFFSET=$(echo "$UPDATES" | grep -o '"update_id":[0-9]*' | tail -n1 | cut -d: -f2)
 		OFFSET=$((OFFSET + 1))
 		

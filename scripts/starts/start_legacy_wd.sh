@@ -1,4 +1,5 @@
 
+[ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
 PIDFILE="/tmp/ShellCrash/$1.pid"
 
 if [ -f "$PIDFILE" ]; then
