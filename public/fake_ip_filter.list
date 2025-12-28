@@ -72,6 +72,7 @@ localhost.ptlogin2.qq.com
 localhost.sec.qq.com
 #微信登录
 localhost.*.weixin.qq.com
++.kk-rays.com
 #Game
 #Steam
 +.steamcontent.com
