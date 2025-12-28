@@ -1920,7 +1920,7 @@ setdb(){
 	1)
 		db_type=zashboard
 		echo $update_url
-		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/zashboard.tar.gz"
+		setconfig external_ui_url "https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip"
 		dbdir
 		;;
 	2)
