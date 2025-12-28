@@ -136,8 +136,10 @@ start_nft_wan() { #nftables公网防火墙
     nft add chain inet shellcrash input { type filter hook input priority -100 \; }
     nft add rule inet shellcrash input iif lo accept #本机请求全放行
 	#端口放行
-    [ -n "$fw_wan_ports" ] && {
-		fw_wan_nfports="{ $(echo "$fw_wan_ports" | sed 's/,/, /g') }"
+	[ -f "$CRASHDIR"/configs/gateway.cfg ] && . "$CRASHDIR"/configs/gateway.cfg
+	accept_ports=$(echo "$fw_wan_ports,$vms_port,$sss_port" | sed "s/,,/,/g ;s/^,// ;s/,$// ;s/,/, /")
+    [ -n "$accept_ports" ] && {
+		fw_wan_nfports="{ $(echo "$accept_ports" | sed 's/,/, /g') }"
 		nft add rule inet shellcrash input tcp dport $fw_wan_nfports accept
 		nft add rule inet shellcrash input udp dport $fw_wan_nfports accept
 	}

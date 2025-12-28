@@ -29,7 +29,11 @@ start_core() {
         "$CRASHDIR"/start.sh start
         #设置循环检测以判定服务启动是否成功
 		. "$CRASHDIR"/libs/start_wait.sh
-        [ -n "$test" -o -n "$(pidof CrashCore)" ] && startover
+        [ -n "$test" -o -n "$(pidof CrashCore)" ] && {
+			#启动TG机器人
+			[ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_start
+			startover
+		}
     else
         echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"
         . "$CRASHDIR"/webget.sh && set_core_config

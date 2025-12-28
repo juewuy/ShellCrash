@@ -288,7 +288,6 @@ set_fw_filter(){ #流量过滤
     echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
     echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
     echo -e " 3 过滤QUIC协议:	\033[36m$quic_rj\033[0m   ————优化视频性能"
-    [ "$dns_mod" != "fake-ip" ] &&
     echo -e " 4 过滤CN_IP(6)列表:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
 	echo -e " 5 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"
 	echo -e " 6 自定义保留地址ipv4网段:	需要以保留地址为访问目标的环境"
@@ -303,7 +302,7 @@ set_fw_filter(){ #流量过滤
         set_common_ports() {
             if [ "$common_ports" = "未开启" ]; then
                 echo -e "\033[33m当前代理端口为：【$multiport】\033[0m"
-                echo -e "\033[31m注意，fake-ip模式下，非常用端口的域名连接将不受影响！！\033[0m"
+                echo -e "\033[31m注意，MIX模式下，非常用端口的域名连接将不受影响！！\033[0m"
                 read -p "是否修改默认端口？(1/0) > " res
                 [ "$res" = "1" ] && {
                     read -p "请输入自定义端口,注意用小写逗号分隔 > " text

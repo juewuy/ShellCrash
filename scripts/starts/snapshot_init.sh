@@ -52,7 +52,7 @@ auto_clean(){
 }
 auto_start(){
 	#设置init.d服务
-	cp -f "$CRASHDIR"/shellcrash.procd /etc/init.d/shellcrash
+	cp -f "$CRASHDIR"/starts/shellcrash.procd /etc/init.d/shellcrash
 	chmod 755 /etc/init.d/shellcrash
 	#初始化环境变量
 	. "$CRASHDIR"/libs/set_profile.sh && set_profile '/etc/profile' 

@@ -66,7 +66,7 @@ modify_json() {
 { "log": { "level": "info", "timestamp": true } }
 EOF
     #生成add_hosts.json
-    if [ "$hosts_opt" != "未启用" ]; then #本机hosts
+    if [ "$hosts_opt" != "OFF" ]; then #本机hosts
         sys_hosts=/etc/hosts
         [ -s /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
         #NTP劫持

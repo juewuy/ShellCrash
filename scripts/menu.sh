@@ -186,7 +186,8 @@ main_menu() {
         main_menu
 	;;
     3)
-        "$CRASHDIR"/start.sh stop
+        [ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
+		"$CRASHDIR"/start.sh stop
         sleep 1
         echo "-----------------------------------------------"
         echo -e "\033[31m$corename服务已停止！\033[0m"

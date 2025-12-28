@@ -133,8 +133,8 @@ start_ipt_wan() { #iptables公网防火墙
 	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
 	ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
 	ipt_wan_accept(){
-		$iptable -I INPUT -p "$1" -m multiport --dports "$fw_wan_ports" -j ACCEPT
-		ckcmd ip6tables && $ip6table -I INPUT -p "$1" -m multiport --dports "$fw_wan_ports" -j ACCEPT
+		$iptable -I INPUT -p "$1" -m multiport --dports "$accept_ports" -j ACCEPT
+		ckcmd ip6tables && $ip6table -I INPUT -p "$1" -m multiport --dports "$accept_ports" -j ACCEPT
 	}
 	ipt_wan_reject(){
 		$iptable -I INPUT -p "$1" -m multiport --dports "$reject_ports" -j REJECT
@@ -145,7 +145,9 @@ start_ipt_wan() { #iptables公网防火墙
 	ipt_wan_reject tcp
 	ipt_wan_reject udp
 	#端口放行
-    [ -n "$fw_wan_ports" ] && {
+	[ -f "$CRASHDIR"/configs/gateway.cfg ] && . "$CRASHDIR"/configs/gateway.cfg
+	accept_ports=$(echo "$fw_wan_ports,$vms_port,$sss_port" | sed "s/,,/,/g ;s/^,// ;s/,$//")
+    [ -n "$accept_ports" ] && {
 		ipt_wan_accept tcp
 		ipt_wan_accept udp
 	}

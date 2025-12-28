@@ -33,7 +33,6 @@ start_service() {
 	fi
 }
 stop_service() {
-	killall bot_tg.sh 2>/dev/null
 	procd_close_instance
 	"$CRASHDIR"/starts/fw_stop.sh
 }

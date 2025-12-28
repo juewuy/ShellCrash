@@ -1095,7 +1095,7 @@ set_core_config(){ #配置文件功能
 		exit
 	;;
 	5)
-		. ${CRASHDIR}/task/task.sh && task_menu
+		. ${CRASHDIR}/menus/task.sh && task_menu
 		set_core_config
 	;;
 	6)

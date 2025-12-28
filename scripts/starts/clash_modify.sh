@@ -82,7 +82,7 @@ $find_process
 routing-mark: $routing_mark
 EOF
     #读取本机hosts并生成配置文件
-    if [ "$hosts_opt" != "未启用" ] && [ -z "$(grep -aE '^hosts:' "$CRASHDIR"/yamls/user.yaml 2>/dev/null)" ]; then
+    if [ "$hosts_opt" != "OFF" ] && [ -z "$(grep -aE '^hosts:' "$CRASHDIR"/yamls/user.yaml 2>/dev/null)" ]; then
         #NTP劫持
         cat >"$TMPDIR"/hosts.yaml <<EOF
 use-system-hosts: true

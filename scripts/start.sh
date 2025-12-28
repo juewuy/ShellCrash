@@ -70,8 +70,6 @@ stop)
     cronset '保守模式守护进程'
     cronset '运行时每'
     cronset '流媒体预解析'
-	#停止tg机器人
-	. "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
     #多种方式结束进程
 	if [ -f "$TMPDIR/shellcrash.pid" ];then
 		kill -TERM "$(cat "$TMPDIR/shellcrash.pid")"

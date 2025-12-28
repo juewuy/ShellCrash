@@ -21,6 +21,8 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 	[ "$start_old" = "已开启" ] && rm -rf "$TMPDIR"/CrashCore               #删除缓存目录内核文件
 	. "$CRASHDIR"/starts/fw_start.sh										#配置防火墙流量劫持
 	date +%s >"$TMPDIR"/crash_start_time                                    #标记启动时间
+	#TG机器人守护进程
+	[ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_cron
 	#后台还原面板配置
 	[ -s "$CRASHDIR"/configs/web_save ] && {
 		. "$CRASHDIR"/libs/web_restore.sh
@@ -50,8 +52,6 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 		line=$(grep -En "fw.* start" /etc/init.d/firewall | cut -d ":" -f 1)
 		sed -i "${line}a\\. $CRASHDIR/task/affirewall" /etc/init.d/firewall
 	} &
-	#启动TG机器人
-	[ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_start
 	exit 0
 else
 	. "$CRASHDIR"/starts/start_error.sh

@@ -202,7 +202,7 @@ switch_core(){ #clash与singbox内核切换
 	#singbox和clash内核切换时提示是否保留文件
 	[ "$core_new" != "$core_old" ] && {
 		[ "$dns_mod" = "redir_host" ] && [ "$core_old" = "clash" ] && setconfig dns_mod mix #singbox自动切换dns
-		[ "$dns_mod" = "mix" ] && [ "$crashcore" = 'clash' -o "$crashcore" = 'clashpre' ] && setconfig dns_mod fake-ip #singbox自动切换dns
+		[ "$dns_mod" = "mix" ] && [ "$crashcore" = 'clash' -o "$crashcore" = 'clashpre' ] && setconfig dns_mod redir_host #singbox自动切换dns
 		echo -e "\033[33m已从$core_old内核切换至$core_new内核\033[0m"
 		echo -e "\033[33m二者Geo数据库及yaml/json配置文件不通用\033[0m"
 		read -p "是否保留相关数据库文件？(1/0) > " res
@@ -795,8 +795,7 @@ setdb(){
 	0) ;;
 	1)
 		db_type=zashboard
-		echo $update_url
-		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/zashboard.tar.gz"
+		setconfig external_ui_url "https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip"
 		dbdir
 		;;
 	2)

@@ -70,12 +70,15 @@ set_fw_wan() {
 	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m如在vps运行，还需在vps安全策略对相关端口同时放行"
 	[ -n "$fw_wan_ports" ] && 
-	echo -e "当前放行端口：\033[36m$fw_wan_ports\033[0m"
+	echo -e "当前手动放行端口：\033[36m$fw_wan_ports\033[0m"
+	[ -n "$vms_port$sss_port" ] && 
+	echo -e "当前自动放行端口：\033[36m$vms_port $sss_port\033[0m"
 	echo -e "默认拦截端口：\033[33m$dns_port,$mix_port,$db_port\033[0m"
 	echo "-----------------------------------------------"
 	echo -e " 1 启用/关闭公网防火墙:	\033[36m$fw_wan\033[0m"
 	echo -e " 2 添加放行端口(可包含默认拦截端口)"
-	echo -e " 3 移除指定放行端口"
+	echo -e " 3 移除指定手动放行端口"
+	echo -e " 4 清空全部手动放行端口"
 	echo -e " 0 返回上级菜单"
 	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
@@ -122,10 +125,16 @@ set_fw_wan() {
 		fi
 		sleep 1
 		set_fw_wan
-		;;
+	;;
+	4)
+		fw_wan_ports=''
+		setconfig fw_wan_ports
+		sleep 1
+		set_fw_wan
+	;;
 	*)
 		errornum
-		;;
+	;;
 	esac
 }
 #tg_BOT相关
@@ -221,19 +230,24 @@ set_vmess(){
 	echo -e " 4 设置\033[36m秘钥-uuid\033[0m：	\033[36m$vms_uuid\033[0m"
 	echo -e " 5 一键生成\033[32m随机秘钥\033[0m"
 	gen_base64 1 >/dev/null 2>&1 &&
-	echo -e " 6 一键生成分享链接"
+	echo -e " 6 一键生成\033[36m分享链接\033[0m"
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
 	1)
-		if [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
-			[ "$vms_service" = ON ] && vms_service=OFF || vms_service=ON
+		if [ "$vms_service" = ON ];then
+			vms_service=OFF
 			setconfig vms_service "$vms_service"
 		else
-			echo -e "\033[31m请先完成必选设置！\033[0m"
-			sleep 1
+			if [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
+				vms_service=OFF
+				setconfig vms_service "$vms_service"
+			else
+				echo -e "\033[31m请先完成必选设置！\033[0m"
+				sleep 1
+			fi
 		fi
 		set_vmess
 	;;
@@ -245,8 +259,6 @@ set_vmess(){
 		elif check_port "$text"; then
 			vms_port="$text"
 			setconfig vms_port "$text" "$GT_CFG_PATH"
-			fw_wan_ports=$(echo "$fw_wan_ports,$vms_port" | sed "s/^,//")
-			setconfig fw_wan_ports "$fw_wan_ports"
 		else
 			sleep 1
 		fi
@@ -288,6 +300,7 @@ set_vmess(){
 	;;
 	6)
 		read -p "请输入本机公网IP(4/6)或域名 > " host_wan
+		read -p "请输入免流混淆host(可选) > " vms_host
 		if [ -n "$host_wan" ] && [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
 			[ -n "$vms_ws_path" ] && vms_net=ws
 			vms_json=$(cat <<EOF
@@ -300,7 +313,8 @@ set_vmess(){
   "aid": "0",
   "type": "auto",
   "net": "$vms_net",
-  "path": "$vms_ws_path"
+  "path": "$vms_ws_path",
+  "host": "$vms_host"
 }
 EOF
 )
@@ -317,7 +331,6 @@ EOF
 	esac		
 }
 set_shadowsocks(){
-	[ -z "$sss_cipher" ] && sss_cipher='xchacha20-ietf-poly1305'
 	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
 	echo "-----------------------------------------------"
@@ -334,12 +347,17 @@ set_shadowsocks(){
 	case "$num" in
 	0) ;;
 	1)
-		if [ -n "$sss_port" ] && [ -n "$sss_pwd" ];then
-			[ "$sss_service" = ON ] && sss_service=OFF || sss_service=ON
+		if [ "$sss_service" = ON ];then
+			sss_service=OFF
 			setconfig sss_service "$sss_service"
 		else
-			echo -e "\033[31m请先完成必选设置！\033[0m"
-			sleep 1
+			if [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ];then
+				sss_service=OFF
+				setconfig sss_service "$sss_service"
+			else
+				echo -e "\033[31m请先完成必选设置！\033[0m"
+				sleep 1
+			fi
 		fi
 		set_shadowsocks
 	;;
@@ -351,8 +369,6 @@ set_shadowsocks(){
 		elif check_port "$text"; then
 			sss_port="$text"
 			setconfig sss_port "$text" "$GT_CFG_PATH"
-			fw_wan_ports=$(echo "$fw_wan_ports,$sss_port" | sed "s/^,//")
-			setconfig fw_wan_ports "$fw_wan_ports"
 		else
 			sleep 1
 		fi
@@ -416,15 +432,14 @@ set_shadowsocks(){
 			sleep 1
 		else
 			read -p "请输入秘钥(输入0删除) > " text
-			[ "$text" = 0 ] && unset sss_pwd
-			sss_pwd="$text"
+			[ "$text" = 0 ] && sss_pwd='' || sss_pwd="$text"
 			setconfig sss_pwd "$text" "$GT_CFG_PATH"
 		fi
 		set_shadowsocks
 	;;
 	5)
 		read -p "请输入本机公网IP(4/6)或域名 > " text
-		if [ -n "$text" ] && [ -n "$sss_port" ] && [ -n "$sss_pwd" ];then
+		if [ -n "$text" ] && [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ];then
 			ss_link="ss://$(gen_base64 "$sss_cipher":"$sss_pwd")@${text}:${sss_port}#ShellCrash_ss_in"
 			echo "-----------------------------------------------"
 			echo -e "你的分享链接是(请勿随意分享给他人):\n\033[32m$ss_link\033[0m"

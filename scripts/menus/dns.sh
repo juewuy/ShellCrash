@@ -2,43 +2,29 @@
 # Copyright (C) Juewuy
 
 set_dns_mod() { #DNS模式设置
+	[ -z "$hosts_opt" ] && hosts_opt=ON
+    [ -z "$dns_protect" ] && dns_protect=ON
     echo "-----------------------------------------------"
     echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
     echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
     echo "-----------------------------------------------"
-    echo -e " 1 fake-ip模式：   响应快，\033[33m兼容性较差\033[0m"
-    echo -e "                   不支持CN-IP绕过功能"
-    echo -e " 2 redir_host模式：\033[33m不安全，易被污染\033[0m"
-    echo -e "                   建议搭配第三方DNS服务使用"
-    if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
-        echo -e " 3 mix混合模式：   \033[32m防污染防泄露，响应快，推荐！\033[0m"
-        echo -e "                   cn域名realip其他fakeip分流"
-        echo -e " 4 route模式：     \033[32m防污染防泄露，全真实IP\033[0m"
-        echo -e "                   cn域名realip其他dns2proxy分流"
-    fi
+	echo -e " 1 MIX模式：  \033[32m防污染防泄露，响应快，推荐！\033[0m"
+	echo -e "              cn域名realip其他fakeip分流"
+	echo -e " 2 Route模式：\033[32m防污染防泄露，全真实IP\033[0m"
+	echo -e "              cn域名realip其他dns2proxy分流"
+    echo -e " 3 Redir模式：\033[33m不安全，易被污染\033[0m"
+    echo -e "              建议搭配第三方DNS服务使用"
 	echo "-----------------------------------------------"
-    [ "$dns_mod" = "fake-ip" ] || [ "$dns_mod" = "mix" ] &&
-    echo -e " 8 管理Fake-ip过滤列表"
+    echo -e " 4 DNS防泄漏：  \033[36m$dns_protect\033[0m	———启用时少量网站可能连接卡顿"
+    echo -e " 5 Hosts优化：  \033[36m$hosts_opt\033[0m	———调用本机hosts并劫持NTP服务"
+    [ "$dns_mod" = "mix" ] &&
+    echo -e " 8 管理MIX模式Fake-ip过滤列表"
     echo -e " 9 \033[36mDNS进阶设置\033[0m"
     echo " 0 返回上级菜单"
     read -p "请输入对应数字 > " num
     case "$num" in
     0) ;;
     1)
-        dns_mod=fake-ip
-        setconfig dns_mod $dns_mod
-        echo "-----------------------------------------------"
-        echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-		set_dns_mod
-    ;;
-    2)
-        dns_mod=redir_host
-        setconfig dns_mod $dns_mod
-        echo "-----------------------------------------------"
-        echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
-		set_dns_mod
-    ;;
-    3)
         if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
             dns_mod=mix
             setconfig dns_mod $dns_mod
@@ -50,7 +36,7 @@ set_dns_mod() { #DNS模式设置
         fi
 		set_dns_mod
     ;;
-    4)
+    2)
         if echo "$crashcore" | grep -q 'singbox' || [ "$crashcore" = meta ]; then
             dns_mod=route
             setconfig dns_mod $dns_mod
@@ -62,6 +48,23 @@ set_dns_mod() { #DNS模式设置
         fi
 		set_dns_mod
     ;;
+    3)
+        dns_mod=redir_host
+        setconfig dns_mod $dns_mod
+        echo "-----------------------------------------------"
+        echo -e "\033[36m已设为 $dns_mod 模式！！\033[0m"
+		set_dns_mod
+    ;;
+    4)
+        [ "$dns_protect" = "ON" ] && dns_protect=OFF || dns_protect=ON
+        setconfig dns_protect $dns_protect
+        set_dns_mod
+	;;
+    5)
+		[ "$hosts_opt" = "ON" ] && hosts_opt=OFF || hosts_opt=ON
+        setconfig hosts_opt $hosts_opt
+        set_dns_mod
+	;;
     8)
         echo "-----------------------------------------------"
         fake_ip_filter
@@ -113,9 +116,6 @@ set_dns_adv() { #DNS详细设置
     [ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5, 1.2.4.8'
     [ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
     [ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
-    [ -z "$hosts_opt" ] && hosts_opt=已启用
-    [ -z "$dns_protect" ] && dns_protect=ON
-    [ -z "$dns_redir" ] && dns_redir=未开启
     [ -z "$dns_no" ] && dns_no=未禁用
     echo "-----------------------------------------------"
     echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
@@ -128,10 +128,8 @@ set_dns_adv() { #DNS详细设置
     echo -e " 1 修改\033[32m基础DNS\033[0m"
     echo -e " 2 修改\033[36mPROXY-DNS\033[0m(该DNS查询会经过节点)"
     echo -e " 3 修改\033[33m解析DNS\033[0m(必须是IP,用于解析其他DNS)"
-    echo -e " 4 DNS防泄漏：  \033[36m$dns_protect\033[0m	———启用时少量网站可能连接卡顿"
-    echo -e " 5 hosts优化：  \033[36m$hosts_opt\033[0m	———调用本机hosts并劫持NTP服务"
+    echo -e " 4 一键配置\033[32m加密DNS\033[0m"
     echo -e " 7 禁用DNS劫持：\033[36m$dns_no\033[0m	———搭配第三方DNS使用"
-    echo -e " 8 一键配置\033[32m加密DNS\033[0m"
     echo -e " 9 \033[33m重置\033[0m默认DNS配置"
     echo -e " 0 返回上级菜单"
     echo "-----------------------------------------------"
@@ -170,43 +168,6 @@ set_dns_adv() { #DNS详细设置
         sleep 1
         set_dns_adv
 	;;
-    4)
-        [ "$dns_protect" = "ON" ] && dns_protect=OFF || dns_protect=ON
-        setconfig dns_protect $dns_protect
-        set_dns_adv
-	;;
-    5)
-        echo "-----------------------------------------------"
-        if [ "$hosts_opt" = "已启用" ]; then
-            hosts_opt=未启用
-            echo -e "\033[32m已禁用hosts优化功能！！！\033[0m"
-        else
-            hosts_opt=已启用
-            echo -e "\033[33m已启用hosts优化功能！！！\033[0m"
-        fi
-        setconfig hosts_opt $hosts_opt
-        sleep 1
-        set_dns_adv
-	;;
-    6)
-        echo "-----------------------------------------------"
-        if [ "$dns_redir" = "未开启" ]; then
-            echo -e "\033[31m将使用OpenWrt中Dnsmasq插件自带的DNS转发功能转发DNS请求至内核！\033[0m"
-            echo -e "\033[33m启用后将禁用本插件自带的iptables转发功能\033[0m"
-            dns_redir=已开启
-            echo -e "\033[32m已启用Dnsmasq转发DNS功能！！！\033[0m"
-        else
-            uci del dhcp.@dnsmasq[-1].server
-            uci set dhcp.@dnsmasq[0].noresolv=0
-            uci commit dhcp
-            /etc/init.d/dnsmasq restart
-            echo -e "\033[33m禁用成功！！如有报错请重启设备！\033[0m"
-            dns_redir=未开启
-        fi
-        setconfig dns_redir $dns_redir
-        sleep 1
-        set_dns_adv
-	;;
     7)
         echo "-----------------------------------------------"
         if [ "$dns_no" = "未禁用" ]; then
@@ -221,7 +182,7 @@ set_dns_adv() { #DNS详细设置
         sleep 1
         set_dns_adv
 	;;
-    8)
+    4)
         echo "-----------------------------------------------"
         openssldir="$(openssl version -d 2>&1 | awk -F '"' '{print $2}')"
         if [ -s "$openssldir/certs/ca-certificates.crt" ] || [ -s "/etc/ssl/certs/ca-certificates.crt" ] ||
