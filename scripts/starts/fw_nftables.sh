@@ -212,8 +212,8 @@ start_nftables() { #nftables配置总入口
         }
         [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
             nft insert rule inet fw4 forward oifname "utun" udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
-            [ -n "$CN_IP" ] && nft insert rule inet fw4 forward oifname "utun" ip daddr @cn_ip return
-            [ -n "$CN_IP6" ] && nft insert rule inet fw4 forward oifname "utun" ip6 daddr @cn_ip6 return
+            [ -n "$CN_IP" ] && nft insert rule inet fw4 forward oifname "utun" ip daddr { $CN_IP } return
+            [ -n "$CN_IP6" ] && nft insert rule inet fw4 forward oifname "utun" ip6 daddr { $CN_IP6 } return
         }
     }
 }

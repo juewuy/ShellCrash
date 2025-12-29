@@ -192,8 +192,8 @@ EOF
 EOF
     #生成add_route.json
     #域名嗅探配置
-    [ "$sniffer" = "已启用" ] && sniffer_set='{ "inbound": [ "redirect-in", "tproxy-in", "tun-in" ], "action": "sniff", "timeout": "500ms" },'
-	[ "advertise_exit_node" = true ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
+    [ "$sniffer" = "已启用" ] && sniffer_set='{ "action": "sniff", "timeout": "500ms" },'
+	[ "$ts_service" = ON ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
     cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {

@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+. "$CRASHDIR"/libs/logger.sh
+. "$CRASHDIR"/libs/web_get_bin.sh
+
 #工具与优化
 tools() {
     ssh_tools() {
@@ -112,7 +115,7 @@ tools() {
         echo "-----------------------------------------------"
         if [ ! -f "$CRASHDIR"/tools/ShellDDNS.sh ]; then
             echo -e "正在获取在线脚本……"
-            "$CRASHDIR"/start.sh get_bin "$TMPDIR"/ShellDDNS.sh tools/ShellDDNS.sh
+            get_bin "$TMPDIR"/ShellDDNS.sh tools/ShellDDNS.sh
             if [ "$?" = "0" ]; then
                 mv -f "$TMPDIR"/ShellDDNS.sh "$CRASHDIR"/tools/ShellDDNS.sh
                 . "$CRASHDIR"/tools/ShellDDNS.sh
@@ -162,7 +165,7 @@ tools() {
             if [ "$res" = 1 ]; then
                 echo "-----------------------------------------------"
                 echo "正在连接服务器获取Tun模块补丁文件…………"
-                "$CRASHDIR"/start.sh get_bin "$TMPDIR"/tun.ko bin/fix/tun.ko
+                get_bin "$TMPDIR"/tun.ko bin/fix/tun.ko
                 if [ "$?" = "0" ]; then
                     mv -f "$TMPDIR"/tun.ko "$CRASHDIR"/tools/tun.ko &&
                         "$CRASHDIR"/misnap_init.sh tunfix &&
@@ -295,7 +298,7 @@ log_pusher() {
             if [ -n "$url" ]; then
                 push_Deer=$url
                 setconfig push_Deer $url
-                "$CRASHDIR"/start.sh logger "已完成PushDeer日志推送设置！" 32
+                logger "已完成PushDeer日志推送设置！" 32
             else
                 echo -e "\033[31m输入错误，请重新输入！\033[0m"
             fi
@@ -322,7 +325,7 @@ log_pusher() {
             if [ -n "$url" ]; then
                 push_bark=$url
                 setconfig push_bark $url
-                "$CRASHDIR"/start.sh logger "已完成Bark日志推送设置！" 32
+                logger "已完成Bark日志推送设置！" 32
             else
                 echo -e "\033[31m输入错误，请重新输入！\033[0m"
             fi
@@ -358,7 +361,7 @@ log_pusher() {
                     push_Po_key=$key
                     setconfig push_Po $Token
                     setconfig push_Po_key $key
-                    "$CRASHDIR"/start.sh logger "已完成Passover日志推送设置！" 32
+                    logger "已完成Passover日志推送设置！" 32
                 else
                     echo -e "\033[31m输入错误，请重新输入！\033[0m"
                 fi
@@ -385,7 +388,7 @@ log_pusher() {
             if [ -n "$Token" ]; then
                 push_PP=$Token
                 setconfig push_PP $Token
-                "$CRASHDIR"/start.sh logger "已完成PushPlus日志推送设置！" 32
+                logger "已完成PushPlus日志推送设置！" 32
             else
                 echo -e "\033[31m输入错误，请重新输入！\033[0m"
             fi
@@ -416,7 +419,7 @@ log_pusher() {
                 setconfig push_ChatURL $URL
                 setconfig push_ChatTOKEN $TOKEN
                 setconfig push_ChatUSERID $USERID
-                "$CRASHDIR"/start.sh logger "已完成SynoChat日志推送设置！" 32
+                logger "已完成SynoChat日志推送设置！" 32
             else
                 echo -e "\033[31m输入错误，请重新输入！\033[0m"
                 setconfig push_ChatURL
@@ -446,7 +449,7 @@ log_pusher() {
             if [ -n "$url" ]; then
                 push_Gotify=$url
                 setconfig push_Gotify "$url"
-                "$CRASHDIR"/start.sh logger "已完成Gotify日志推送设置！" 32
+                logger "已完成Gotify日志推送设置！" 32
             else
                 echo -e "\033[31m输入错误，请重新输入！\033[0m"
             fi

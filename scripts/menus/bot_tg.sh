@@ -311,7 +311,7 @@ polling(){
 	done
 }
 
-send_menu
+#send_menu
 
 polling
 

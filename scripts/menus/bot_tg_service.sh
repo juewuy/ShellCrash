@@ -2,6 +2,7 @@
 . "$CRASHDIR"/libs/set_cron.sh
 
 bot_tg_start(){
+	bot_tg_stop
 	. "$CRASHDIR"/starts/start_legacy.sh
 	start_legacy "$CRASHDIR/menus/bot_tg.sh" 'bot_tg'
 	bot_tg_cron
