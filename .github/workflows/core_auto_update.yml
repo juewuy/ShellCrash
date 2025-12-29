@@ -29,7 +29,7 @@ jobs:
             exit 1
           fi
     
-  auto_update_singboxp_with_wg:
+  auto_update_singboxr_dev:
     needs: check_version
     if: ${{ success() }}
     permissions: write-all
@@ -37,6 +37,18 @@ jobs:
     with:
       tag1: reF1nd/sing-box
       tag2: reF1nd-dev
+      tag3: singbox_core_dev_reF1nd
+      tag5: with_quic,with_dhcp,with_wireguard,with_tailscale,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
+    secrets: inherit
+  
+  auto_update_singboxr_main:
+    needs: check_version
+    if: ${{ success() }}
+    permissions: write-all
+    uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
+    with:
+      tag1: reF1nd/sing-box
+      tag2: reF1nd-main
       tag3: singbox_core_reF1nd
       tag5: with_quic,with_dhcp,with_wireguard,with_tailscale,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
     secrets: inherit
