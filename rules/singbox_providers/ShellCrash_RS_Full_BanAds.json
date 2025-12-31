@@ -1,0 +1,267 @@
+//ShellCrash-ruleset 全分组规则+去广告 For Sing-box By Maozai 251231
+{
+  "outbounds": [
+    { "tag": "🚀 节点选择", "type": "selector", "outbounds": ["♻️ 自动选择", "✨ 自动选择（去高倍率）", "🛠️ 手动切换", "🎯 本地直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🛠️ 手动切换", "type": "selector", "use_all_providers": true, "outbounds": ["🎯 本地直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "♻️ 自动选择", "type": "urltest", "use_all_providers": true },
+    { "tag": "✨ 自动选择（去高倍率）", "type": "urltest", "use_all_providers": true, "exclude": "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|[0-9][0-9]+))" },
+
+    { "tag": "🤖 AI 平台", "type": "selector", "outbounds": ["🚀 节点选择", "🤖 AI节点（过滤港澳）", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🤖 AI节点（过滤港澳）", "type": "urltest", "use_all_providers": true, "exclude": "(?i)(🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)" },
+    { "tag": "🎬 奈飞视频", "type": "selector", "outbounds": ["🚀 节点选择", "🎬 奈飞节点", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🎬 奈飞节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(NF|奈飞|解锁|Netflix|NETFLIX|Media)" },
+    { "tag": "▶️ 油管视频", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "📢 谷歌推送", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },    
+    { "tag": "📲 电报消息", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🌍 国际媒体", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🌐 国际流量", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🎮 外服游戏", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+
+    { "tag": "🕹 国服游戏", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", {providers_tags}] },
+    { "tag": "🦾 Steam平台", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🪟 微软服务", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🍎 苹果服务", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🇬 谷歌服务", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "🧲 BT下载", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "📈 网络测速", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    { "tag": "↔️ 直连软件", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", {providers_tags}] },
+    { "tag": "🀄️ 国内流量", "type": "selector", "outbounds": ["🎯 本地直连", "🚀 节点选择", "♻️ 自动选择", "🛠️ 手动切换", {providers_tags}] },
+
+    { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
+    
+    { "tag": "🛑 广告拦截", "type": "selector", "outbounds": ["⛔ 禁止连接", "🎯 本地直连"] },
+    { "tag": "🎯 本地直连", "type": "direct" },
+    { "tag": "⛔ 禁止连接", "type": "block" },
+
+    { "tag": "🇭🇰 香港节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
+    { "tag": "🇹🇼 台湾节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇹🇼|台|tw|taiwan|tai wan)" },
+    { "tag": "🇺🇸 美国节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇺🇸|美|洛杉矶|圣何塞|西雅图|纽约|波特兰|旧金山|us|unitedstates|united states)" },
+    { "tag": "🇯🇵 日本节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇯🇵|日|东京|大阪|埼玉|九州|jp|japan)" },
+    { "tag": "🇪🇺 欧洲节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇪🇺|欧|德|英|法|荷|俄罗斯|西班牙|意大利|瑞士|瑞典|土耳其|挪威|芬兰|丹麦|比利时|爱尔兰|奥地利|波兰|葡萄牙|乌克兰|希腊|捷克|匈牙利|罗马尼亚|保加利亚|冰岛|克罗地亚)" },
+    { "tag": "🇰🇷 韩国节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇰🇷|韩|韓|首尔|kr|kor)" },
+    { "tag": "🇸🇬 狮城节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇸🇬|新加坡|狮城|sg|singapore)" },
+
+    { "tag": "👑 高级节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|[0-9][0-9]+))" },
+    { "tag": "📉 省流节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(0[.][1-5]|低倍率|省流|大流量|公益|免费|闲时|Low)" }
+  ],
+  "route": {
+    "rules": [
+      { "rule_set": ["private"], "outbound": "🔒 私有网络" },
+      { "rule_set": ["ads"], "outbound": "🛑 广告拦截" },
+
+      { "rule_set": ["networktest"], "outbound": "📈 网络测速" },
+      { "rule_set": ["applications"], "outbound": "↔️ 直连软件" },
+      { "rule_set": ["trackerslist"], "outbound": "🧲 BT下载" },
+      { "rule_set": ["apple-cn"], "outbound": "🍎 苹果服务" },
+      { "rule_set": ["microsoft-cn"], "outbound": "🪟 微软服务" },
+      { "rule_set": ["google-cn"], "outbound": "🇬 谷歌服务" },
+      { "rule_set": ["steamcn"], "outbound": "🦾 Steam平台" },
+      { "rule_set": ["games-cn"], "outbound": "🕹 国服游戏" },
+
+      { "rule_set": ["googlefcm"], "outbound": "📢 谷歌推送" },
+      { "rule_set": ["netflix"], "outbound": "🎬 奈飞视频" },
+      { "rule_set": ["youtube"], "outbound": "▶️ 油管视频" },
+      { "rule_set": ["ai"], "outbound": "🤖 AI 平台" },
+      { "rule_set": ["media"], "outbound": "🌍 国际媒体" },
+      { "rule_set": ["games"], "outbound": "🎮 外服游戏" },
+
+      { "rule_set": ["proxy"], "outbound": "🌐 国际流量" },
+      { "rule_set": ["cn"], "outbound": "🀄️ 国内流量" },
+
+      { "rule_set": ["privateip"], "outbound": "🔒 私有网络" },
+      { "rule_set": ["telegramip"], "outbound": "📲 电报消息" },
+
+      { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4" },
+      { "rule_set": ["gamesip"], "outbound": "🎮 外服游戏" },
+      { "rule_set": ["mediaip"], "outbound": "🌍 国际媒体" },
+      { "rule_set": ["cnip"], "outbound": "🀄️ 国内流量" }
+    ],
+    "rule_set": [
+      {
+        "tag": "private",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/private.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "ads",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/ads.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ads.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "networktest",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/networktest.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "applications",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/applications.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/applications.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "trackerslist",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/trackerslist.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/trackerslist.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "apple-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/apple-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "microsoft-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/microsoft-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "google-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/google-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "steamcn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/steamcn.srs",
+        "url": "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/sing/geo/geosite/steam%40cn.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "games-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/games-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "googlefcm",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/googlefcm.srs",
+        "url": "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/sing/geo/geosite/googlefcm.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "netflix",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/netflix.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflix.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "youtube",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/youtube.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/youtube.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "ai",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/ai.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "media",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/media.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/media.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "games",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/games.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "proxy",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/proxy.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "privateip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/privateip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/privateip.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "telegramip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/telegramip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "gamesip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/gamesip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/gamesip.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "mediaip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/mediaip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/mediaip.srs",
+        "download_detour": "DIRECT"
+      },
+      {
+        "tag": "cnip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/cnip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs",
+        "download_detour": "DIRECT"
+      }
+    ],
+    "final": "🐟 漏网之鱼"
+  }
+}
