@@ -233,8 +233,9 @@ set_vmess(){
 	echo -e " 3 设置\033[33mWS-path(可选)\033[0m：	\033[33m$vms_ws_path\033[0m"
 	echo -e " 4 设置\033[36m秘钥-uuid\033[0m：	\033[36m$vms_uuid\033[0m"
 	echo -e " 5 一键生成\033[32m随机秘钥\033[0m"
+	echo -e " 6 设置\033[36m混淆host(可选)\033[0m：	\033[33m$vms_host\033[0m"
 	gen_base64 1 >/dev/null 2>&1 &&
-	echo -e " 6 一键生成\033[36m分享链接\033[0m"
+	echo -e " 7 一键生成\033[32m分享链接\033[0m"
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
@@ -303,8 +304,18 @@ set_vmess(){
 		set_vmess
 	;;
 	6)
+		read -p "请输入免流混淆host(输入0删除) > " text
+		if [ "$text" = 0 ];then
+			vms_host=''
+			setconfig vms_host "" "$GT_CFG_PATH"
+		else
+			vms_host="$text"
+			setconfig vms_host "$text" "$GT_CFG_PATH"
+		fi
+		set_vmess
+	;;
+	7)
 		read -p "请输入本机公网IP(4/6)或域名 > " host_wan
-		read -p "请输入免流混淆host(可选) > " vms_host
 		if [ -n "$host_wan" ] && [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
 			[ -n "$vms_ws_path" ] && vms_net=ws
 			vms_json=$(cat <<EOF
@@ -496,7 +507,11 @@ set_tailscale(){
 		set_tailscale
 	;;
 	4)
-		[ "$ts_exit_node" = true ] && ts_exit_node=false || ts_exit_node=true
+		[ "$ts_exit_node" = true ] && ts_exit_node=false || {
+			ts_exit_node=true
+			echo -e "\033[31m注意：\033[0m目前exitnode的官方DNS有bug，要么启用域名嗅探并禁用TailscaleDNS，\n要么必须在网页设置Globalname servers为分配的本设备子网IP且启用override"
+			sleep 3
+		}
 		setconfig ts_exit_node "$ts_exit_node" "$GT_CFG_PATH"
 		set_tailscale
 	;;

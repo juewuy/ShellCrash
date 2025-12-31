@@ -16,7 +16,10 @@ getlanip() { #获取局域网host地址
         host_ipv4="$host_ipv4$cust_host_ipv4"
     fi
     #缺省配置
-    [ -z "$host_ipv4" ] && host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
+    [ -z "$host_ipv4" ] && {
+		host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
+		logger "无法获取本地LAN-IPV4网段，请前往流量过滤设置界面设置自定义网段！" 31
+	}
     host_ipv6="fe80::/10 fd00::/8 $host_ipv6"
     #获取本机出口IP地址
     local_ipv4=$(ip route 2>&1 | grep -Ev 'utun|iot|docker|linkdown' | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)

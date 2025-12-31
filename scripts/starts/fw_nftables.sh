@@ -140,8 +140,8 @@ start_nft_wan() { #nftables公网防火墙
 	accept_ports=$(echo "$fw_wan_ports,$vms_port,$sss_port" | sed "s/,,/,/g ;s/^,// ;s/,$// ;s/,/, /")
     [ -n "$accept_ports" ] && {
 		fw_wan_nfports="{ $(echo "$accept_ports" | sed 's/,/, /g') }"
-		nft add rule inet shellcrash input tcp dport $fw_wan_nfports accept
-		nft add rule inet shellcrash input udp dport $fw_wan_nfports accept
+		nft add rule inet shellcrash input tcp dport $fw_wan_nfports meta mark set 0x67890 accept
+		nft add rule inet shellcrash input udp dport $fw_wan_nfports meta mark set 0x67890 accept
 	}
 	#端口拦截
 	reject_ports="{ $mix_port, $db_port, $dns_port }"
@@ -149,6 +149,10 @@ start_nft_wan() { #nftables公网防火墙
 	nft add rule inet shellcrash input ip6 saddr {$HOST_IP6} accept
 	nft add rule inet shellcrash input tcp dport $reject_ports reject
 	nft add rule inet shellcrash input udp dport $reject_ports reject
+	#fw4特殊处理
+	nft list chain inet fw4 input >/dev/null 2>&1 && \
+    nft list chain inet fw4 input | grep -q 'meta mark 0x67890 accept' || \
+    nft insert rule inet fw4 input meta mark 0x67890 accept 2>/dev/null
 }
 start_nftables() { #nftables配置总入口
     #初始化nftables
@@ -204,16 +208,11 @@ start_nftables() { #nftables配置总入口
     }
     #屏蔽QUIC
     [ "$quic_rj" = '已启用' -a "$lan_proxy" = true ] && {
-        [ "$redir_mod" = "Tproxy模式" ] && {
+        [ "$redir_mod" != "Redir模式" ] && {
             nft add chain inet shellcrash quic_rj { type filter hook input priority 0 \; }
             [ -n "$CN_IP" ] && nft add rule inet shellcrash quic_rj ip daddr @cn_ip return
             [ -n "$CN_IP6" ] && nft add rule inet shellcrash quic_rj ip6 daddr @cn_ip6 return
             nft add rule inet shellcrash quic_rj udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
-        }
-        [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
-            nft insert rule inet fw4 forward oifname "utun" udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
-            [ -n "$CN_IP" ] && nft insert rule inet fw4 forward oifname "utun" ip daddr { $CN_IP } return
-            [ -n "$CN_IP6" ] && nft insert rule inet fw4 forward oifname "utun" ip6 daddr { $CN_IP6 } return
         }
     }
 }
