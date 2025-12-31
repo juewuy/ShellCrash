@@ -171,6 +171,7 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: sing-box
+          overwrite: true
           
   push_to_git:
     needs: 
