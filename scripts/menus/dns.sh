@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_DNS_LOADED" ] && return
+__IS_MODULE_DNS_LOADED=1
+
 set_dns_mod() { #DNS模式设置
 	[ -z "$hosts_opt" ] && hosts_opt=ON
     [ -z "$dns_protect" ] && dns_protect=ON
