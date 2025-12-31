@@ -412,7 +412,7 @@ setcore(){ #内核选择菜单
 	echo "-----------------------------------------------"
 	echo "9 手动指定处理器架构"
 	echo "-----------------------------------------------"
-	echo 0 返回上级菜单
+	echo "0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0)
@@ -485,217 +485,219 @@ getgeo(){ #下载Geo文件
 	fi
 	sleep 1
 }
-setcustgeo(){ #下载自定义数据库文件
-	getcustgeo(){
+
+getcustgeo(){
+	echo "-----------------------------------------------"
+	echo "正在获取数据库文件…………"
+	webget "$TMPDIR"/$geoname $custgeolink
+	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
-		echo "正在获取数据库文件…………"
-		webget "$TMPDIR"/$geoname $custgeolink
-		if [ "$?" = "1" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[31m文件下载失败！\033[0m"
-			error_down
-		else
-			echo "$geoname" | grep -Eq '.mrs|.srs' && {
-				geofile='ruleset/'
-				[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
-			}
-			mv -f "$TMPDIR"/${geoname} "$BINDIR"/${geofile}${geoname}
-			echo "-----------------------------------------------"
-			echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
-		fi
-		sleep 1
-	}
-	checkcustgeo(){
-		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
-		[ ! -s "$TMPDIR"/geo.list ] && {
-			echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
-			webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
-			release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-			cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > "$TMPDIR"/geo.list
-			rm -rf "$TMPDIR"/github_api
+		echo -e "\033[31m文件下载失败！\033[0m"
+		error_down
+	else
+		echo "$geoname" | grep -Eq '.mrs|.srs' && {
+			geofile='ruleset/'
+			[ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
 		}
-		if [ -s "$TMPDIR"/geo.list ];then
-			echo -e "请选择需要更新的数据库文件："
-			echo "-----------------------------------------------"
-			cat "$TMPDIR"/geo.list | awk '{print " "NR" "$1}'
-			echo -e " 0 返回上级菜单"
-			echo "-----------------------------------------------"
-			read -p "请输入对应数字 > " num
-			case "$num" in
-			0)
-			;;
-			[1-99])
-				if [ "$num" -le "$(wc -l < "$TMPDIR"/geo.list)" ];then
-					geotype=$(sed -n "$num"p "$TMPDIR"/geo.list)
-					[ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
-					[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
-					[ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
-					custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
-					getcustgeo
-					checkcustgeo
-				else
-					errornum
-				fi
-			;;
-			*)
+		mv -f "$TMPDIR"/${geoname} "$BINDIR"/${geofile}${geoname}
+		echo "-----------------------------------------------"
+		echo -e "\033[32m$geotype数据库文件下载成功！\033[0m"
+	fi
+	sleep 1
+}
+
+checkcustgeo(){
+	[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
+	[ ! -s "$TMPDIR"/geo.list ] && {
+		echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
+		webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
+		release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+		cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > "$TMPDIR"/geo.list
+		rm -rf "$TMPDIR"/github_api
+	}
+	if [ -s "$TMPDIR"/geo.list ];then
+		echo -e "请选择需要更新的数据库文件："
+		echo "-----------------------------------------------"
+		cat "$TMPDIR"/geo.list | awk '{print " "NR" "$1}'
+		echo -e " 0 返回上级菜单"
+		echo "-----------------------------------------------"
+		read -p "请输入对应数字 > " num
+		case "$num" in
+		0)
+		;;
+		[1-99])
+			if [ "$num" -le "$(wc -l < "$TMPDIR"/geo.list)" ];then
+				geotype=$(sed -n "$num"p "$TMPDIR"/geo.list)
+				[ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
+				[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
+				[ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
+				custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
+				getcustgeo
+				checkcustgeo
+			else
 				errornum
-			;;
-			esac
-		else
-			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
+			fi
+		;;
+		*)
+			errornum
+		;;
+		esac
+	else
+		echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
+		sleep 1
+	fi
+}
+
+# 下载自定义数据库文件
+setcustgeo() {
+	while true; do
+		rm -rf "$TMPDIR"/geo.list
+		echo "-----------------------------------------------"
+		echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
+		echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
+		echo -e "\033[31m自定义数据库不支持定时任务及小闪存模式！\033[0m"
+		echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
+		echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
+		echo "-----------------------------------------------"
+		echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (仅限Clash/Mihomo)"
+		echo -e " 2 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Clash/Mihomo)"
+		echo -e " 3 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限SingBox-srs)"
+		echo -e " 4 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Mihomo-mrs)"
+		echo -e " 5 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
+		echo "-----------------------------------------------"
+		echo -e " 9 \033[33m自定义数据库链接 \033[0m"
+		echo -e " 0 返回上级菜单"
+		read -p "请输入对应数字 > " num
+		case "$num" in
+		""|0)
+			break
+		;;
+		1)
+			project=MetaCubeX/meta-rules-dat
+			api_tag=latest
+			checkcustgeo
+		;;
+		2)
+			project=DustinWin/ruleset_geodata
+			api_tag=mihomo-geodata
+			checkcustgeo
+		;;
+		3)
+			project=DustinWin/ruleset_geodata
+			api_tag=sing-box-ruleset
+			checkcustgeo
+		;;
+		4)
+			project=DustinWin/ruleset_geodata
+			api_tag=mihomo-ruleset
+			checkcustgeo
+		;;
+		5)
+			project=Loyalsoldier/geoip
+			api_tag=latest
+			checkcustgeo
+		;;
+		9)
+			read -p "请输入自定义数据库的链接地址 > " link
+			[ -n "$link" ] && custgeolink="$link"
+			getgeo
+		;;
+		*)
+			errornum
 			sleep 1
-		fi
-	}
-	rm -rf "$TMPDIR"/geo.list
-	echo "-----------------------------------------------"
-	echo -e "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
-	echo -e "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
-	echo -e "\033[31m自定义数据库不支持定时任务及小闪存模式！\033[0m"
-	echo -e "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
-	echo -e "\033[0m请选择需要更新的数据库项目来源：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m (仅限Clash/Mihomo)"
-	echo -e " 2 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Clash/Mihomo)"
-	echo -e " 3 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限SingBox-srs)"
-	echo -e " 4 \033[36;4mhttps://github.com/DustinWin/ruleset_geodata\033[0m (仅限Mihomo-mrs)"
-	echo -e " 5 \033[36;4mhttps://github.com/Loyalsoldier/geoip\033[0m (仅限Clash-GeoIP)"
-	echo "-----------------------------------------------"
-	echo -e " 9 \033[33m自定义数据库链接 \033[0m"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		project=MetaCubeX/meta-rules-dat
-		api_tag=latest
-		checkcustgeo
-		setcustgeo
-	;;
-	2)
-		project=DustinWin/ruleset_geodata
-		api_tag=mihomo-geodata
-		checkcustgeo
-		setcustgeo
-	;;
-	3)
-		project=DustinWin/ruleset_geodata
-		api_tag=sing-box-ruleset
-		checkcustgeo
-		setcustgeo
-	;;
-	4)
-		project=DustinWin/ruleset_geodata
-		api_tag=mihomo-ruleset
-		checkcustgeo
-		setcustgeo
-	;;
-	5)
-		project=Loyalsoldier/geoip
-		api_tag=latest
-		checkcustgeo
-		setcustgeo
-	;;
-	9)
-		read -p "请输入自定义数据库的链接地址 > " link
-		[ -n "$link" ] && custgeolink="$link"
-		getgeo
-		setcustgeo
-	;;
-	*)
-		errornum
-	;;
+			break
+		;;
+		esac
+	done
+}
+
+setgeo() {
+	while true; do
+		. $CFG_PATH > /dev/null
+		[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
+		echo "-----------------------------------------------"
+		echo -e "\033[36m请选择需要更新的Geo数据库文件：\033[0m"
+		echo -e "\033[36mMihomo内核和SingBox内核的数据库文件不通用\033[0m"
+		echo -e "在线数据库最新版本(每日同步上游)：\033[32m$GeoIP_v\033[0m"
+		echo "-----------------------------------------------"
+		echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
+		echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
+		echo "-----------------------------------------------"
+		echo -e " 3 Mihomo精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
+		echo -e " 4 Mihomo完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
+		echo -e " 5 Mihomo-mrs数据库常用包(约1mb)	\033[33m$mrs_v\033[0m"
+		echo "-----------------------------------------------"
+		echo -e " 6 Singbox-srs数据库常用包(约0.8mb)	\033[33m$srs_v\033[0m"
+		echo "-----------------------------------------------"
+		echo -e " 8 \033[32m自定义数据库文件\033[0m"
+		echo -e " 9 \033[31m清理数据库文件\033[0m"
+		echo " 0 返回上级菜单"
+		echo "-----------------------------------------------"
+		read -p "请输入对应数字 > " num
+		case "$num" in
+		""|0)
+			break
+		;;
+		1)
+			geotype=china_ip_list.txt
+			geoname=cn_ip.txt
+			getgeo
+		;;
+		2)
+			geotype=china_ipv6_list.txt
+			geoname=cn_ipv6.txt
+			getgeo
+		;;
+		3)
+			geotype=cn_mini.mmdb
+			geoname=Country.mmdb
+			getgeo
+		;;
+		4)
+			geotype=geosite.dat
+			geoname=GeoSite.dat
+			getgeo
+		;;
+		5)
+			geotype=mrs.tar.gz
+			geoname=mrs.tar.gz
+			getgeo
+		;;
+		6)
+			geotype=srs.tar.gz
+			geoname=srs.tar.gz
+			getgeo
+		;;
+		8)
+			setcustgeo
+		;;
+		9)
+			echo "-----------------------------------------------"
+			echo -e "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
+			echo -e "\033[36m清理后启动服务即可自动下载所需文件~\033[0m"
+			echo "-----------------------------------------------"
+			read -p "确认清理？[1/0] > " res
+			[ "$res" = '1' ] && {
+				for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db;do
+					rm -rf $CRASHDIR/$file
+				done
+				for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v mrs_v srs_v;do
+					setconfig $var
+				done
+				rm -rf $CRASHDIR/ruleset/*
+				echo -e "\033[33m所有数据库文件均已清理！\033[0m"
+				sleep 1
+			}
+		;;
+		*)
+			errornum
+			sleep 1
+			break
+		;;
 	esac
+done
 }
-setgeo(){ 
-	. $CFG_PATH > /dev/null
-	[ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
-	echo "-----------------------------------------------"
-	echo -e "\033[36m请选择需要更新的Geo数据库文件：\033[0m"
-	echo -e "\033[36mMihomo内核和SingBox内核的数据库文件不通用\033[0m"
-	echo -e "在线数据库最新版本(每日同步上游)：\033[32m$GeoIP_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 CN-IP绕过文件(约0.1mb)	\033[33m$china_ip_list_v\033[0m"
-	echo -e " 2 CN-IPV6绕过文件(约30kb)	\033[33m$china_ipv6_list_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 3 Mihomo精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
-	echo -e " 4 Mihomo完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
-	echo -e " 5 Mihomo-mrs数据库常用包(约1mb)	\033[33m$mrs_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 6 Singbox-srs数据库常用包(约0.8mb)	\033[33m$srs_v\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 8 \033[32m自定义数据库文件\033[0m"
-	echo -e " 9 \033[31m清理数据库文件\033[0m"
-	echo " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		geotype=china_ip_list.txt
-		geoname=cn_ip.txt
-		getgeo
-		setgeo
-	;;
-	2)
-		geotype=china_ipv6_list.txt
-		geoname=cn_ipv6.txt
-		getgeo
-		setgeo
-	;;
-	3)
-		geotype=cn_mini.mmdb
-		geoname=Country.mmdb
-		getgeo
-		setgeo
-	;;
-	4)
-		geotype=geosite.dat
-		geoname=GeoSite.dat
-		getgeo
-		setgeo
-	;;
-	5)
-		geotype=mrs.tar.gz
-		geoname=mrs.tar.gz
-		getgeo
-		setgeo
-	;;
-	6)
-		geotype=srs.tar.gz
-		geoname=srs.tar.gz
-		getgeo
-		setgeo
-	;;
-	8)
-		setcustgeo
-		setgeo
-	;;
-	9)
-		echo "-----------------------------------------------"
-		echo -e "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
-		echo -e "\033[36m清理后启动服务即可自动下载所需文件~\033[0m"
-		echo "-----------------------------------------------"
-		read -p "确认清理？[1/0] > " res
-		[ "$res" = '1' ] && {
-			for file in cn_ip.txt cn_ipv6.txt Country.mmdb GeoSite.dat geoip.db geosite.db;do
-				rm -rf $CRASHDIR/$file
-			done
-			for var in Country_v cn_mini_v china_ip_list_v china_ipv6_list_v geosite_v geoip_cn_v geosite_cn_v mrs_geosite_cn_v srs_geoip_cn_v srs_geosite_cn_v mrs_v srs_v;do
-				setconfig $var
-			done
-			rm -rf $CRASHDIR/ruleset/*
-			echo -e "\033[33m所有数据库文件均已清理！\033[0m"
-			sleep 1
-		}
-		setgeo
-	;;
-	*)
-		errornum
-	;;
-esac
-}
+
 #Dashboard
 getdb(){ 
 	dblink="${update_url}/"
@@ -892,132 +894,137 @@ setcrt(){
 		sleep 1
 	fi
 }
-#安装源
-setserver(){
-	[ -z "$release_type" ] && release_name=未指定
-	[ -n "$release_type" ] && release_name="$release_type(回退)"
-	[ "$release_type" = stable ] && release_name=稳定版
-	[ "$release_type" = master ] && release_name=公测版
-	[ "$release_type" = dev ] && release_name=开发版
-	[ -n "$url_id" ] && url_name=$(grep "$url_id" "$CRASHDIR"/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name="$update_url"
-	saveserver(){
-		#写入配置文件
-		setconfig update_url "'$update_url'"
-		setconfig url_id $url_id
-		setconfig release_type $release_type
+
+# 写入配置文件
+saveserver() {
+	setconfig update_url "'$update_url'"
+	setconfig url_id $url_id
+	setconfig release_type $release_type
+	echo "-----------------------------------------------"
+	echo -e "\033[32m源地址切换成功！\033[0m"
+}
+
+# 安装源
+setserver() {
+	while true; do
+		[ -z "$release_type" ] && release_name=未指定
+		[ -n "$release_type" ] && release_name="$release_type(回退)"
+		[ "$release_type" = stable ] && release_name=稳定版
+		[ "$release_type" = master ] && release_name=公测版
+		[ "$release_type" = dev ] && release_name=开发版
+		[ -n "$url_id" ] && url_name=$(grep "$url_id" "$CRASHDIR"/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name="$update_url"
+	
 		echo "-----------------------------------------------"
-		echo -e "\033[32m源地址切换成功！\033[0m"
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
-	echo -e "当前版本：\033[4;33m$release_name\033[0m 当前源：\033[4;32m$url_name\033[0m"
-	echo "-----------------------------------------------"
-	grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | awk '{print " "NR" "$2}'
-	echo "-----------------------------------------------"
-	echo -e " a 切换至\033[32m稳定版-stable\033[0m"
-	echo -e " b 切换至\033[36m公测版-master\033[0m"
-	echo -e " c 切换至\033[33m开发版-dev\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " d 自定义源地址(用于本地源或自建源)"
-	echo -e " e \033[31m版本回退\033[0m"
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应字母或数字 > " num
-	case "$num" in
-	0)
-		checkupdate=false
-	;;
-	[1-99])
-		url_id_new=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
-		if [ -z "$url_id_new" ];then
-			errornum
-			sleep 1
-			setserver
-		elif [ "$url_id_new" -ge 200 ];then
-			update_url=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
-			url_id=''
-			saveserver
-		else
-			url_id=$url_id_new
-			update_url=''
-			saveserver
-		fi
-		unset url_id_new
-	;;
-	a)
-		release_type=stable
-		[ -z "$url_id" ] && url_id=101
-		saveserver
-		setserver
-	;;
-	b)
-		release_type=master
-		[ -z "$url_id" ] && url_id=101
-		saveserver
-		setserver
-	;;
-	c)
+		echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
+		echo -e "当前版本：\033[4;33m$release_name\033[0m 当前源：\033[4;32m$url_name\033[0m"
 		echo "-----------------------------------------------"
-		echo -e "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
-		echo -e "\033[36m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
-		echo -e "请务必加入我们的讨论组：\033[32;4mhttps://t.me/ShellClash\033[0m"
-		read -p "是否依然切换到开发版？(1/0) > " res
-		if [ "$res" = 1 ];then
-			release_type=dev
+		grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | awk '{print " "NR" "$2}'
+		echo "-----------------------------------------------"
+		echo -e " a 切换至\033[32m稳定版-stable\033[0m"
+		echo -e " b 切换至\033[36m公测版-master\033[0m"
+		echo -e " c 切换至\033[33m开发版-dev\033[0m"
+		echo "-----------------------------------------------"
+		echo -e " d 自定义源地址(用于本地源或自建源)"
+		echo -e " e \033[31m版本回退\033[0m"
+		echo -e " 0 返回上级菜单"
+		echo "-----------------------------------------------"
+		read -p "请输入对应字母或数字 > " num
+		case "$num" in
+		""|0)
+			checkupdate=false
+			break
+		;;
+		[1-99])
+			url_id_new=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
+			if [ -z "$url_id_new" ];then
+				errornum
+				sleep 1
+				continue
+			elif [ "$url_id_new" -ge 200 ];then
+				update_url=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+				url_id=''
+				continue
+			else
+				url_id=$url_id_new
+				update_url=''
+				continue
+			fi
+			unset url_id_new
+		;;
+		a)
+			release_type=stable
 			[ -z "$url_id" ] && url_id=101
 			saveserver
-		fi
-		setserver
-	;;
-	d)
-		echo "-----------------------------------------------"
-		read -p "请输入个人源路径 > " update_url
-		if [ -z "$update_url" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[31m取消输入，返回上级菜单\033[0m"
-		else
-			url_id=''
-			release_type=''
+		;;
+		b)
+			release_type=master
+			[ -z "$url_id" ] && url_id=101
 			saveserver
-		fi
-	;;
-	e)
-		echo "-----------------------------------------------"
-		if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
-			echo -ne "\033[32m正在获取版本信息！\033[0m\r"
-			get_bin "$TMPDIR"/release_version bin/release_version
-			if [ "$?" = "0" ];then
-				echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
-				cat "$TMPDIR"/release_version | awk '{print " "NR" "$1}'
-				echo -e " 0 返回上级菜单"
-				read -p "请输入对应数字 > " num
-				if [ -z "$num" -o "$num" = 0 ]; then
-					setserver
-				elif [ $num -le $(cat "$TMPDIR"/release_version 2>/dev/null | awk 'END{print NR}') ]; then
-					release_type=$(cat "$TMPDIR"/release_version | awk '{print $1}' | sed -n "$num"p)
-					update_url=''
-					saveserver
+		;;
+		c)
+			echo "-----------------------------------------------"
+			echo -e "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
+			echo -e "\033[36m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
+			echo -e "请务必加入我们的讨论组：\033[32;4mhttps://t.me/ShellClash\033[0m"
+			read -p "是否依然切换到开发版？(1/0) > " res
+			if [ "$res" = 1 ];then
+				release_type=dev
+				[ -z "$url_id" ] && url_id=101
+				saveserver
+			fi
+		;;
+		d)
+			echo "-----------------------------------------------"
+			read -p "请输入个人源路径 > " update_url
+			if [ -z "$update_url" ];then
+				echo "-----------------------------------------------"
+				echo -e "\033[31m取消输入，返回上级菜单\033[0m"
+			else
+				url_id=''
+				release_type=''
+				saveserver
+			fi
+		;;
+		e)
+			echo "-----------------------------------------------"
+			if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
+				echo -ne "\033[32m正在获取版本信息！\033[0m\r"
+				get_bin "$TMPDIR"/release_version bin/release_version
+				if [ "$?" = "0" ];then
+					echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
+					cat "$TMPDIR"/release_version | awk '{print " "NR" "$1}'
+					echo -e " 0 返回上级菜单"
+					read -p "请输入对应数字 > " num
+					if [ -z "$num" -o "$num" = 0 ]; then
+						continue
+					elif [ $num -le $(cat "$TMPDIR"/release_version 2>/dev/null | awk 'END{print NR}') ]; then
+						release_type=$(cat "$TMPDIR"/release_version | awk '{print $1}' | sed -n "$num"p)
+						update_url=''
+						saveserver
+					else
+						echo "-----------------------------------------------"
+						errornum
+						sleep 1
+						continue
+					fi
 				else
 					echo "-----------------------------------------------"
-					errornum
+					echo -e "\033[31m版本回退信息获取失败，请尝试更换其他安装源！\033[0m"
 					sleep 1
-					setserver
+					continue
 				fi
+				rm -rf "$TMPDIR"/release_version
 			else
-				echo "-----------------------------------------------"
-				echo -e "\033[31m版本回退信息获取失败，请尝试更换其他安装源！\033[0m"
+				echo -e "\033[31m当前源不支持版本回退，请尝试更换其他安装源！\033[0m"
 				sleep 1
-				setserver
+				continue
 			fi
-			rm -rf "$TMPDIR"/release_version
-		else
-			echo -e "\033[31m当前源不支持版本回退，请尝试更换其他安装源！\033[0m"
+		;;
+		*)
+			errornum
 			sleep 1
-			setserver
-		fi
-	;;
-	*)
-		errornum
-	;;
-	esac
+			break
+		;;
+		esac
+	done
 }
