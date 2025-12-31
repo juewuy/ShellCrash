@@ -44,7 +44,7 @@ upgrade() {
         echo "-----------------------------------------------"
         read -p "请输入对应数字 > " num
         case "$num" in
-        0)
+        ""|0)
             break
             ;;
         1)
@@ -95,6 +95,8 @@ upgrade() {
             ;;
         *)
             errornum
+			sleep 1
+			break
             ;;
         esac
     done
