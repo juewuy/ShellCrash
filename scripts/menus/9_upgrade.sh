@@ -1,108 +1,110 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_9_UPGRADE_LOADED" ] && return
+__IS_MODULE_9_UPGRADE_LOADED=1
+
 . "$CRASHDIR"/libs/check_dir_avail.sh
 . "$CRASHDIR"/libs/check_cpucore.sh
 . "$CRASHDIR"/libs/web_get_bin.sh
 
 error_down(){
-	echo -e  "\033[33m请尝试切换至其他安装源后重新下载！\033[0m"
-	echo -e  "或者参考 \033[32;4mhttps://juewuy.github.io/bdaz\033[0m 进行本地安装！"
+	echo -e "\033[33m请尝试切换至其他安装源后重新下载！\033[0m"
+	echo -e "或者参考 \033[32;4mhttps://juewuy.github.io/bdaz\033[0m 进行本地安装！"
 	sleep 1
 }
-#主界面
-upgrade(){
-    echo "-----------------------------------------------"
-	echo -ne "\033[32m正在检查更新！\033[0m\r"
-	checkupdate
-	[ -z "$core_v" ] && core_v=$crashcore
-	core_v_new=$(eval echo \$"$crashcore"_v)
-	echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
-	[ "$(dir_avail "$CRASHDIR")" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
-		echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
-		sleep 1
-	}
-	echo "-----------------------------------------------"
-	echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
-	echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
-	echo -e " 3 更新\033[32m数据库文件\033[0m	> \033[32m$GeoIP_v\033[0m"
-	echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
-	echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
-	echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
-	echo "-----------------------------------------------"
-	echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
-	echo -e " 8 \033[32m配置自动更新\033[0m"
-	echo -e " 9 \033[31m卸载ShellCrash\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "99 \033[36m鸣谢！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-		;;
-	1)
-	    setscripts
-		;;
-	2)
-	    setcore
-		upgrade
-	    ;;
-	3)
-		setgeo
-		upgrade
-	    ;;
-	4)
-		setdb
-		upgrade
-		;;
-	5)
-	    setcrt
-	    upgrade
-	    ;;
-	6)
-	    echo "-----------------------------------------------"
-	    echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
-	    echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
-	    sleep 2
-	    upgrade
-	    ;;
-	7)
-	    setserver
-	    upgrade
-	    ;;
-	8)
-	    . "$CRASHDIR"/menus/5_task.sh && task_add
-	    upgrade
-	    ;;
-	9)
-	    . "$CRASHDIR"/menus/uninstall.sh && uninstall
-	    ;;
-	99)
-		echo "-----------------------------------------------"
-		echo -e "感谢：\033[32mClash项目 \033[0m作者\033[36m Dreamacro\033[0m"
-		echo -e "感谢：\033[32msing-box项目 \033[0m作者\033[36m SagerNet\033[0m 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
-		echo -e "感谢：\033[32mMetaCubeX项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
-		echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
-		echo -e "感谢：\033[32mzashboard项目 \033[0m作者\033[36m Zephyruso\033[0m 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
-		echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
-		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m PuerNya\033[0m 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
-		echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m reF1nd\033[0m 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
-		echo -e "感谢：\033[32mDustinWin相关项目 \033[0m作者\033[36m DustinWin\033[0m 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
-		echo "-----------------------------------------------"
-		echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
-		echo "-----------------------------------------------"
-		sleep 2
-		upgrade
-	    ;;
-	*)
-	    errornum
-		;;
-	esac
+
+# 更新/卸载功能菜单
+upgrade() {
+    while true; do
+        echo "-----------------------------------------------"
+        echo -ne "\033[32m正在检查更新！\033[0m\r"
+        checkupdate
+        [ -z "$core_v" ] && core_v=$crashcore
+        core_v_new=$(eval echo \$"$crashcore"_v)
+        echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
+        echo "-----------------------------------------------"
+        echo -e "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
+        [ "$(dir_avail "$CRASHDIR")" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
+            echo -e "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
+            sleep 1
+        }
+        echo "-----------------------------------------------"
+        echo -e " 1 更新\033[36m管理脚本    \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
+        echo -e " 2 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
+        echo -e " 3 更新\033[32m数据库文件\033[0m	> \033[32m$GeoIP_v\033[0m"
+        echo -e " 4 安装本地\033[35mDashboard\033[0m面板"
+        echo -e " 5 安装/更新本地\033[33m根证书文件\033[0m"
+        echo -e " 6 查看\033[32mPAC\033[0m自动代理配置"
+        echo "-----------------------------------------------"
+        echo -e " 7 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
+        echo -e " 8 \033[32m配置自动更新\033[0m"
+        echo -e " 9 \033[31m卸载ShellCrash\033[0m"
+        echo "-----------------------------------------------"
+        echo -e "99 \033[36m鸣谢！\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 0 返回上级菜单"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        ""|0)
+            break
+            ;;
+        1)
+            setscripts
+            ;;
+        2)
+            setcore
+            ;;
+        3)
+            setgeo
+            ;;
+        4)
+            setdb
+            ;;
+        5)
+            setcrt
+            ;;
+        6)
+            echo "-----------------------------------------------"
+            echo -e "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
+            echo -e "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
+            sleep 2
+            ;;
+        7)
+            setserver
+            ;;
+        8)
+            . "$CRASHDIR"/menus/5_task.sh && task_add
+            ;;
+        9)
+            . "$CRASHDIR"/menus/uninstall.sh && uninstall
+            ;;
+        99)
+            echo "-----------------------------------------------"
+            echo -e "感谢：\033[32mClash项目 \033[0m作者\033[36m Dreamacro\033[0m"
+            echo -e "感谢：\033[32msing-box项目 \033[0m作者\033[36m SagerNet\033[0m 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
+            echo -e "感谢：\033[32mMetaCubeX项目 \033[0m作者\033[36m MetaCubeX\033[0m 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
+            echo -e "感谢：\033[32mYACD面板项目 \033[0m作者\033[36m haishanh\033[0m 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
+            echo -e "感谢：\033[32mzashboard项目 \033[0m作者\033[36m Zephyruso\033[0m 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
+            echo -e "感谢：\033[32mSubconverter \033[0m作者\033[36m tindy2013\033[0m 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
+            echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m PuerNya\033[0m 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
+            echo -e "感谢：\033[32msing-box分支项目 \033[0m作者\033[36m reF1nd\033[0m 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
+            echo -e "感谢：\033[32mDustinWin相关项目 \033[0m作者\033[36m DustinWin\033[0m 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
+            echo "-----------------------------------------------"
+            echo -e "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
+            echo "-----------------------------------------------"
+            sleep 2
+            ;;
+        *)
+            errornum
+			sleep 1
+			break
+            ;;
+        esac
+    done
 }
+
 #检查更新
 checkupdate(){
 	get_bin "$TMPDIR"/version_new version echooff
