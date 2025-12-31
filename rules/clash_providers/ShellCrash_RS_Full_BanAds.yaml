@@ -1,4 +1,4 @@
-#ShellCrash-ruleset全分组规则+去广告
+#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 251231
 
 #此版本为Maozai根据ACL4SSR规则修改优化而来，尽量在保持原有的基础上进行优化。
 #数据源采用了DustinWin/ruleset_geodata和MetaCubeX/meta-rules-dat两个开源项目的规则，感谢原作者的辛勤付出。
@@ -9,24 +9,24 @@
 #代理组
 proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, ✨ 自动选择（去高倍率）, 🛠️ 手动切换, ⚖️ 负载均衡, 🚑 故障转移, 🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🛠️ 手动切换, type: select, include-all: true, exclude-type: direct}
-  - {name: ♻️ 自动选择, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-type: direct}
-  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-type: direct, filter: "(?i)^(?!.*(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))).*"}
-  - {name: ⚖️ 负载均衡, type: load-balance, interval: 1800, include-all: true, exclude-type: direct, hidden: true}
-  - {name: 🚑 故障转移, type: fallback, interval: 1800, include-all: true, exclude-type: direct, hidden: true}
+  - {name: 🛠️ 手动切换, type: select, include-all: true, proxies: [🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: ♻️ 自动选择, type: url-test, interval: 1800, tolerance: 50, include-all: true}
+  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
+  - {name: ⚖️ 负载均衡, type: load-balance, interval: 1800, include-all: true, hidden: true}
+  - {name: 🚑 故障转移, type: fallback, interval: 1800, include-all: true, hidden: true}
 
   - {name: 🤖 AI 平台, type: select, proxies: [🚀 节点选择, 🤖 AI节点（过滤港澳）, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🤖 AI节点（过滤港澳）, type: url-test, interval: 3600, tolerance: 50, include-all: true, filter: "(?i)^(?!.*(🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)).*", hidden: true}
-  - {name: 📢 谷歌推送, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🤖 AI节点（过滤港澳）, type: url-test, interval: 3600, tolerance: 50, include-all: true, exclude-filter: "(?i)(🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)", hidden: true}
   - {name: 🎬 奈飞视频, type: select, proxies: [🚀 节点选择, 🎬 奈飞节点, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🎬 奈飞节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(NF|奈飞|解锁|Netflix|NETFLIX|Media)", hidden: true}
   - {name: ▶️ 油管视频, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 📢 谷歌推送, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🌍 国外媒体, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🌍 国际媒体, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🌐 国际流量, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🎮 国外游戏, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🎮 外服游戏, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
 
-  - {name: 🕹 国内游戏, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
+  - {name: 🕹 国服游戏, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
   - {name: 🦾 Steam平台, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🪟 微软服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🍎 苹果服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
@@ -34,7 +34,7 @@ proxy-groups:
   - {name: 🧲 BT下载, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 📈 网络测速, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: ↔️ 直连软件, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
-  - {name: 🀄️ 国内直连, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
+  - {name: 🀄️ 国内流量, type: select, proxies: [🎯 本地直连, 🚀 节点选择, ♻️ 自动选择, 🛠️ 手动切换, {providers_tags}]}
 
   - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
 
@@ -53,7 +53,7 @@ proxy-groups:
   - {name: 🇸🇬 狮城节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"}
 
   - {name: 👑 高级节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
-  - {name: 📉 省流节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(0\\.[1-6]|低倍率|省流|大流量|公益|免费|闲时|Low)"}
+  - {name: 📉 省流节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(0\\.[1-6]|低倍率|省流|大流量|公益|免费|闲时|Low)"}
 
 #规则提供者（更新mrs格式）
 rule-providers:
@@ -62,138 +62,161 @@ rule-providers:
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ai.mrs"
   youtube:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/youtube.mrs"
   netflix:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/netflix.mrs"
   telegramip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/telegramip.mrs"
   trackerslist:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/trackerslist.mrs"
   applications:
     type: http
     format: text
     interval: 86400
     behavior: classical
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/applications.list"
   private:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/private.mrs"
   privateip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/privateip.mrs"
   networktest:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/networktest.mrs"
   apple-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/apple-cn.mrs"
   google-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/google-cn.mrs"
   googlefcm:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/googlefcm.mrs"
   steamcn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/steam@cn.mrs"
   microsoft-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/microsoft-cn.mrs"
   games-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games-cn.mrs"
   games:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games.mrs"
   gamesip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/gamesip.mrs"
   mediaip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/mediaip.mrs"
   media:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/media.mrs"
   cnip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
   proxy:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/proxy.mrs"
   cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn.mrs"
   ads:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
+    proxy: DIRECT
     url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ads.mrs"
 
 #规则顺序
@@ -210,19 +233,19 @@ rules:
   - RULE-SET,microsoft-cn,🪟 微软服务
   - RULE-SET,google-cn,🇬 谷歌服务
   - RULE-SET,steamcn,🦾 Steam平台
-  - RULE-SET,games-cn,🕹 国内游戏
+  - RULE-SET,games-cn,🕹 国服游戏
 
   - RULE-SET,googlefcm,📢 谷歌推送
   - RULE-SET,netflix,🎬 奈飞视频
   - RULE-SET,youtube,▶️ 油管视频
   - RULE-SET,ai,🤖 AI 平台
-  - RULE-SET,media,🌍 国外媒体
-  - RULE-SET,games,🎮 国外游戏
+  - RULE-SET,media,🌍 国际媒体
+  - RULE-SET,games,🎮 外服游戏
 
   - RULE-SET,proxy,🌐 国际流量
-  - RULE-SET,cn,🀄️ 国内直连
-  - RULE-SET,gamesip,🎮 国外游戏
-  - RULE-SET,mediaip,🌍 国外媒体
-  - RULE-SET,cnip,🀄️ 国内直连
+  - RULE-SET,cn,🀄️ 国内流量
+  - RULE-SET,gamesip,🎮 外服游戏
+  - RULE-SET,mediaip,🌍 国际媒体
+  - RULE-SET,cnip,🀄️ 国内流量
 
   - MATCH,🐟 漏网之鱼
