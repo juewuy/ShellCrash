@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_9_UPGRADE_LOADED" ] && return
+__IS_MODULE_9_UPGRADE_LOADED=1
+
 . "$CRASHDIR"/libs/check_dir_avail.sh
 . "$CRASHDIR"/libs/check_cpucore.sh
 . "$CRASHDIR"/libs/web_get_bin.sh
