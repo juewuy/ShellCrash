@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_1_START_LOADED" ] && return
+__IS_MODULE_1_START_LOADED=1
+
 #启动相关
 startover() {
     echo -ne "                                   \r"
@@ -24,7 +27,7 @@ start_core() {
         echo -e "\033[33m没有找到${crashcore}配置文件，尝试生成providers配置文件！\033[0m"
         [ "$crashcore" = singboxr ] && coretype=singbox
         [ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
-        . "$CRASHDIR"/webget.sh && gen_${coretype}_providers
+        . "$CRASHDIR"/menus/6_core_config.sh && gen_${coretype}_providers
     elif [ -s $core_config -o -n "$Url" -o -n "$Https" ]; then
         "$CRASHDIR"/start.sh start
         #设置循环检测以判定服务启动是否成功
@@ -36,7 +39,7 @@ start_core() {
 		}
     else
         echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"
-        . "$CRASHDIR"/webget.sh && set_core_config
+        . "$CRASHDIR"/menus/6_core_config.sh && set_core_config
     fi
 }
 start_service() {

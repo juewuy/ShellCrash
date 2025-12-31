@@ -132,6 +132,7 @@ if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ]; then
 		path="/data/shellcrash_init.sh"
 		setconfig CRASHDIR "$CRASHDIR" "$CRASHDIR"/starts/snapshot_init.sh
 		mv -f "$CRASHDIR"/starts/snapshot_init.sh "$path"
+		[ ! -f /data/auto_start.sh ] && echo '#用于自定义需要开机启动的功能或者命令，会在开机后自动运行' > /data/auto_start.sh
 	else
 		path="$CRASHDIR"/starts/snapshot_init.sh
 	fi

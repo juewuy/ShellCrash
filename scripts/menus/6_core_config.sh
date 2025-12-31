@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_6_CORECONFIG_LOADED" ] && return
+__IS_MODULE_6_CORECONFIG_LOADED=1
+
 YAMLSDIR="$CRASHDIR"/yamls
 JSONSDIR="$CRASHDIR"/jsons
 

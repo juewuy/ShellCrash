@@ -35,11 +35,11 @@ uninstall() {
         sed -i '/export CRASHDIR=*/'d /etc/profile 2>/dev/null
         sed -i '/export crashdir=*/'d /etc/profile 2>/dev/null
         [ -w ~/.zshrc ] && {
-            sed -i "/alias $my_alias=*/"d ~/.zshrc
-            sed -i '/export CRASHDIR=*/'d ~/.zshrc
+            sed -i "/alias $my_alias=*/"d ~/.zshrc 2>/dev/null
+            sed -i '/export CRASHDIR=*/'d ~/.zshrc 2>/dev/null
         }
-        sed -i '/all_proxy/'d $profile
-        sed -i '/ALL_PROXY/'d $profile
+        sed -i '/all_proxy/'d /etc/profile 2>/dev/null
+        sed -i '/ALL_PROXY/'d /etc/profile 2>/dev/null
         sed -i "/启用外网访问SSH服务/d" /etc/firewall.user 2>/dev/null
         sed -i '/ShellCrash初始化/'d /etc/storage/started_script.sh 2>/dev/null
         sed -i '/ShellCrash初始化/'d /jffs/.asusrouter 2>/dev/null
@@ -50,7 +50,7 @@ uninstall() {
         rm -rf /www/clash
         rm -rf /tmp/ShellCrash
         rm -rf /usr/bin/crash
-        sed -i '/0:7890/d' /etc/passwd
+        sed -i '/0:7890/d' /etc/passwd 2>/dev/null
         userdel -r shellcrash 2>/dev/null
         nvram set script_usbmount="" 2>/dev/null
         nvram commit 2>/dev/null

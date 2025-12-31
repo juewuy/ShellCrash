@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_8_TOOLS_LOADED" ] && return
+__IS_MODULE_8_TOOLS_LOADED=1
+
 . "$CRASHDIR"/libs/logger.sh
 . "$CRASHDIR"/libs/web_get_bin.sh
 
@@ -168,7 +171,7 @@ tools() {
                 get_bin "$TMPDIR"/tun.ko bin/fix/tun.ko
                 if [ "$?" = "0" ]; then
                     mv -f "$TMPDIR"/tun.ko "$CRASHDIR"/tools/tun.ko &&
-                        "$CRASHDIR"/misnap_init.sh tunfix &&
+                        /data/shellcrash_init.sh tunfix &&
                         echo -e "\033[32m设置成功！请重启服务！\033[0m"
                 else
                     echo -e "\033[31m文件下载失败，请重试！\033[0m"
@@ -629,7 +632,7 @@ debug(){
 	2)
 		"$CRASHDIR"/start.sh stop
 		"$CRASHDIR"/start.sh bfstart
-		"$COMMAND"
+		$COMMAND
 		rm -rf "$TMPDIR"/CrashCore
 		echo "-----------------------------------------------"
 		exit
@@ -757,15 +760,6 @@ userguide(){
 			BINDIR=/tmp/ShellCrash
 			setconfig BINDIR /tmp/ShellCrash "$CRASHDIR"/configs/command.env
 		}
-	fi
-	#设置加密DNS
-	if [ -s $openssldir/certs/ca-certificates.crt ];then
-		dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
-		dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
-		dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
-		setconfig dns_nameserver "'$dns_nameserver'"
-		setconfig dns_fallback "'$dns_fallback'"
-		setconfig dns_resolver "'$dns_resolver'"
 	fi
 	#启用推荐的自动任务配置
 	. "$CRASHDIR"/menus/5_task.sh && task_recom

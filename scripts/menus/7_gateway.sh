@@ -1,5 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
+
+[ -n "$__IS_MODULE_7_GATEWAY_LOADED" ] && return
+__IS_MODULE_7_GATEWAY_LOADED=1
+
 . "$GT_CFG_PATH"
 . "$CRASHDIR"/menus/check_port.sh
 . "$CRASHDIR"/libs/gen_base64.sh
@@ -242,7 +246,7 @@ set_vmess(){
 			setconfig vms_service "$vms_service"
 		else
 			if [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
-				vms_service=OFF
+				vms_service=ON
 				setconfig vms_service "$vms_service"
 			else
 				echo -e "\033[31m请先完成必选设置！\033[0m"
@@ -352,7 +356,7 @@ set_shadowsocks(){
 			setconfig sss_service "$sss_service"
 		else
 			if [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ];then
-				sss_service=OFF
+				sss_service=ON
 				setconfig sss_service "$sss_service"
 			else
 				echo -e "\033[31m请先完成必选设置！\033[0m"

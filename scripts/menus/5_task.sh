@@ -1,6 +1,9 @@
 #!/bin/ash
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_5_TASK_LOADED" ] && return
+__IS_MODULE_5_TASK_LOADED=1
+
 #通用工具
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/set_cron.sh

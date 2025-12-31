@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+[ -n "$__IS_MODULE_2_SETTINGS_LOADED" ] && return
+__IS_MODULE_2_SETTINGS_LOADED=1
+
 settings() { #功能设置
     #获取设置默认显示
     [ -z "$skip_cert" ] && skip_cert=已开启
@@ -65,8 +68,8 @@ settings() { #功能设置
         if [ "$sniffer" = "未启用" ]; then
             if [ "$crashcore" = "clash" ]; then
                 rm -rf ${TMPDIR}/CrashCore
-                rm -rf ${CRASHDIR}/CrashCore
-                rm -rf ${CRASHDIR}/CrashCore.tar.gz
+                rm -rf "$CRASHDIR"/CrashCore
+                rm -rf "$CRASHDIR"/CrashCore.tar.gz
                 crashcore=meta
                 setconfig crashcore $crashcore
                 echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
@@ -86,7 +89,7 @@ settings() { #功能设置
             echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
             read -p "是否停止服务？(1/0) > " res
             if [ "$res" = "1" ]; then
-                ${CRASHDIR}/start.sh stop
+                "$CRASHDIR"/start.sh stop
                 set_adv_config
             fi
         else
@@ -124,7 +127,7 @@ settings() { #功能设置
             fi
         elif [ "$num" = 3 ]; then
             mv -f "$CFG_PATH" "$CFG_PATH".bak
-            . ${CRASHDIR}/init.sh >/dev/null
+            . "$CRASHDIR"/init.sh >/dev/null
             echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
         fi
         echo -e "\033[33m请重新启动脚本！\033[0m"
@@ -143,7 +146,7 @@ set_redir_mod() { #路由模式设置
         echo "-----------------------------------------------"
         echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
     }
-    [ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 && sup_tun=1
+    [ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 || modprobe tun 2>/dev/null && sup_tun=1
     [ -z "$firewall_area" ] && firewall_area=1
     [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
     [ -z "$redir_mod" ] && redir_mod='纯净模式'
@@ -192,7 +195,7 @@ set_redir_mod() { #路由模式设置
             if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ]; then
                 read -p "xiaomi设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
                 [ "$res" = '1' ] && {
-                    ${CRASHDIR}/misnap_init.sh tproxyfix
+                    /data/shellcrash_init.sh tproxyfix
                     redir_mod=Tproxy模式
                     set_redir_config
                 }
@@ -283,7 +286,8 @@ set_fw_filter(){ #流量过滤
 	[ -z "$common_ports" ] && common_ports=已开启
 	[ -z "$quic_rj" ] && quic_rj=未开启
     [ -z "$cn_ip_route" ] && cn_ip_route=未开启	
-	[ -z "$(cat ${CRASHDIR}/configs/mac ${CRASHDIR}/configs/ip_filter 2>/dev/null)" ] && mac_return=未开启 || mac_return=已启用
+	touch "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter
+	[ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ] && mac_return=未开启 || mac_return=已启用
 	echo "-----------------------------------------------"
     echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
     echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
@@ -319,17 +323,17 @@ set_fw_filter(){ #流量过滤
         echo "-----------------------------------------------"
         if [ -n "$(pidof CrashCore)" ]; then
             read -p "切换时将停止服务，是否继续？(1/0) > " res
-            [ "$res" = 1 ] && ${CRASHDIR}/start.sh stop && set_common_ports
+            [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_common_ports
         else
             set_common_ports
         fi
         set_fw_filter
 	;;
     2)
-        checkcfg_mac=$(cat ${CRASHDIR}/configs/mac)
+        checkcfg_mac=$(cat "$CRASHDIR"/configs/mac)
         fw_filter_lan
         if [ -n "$PID" ]; then
-            checkcfg_mac_new=$(cat ${CRASHDIR}/configs/mac)
+            checkcfg_mac_new=$(cat "$CRASHDIR"/configs/mac)
             [ "$checkcfg_mac" != "$checkcfg_mac_new" ] && checkrestart
         fi
         set_fw_filter
@@ -444,7 +448,7 @@ fw_filter_lan() { #局域网设备过滤
     add_mac() {
         echo "-----------------------------------------------"
         echo 已添加的mac地址：
-        cat ${CRASHDIR}/configs/mac 2>/dev/null
+        cat "$CRASHDIR"/configs/mac 2>/dev/null
         echo "-----------------------------------------------"
         echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
         cat $dhcpdir | awk '{print " "NR" "$3,$2,$4}'
@@ -456,8 +460,8 @@ fw_filter_lan() { #局域网设备过滤
         if [ -z "$num" -o "$num" = 0 ]; then
             i=
         elif [ -n "$(echo $num | grep -aE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')" ]; then
-            if [ -z "$(cat ${CRASHDIR}/configs/mac | grep -E "$num")" ]; then
-                echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >>${CRASHDIR}/configs/mac
+            if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$num")" ]; then
+                echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >>"$CRASHDIR"/configs/mac
             else
                 echo "-----------------------------------------------"
                 echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
@@ -465,8 +469,8 @@ fw_filter_lan() { #局域网设备过滤
             add_mac
         elif [ $num -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
             macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
-            if [ -z "$(cat ${CRASHDIR}/configs/mac | grep -E "$macadd")" ]; then
-                echo $macadd >>${CRASHDIR}/configs/mac
+            if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$macadd")" ]; then
+                echo $macadd >>"$CRASHDIR"/configs/mac
             else
                 echo "-----------------------------------------------"
                 echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
@@ -481,7 +485,7 @@ fw_filter_lan() { #局域网设备过滤
     add_ip() {
         echo "-----------------------------------------------"
         echo "已添加的IP地址(段)："
-        cat ${CRASHDIR}/configs/ip_filter 2>/dev/null
+        cat "$CRASHDIR"/configs/ip_filter 2>/dev/null
         echo "-----------------------------------------------"
         echo -e "\033[33m序号   设备IP     设备名称\033[32m"
         cat $dhcpdir | awk '{print " "NR" "$3,$4}'
@@ -494,8 +498,8 @@ fw_filter_lan() { #局域网设备过滤
         if [ -z "$num" -o "$num" = 0 ]; then
             i=
         elif [ -n "$(echo $num | grep -aE '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$')" ]; then
-            if [ -z "$(cat ${CRASHDIR}/configs/ip_filter | grep -E "$num")" ]; then
-                echo $num | grep -oE '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$' >>${CRASHDIR}/configs/ip_filter
+            if [ -z "$(cat "$CRASHDIR"/configs/ip_filter | grep -E "$num")" ]; then
+                echo $num | grep -oE '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$' >>"$CRASHDIR"/configs/ip_filter
             else
                 echo "-----------------------------------------------"
                 echo -e "\033[31m已添加的地址，请勿重复添加！\033[0m"
@@ -503,8 +507,8 @@ fw_filter_lan() { #局域网设备过滤
             add_ip
         elif [ $num -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
             ipadd=$(cat $dhcpdir | awk '{print $3}' | sed -n "$num"p)
-            if [ -z "$(cat ${CRASHDIR}/configs/mac | grep -E "$ipadd")" ]; then
-                echo $ipadd >>${CRASHDIR}/configs/ip_filter
+            if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$ipadd")" ]; then
+                echo $ipadd >>"$CRASHDIR"/configs/ip_filter
             else
                 echo "-----------------------------------------------"
                 echo -e "\033[31m已添加的地址，请勿重复添加！\033[0m"
@@ -518,14 +522,14 @@ fw_filter_lan() { #局域网设备过滤
     }
     del_all() {
         echo "-----------------------------------------------"
-        if [ -z "$(cat ${CRASHDIR}/configs/mac ${CRASHDIR}/configs/ip_filter 2>/dev/null)" ]; then
+        if [ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ]; then
             echo -e "\033[31m列表中没有需要移除的设备！\033[0m"
             sleep 1
         else
             echo -e "请选择需要移除的设备：\033[36m"
             echo -e "\033[33m      设备IP       设备mac地址       设备名称\033[0m"
             i=1
-            for dev in $(cat ${CRASHDIR}/configs/mac ${CRASHDIR}/configs/ip_filter 2>/dev/null); do
+            for dev in $(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null); do
                 get_devinfo
                 echo -e " $i \033[32m$dev_ip \033[36m$dev_mac \033[32m$dev_name\033[0m"
                 i=$((i + 1))
@@ -533,18 +537,18 @@ fw_filter_lan() { #局域网设备过滤
             echo "-----------------------------------------------"
             echo -e "\033[0m 0 或回车 结束删除"
             read -p "请输入需要移除的设备的对应序号 > " num
-            mac_filter_rows=$(cat ${CRASHDIR}/configs/mac 2>/dev/null | wc -l)
-            ip_filter_rows=$(cat ${CRASHDIR}/configs/ip_filter 2>/dev/null | wc -l)
+            mac_filter_rows=$(cat "$CRASHDIR"/configs/mac 2>/dev/null | wc -l)
+            ip_filter_rows=$(cat "$CRASHDIR"/configs/ip_filter 2>/dev/null | wc -l)
             if [ -z "$num" ] || [ "$num" -le 0 ]; then
                 n=
             elif [ $num -le $mac_filter_rows ]; then
-                sed -i "${num}d" ${CRASHDIR}/configs/mac
+                sed -i "${num}d" "$CRASHDIR"/configs/mac
                 echo "-----------------------------------------------"
                 echo -e "\033[32m对应设备已移除！\033[0m"
                 del_all
             elif [ $num -le $((mac_filter_rows + ip_filter_rows)) ]; then
                 num=$((num - mac_filter_rows))
-                sed -i "${num}d" ${CRASHDIR}/configs/ip_filter
+                sed -i "${num}d" "$CRASHDIR"/configs/ip_filter
                 echo "-----------------------------------------------"
                 echo -e "\033[32m对应设备已移除！\033[0m"
                 del_all
@@ -561,8 +565,8 @@ fw_filter_lan() { #局域网设备过滤
     [ -z "$dhcpdir" ] && [ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
     [ -z "$dhcpdir" ] && [ -f /tmp/dnsmasq.leases ] && dhcpdir='/tmp/dnsmasq.leases'
     [ -z "$dhcpdir" ] && dhcpdir='/dev/null'
-    [ -z "$fw_filter_lan_type" ] && fw_filter_lan_type='黑名单'
-    if [ "$fw_filter_lan_type" = "黑名单" ]; then
+    [ -z "$macfilter_type" ] && macfilter_type='黑名单'
+    if [ "$macfilter_type" = "黑名单" ]; then
         fw_filter_lan_over='白名单'
         fw_filter_lan_scrip='不'
     else
@@ -573,15 +577,15 @@ fw_filter_lan() { #局域网设备过滤
     echo -e "\033[30;47m请在此添加或移除设备\033[0m"
     echo -e "当前过滤方式为：\033[33m$fw_filter_lan_type模式\033[0m"
     echo -e "仅列表内设备流量\033[36m$fw_filter_lan_scrip经过\033[0m内核"
-    if [ -n "$(cat ${CRASHDIR}/configs/mac)" ]; then
+    if [ -n "$(cat "$CRASHDIR"/configs/mac)" ]; then
         echo "-----------------------------------------------"
         echo -e "当前已过滤设备为：\033[36m"
         echo -e "\033[33m 设备mac/ip地址       设备名称\033[0m"
-        for dev in $(cat ${CRASHDIR}/configs/mac 2>/dev/null); do
+        for dev in $(cat "$CRASHDIR"/configs/mac 2>/dev/null); do
             get_devinfo
             echo -e "\033[36m$dev_mac \033[0m$dev_name"
         done
-        for dev in $(cat ${CRASHDIR}/configs/ip_filter 2>/dev/null); do
+        for dev in $(cat "$CRASHDIR"/configs/ip_filter 2>/dev/null); do
             get_devinfo
             echo -e "\033[32m$dev_ip  \033[0m$dev_name"
         done
@@ -597,8 +601,8 @@ fw_filter_lan() { #局域网设备过滤
     case "$num" in
     0) ;;
     1)
-        fw_filter_lan_type=$fw_filter_lan_over
-        setconfig fw_filter_lan_type $fw_filter_lan_type
+        macfilter_type=$fw_filter_lan_over
+        setconfig macfilter_type $macfilter_type
         echo "-----------------------------------------------"
         echo -e "\033[32m已切换为$fw_filter_lan_type模式！\033[0m"
         fw_filter_lan
@@ -616,8 +620,8 @@ fw_filter_lan() { #局域网设备过滤
         fw_filter_lan
 	;;
     9)
-        : >${CRASHDIR}/configs/mac
-        : >${CRASHDIR}/configs/ip_filter
+        : >"$CRASHDIR"/configs/mac
+        : >"$CRASHDIR"/configs/ip_filter
         echo "-----------------------------------------------"
         echo -e "\033[31m设备列表已清空！\033[0m"
         fw_filter_lan

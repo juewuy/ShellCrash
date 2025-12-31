@@ -1,10 +1,6 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-#默认dns
-[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5'
-[ -z "$dns_fallback" ] && dns_fallback="1.1.1.1"
-[ -z "$dns_resolver" ] && dns_resolver="223.5.5.5"
  #修饰singbox配置文件
 parse_singbox_dns() { #dns转换
     first_dns=$(echo "$1" | cut -d',' -f1 | cut -d' ' -f1)

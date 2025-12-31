@@ -1,10 +1,6 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-#默认dns
-[ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5, 1.2.4.8'
-[ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
-[ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
 #修饰clash配置文件
 modify_yaml() {
     ##########需要变更的配置###########
@@ -80,6 +76,7 @@ $exper
 $sniffer_set
 $find_process
 routing-mark: $routing_mark
+unified-delay: true
 EOF
     #读取本机hosts并生成配置文件
     if [ "$hosts_opt" != "OFF" ] && [ -z "$(grep -aE '^hosts:' "$CRASHDIR"/yamls/user.yaml 2>/dev/null)" ]; then
@@ -198,7 +195,7 @@ EOF
         yaml_user="$CRASHDIR"/yamls/user.yaml
         #set和user去重,且优先使用user.yaml
         cp -f "$TMPDIR"/set.yaml "$TMPDIR"/set_bak.yaml
-        for char in mode allow-lan log-level tun experimental external-ui-url interface-name dns store-selected; do
+        for char in mode allow-lan log-level tun experimental external-ui-url interface-name dns store-selected unified-delay; do
             [ -n "$(grep -E "^$char" $yaml_user)" ] && sed -i "/^$char/d" "$TMPDIR"/set.yaml
         done
     }

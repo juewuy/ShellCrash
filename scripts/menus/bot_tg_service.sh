@@ -10,6 +10,7 @@ bot_tg_start(){
 bot_tg_stop(){
 	cronset 'TG_BOT守护进程'
 	[ -f "$TMPDIR/bot_tg.pid" ] && kill -TERM "$(cat "$TMPDIR/bot_tg.pid")"
+	killall bot_tg.sh 2>/dev/null
 	rm -f "$TMPDIR/bot_tg.pid"
 }
 bot_tg_cron(){

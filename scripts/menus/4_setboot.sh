@@ -1,5 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
+
+[ -n "$__IS_MODULE_4_SETBOOT_LOADED" ] && return
+__IS_MODULE_4_SETBOOT_LOADED=1
+
 allow_autostart(){
 	[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
 	ckcmd systemctl && systemctl enable shellcrash.service >/dev/null 2>&1

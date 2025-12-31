@@ -129,6 +129,8 @@ fi
 		echo "shellcrash:x:0:7890:::" >>/etc/passwd
 	fi
 }
+#加载系统内核组件
+[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && ckcmd modprobe && modprobe tun 2>/dev/null
 #清理debug日志
 rm -rf /tmp/ShellCrash/debug.log
 rm -rf "$CRASHDIR"/debug.log

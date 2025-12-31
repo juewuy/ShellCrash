@@ -8,18 +8,16 @@ set_dns_mod() { #DNS模式设置
     echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
     echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
     echo "-----------------------------------------------"
-	echo -e " 1 MIX模式：  \033[32m防污染防泄露，响应快，推荐！\033[0m"
-	echo -e "              cn域名realip其他fakeip分流"
-	echo -e " 2 Route模式：\033[32m防污染防泄露，全真实IP\033[0m"
-	echo -e "              cn域名realip其他dns2proxy分流"
-    echo -e " 3 Redir模式：\033[33m不安全，易被污染\033[0m"
-    echo -e "              建议搭配第三方DNS服务使用"
+	echo -e " 1 MIX模式：  \033[32mCN域名realip其他fake-ip分流\033[0m"
+	echo -e " 2 Route模式：\033[32mCN域名realip其他dns2proxy分流\033[0m"
+    echo -e " 3 Redir模式：\033[33m不安全,需搭配第三方DNS服务使用\033[0m"
 	echo "-----------------------------------------------"
     echo -e " 4 DNS防泄漏：  \033[36m$dns_protect\033[0m	———启用时少量网站可能连接卡顿"
     echo -e " 5 Hosts优化：  \033[36m$hosts_opt\033[0m	———调用本机hosts并劫持NTP服务"
     [ "$dns_mod" = "mix" ] &&
     echo -e " 8 管理MIX模式Fake-ip过滤列表"
     echo -e " 9 \033[36mDNS进阶设置\033[0m"
+	echo "-----------------------------------------------"
     echo " 0 返回上级菜单"
     read -p "请输入对应数字 > " num
     case "$num" in
@@ -113,9 +111,6 @@ fake_ip_filter() {
     esac
 }
 set_dns_adv() { #DNS详细设置
-    [ -z "$dns_nameserver" ] && dns_nameserver='223.5.5.5, 1.2.4.8'
-    [ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
-    [ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
     [ -z "$dns_no" ] && dns_no=未禁用
     echo "-----------------------------------------------"
     echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
@@ -201,12 +196,10 @@ set_dns_adv() { #DNS详细设置
         set_dns_adv
 	;;
     9)
-        dns_nameserver=
-        dns_fallback=
-        dns_resolver=
         setconfig dns_nameserver
         setconfig dns_fallback
         setconfig dns_resolver
+		. "$CRASHDIR"/libs/get_config.sh
         echo -e "\033[33mDNS配置已重置！！！\033[0m"
         sleep 1
         set_dns_adv
