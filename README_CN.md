@@ -55,48 +55,48 @@
 
 ```shell
 sudo -i #切换到root用户，如果需要密码，请输入密码
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && bash /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && bash /tmp/install.sh && . /etc/profile &> /dev/null
 ```
 或者
 ```shell
 sudo -i #切换到root用户，如果需要密码，请输入密码
-export url='https://gh.jwsc.eu.org/master' && bash -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://gh.jwsc.eu.org/master' && bash -c "$(curl -kfsSl $url/install.sh)" && . /etc/profile &> /dev/null
 ```
 
 ~**路由设备使用curl安装**：<br>
 
 ```shell
 #GitHub源(可能需要代理)
-export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' && sh -c "$(curl -kfsSl $url/install.sh)" && . /etc/profile &> /dev/null
 ```
 或者
 ```shell
 #jsDelivrCDN源
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && sh -c "$(curl -kfsSl $url/install.sh)" && . /etc/profile &> /dev/null
 ```
 或者
 ```shell
 #作者私人源
-export url='https://gh.jwsc.eu.org/master' && sh -c "$(curl -kfsSl $url/install.sh)" && source /etc/profile &> /dev/null
+export url='https://gh.jwsc.eu.org/master' && sh -c "$(curl -kfsSl $url/install.sh)" && . /etc/profile &> /dev/null
 ```
 
 ~**路由设备使用wget安装**：<br>
 
 ```Shell
 #GitHub源(可能需要代理)
-export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && . /etc/profile &> /dev/null
 ```
 或者
 ```shell
 #jsDelivrCDN源
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && . /etc/profile &> /dev/null
 ```
 
 ~**老旧设备使用低版本wge安装**：<br>
 
 ```Shell
 #作者私人http内测源
-export url='http://t.jwsc.eu.org' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='http://t.jwsc.eu.org' && wget -q -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && . /etc/profile &> /dev/null
 ```
 
 ##### ~**虚拟机安装：**<br>
@@ -107,7 +107,7 @@ export url='http://t.jwsc.eu.org' && wget -q -O /tmp/install.sh $url/install.sh 
 #安装必要依赖
 apk add --no-cache wget openrc ca-certificates tzdata nftables iproute2 dcron
 #执行安装命令
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && source /etc/profile &> /dev/null
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh  && sh /tmp/install.sh && . /etc/profile &> /dev/null
 ```
 
 ##### ~Docker安装：<br>
