@@ -196,7 +196,7 @@ jobs:
           done
          
       - name: Zip core by tar
-        if: !endsWith(env.PUSHDIR, '_upx')
+        if: ${{ !endsWith(env.PUSHDIR, '_upx') }}
         run: |      
           for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
             [ ! -f ./tmp/linux-${arch}/meta ] && continue
@@ -242,3 +242,4 @@ jobs:
         with:
           retain_days: 1
           keep_minimum_runs: 2      
+
