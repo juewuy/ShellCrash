@@ -212,8 +212,7 @@ jobs:
           crashcore="${PUSHDIR}"
           mkdir -p ./bin/${crashcore}
           rm -fr ./bin/${crashcore}/*
-          mv -f ./tmp/clash-linux-*.gz ./bin/${crashcore}/
-          mv -f ./tmp/clash-linux-*.upx ./bin/${crashcore}/
+          mv -f ./tmp/clash-linux-* ./bin/${crashcore}/
           rm -fr ./tmp
           sed -i "s/${crashcore}_v=.*/${crashcore}_v=${VERSION}/" ./bin/version
           git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
@@ -243,5 +242,6 @@ jobs:
         with:
           retain_days: 1
           keep_minimum_runs: 2      
+
 
 
