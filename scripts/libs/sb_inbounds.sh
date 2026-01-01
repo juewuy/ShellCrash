@@ -29,6 +29,8 @@ EOF
 	{
 	  "type": "shadowsocks",
 	  "tag": "ss-in",
+      "listen": "::",
+      "listen_port": $sss_port,
 	  "method": "$sss_cipher",
 	  "password": "$sss_pwd",
 	}

@@ -108,7 +108,7 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 if [ -n "$profile" ]; then
     set_profile "$profile"
     #适配zsh环境变量
-    zsh --version >/dev/null 2>&1 && [ -z "$(cat $HOME/.zshrc 2>/dev/null | grep CRASHDIR)" ] && set_profile '$HOME/.zshrc'
+    zsh --version >/dev/null 2>&1 && [ -z "$(cat $HOME/.zshrc 2>/dev/null | grep CRASHDIR)" ] && set_profile "$HOME/.zshrc"
     setconfig my_alias "$my_alias"
 else
     echo -e "\033[33m无法写入环境变量！请检查安装权限！\033[0m"
