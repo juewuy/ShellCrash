@@ -175,7 +175,28 @@ jobs:
         with:
           path: ./tmp
           
+      - name: Zip core by upx
+        if: endsWith(env.PUSHDIR, '_upx')
+        run: |    
+          wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+          wget https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
+          tar xf upx-3.96-amd64_linux.tar.xz
+          tar xf upx-3.94-amd64_linux.tar.xz
+          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
+            [ ! -f ./tmp/linux-${arch}/meta ] && continue
+            mv -f ./tmp/linux-${arch}/meta ./tmp/clash-linux-${arch}.upx
+            case "${arch}" in
+              armv5|mips* )
+                ./upx-3.94-amd64_linux/upx -9 --no-lzma ./tmp/clash-linux-${arch}.upx
+              ;;
+              *)
+                ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/clash-linux-${arch}.upx
+              ;;
+            esac
+          done
+         
       - name: Zip core by tar
+        if: !endsWith(env.PUSHDIR, '_upx')
         run: |      
           for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
             [ ! -f ./tmp/linux-${arch}/meta ] && continue
