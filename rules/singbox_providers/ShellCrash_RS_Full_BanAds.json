@@ -49,7 +49,7 @@
   ],
   "route": {
     "rules": [
-      { "rule_set": ["private"], "outbound": "🔒 私有网络" },
+      { "rule_set": ["private"], "outbound": "🎯 本地直连" },
       { "rule_set": ["ads"], "outbound": "🛑 广告拦截" },
 
       { "rule_set": ["networktest"], "outbound": "📈 网络测速" },
@@ -71,7 +71,7 @@
       { "rule_set": ["proxy"], "outbound": "🌐 国际流量" },
       { "rule_set": ["cn"], "outbound": "🀄️ 国内流量" },
 
-      { "rule_set": ["privateip"], "outbound": "🔒 私有网络" },
+      { "rule_set": ["privateip"], "outbound": "🎯 本地直连" },
       { "rule_set": ["telegramip"], "outbound": "📲 电报消息" },
 
       { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4" },
