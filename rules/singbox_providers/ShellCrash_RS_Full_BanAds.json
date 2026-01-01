@@ -1,4 +1,4 @@
-//ShellCrash-ruleset 全分组规则+去广告 For Sing-box By Maozai 251231
+//ShellCrash-ruleset 全分组规则+去广告 For Sing-box By Maozai 260101
 {
   "outbounds": [
     { "tag": "🚀 节点选择", "type": "selector", "outbounds": ["♻️ 自动选择", "✨ 自动选择（去高倍率）", "🛠️ 手动切换", "🎯 本地直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
@@ -85,7 +85,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/private.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/private.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -93,7 +93,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/ads.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ads.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/ads.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -101,7 +101,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/networktest.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/networktest.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -109,7 +109,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/applications.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/applications.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/applications.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -117,7 +117,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/trackerslist.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/trackerslist.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/trackerslist.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -125,7 +125,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/apple-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/apple-cn.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -133,7 +133,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/microsoft-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/microsoft-cn.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -141,7 +141,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/google-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/google-cn.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -149,7 +149,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/steamcn.srs",
-        "url": "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/sing/geo/geosite/steam%40cn.srs",
+        "url": "https://raw.kkgithub.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/steam%40cn.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -157,7 +157,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/games-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/games-cn.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -165,7 +165,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/googlefcm.srs",
-        "url": "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/sing/geo/geosite/googlefcm.srs",
+        "url": "https://raw.kkgithub.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/googlefcm.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -173,7 +173,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/netflix.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflix.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/netflix.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -181,7 +181,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/youtube.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/youtube.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/youtube.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -189,7 +189,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/ai.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/ai.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -197,7 +197,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/media.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/media.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/media.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -205,7 +205,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/games.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/games.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -213,7 +213,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/proxy.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/proxy.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -221,7 +221,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/cn.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -229,7 +229,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/privateip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/privateip.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/privateip.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -237,7 +237,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/telegramip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/telegramip.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -245,7 +245,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/gamesip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/gamesip.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/gamesip.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -253,7 +253,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/mediaip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/mediaip.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/mediaip.srs",
         "download_detour": "DIRECT"
       },
       {
@@ -261,7 +261,7 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/cnip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs",
+        "url": "https://raw.kkgithub.com/DustinWin/ruleset_geodata/sing-box-ruleset/cnip.srs",
         "download_detour": "DIRECT"
       }
     ],
