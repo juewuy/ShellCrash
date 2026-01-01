@@ -69,7 +69,7 @@ auto_start(){
 		/etc/init.d/shellcrash enable
 	fi
 	#启动自定义服务
-	[ -s /data/auto_start.sh ] && /data/auto_start.sh &
+	[ -s /data/auto_start.sh ] && /bin/sh /data/auto_start.sh &
 	#兼容auto_ssh脚本
 	[ -s /data/auto_ssh/auto_ssh.sh ] && /bin/sh /data/auto_ssh/auto_ssh.sh &
 }
