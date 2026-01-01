@@ -215,6 +215,7 @@ jobs:
               ;;
             esac
           done
+          rm -rf upx-3.9*
          
       - name: Zip core by tar
         if: ${{ !endsWith(env.PUSHDIR, '_upx') }}
