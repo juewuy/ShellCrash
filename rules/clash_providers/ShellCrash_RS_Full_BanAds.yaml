@@ -1,4 +1,4 @@
-#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 251231
+#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 260101
 
 #此版本为Maozai根据ACL4SSR规则修改优化而来，尽量在保持原有的基础上进行优化。
 #数据源采用了DustinWin/ruleset_geodata和MetaCubeX/meta-rules-dat两个开源项目的规则，感谢原作者的辛勤付出。
@@ -63,161 +63,161 @@ rule-providers:
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ai.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/ai.mrs"
   youtube:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/youtube.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/youtube.mrs"
   netflix:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/netflix.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/netflix.mrs"
   telegramip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/telegramip.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/telegramip.mrs"
   trackerslist:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/trackerslist.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/trackerslist.mrs"
   applications:
     type: http
     format: text
     interval: 86400
     behavior: classical
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/applications.list"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/applications.list"
   private:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/private.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/private.mrs"
   privateip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/privateip.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/privateip.mrs"
   networktest:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/networktest.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/networktest.mrs"
   apple-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/apple-cn.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/apple-cn.mrs"
   google-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/google-cn.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/google-cn.mrs"
   googlefcm:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/googlefcm.mrs"
+    url: "https://raw.kkgithub.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/googlefcm.mrs"
   steamcn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/steam@cn.mrs"
+    url: "https://raw.kkgithub.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs"
   microsoft-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/microsoft-cn.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/microsoft-cn.mrs"
   games-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games-cn.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/games-cn.mrs"
   games:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/games.mrs"
   gamesip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/gamesip.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/gamesip.mrs"
   mediaip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/mediaip.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/mediaip.mrs"
   media:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/media.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/media.mrs"
   cnip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/cnip.mrs"
   proxy:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/proxy.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/proxy.mrs"
   cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/cn.mrs"
   ads:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ads.mrs"
+    url: "https://raw.kkgithub.com/DustinWin/ruleset_geodata/mihomo-ruleset/ads.mrs"
 
 #规则顺序
 rules:
