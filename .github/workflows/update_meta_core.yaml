@@ -23,6 +23,31 @@ on:
         description: 'build tags'
         required: false
         type: string
+      tag6:
+        description: 'ziptype(tar.gz|upx|gz)'
+        required: true
+        type: string
+        
+  workflow_call:
+    inputs:
+      tag1:
+        required: true
+        type: string
+      tag2:
+        required: true
+        type: string
+      tag3:
+        required: false
+        type: string
+      tag4:
+        required: false
+        type: string
+      tag5:
+        required: false
+        type: string
+      tag6:
+        required: true
+        type: string
         
 jobs:
   go:
@@ -144,8 +169,9 @@ jobs:
       - meta
     runs-on: ubuntu-latest
     env: 
-      RELEASE: ${{ github.event.inputs.tag3 }}
-      PUSHDIR: ${{ github.event.inputs.tag4 }}
+      RELEASE: ${{ inputs.tag3 }}
+      PUSHDIR: ${{ inputs.tag4 }}
+      ZIPTYPE: ${{ inputs.tag6 }}    
       VERSION: ${{needs.meta.outputs.version}}
     steps:
       - name: Checkout ShellCrash
@@ -160,7 +186,7 @@ jobs:
           path: ./tmp
           
       - name: Zip core by upx
-        if: endsWith(env.PUSHDIR, '_upx')
+        if: env.ZIPTYPE == 'upx'
         run: |    
           wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
           wget https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
@@ -182,7 +208,7 @@ jobs:
           rm -rf upx-3.9*
          
       - name: Zip core by tar
-        if: ${{ !endsWith(env.PUSHDIR, '_upx') }}
+        if: env.ZIPTYPE == 'tar.gz'
         run: |      
           for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
             [ ! -f ./tmp/linux-${arch}/meta ] && continue
@@ -191,12 +217,21 @@ jobs:
             tar --no-same-owner -zcvf ./tmp/clash-linux-${arch}.tar.gz -C ./tmp CrashCore
           done
           
+      - name: Zip core by gz
+        if: env.ZIPTYPE == 'gz'
+        run: |        
+          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
+            [ ! -f ./tmp/linux-${arch}/meta ] && continue
+            mv -f ./tmp/linux-${arch}/meta ./tmp/clash-linux-${arch}
+            chmod +x ./tmp/clash-linux-${arch}
+            gzip ./tmp/clash-linux-${arch}
+          done
+                    
       - name: Commit and push
         if: ${{ env.PUSHDIR != '' }}
         run: |
-          crashcore="${PUSHDIR}"
+          [ "${{ inputs.tag1 }}" = MetaCubeX/mihomo ] && crashcore='meta'
           mkdir -p ./bin/${crashcore}
-          rm -fr ./bin/${crashcore}/*
           mv -f ./tmp/clash-linux-* ./bin/${crashcore}/
           rm -fr ./tmp
           sed -i "s/${crashcore}_v=.*/${crashcore}_v=${VERSION}/" ./bin/version
