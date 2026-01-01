@@ -2,7 +2,7 @@
 # Copyright (C) Juewuy
 
 #初始化目录
-CRASHDIR=$(
+[ -z "$CRASHDIR" ] && CRASHDIR=$(
     cd $(dirname $0)
     pwd
 )

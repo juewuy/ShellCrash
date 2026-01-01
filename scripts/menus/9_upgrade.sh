@@ -121,6 +121,7 @@ checkupdate(){
 	fi
 	rm -rf "$TMPDIR"/version_new
 }
+
 #更新脚本
 getscripts(){ 
 	get_bin "$TMPDIR"/ShellCrash.tar.gz ShellCrash.tar.gz
@@ -162,6 +163,7 @@ setscripts(){
 		exit;
 	fi
 }
+
 #更新内核
 setcpucore(){ #手动设置内核架构
 	cpucore_list="armv5 armv7 arm64 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
@@ -456,6 +458,7 @@ setcore(){ #内核选择菜单
 	;;
 	esac
 }
+
 #数据库
 getgeo(){ #下载Geo文件
 	#生成链接
@@ -485,7 +488,6 @@ getgeo(){ #下载Geo文件
 	fi
 	sleep 1
 }
-
 getcustgeo(){
 	echo "-----------------------------------------------"
 	echo "正在获取数据库文件…………"
@@ -505,7 +507,6 @@ getcustgeo(){
 	fi
 	sleep 1
 }
-
 checkcustgeo(){
 	[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
 	[ ! -s "$TMPDIR"/geo.list ] && {
@@ -610,7 +611,6 @@ setcustgeo() {
 		esac
 	done
 }
-
 setgeo() {
 	while true; do
 		. $CFG_PATH > /dev/null
@@ -839,6 +839,7 @@ setdb(){
 		;;
 	esac
 }
+
 #根证书
 getcrt(){
 	echo "-----------------------------------------------"

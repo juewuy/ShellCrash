@@ -4,15 +4,16 @@
 [ "$ts_service" = ON ] && {
 	[ "$ts_subnet" = true ] && advertise_routes='"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"'
 	[ -z "$ts_exit_node" ] && ts_exit_node=false
+	[ -z "$ts_hostname" ] && ts_hostname='ShellCrash'
 	cat >"$TMPDIR"/jsons/tailscale.json <<EOF
 {
   "endpoints": [
     {
 	  "type": "tailscale",
 	  "tag": "ts-ep",
-	  "state_directory": "/tmp/ShellCrash/tailscale",
+	  "state_directory": "$CRASHDIR/tailscale",
 	  "auth_key": "$ts_auth_key",
-	  "hostname": "ShellCrash-ts-ep",
+	  "hostname": "$ts_hostname",
 	  "advertise_routes": [$advertise_routes],
 	  "advertise_exit_node": $ts_exit_node,
 	  "udp_timeout": "5m"

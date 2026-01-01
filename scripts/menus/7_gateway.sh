@@ -480,6 +480,7 @@ set_tailscale(){
 	echo -e " 2 设置\033[36m秘钥\033[0m(Auth Key)		$ts_auth_key_info"
 	echo -e " 3 通告路由\033[33m内网地址\033[0m(Subnet)	\033[36m$ts_subnet\033[0m"
 	echo -e " 4 通告路由\033[31m全部流量\033[0m(EXIT-NODE)	\033[36m$ts_exit_node\033[0m"
+	echo -e " 5 设置\033[36m设备名称\033[0m(可选)		$ts_hostname"
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
@@ -513,6 +514,11 @@ set_tailscale(){
 			sleep 3
 		}
 		setconfig ts_exit_node "$ts_exit_node" "$GT_CFG_PATH"
+		set_tailscale
+	;;
+	5)
+		read -p "请输入希望在Tailscale显示的设备名称 > " ts_hostname
+		setconfig ts_hostname "$ts_hostname" "$GT_CFG_PATH"
 		set_tailscale
 	;;
 	*) errornum ;;

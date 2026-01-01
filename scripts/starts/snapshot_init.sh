@@ -30,9 +30,9 @@ tunfix(){
 	mkdir -p /tmp/overlay
 	mkdir -p /tmp/overlay/upper
 	mkdir -p /tmp/overlay/work
-	mount -o noatime,lowerdir=${ko_dir},upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" ${ko_dir}
+	mount -o noatime,lowerdir="$ko_dir",upperdir=/tmp/overlay/upper,workdir=/tmp/overlay/work -t overlay "overlay_mods_only" "$ko_dir"
 	#将tun.ko链接到lib
-	ln -sf "$CRASHDIR"/tools/tun.ko ${ko_dir}/tun.ko
+	ln -sf "$CRASHDIR"/tools/tun.ko "$ko_dir"/tun.ko
 }
 tproxyfix(){
 	sed -i 's/sysctl -w net.bridge.bridge-nf-call-ip/#sysctl -w net.bridge.bridge-nf-call-ip/g' /etc/init.d/qca-nss-ecm
@@ -90,7 +90,7 @@ case "$1" in
 	auto_clean) auto_clean ;;
 	init) init ;;
 	*)
-		if [ -z $(pidof CrashCore) ];then
+		if [ -z "$(pidof CrashCore)" ];then
 			init &
 		fi
 	;;

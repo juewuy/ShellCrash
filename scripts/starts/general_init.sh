@@ -2,11 +2,7 @@
 # Copyright (C) Juewuy
 
 #初始化目录
-CRASHDIR=$(
-    cd $(dirname $0)
-	cd ..
-    pwd
-)
+[ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
 profile=/etc/profile
 . "$CRASHDIR"/libs/set_profile.sh
 . "$CRASHDIR"/libs/set_cron.sh
