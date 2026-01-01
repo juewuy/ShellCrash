@@ -185,6 +185,7 @@ jobs:
           for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
             [ ! -f ./tmp/linux-${arch}/meta ] && continue
             mv -f ./tmp/linux-${arch}/meta ./tmp/clash-linux-${arch}.upx
+            chmod +x ./tmp/clash-linux-${arch}.upx
             case "${arch}" in
               armv5|mips* )
                 ./upx-3.94-amd64_linux/upx -9 --no-lzma ./tmp/clash-linux-${arch}.upx
@@ -242,4 +243,5 @@ jobs:
         with:
           retain_days: 1
           keep_minimum_runs: 2      
+
 
