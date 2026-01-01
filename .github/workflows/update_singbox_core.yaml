@@ -117,11 +117,11 @@ jobs:
             goos: linux
             goarch: mips
             gomips: softfloat
-          - name: linux-mipsel-softfloat
+          - name: linux-mipsle-softfloat
             goos: linux
             goarch: mipsle
             gomips: softfloat
-          - name: linux-mipsel-hardfloat
+          - name: linux-mipsle-hardfloat
             goos: linux
             goarch: mipsle
             gomips: hardfloat   
@@ -195,17 +195,36 @@ jobs:
         with:
           path: ./tmp
           
+      - name: Zip core by upx
+        if: endsWith(env.PUSHDIR, '_upx')
+        run: |    
+          wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+          wget https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
+          tar xf upx-3.96-amd64_linux.tar.xz
+          tar xf upx-3.94-amd64_linux.tar.xz
+          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
+            [ ! -f ./tmp/linux-${arch}/sing-box ] && continue
+            mv -f ./tmp/linux-${arch}/sing-box ./tmp/singbox-linux-${arch}.upx
+            chmod +x ./tmp/singbox-linux-${arch}.upx
+            case "${arch}" in
+              armv5|mips* )
+                ./upx-3.94-amd64_linux/upx -9 --no-lzma ./tmp/singbox-linux-${arch}.upx
+              ;;
+              *)
+                ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/singbox-linux-${arch}.upx
+              ;;
+            esac
+          done
+         
       - name: Zip core by tar
-        run: |      
-          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsel-hardfloat mipsel-softfloat;do
+        if: ${{ !endsWith(env.PUSHDIR, '_upx') }}
+        run: |        
+          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
             [ ! -f ./tmp/linux-${arch}/sing-box ] && continue
             mv -f ./tmp/linux-${arch}/sing-box ./tmp/CrashCore
             chmod +x ./tmp/CrashCore
             tar --no-same-owner -zcvf ./tmp/singbox-linux-${arch}.tar.gz -C ./tmp CrashCore
           done
-          mv -f ./tmp/singbox-linux-mipsel-hardfloat.tar.gz ./tmp/singbox-linux-mipsle-hardfloat.tar.gz
-          mv -f ./tmp/singbox-linux-mipsel-softfloat.tar.gz ./tmp/singbox-linux-mipsle-softfloat.tar.gz
-          echo ${VERSION} > ./tmp/version
 
       - name: Commit and push
         if: ${{ env.PUSHDIR != '' }}
