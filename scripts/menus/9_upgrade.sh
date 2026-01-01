@@ -383,9 +383,37 @@ setcustcore(){ #自定义内核
 	;;
 	esac
 }
+setziptype(){
+	echo "-----------------------------------------------"
+	echo -e "请选择内核内核分支及压缩方式：\033[0m"
+	echo "-----------------------------------------------"
+	echo -e " 1 \033[32m标准编译release版本,gz压缩\033[0m-完整支持脚本全部内置功能"
+	echo -e " 2 \033[36m最简编译release版本,upx压缩\033[0m-不支持Gvisor,Tailscale,Wireguard,NaiveProxy"
+	echo -e " 3 \033[33m完整编译dev版本,tar.gz压缩\033[0m-占用可能略高，稳定性自测"
+	echo "-----------------------------------------------"
+	echo " 0 返回上级菜单"
+	read -p "请输入对应数字 > " num
+	case "$num" in
+	0) ;;
+	1) 
+		zip_type='gz'
+	;;
+	2) 
+		zip_type='upx'
+	;;
+	3) 
+		zip_type='tar.gz'
+	;;
+	*) 
+		errornum
+	;;
+	esac
+	setconfig zip_type "$zip_type"
+}
 setcore(){ #内核选择菜单
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow"
+	[ -z "$zip_type" ] && zip_type="gz"
 	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
 	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 	###
@@ -402,15 +430,20 @@ setcore(){ #内核选择菜单
 	echo -e "2 \033[43;30m SingBoxR \033[0m：	\033[32m支持全面\033[0m"
 	echo -e " >>\033[32m$singboxr_v  	\033[33m使用reF1nd增强分支\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-boxr.dustinwin.us.kg\033[0m"
+	[ "$zip_type" = 'tar.gz' ] && {
 	echo -e "3 \033[43;30m SingBox \033[0m：	\033[32m占用较低\033[0m"
 	echo -e " >>\033[32m$singbox_v  		\033[33m不支持providers\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
+	}
+	[ "$zip_type" = 'upx' ] && {
 	echo -e "4 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
 	echo -e " >>\033[32m$clash_v  		\033[33m不安全,已停止维护\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
+	}
 	echo "-----------------------------------------------"
-	echo -e "5 \033[36m自定义内核\033[0m	$custcore"
-	echo -e "6 \033[32m更新当前内核\033[0m"
+	echo -e "5 切换内核分支及压缩方式:	\033[32m$zip_type\033[0m"
+	echo -e "6 \033[36m自定义内核\033[0m	$custcore"
+	echo -e "7 \033[32m更新当前内核\033[0m"
 	echo "-----------------------------------------------"
 	echo "9 手动指定处理器架构"
 	echo "-----------------------------------------------"
@@ -444,10 +477,14 @@ setcore(){ #内核选择菜单
 		getcore
 	;;
 	5)
-		setcustcore
+		setziptype
 		setcore
 	;;
 	6)
+		setcustcore
+		setcore
+	;;
+	7)
 		getcore
 	;;
 	9)
