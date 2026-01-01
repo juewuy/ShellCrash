@@ -389,7 +389,7 @@ setziptype(){
 	echo "-----------------------------------------------"
 	echo -e " 1 \033[32m标准编译release版本,gz压缩\033[0m-完整支持脚本全部内置功能"
 	echo -e " 2 \033[36m最简编译release版本,upx压缩\033[0m-不支持Gvisor,Tailscale,Wireguard,NaiveProxy"
-	echo -e " 3 \033[33m完整编译dev版本,tar.gz压缩\033[0m-占用可能略高，稳定性自测"
+	#echo -e " 3 \033[33m完整编译dev版本,tar.gz压缩\033[0m-占用可能略高，稳定性自测"
 	echo "-----------------------------------------------"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
@@ -430,7 +430,7 @@ setcore(){ #内核选择菜单
 	echo -e "2 \033[43;30m SingBoxR \033[0m：	\033[32m支持全面\033[0m"
 	echo -e " >>\033[32m$singboxr_v  	\033[33m使用reF1nd增强分支\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-boxr.dustinwin.us.kg\033[0m"
-	[ "$zip_type" = 'tar.gz' ] && {
+	[ "$zip_type" = 'upx' ] && {
 	echo -e "3 \033[43;30m SingBox \033[0m：	\033[32m占用较低\033[0m"
 	echo -e " >>\033[32m$singbox_v  		\033[33m不支持providers\033[0m"
 	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
