@@ -253,7 +253,6 @@ jobs:
           [ "${{ inputs.tag1 }}" = PuerNya/sing-box ] && crashcore='singboxp'
           [ "${{ inputs.tag1 }}" = reF1nd/sing-box ] && crashcore='singboxr'
           mkdir -p ./bin/${crashcore}
-          rm -fr ./bin/${crashcore}/*
           mv -f ./tmp/singbox-linux-* ./bin/${crashcore}/
           rm -fr ./tmp
           sed -i "s/${crashcore}_v=.*/${crashcore}_v=${VERSION}/" ./bin/version
