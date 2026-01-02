@@ -15,7 +15,7 @@ docker run -d \
   --name shellcrash \
   -p 7890:7890 \
   -p 9999:9999 \
-  shellcrash:latest
+  juewuy/shellcrash:latest
 ```
 
 ------
@@ -59,7 +59,7 @@ docker run -d \
   --cap-add SYS_ADMIN \
   --device /dev/net/tun:/dev/net/tun \
   --restart unless-stopped \
-  shellcrash:latest
+  juewuy/shellcrash:latest
 ```
 
 ### 3. 配置需要路由的设备
