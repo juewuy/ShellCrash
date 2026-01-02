@@ -48,7 +48,7 @@
       { "rule_set": [ "privateip" ], "outbound": "🎯 本地直连" },
       { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息" },
 
-      { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4"},
+      { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4", "match_only": true},
       { "rule_set": [ "cnip" ], "outbound": "🀄️ 直连 IP" },
       { "rule_set": [ "mediaip" ], "outbound": "🌍 国外媒体" },
       { "rule_set": [ "gamesip" ], "outbound": "🎮 游戏平台" }

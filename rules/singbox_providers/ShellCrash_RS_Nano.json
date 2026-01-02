@@ -9,7 +9,7 @@
       { "rule_set": [ "privateip" ], "outbound": "🎯 本地直连" },
       { "rule_set": [ "cn" ], "outbound": "🎯 本地直连" },
 
-      { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4"},
+      { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4", "match_only": true},
       { "rule_set": [ "cnip" ], "outbound": "🎯 本地直连" }
     ],
     "rule_set": [
