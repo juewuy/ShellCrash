@@ -255,7 +255,7 @@ jobs:
           mkdir -p ./bin/${crashcore}
           mv -f ./tmp/singbox-linux-* ./bin/${crashcore}/
           rm -fr ./tmp
-          sed -i "s/${crashcore}_v=.*/${crashcore}_v=${VERSION}/" ./bin/version
+          [ "${{ inputs.tag6 }}" = tar.gz ] && sed -i "s/${crashcore}_v=.*/${crashcore}_v=${VERSION}/" ./bin/version
           git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
           git add . && git commit -m "更新${crashcore}内核至${VERSION}" || exit 0
           git push
