@@ -88,6 +88,7 @@ jobs:
           git fetch --tags sekai
           version=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
           [ -z "$version" ] &&  version=${{ inputs.tag2 }}
+          version=$(echo $version | sed 's/-reF1nd//')
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
             if [ "$REPO" = 'SagerNet/sing-box' ];then
