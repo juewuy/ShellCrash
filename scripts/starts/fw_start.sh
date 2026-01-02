@@ -47,3 +47,8 @@
 	line=$(grep -n 'nameserver' /etc/resolv.conf | awk -F: 'FNR==1{print $1}')
 	sed -i "$line i\nameserver 127.0.0.1 #shellcrash-dns-repair" /etc/resolv.conf >/dev/null 2>&1
 }
+#移除openwrt-dnsmasq的DNS重定向
+[ "$(uci get dhcp.@dnsmasq[0].dns_redirect 2>/dev/null)" = 1 ] && {
+		uci del dhcp.@dnsmasq[0].dns_redirect
+		uci commit dhcp.@dnsmasq[0]
+}

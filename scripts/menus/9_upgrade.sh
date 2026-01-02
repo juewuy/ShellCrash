@@ -320,14 +320,12 @@ setcustcore(){ #自定义内核
 	echo "-----------------------------------------------"
 	echo -e "\033[33m请选择需要使用的核心！\033[0m"
 	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核"
-	echo -e "2 \033[36mMetaCubeX/mihomo\033[32m@alpha\033[0m版本官方内核"
-	echo -e "3 \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)"
-	echo -e "4 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本官方内核"
-	echo -e "5 \033[36mreF1nd/sing-box\033[32m@release\033[0m版本内核(完整编译)"
-	echo -e "6 \033[36mreF1nd/sing-box\033[32m@dev\033[0m版本内核(完整编译)"
-	echo -e "7 Premium-2023.08.17内核(已停止维护)"
-	echo -e "a \033[33m自定义内核链接 \033[0m"
+	echo -e "2 \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)"
+	echo -e "3 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本官方内核"
+	echo -e "4 Premium-2023.08.17内核(已停止维护)"
+	echo -e "9 \033[33m自定义内核链接 \033[0m"
 	echo "-----------------------------------------------"
+	echo -e " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	1)
@@ -337,49 +335,30 @@ setcustcore(){ #自定义内核
 		checkcustcore
 	;;
 	2)
-		project=MetaCubeX/mihomo
-		api_tag=Prerelease-Alpha
-		crashcore=meta
-		checkcustcore
-	;;
-	3)
 		project=vernesong/mihomo
 		api_tag=Prerelease-Alpha
 		crashcore=meta
 		checkcustcore
 	;;
-	4)
+	3)
 		project=SagerNet/sing-box
 		api_tag=latest
 		crashcore=singbox
 		checkcustcore
 	;;
-	5)
-		project=juewuy/ShellCrash
-		api_tag=singbox_core_reF1nd
-		crashcore=singboxr
-		checkcustcore
-	;;
-	6)
-		project=juewuy/ShellCrash
-		api_tag=singbox_core_dev_reF1nd
-		crashcore=singboxr
-		checkcustcore
-	;;
-	7)
+	4)
 		project=juewuy/ShellCrash
 		api_tag=clash.premium.latest
 		crashcore=clashpre
 		checkcustcore
 	;;
-	a)
+	9)
 		read -p "请输入自定义内核的链接地址(必须是以.tar.gz或.gz结尾的压缩文件) > " link
 		[ -n "$link" ] && custcorelink="$link"
 		setcoretype
 		getcore
 	;;
 	*)
-		errornum
 	;;
 	esac
 }
@@ -387,22 +366,22 @@ setziptype(){
 	echo "-----------------------------------------------"
 	echo -e "请选择内核内核分支及压缩方式：\033[0m"
 	echo "-----------------------------------------------"
-	echo -e " 1 \033[32m标准编译release版本,gz压缩\033[0m-完整支持脚本全部内置功能"
-	echo -e " 2 \033[36m最简编译release版本,upx压缩\033[0m-不支持Gvisor,Tailscale,Wireguard,NaiveProxy"
-	#echo -e " 3 \033[33m完整编译dev版本,tar.gz压缩\033[0m-占用可能略高，稳定性自测"
+	echo -e " 1 \033[36m最简编译release版本,upx压缩\033[0m-不支持Gvisor,Tailscale,Wireguard,NaiveProxy"
+	echo -e " 2 \033[32m标准编译release版本,tar.gz压缩\033[0m-完整支持脚本全部内置功能"
+	echo -e " 3 \033[33m完整编译alpha版本,gz压缩\033[0m-占用可能略高，稳定性自测"
 	echo "-----------------------------------------------"
 	echo " 0 返回上级菜单"
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
 	1) 
-		zip_type='gz'
-	;;
-	2) 
 		zip_type='upx'
 	;;
-	3) 
+	2) 
 		zip_type='tar.gz'
+	;;
+	3) 
+		zip_type='gz'
 	;;
 	*) 
 		errornum
@@ -413,7 +392,7 @@ setziptype(){
 setcore(){ #内核选择菜单
 	#获取核心及版本信息
 	[ -z "$crashcore" ] && crashcore="unknow"
-	[ -z "$zip_type" ] && zip_type="gz"
+	[ -z "$zip_type" ] && zip_type="tar.gz"
 	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
 	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 	###
@@ -422,7 +401,7 @@ setcore(){ #内核选择菜单
 	echo -e "当前内核：\033[42;30m $crashcore \033[47;30m$core_v\033[0m"
 	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
 	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
-	echo -e "\033[36m如需本地上传，请将二进制文件上传至 /tmp 目录后重新运行crash命令\033[0m"
+	echo -e "\033[36m如需本地上传，请将.upx .gz .tar.gz文件上传至 /tmp 目录后重新运行crash命令\033[0m"
 	echo "-----------------------------------------------"
 	echo -e "1 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
 	echo -e " >>\033[32m$meta_v   		\033[33m占用略高\033[0m"
@@ -441,8 +420,8 @@ setcore(){ #内核选择菜单
 	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
 	}
 	echo "-----------------------------------------------"
-	echo -e "5 切换内核分支及压缩方式:	\033[32m$zip_type\033[0m"
-	echo -e "6 \033[36m自定义内核\033[0m	$custcore"
+	echo -e "5 切换版本分支及压缩方式:	\033[32m$zip_type\033[0m"
+	echo -e "6 \033[36m使用自定义内核\033[0m	$custcore"
 	echo -e "7 \033[32m更新当前内核\033[0m"
 	echo "-----------------------------------------------"
 	echo "9 手动指定处理器架构"

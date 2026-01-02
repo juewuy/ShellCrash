@@ -213,8 +213,8 @@ sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash
 rm -rf "$CRASHDIR"/rules
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
-for file in tools webget.sh misnap_init.sh core.new; do
-    rm -rf "$CRASHDIR/$file"
+for file in webget.sh misnap_init.sh core.new; do
+    rm -f "$CRASHDIR/$file"
 done
 #旧版变量改名
 sed -i "s/clashcore/crashcore/g" "$CFG_PATH"

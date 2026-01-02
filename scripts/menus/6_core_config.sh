@@ -952,8 +952,10 @@ gen_core_config_link(){ #在线生成工具
 			if [ -n "$Url_link" ];then
 				i=100
 				#将用户链接写入配置
+				Url="$Url_link"
+				Https=''
 				setconfig Https
-				setconfig Url "'$Url_link'"
+				setconfig Url "'$Url'"
 				#获取在线yaml文件
 				jump_core_config
 			else
@@ -1006,8 +1008,9 @@ set_core_config_link(){ #直接导入配置
 		read -p "确认导入配置文件？原配置文件将被备份![1/0] > " res
 			if [ "$res" = '1' ]; then
 				#将用户链接写入配置
-				sed -i '/Url=*/'d $CFG_PATH
-				setconfig Https "'$link'"
+				Url=''
+				Https="$link"
+				setconfig Https "'$Https'"
 				setconfig Url
 				#获取在线yaml文件
 				jump_core_config
