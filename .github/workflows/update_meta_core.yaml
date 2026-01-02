@@ -75,6 +75,7 @@ jobs:
         id: meta
         run: |
           version=${{ github.event.inputs.tag2 }}
+          [ "$version" = Alpha ] && version="Alpha-$(date +"%Y%m%d")"
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
             echo tags='' >> $GITHUB_OUTPUT
