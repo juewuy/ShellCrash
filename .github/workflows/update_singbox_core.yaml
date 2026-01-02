@@ -217,7 +217,7 @@ jobs:
             chmod +x ./tmp/singbox-linux-${arch}.upx
             case "${arch}" in
               armv5|mips* )
-                ./upx-3.94-amd64_linux/upx -9 --no-lzma ./tmp/singbox-linux-${arch}.upx
+                ./upx-3.94-amd64_linux/upx --no-lzma ./tmp/singbox-linux-${arch}.upx
               ;;
               *)
                 ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/singbox-linux-${arch}.upx
