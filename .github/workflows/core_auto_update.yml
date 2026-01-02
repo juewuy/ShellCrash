@@ -6,55 +6,30 @@ on:
     workflow_dispatch:
 
 jobs:
-  check_version:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          repository: reF1nd/sing-box
-          ref: reF1nd-dev
-          fetch-depth: 0   
-      - name: Check version
-        run: |
-          git remote add sekai https://github.com/SagerNet/sing-box.git
-          git fetch --tags sekai
-          version_new=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
-          version_old=$(curl -sSl https://github.com/juewuy/ShellCrash/releases/download/singbox_core_reF1nd/version)    
-          if [ "$version_old" != "$version_new" ];then
-            echo a=$version_old >> $GITHUB_ENV
-            echo b=$version_new >> $GITHUB_ENV
-          else
-            echo "未检查到版本更新，已退出！"
-            exit 1
-          fi
     
   auto_update_singboxr_dev:
-    needs: check_version
-    if: ${{ success() }}
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
       tag1: reF1nd/sing-box
       tag2: reF1nd-dev
-      tag3: singbox_core_dev_reF1nd
-      tag5: with_quic,with_dhcp,with_wireguard,with_tailscale,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
+      tag4: singboxr
+      tag5: with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_shadowsocksr,with_acme,with_clash_api,with_tailscale
+      tag6：gz
     secrets: inherit
-  
-  auto_update_singboxr_main:
-    needs: check_version
-    if: ${{ success() }}
+    
+  auto_update_singboxr_dev:
     permissions: write-all
-    uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
+    uses: juewuy/ShellCrash/.github/workflows/update_meta_core.yaml@dev
     with:
-      tag1: reF1nd/sing-box
-      tag2: reF1nd-main
-      tag3: singbox_core_reF1nd
-      tag5: with_quic,with_dhcp,with_wireguard,with_tailscale,with_shadowsocksr,with_utls,with_clash_api,with_gvisor
+      tag1: MetaCubeX/mihomo
+      tag2: Alpha
+      tag4: meta
+      tag5: with_gvisor
+      tag6：gz
     secrets: inherit
-
+    
   cleanup:
-    needs: check_version
     runs-on: ubuntu-latest
     steps:
       - name: cleanup
