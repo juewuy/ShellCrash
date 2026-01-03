@@ -9,10 +9,12 @@ echo "**                 欢迎使用                  **"
 echo "**                ShellCrash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
-#内置工具
+
+# Check available capacity
 dir_avail() {
-    df $2 $1 | awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' | grep -E 'Ava|可用' | awk '{print $2}'
+    df -P $2 "${1:-.}" 2>/dev/null | awk 'NR==2 {print $(NF-2)}'
 }
+
 ckcmd() { #检查命令
     if command -v sh >/dev/null 2>&1;then
         command -v "$1" >/dev/null 2>&1
