@@ -91,6 +91,8 @@ start_nft_route() { #nftables-route通用工具
     else
         nft add rule inet shellcrash $1 meta nfproto ipv6 return
     fi
+	#屏蔽quic
+	[ "$quic_rj" = '已启用' -a "$lan_proxy" = true ] && nft add rule inet shellcrash $1 udp dport {443, 8443} return
     #添加通用路由
     nft add rule inet shellcrash "$1" "$JUMP"
     #处理特殊路由
@@ -151,7 +153,7 @@ start_nft_wan() { #nftables公网防火墙
 	nft add rule inet shellcrash input udp dport $reject_ports reject
 	#fw4特殊处理
 	nft list chain inet fw4 input >/dev/null 2>&1 && \
-    nft list chain inet fw4 input | grep -q 'meta mark 0x67890 accept' || \
+    nft list chain inet fw4 input | grep -q '67890' || \
     nft insert rule inet fw4 input meta mark 0x67890 accept 2>/dev/null
 }
 start_nftables() { #nftables配置总入口
@@ -205,14 +207,5 @@ start_nftables() { #nftables配置总入口
         start_nft_dns prerouting_vm prerouting
         JUMP="meta l4proto tcp redirect to $redir_port" #跳转劫持的具体命令
         start_nft_route prerouting_vm prerouting nat -100
-    }
-    #屏蔽QUIC
-    [ "$quic_rj" = '已启用' -a "$lan_proxy" = true ] && {
-        [ "$redir_mod" != "Redir模式" ] && {
-            nft add chain inet shellcrash quic_rj { type filter hook input priority 0 \; }
-            [ -n "$CN_IP" ] && nft add rule inet shellcrash quic_rj ip daddr @cn_ip return
-            [ -n "$CN_IP6" ] && nft add rule inet shellcrash quic_rj ip6 daddr @cn_ip6 return
-            nft add rule inet shellcrash quic_rj udp dport {443, 8443} reject comment 'ShellCrash-QUIC-REJECT'
-        }
     }
 }
