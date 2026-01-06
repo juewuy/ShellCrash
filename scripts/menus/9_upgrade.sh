@@ -729,7 +729,7 @@ getdb(){
 	else
 		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
 		mkdir -p $dbdir > /dev/null
-		tar -zxf ""$TMPDIR"/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
+		tar -zxf "$TMPDIR/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
 		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf "$TMPDIR"/clashfm.tar.gz && exit 1
 		#修改默认host和端口
 		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "zashboard" ];then
