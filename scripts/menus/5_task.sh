@@ -108,7 +108,8 @@ task_add(){ #任务添加
 }
 task_del(){ #任务删除
 	#删除定时任务
-	croncmd -l > "$TMPDIR"/cron && sed -i "/$1/d" "$TMPDIR"/cron && croncmd "$TMPDIR"/cron
+	croncmd -l > "$TMPDIR"/cron
+	sed -i "/$1/d" "$TMPDIR"/cron && croncmd "$TMPDIR"/cron
 	rm -f "$TMPDIR"/cron
 	#删除条件任务
 	sed -i "/$1/d" "$CRASHDIR"/task/cron 2>/dev/null
@@ -125,6 +126,9 @@ task_type(){ #任务条件选择菜单
 	echo -e " 2 定时任务\033[32m每日执行\033[0m"
 	echo -e " 3 定时任务\033[32m每小时执行\033[0m"
 	echo -e " 4 定时任务\033[32m每分钟执行\033[0m"
+	echo "-----------------------------------------------"
+	echo  -e "\033[31m注意：\033[0m逻辑水平不及格的请勿使用下方触发条件！"
+	echo "-----------------------------------------------"
 	echo -e " 5 服务\033[33m启动前执行\033[0m"
 	echo -e " 6 服务\033[33m启动后执行\033[0m"
 	echo -e " 7 服务\033[33m运行时每分钟执行\033[0m"

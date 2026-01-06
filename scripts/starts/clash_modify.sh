@@ -89,19 +89,18 @@ hosts:
 EOF
         if [ "$crashcore" = "meta" ]; then
             echo "  'services.googleapis.cn': services.googleapis.com" >>"$TMPDIR"/hosts.yaml
-        else
-            #加载本机hosts
-            sys_hosts=/etc/hosts
-            [ -f /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
-            while read line; do
-                [ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}")" ] &&
-                    [ -z "$(echo "$line" | grep -oE '^#')" ] &&
-                    hosts_ip=$(echo $line | awk '{print $1}') &&
-                    hosts_domain=$(echo $line | awk '{print $2}') &&
-                    [ -z "$(cat "$TMPDIR"/hosts.yaml | grep -oE "$hosts_domain")" ] &&
-                    echo "  '$hosts_domain': $hosts_ip" >>"$TMPDIR"/hosts.yaml
-            done <$sys_hosts
         fi
+		#加载本机hosts
+		sys_hosts=/etc/hosts
+		[ -f /data/etc/custom_hosts ] && sys_hosts='/etc/hosts /data/etc/custom_hosts'
+		cat $sys_hosts | while read line; do
+			[ -n "$(echo "$line" | grep -oE "([0-9]{1,3}[\.]){3}")" ] &&
+				[ -z "$(echo "$line" | grep -oE '^#')" ] &&
+				hosts_ip=$(echo $line | awk '{print $1}') &&
+				hosts_domain=$(echo $line | awk '{print $2}') &&
+				[ -z "$(cat "$TMPDIR"/hosts.yaml | grep -oE "$hosts_domain")" ] &&
+				echo "  '$hosts_domain': $hosts_ip" >>"$TMPDIR"/hosts.yaml
+		done
     fi
     #分割配置文件
     yaml_char='proxies proxy-groups proxy-providers rules rule-providers sub-rules listeners'

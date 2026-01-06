@@ -18,8 +18,7 @@ error_down(){
 upgrade() {
     while true; do
         echo "-----------------------------------------------"
-        echo -ne "\033[32m正在检查更新！\033[0m\r"
-        checkupdate
+        [ -z "$version_new" ] && checkupdate
         [ -z "$core_v" ] && core_v=$crashcore
         core_v_new=$(eval echo \$"$crashcore"_v)
         echo -e "\033[30;47m欢迎使用更新功能：\033[0m"
@@ -107,6 +106,7 @@ upgrade() {
 
 #检查更新
 checkupdate(){
+	echo -ne "\033[32m正在检查更新！\033[0m\r"
 	get_bin "$TMPDIR"/version_new version echooff
 	[ "$?" = "0" ] && {
 		version_new=$(cat "$TMPDIR"/version_new)
@@ -641,9 +641,9 @@ setgeo() {
 		echo "-----------------------------------------------"
 		echo -e " 3 Mihomo精简版GeoIP_cn数据库(约0.1mb)	\033[33m$cn_mini_v\033[0m"
 		echo -e " 4 Mihomo完整版GeoSite数据库(约5mb)	\033[33m$geosite_v\033[0m"
-		echo -e " 5 Mihomo-mrs数据库常用包(约1mb)	\033[33m$mrs_v\033[0m"
 		echo "-----------------------------------------------"
-		echo -e " 6 Singbox-srs数据库常用包(约0.8mb)	\033[33m$srs_v\033[0m"
+		echo -e " 5 Mihomo-mrs数据库常用包(约1mb,非必要勿用)"
+		echo -e " 6 Singbox-srs数据库常用包(约0.8mb,非必要勿用)"
 		echo "-----------------------------------------------"
 		echo -e " 8 \033[32m自定义数据库文件\033[0m"
 		echo -e " 9 \033[31m清理数据库文件\033[0m"
@@ -917,6 +917,7 @@ saveserver() {
 	setconfig update_url "'$update_url'"
 	setconfig url_id $url_id
 	setconfig release_type $release_type
+	version_new=''
 	echo "-----------------------------------------------"
 	echo -e "\033[32m源地址切换成功！\033[0m"
 }
@@ -960,11 +961,13 @@ setserver() {
 			elif [ "$url_id_new" -ge 200 ];then
 				update_url=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
 				url_id=''
-				continue
+				saveserver
+				break
 			else
 				url_id=$url_id_new
 				update_url=''
-				continue
+				saveserver
+				break
 			fi
 			unset url_id_new
 		;;

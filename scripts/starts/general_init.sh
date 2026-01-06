@@ -14,7 +14,7 @@ if [ -d "/etc/storage/clash" -o -d "/etc/storage/ShellCrash" ]; then
 		sleep 3 && i=$((i + 1))
 	done
 	[ -w "$profile" ] || profile=/etc_ro/profile
-	mount -t tmpfs -o remount,rw,size=45M tmpfs /tmp #增加/tmp空间以适配新的内核压缩方式
+	[ "$zip_type" = 'upx' ] || mount -t tmpfs -o remount,rw,size=45M tmpfs /tmp #增加/tmp空间以适配新的内核压缩方式
 	sed -i '' "$profile"                        #将软链接转化为一般文件
 elif [ -d "/jffs" ]; then
 	sleep 60
