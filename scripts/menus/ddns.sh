@@ -8,7 +8,7 @@ ddns_menu(){
 	load_ddns
 }
 add_ddns() {
-	cat >>$ddns_dir <<EOF
+	cat >>"$ddns_dir" <<EOF
 	
 config service '$service'
 	option enabled '1'
@@ -21,27 +21,26 @@ config service '$service'
 	option use_ipv6 '$use_ipv6'
 	option password '$password'
 	option ip_source 'web'
-	option ip_url 'http://ip.sb'
 	option check_unit 'minutes'
 	option check_interval '$check_interval'
 	option force_interval '$force_interval'
 	option interface 'wan'
 	option bind_network 'wan'
 EOF
-	/usr/lib/ddns/dynamic_dns_updater.sh -S $service start >/dev/null 2>&1 &
+	/usr/lib/ddns/dynamic_dns_updater.sh -S "$service" start >/dev/null 2>&1 &
 	sleep 3
 	echo 服务已经添加！
 }
 set_ddns() {
 	echo -----------------------------------------------
 	read -p "请输入你的域名 > " str
-	[ -z "$str" ] && domain=$domain || domain=$str
+	[ -z "$str" ] && domain="$domain" || domain="$str"
 	echo -----------------------------------------------
 	read -p "请输入用户名或邮箱 > " str
-	[ -z "$str" ] && username=$username || username=$str
+	[ -z "$str" ] && username="$username" || username="$str"
 	echo -----------------------------------------------
 	read -p "请输入密码或令牌秘钥 > " str
-	[ -z "$str" ] && password=$password || password=$str
+	[ -z "$str" ] && password="$password" || password="$str"
 	echo -----------------------------------------------
 	read -p "请输入检测更新间隔(单位:分钟;默认为10) > " check_interval
 	[ -z "$check_interval" ] || [ "$check_interval" -lt 1 -o "$check_interval" -gt 1440 ] && check_interval=10
@@ -59,17 +58,17 @@ set_ddns() {
 	[ "$res" = 1 ] && add_ddns || set_ddns
 }
 set_ddns_service() {
-	services_dir=/etc/ddns/$serv 
-	[ -s $services_dir ] || services_dir=/usr/share/ddns/list
+	services_dir=/etc/ddns/"$serv"
+	[ -s "$services_dir" ] || services_dir=/usr/share/ddns/list
 	echo -----------------------------------------------
 	echo -e "\033[32m请选择服务提供商\033[0m"
-	cat $services_dir | grep -v '^#' | awk '{print " "NR" " $1}'
-	nr=$(cat $services_dir | grep -v '^#' | wc -l)
+	cat "$services_dir" | grep -v '^#' | awk '{print " "NR" " $1}'
+	nr=$(cat "$services_dir" | grep -v '^#' | wc -l)
 	read -p "请输入对应数字 > " num
 	if [ -z "$num" ]; then
 		i=
 	elif [ "$num" -gt 0 -a "$num" -lt $nr ]; then
-		service_name=$(cat $services_dir | grep -v '^#' | awk '{print $1}' | sed -n "$num"p | sed 's/"//g')
+		service_name=$(cat "$services_dir" | grep -v '^#' | awk '{print $1}' | sed -n "$num"p | sed 's/"//g')
 		service=$(echo $service_name | sed 's/\./_/g')
 		set_ddns
 	else
@@ -101,7 +100,7 @@ set_ddns_type() {
 	fi
 }
 rev_ddns_service() {
-	enabled=$(uci show ddns.$service | grep 'enabled' | awk -F "=" '{print $2}' | tr -d "'\"")
+	enabled=$(uci get ddns."$service".enabled)
 	[ "$enabled" = 1 ] && enabled_b="停用" || enabled_b="启用"
 	echo -----------------------------------------------
 	echo -e " 1 \033[32m立即更新\033[0m"
@@ -118,21 +117,21 @@ rev_ddns_service() {
 		/usr/lib/ddns/dynamic_dns_updater.sh -S $service start >/dev/null 2>&1 &
 		sleep 3
 	elif [ "$num" = 2 ]; then
-		domain=$(uci show ddns.$service | grep 'domain' | awk -F "=" '{print $2}' | tr -d "'\"")
-		username=$(uci show ddns.$service | grep 'username' | awk -F "=" '{print $2}' | tr -d "'\"")
-		password=$(uci show ddns.$service | grep 'password' | awk -F "=" '{print $2}' | tr -d "'\"")
-		service_name=$(uci show ddns.$service | grep 'service_name' | awk -F "=" '{print $2}' | tr -d "'\"")
-		uci delete ddns.$service
+		domain=$(uci get ddns."$service".domain 2>/dev/null)
+		username=$(uci get ddns."$service".username 2>/dev/null)
+		password=$(uci get ddns."$service".password 2>/dev/null)
+		service_name=$(uci get ddns."$service".service_name 2>/dev/null)
+		uci delete ddns."$service"
 		set_ddns
 	elif [ "$num" = 3 ]; then
-		[ "$enabled" = 1 ] && uci set ddns.$service.enabled='0' || uci set ddns.$service.enabled='1' && sleep 3
-		uci commit ddns.$service
+		[ "$enabled" = 1 ] && uci set ddns."$service".enabled='0' || uci set ddns."$service".enabled='1' && sleep 3
+		uci commit ddns."$service"
 	elif [ "$num" = 4 ]; then
-		uci delete ddns.$service
-		uci commit ddns.$service
+		uci delete ddns."$service"
+		uci commit ddns."$service"
 	elif [ "$num" = 5 ]; then
 		echo -----------------------------------------------
-		cat /var/log/ddns/$service.log 2>/dev/null
+		cat /var/log/ddns/"$service".log 2>/dev/null
 		sleep 1
 	fi
 }
@@ -145,15 +144,15 @@ load_ddns() {
 		return 1
 	}
 	nr=0
-	cat $ddns_dir | grep 'config service' | awk '{print $3}' | sed "s/\'//g" | sed "s/\"//g" >$tmp_dir
+	cat "$ddns_dir" | grep 'config service' | awk '{print $3}' | sed "s/'//g" | sed 's/"//g' >"$tmp_dir"
 	echo -----------------------------------------------
 	echo -e "列表      域名       启用     IP地址"
 	echo -----------------------------------------------
-	for service in $(cat $tmp_dir); do
+	[ -s "$tmp_dir" ] && for service in $(cat "$tmp_dir"); do
 		#echo $service >>$tmp_dir
 		nr=$((nr + 1))
-		enabled=$(uci show ddns.$service 2>/dev/null | grep 'enabled' | awk -F "=" '{print $2}' | tr -d "'\"")
-		domain=$(uci show ddns.$service 2>/dev/null | grep 'domain' | awk -F "=" '{print $2}' | tr -d "'\"")
+		enabled=$(uci get ddns."$service".enabled 2>/dev/null)
+		domain=$(uci get ddns."$service".domain 2>/dev/null)
 		local_ip=$(sed '1!G;h;$!d' /var/log/ddns/$service.log 2>/dev/null | grep -E 'Registered IP' | tail -1 | awk -F "'" '{print $2}' | tr -d "'\"")
 		echo -e " $nr   $domain  $enabled   $local_ip"
 	done
@@ -173,7 +172,7 @@ load_ddns() {
 	else
 		echo "请输入正确数字！" && load_ddns
 	fi
-	rm -rf $tmp_dir
+	rm -rf "$tmp_dir"
 }
 
 
