@@ -12,7 +12,8 @@ echo "***********************************************"
 
 # Check available capacity
 dir_avail() {
-    df -P $2 "${1:-.}" 2>/dev/null | awk 'NR==2 {print $(NF-2)}'
+	df -h >/dev/null 2>&1 && h="$2"
+    df -P $h "${1:-.}" 2>/dev/null | awk 'NR==2 {print $(NF-2)}'
 }
 
 ckcmd() { #检查命令
