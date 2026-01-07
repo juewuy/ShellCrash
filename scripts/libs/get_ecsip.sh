@@ -1,10 +1,8 @@
 
 get_ecs_address() {
-    ip=$(uci get network.wan.dns 2>/dev/null)
-    [ -n "$ip" ] && return
     for f in /tmp/resolv.conf.auto /tmp/resolv.conf /tmp/resolv.conf.d/resolv.conf.auto; do
         [ -f "$f" ] || continue
-        ip=$(grep -A2 "^# Interface wan" "$f" | grep nameserver | awk '{printf "%s ", $2}')
+        ip=$(grep -A1 "^# Interface wan$" "$f" | grep nameserver | awk '{printf "%s ", $2}')
         [ -n "$ip" ] && return
     done
 	. "$CRASHDIR"/libs/web_get_lite.sh
