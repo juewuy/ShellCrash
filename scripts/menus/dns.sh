@@ -17,9 +17,10 @@ set_dns_mod() { #DNS模式设置
 	echo "-----------------------------------------------"
     echo -e " 4 DNS防泄漏：  \033[36m$dns_protect\033[0m	———启用时少量网站可能连接卡顿"
     echo -e " 5 Hosts优化：  \033[36m$hosts_opt\033[0m	———调用本机hosts并劫持NTP服务"
+    echo -e " 6 DNS劫持端口：\033[36m$dns_redir_port\033[0m	———用于兼容第三方DNS服务"
     [ "$dns_mod" = "mix" ] &&
-    echo -e " 8 管理MIX模式Fake-ip过滤列表"
-    echo -e " 9 \033[36mDNS进阶设置\033[0m"
+    echo -e " 8 管理MIX模式\033[33mFake-ip过滤列表\033[0m"
+    echo -e " 9 修改\033[36mDNS服务器\033[0m"
 	echo "-----------------------------------------------"
     echo " 0 返回上级菜单"
     read -p "请输入对应数字 > " num
@@ -64,6 +65,28 @@ set_dns_mod() { #DNS模式设置
     5)
 		[ "$hosts_opt" = "ON" ] && hosts_opt=OFF || hosts_opt=ON
         setconfig hosts_opt $hosts_opt
+        set_dns_mod
+	;;
+    6)
+        echo "-----------------------------------------------"
+        echo -e "\033[31m仅限搭配第三方DNS服务(AdGuard、SmartDNS……)使用！\033[0m"
+		echo -e "\033[33m设置为第三方DNS服务的监听端口即可修改防火墙劫持！\n建议在第三方DNS服务中将上游DNS指向【localhost:$dns_port】\033[0m"
+		echo "-----------------------------------------------"
+		read -p "请输入第三方DNS服务的监听端口(0重置端口) > " num
+		if [ "$num" = 0 ];then
+			dns_redir_port="$dns_port"
+			setconfig dns_redir_port
+		elif [ "$num" -lt 65535 -a "$num" -ge 1 ];then
+			if [ -n "$(netstat -ntul | grep -E ":$num[[:space:]]")" ];then
+				dns_redir_port="$num"
+				setconfig dns_redir_port "$dns_redir_port"
+			else
+				echo -e "\033[33m此端口未检测到已运行的DNS服务！\033[0m"
+			fi
+		else
+			errornum
+		fi
+        sleep 1
         set_dns_mod
 	;;
     8)
@@ -114,7 +137,6 @@ fake_ip_filter() {
     esac
 }
 set_dns_adv() { #DNS详细设置
-    [ -z "$dns_no" ] && dns_no=未禁用
     echo "-----------------------------------------------"
     echo -e "当前基础DNS：\033[32m$dns_nameserver\033[0m"
     echo -e "PROXY-DNS：\033[36m$dns_fallback\033[0m"
@@ -127,7 +149,6 @@ set_dns_adv() { #DNS详细设置
     echo -e " 2 修改\033[36mPROXY-DNS\033[0m(该DNS查询会经过节点)"
     echo -e " 3 修改\033[33m解析DNS\033[0m(必须是IP,用于解析其他DNS)"
     echo -e " 4 一键配置\033[32m加密DNS\033[0m"
-    echo -e " 7 禁用DNS劫持：\033[36m$dns_no\033[0m	———搭配第三方DNS使用"
     echo -e " 9 \033[33m重置\033[0m默认DNS配置"
     echo -e " 0 返回上级菜单"
     echo "-----------------------------------------------"
@@ -163,20 +184,6 @@ set_dns_adv() { #DNS详细设置
             setconfig dns_resolver "'$dns_resolver'"
             echo -e "\033[32m设置成功！！！\033[0m"
         fi
-        sleep 1
-        set_dns_adv
-	;;
-    7)
-        echo "-----------------------------------------------"
-        if [ "$dns_no" = "未禁用" ]; then
-            echo -e "\033[31m仅限搭配其他DNS服务(比如dnsmasq、smartDNS)时使用！\033[0m"
-            dns_no=已禁用
-            echo -e "\033[32m已禁用DNS劫持！！！\033[0m"
-        else
-            dns_no=未禁用
-            echo -e "\033[33m已启用DNS劫持！！！\033[0m"
-        fi
-        setconfig dns_no $dns_no
         sleep 1
         set_dns_adv
 	;;
