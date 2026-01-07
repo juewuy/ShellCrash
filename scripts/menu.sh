@@ -38,16 +38,15 @@ checkport() { #检查端口冲突
             echo -e "\033[0m-----------------------------------------------"
             echo -e "\033[36m请修改默认端口配置！\033[0m"
             . "$CRASHDIR"/menus/2_settings.sh && set_adv_config
-            . "$CFG_PATH" >/dev/null
+            . "$CRASHDIR"/libs/get_config.sh
             checkport
         fi
     done
 }
 ckstatus() { #脚本启动前检查
-    #检查/读取脚本配置文件
+    #检查脚本配置文件
     if [ -f "$CFG_PATH" ]; then
         [ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' "$CFG_PATH" >"$CFG_PATH" #检查重复行并去除
-        . "$CFG_PATH" 2>/dev/null
     else
         . "$CRASHDIR"/init.sh >/dev/null 2>&1
     fi

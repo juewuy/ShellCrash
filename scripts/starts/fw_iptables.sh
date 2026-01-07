@@ -108,18 +108,18 @@ start_ipt_dns() { #iptables-dns通用工具
     if [ "$2" = 'PREROUTING' ] && [ "$3" != 'shellcrash_vm_dns' ] && [ "$macfilter_type" = "白名单" ] && [ -n "$(cat $CRASHDIR/configs/mac $CRASHDIR/configs/ip_filter 2>/dev/null)" ]; then
         [ -s "$CRASHDIR"/configs/mac ] &&
             for mac in $(cat "$CRASHDIR"/configs/mac); do
-                "$1" $w -t nat -A "$3" -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
-                "$1" $w -t nat -A "$3" -p udp -m mac --mac-source $mac -j REDIRECT --to-ports $dns_port
+                "$1" $w -t nat -A "$3" -p tcp -m mac --mac-source $mac -j REDIRECT --to-ports "$dns_redir_port"
+                "$1" $w -t nat -A "$3" -p udp -m mac --mac-source $mac -j REDIRECT --to-ports "$dns_redir_port"
             done
         [ -s "$CRASHDIR"/configs/ip_filter ] && [ "$1" = 'iptables' ] &&
             for ip in $(cat "$CRASHDIR"/configs/ip_filter); do
-                "$1" $w -t nat -A "$3" -p tcp -s $ip -j REDIRECT --to-ports $dns_port
-                "$1" $w -t nat -A "$3" -p udp -s $ip -j REDIRECT --to-ports $dns_port
+                "$1" $w -t nat -A "$3" -p tcp -s $ip -j REDIRECT --to-ports "$dns_redir_port"
+                "$1" $w -t nat -A "$3" -p udp -s $ip -j REDIRECT --to-ports "$dns_redir_port"
             done
     else
         for ip in $HOST_IP; do #仅限指定网段流量
-            "$1" $w -t nat -A "$3" -p tcp -s $ip -j REDIRECT --to-ports $dns_port
-            "$1" $w -t nat -A "$3" -p udp -s $ip -j REDIRECT --to-ports $dns_port
+            "$1" $w -t nat -A "$3" -p tcp -s $ip -j REDIRECT --to-ports "$dns_redir_port"
+            "$1" $w -t nat -A "$3" -p udp -s $ip -j REDIRECT --to-ports "$dns_redir_port"
         done
     fi
     [ "$1" = 'ip6tables' ] && { #屏蔽外部请求
@@ -258,7 +258,7 @@ start_iptables() { #iptables配置总入口
         start_ipt_route iptables nat PREROUTING shellcrash_vm tcp #ipv4-局域网tcp转发
     }
     #启动DNS劫持
-    [ "$dns_no" != "已禁用" -a "$dns_redir" != "ON" -a "$firewall_area" -le 3 ] && {
+    [ "$firewall_area" -le 3 ] && {
         [ "$lan_proxy" = true ] && {
             start_ipt_dns iptables PREROUTING shellcrash_dns #ipv4-局域网dns转发
             if $ip6table -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then

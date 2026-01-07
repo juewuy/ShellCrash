@@ -6,7 +6,8 @@
 [ -z "$tproxy_port" ] && tproxy_port=7893
 [ -z "$db_port" ] && db_port=9999
 [ -z "$dns_port" ] && dns_port=1053
-[ -z "$fwmark" ] && fwmark=$redir_port
+[ -z "$dns_redir_port" ] && dns_redir_port="$dns_port"
+[ -z "$fwmark" ] && fwmark="$redir_port"
 routing_mark=$((fwmark + 2))
 [ -z "$table" ] && table=100
 

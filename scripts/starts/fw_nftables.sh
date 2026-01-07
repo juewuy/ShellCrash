@@ -129,8 +129,8 @@ start_nft_dns() { #nftables-dns
             nft add rule inet shellcrash "$1"_dns ether saddr != {$MAC} return
         fi
     }
-    nft add rule inet shellcrash "$1"_dns udp dport 53 redirect to ${dns_port}
-    nft add rule inet shellcrash "$1"_dns tcp dport 53 redirect to ${dns_port}
+    nft add rule inet shellcrash "$1"_dns udp dport 53 redirect to "$dns_redir_port"
+    nft add rule inet shellcrash "$1"_dns tcp dport 53 redirect to "$dns_redir_port"
 }
 start_nft_wan() { #nftables公网防火墙
 	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
@@ -163,7 +163,7 @@ start_nftables() { #nftables配置总入口
     #公网访问防火墙
     [ "$fw_wan" != OFF ] && [ "$systype" != 'container' ] && start_nft_wan
     #启动DNS劫持
-    [ "$dns_no" != "已禁用" -a "$dns_redir" != "ON" -a "$firewall_area" -le 3 ] && {
+    [ "$firewall_area" -le 3 ] && {
         [ "$lan_proxy" = true ] && start_nft_dns prerouting prerouting #局域网dns转发
         [ "$local_proxy" = true ] && start_nft_dns output output       #本机dns转发
     }
