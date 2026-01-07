@@ -134,7 +134,7 @@ getscripts(){
 		echo "-----------------------------------------------"
 		echo "开始解压文件！"
 		mkdir -p "$CRASHDIR" > /dev/null
-		tar -zxf ""$TMPDIR"/ShellCrash.tar.gz" ${tar_para} -C "$CRASHDIR"/
+		tar -zxf "$TMPDIR/ShellCrash.tar.gz" ${tar_para} -C "$CRASHDIR"/
 		if [ $? -ne 0 ];then
 			echo -e "\033[33m文件解压失败！\033[0m"
 			error_down
@@ -953,13 +953,13 @@ setserver() {
 			break
 		;;
 		[1-99])
-			url_id_new=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $1}')
+			url_id_new=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n "$num"p | awk '{print $1}')
 			if [ -z "$url_id_new" ];then
 				errornum
 				sleep 1
 				continue
 			elif [ "$url_id_new" -ge 200 ];then
-				update_url=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n ""$num"p" | awk '{print $3}')
+				update_url=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n "$num"p | awk '{print $3}')
 				url_id=''
 				saveserver
 				break
