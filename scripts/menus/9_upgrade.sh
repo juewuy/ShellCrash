@@ -389,90 +389,101 @@ setziptype(){
 	esac
 	setconfig zip_type "$zip_type"
 }
-setcore(){ #内核选择菜单
-	#获取核心及版本信息
-	[ -z "$crashcore" ] && crashcore="unknow"
-	[ -z "$zip_type" ] && zip_type="tar.gz"
-	echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
-	[ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
-	###
-	echo "-----------------------------------------------"
-	[ -z "$cpucore" ] && check_cpucore
-	echo -e "当前内核：\033[42;30m $crashcore \033[47;30m$core_v\033[0m"
-	echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
-	echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
-	echo -e "\033[36m如需本地上传，请将.upx .gz .tar.gz文件上传至 /tmp 目录后重新运行crash命令\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "1 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
-	echo -e " >>\033[32m$meta_v   		\033[33m占用略高\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
-	echo -e "2 \033[43;30m SingBoxR \033[0m：	\033[32m支持全面\033[0m"
-	echo -e " >>\033[32m$singboxr_v  	\033[33m使用reF1nd增强分支\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://sing-boxr.dustinwin.us.kg\033[0m"
-	[ "$zip_type" = 'upx' ] && {
-	echo -e "3 \033[43;30m SingBox \033[0m：	\033[32m占用较低\033[0m"
-	echo -e " >>\033[32m$singbox_v  		\033[33m不支持providers\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
-	}
-	[ "$zip_type" = 'upx' ] && {
-	echo -e "4 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
-	echo -e " >>\033[32m$clash_v  		\033[33m不安全,已停止维护\033[0m"
-	echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
-	}
-	echo "-----------------------------------------------"
-	echo -e "5 切换版本分支及压缩方式:	\033[32m$zip_type\033[0m"
-	echo -e "6 \033[36m使用自定义内核\033[0m	$custcore"
-	echo -e "7 \033[32m更新当前内核\033[0m"
-	echo "-----------------------------------------------"
-	echo "9 手动指定处理器架构"
-	echo "-----------------------------------------------"
-	echo "0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		[ -d "/jffs" ] && {
-			echo -e "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
-			sleep 3
-		}
-		crashcore=meta
-		custcorelink=''
-		getcore
-	;;
-	2)
-		crashcore=singboxr
-		custcorelink=''
-		getcore
-	;;
-	3)
-		crashcore=singbox
-		custcorelink=''
-		getcore
-	;;
-	4)
-		crashcore=clash
-		custcorelink=''
-		getcore
-	;;
-	5)
-		setziptype
-		setcore
-	;;
-	6)
-		setcustcore
-		setcore
-	;;
-	7)
-		getcore
-	;;
-	9)
-		setcpucore
-	;;
-	*)
-		errornum
-	;;
-	esac
+
+# 内核选择菜单
+setcore() {
+    while true; do
+        # 获取核心及版本信息
+        [ -z "$crashcore" ] && crashcore="unknow"
+        [ -z "$zip_type" ] && zip_type="tar.gz"
+        echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
+        [ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
+        ###
+        echo "-----------------------------------------------"
+        [ -z "$cpucore" ] && check_cpucore
+        echo -e "当前内核：\033[42;30m $crashcore \033[47;30m$core_v\033[0m"
+        echo -e "当前系统处理器架构：\033[32m $cpucore \033[0m"
+        echo -e "\033[33m请选择需要使用的核心版本！\033[0m"
+        echo -e "\033[36m如需本地上传，请将.upx .gz .tar.gz文件上传至 /tmp 目录后重新运行crash命令\033[0m"
+        echo "-----------------------------------------------"
+        echo -e "1 \033[43;30m Mihomo  \033[0m：	\033[32m(原meta内核)支持全面\033[0m"
+        echo -e " >>\033[32m$meta_v   		\033[33m占用略高\033[0m"
+        echo -e "  说明文档：	\033[36;4mhttps://wiki.metacubex.one\033[0m"
+        echo -e "2 \033[43;30m SingBoxR \033[0m：	\033[32m支持全面\033[0m"
+        echo -e " >>\033[32m$singboxr_v  	\033[33m使用reF1nd增强分支\033[0m"
+        echo -e "  说明文档：	\033[36;4mhttps://sing-boxr.dustinwin.us.kg\033[0m"
+        [ "$zip_type" = 'upx' ] && {
+            echo -e "3 \033[43;30m SingBox \033[0m：	\033[32m占用较低\033[0m"
+            echo -e " >>\033[32m$singbox_v  		\033[33m不支持providers\033[0m"
+            echo -e "  说明文档：	\033[36;4mhttps://sing-box.sagernet.org\033[0m"
+        }
+        [ "$zip_type" = 'upx' ] && {
+            echo -e "4 \033[43;30m Clash \033[0m：	\033[32m占用低\033[0m"
+            echo -e " >>\033[32m$clash_v  		\033[33m不安全,已停止维护\033[0m"
+            echo -e "  说明文档：	\033[36;4mhttps://lancellc.gitbook.io\033[0m"
+        }
+        echo "-----------------------------------------------"
+        echo -e "5 切换版本分支及压缩方式:	\033[32m$zip_type\033[0m"
+        echo -e "6 \033[36m使用自定义内核\033[0m	$custcore"
+        echo -e "7 \033[32m更新当前内核\033[0m"
+        echo "-----------------------------------------------"
+        echo "9 手动指定处理器架构"
+        echo "-----------------------------------------------"
+        echo "0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            [ -d "/jffs" ] && {
+                echo -e "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
+                sleep 3
+            }
+            crashcore=meta
+            custcorelink=''
+            getcore
+            break
+            ;;
+        2)
+            crashcore=singboxr
+            custcorelink=''
+            getcore
+            break
+            ;;
+        3)
+            crashcore=singbox
+            custcorelink=''
+            getcore
+            break
+            ;;
+        4)
+            crashcore=clash
+            custcorelink=''
+            getcore
+            break
+            ;;
+        5)
+            setziptype
+            ;;
+        6)
+            setcustcore
+            ;;
+        7)
+            getcore
+            break
+            ;;
+        9)
+            setcpucore
+            break
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
 
 #数据库
