@@ -40,7 +40,7 @@ upgrade() {
         echo -e " 8 \033[32m配置自动更新\033[0m"
         echo -e " 9 \033[31m卸载ShellCrash\033[0m"
         echo "-----------------------------------------------"
-        echo -e "99 \033[36m鸣谢！\033[0m"
+        echo -e " 99 \033[36m鸣谢！\033[0m"
         echo "-----------------------------------------------"
         echo -e " 0 返回上级菜单"
         echo "-----------------------------------------------"
@@ -490,7 +490,7 @@ setcore() {
 getgeo(){ #下载Geo文件
 	#生成链接
 	echo "-----------------------------------------------"
-	echo 正在从服务器获取数据库文件…………
+	echo "正在从服务器获取数据库文件…………"
 	get_bin "$TMPDIR"/${geoname} bin/geodata/$geotype
 	if [ "$?" = "1" ];then
 		echo "-----------------------------------------------"
@@ -515,6 +515,7 @@ getgeo(){ #下载Geo文件
 	fi
 	sleep 1
 }
+
 getcustgeo(){
 	echo "-----------------------------------------------"
 	echo "正在获取数据库文件…………"
@@ -534,46 +535,53 @@ getcustgeo(){
 	fi
 	sleep 1
 }
-checkcustgeo(){
-	[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
-	[ ! -s "$TMPDIR"/geo.list ] && {
-		echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
-		webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
-		release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-		cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' > "$TMPDIR"/geo.list
-		rm -rf "$TMPDIR"/github_api
-	}
-	if [ -s "$TMPDIR"/geo.list ];then
-		echo -e "请选择需要更新的数据库文件："
-		echo "-----------------------------------------------"
-		cat "$TMPDIR"/geo.list | awk '{print " "NR" "$1}'
-		echo -e " 0 返回上级菜单"
-		echo "-----------------------------------------------"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0)
-		;;
-		[1-99])
-			if [ "$num" -le "$(wc -l < "$TMPDIR"/geo.list)" ];then
-				geotype=$(sed -n "$num"p "$TMPDIR"/geo.list)
-				[ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
-				[ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
-				[ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
-				custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
-				getcustgeo
-				checkcustgeo
-			else
-				errornum
-			fi
-		;;
-		*)
-			errornum
-		;;
-		esac
-	else
-		echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
-		sleep 1
-	fi
+
+checkcustgeo() {
+    while true; do
+        [ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
+        [ ! -s "$TMPDIR"/geo.list ] && {
+            echo -e "\033[32m正在查找可更新的数据库文件！\033[0m"
+            webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
+            release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+            cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' >"$TMPDIR"/geo.list
+            rm -rf "$TMPDIR"/github_api
+        }
+        if [ -s "$TMPDIR"/geo.list ]; then
+            echo -e "请选择需要更新的数据库文件："
+            echo "-----------------------------------------------"
+            cat "$TMPDIR"/geo.list | awk '{print " "NR" "$1}'
+            echo -e " 0 返回上级菜单"
+            echo "-----------------------------------------------"
+            read -p "请输入对应数字 > " num
+            case "$num" in
+            "" | 0)
+                break
+                ;;
+            [1-99])
+                if [ "$num" -le "$(wc -l <"$TMPDIR"/geo.list)" ]; then
+                    geotype=$(sed -n "$num"p "$TMPDIR"/geo.list)
+                    [ -n "$(echo $geotype | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
+                    [ -n "$(echo $geotype | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
+                    [ -n "$(echo $geotype | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
+                    custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
+                    getcustgeo
+                else
+                    errornum
+                    sleep 1
+                    break
+                fi
+                ;;
+            *)
+                errornum
+                sleep 1
+                beak
+                ;;
+            esac
+        else
+            echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
+            sleep 1
+        fi
+    done
 }
 
 # 下载自定义数据库文件
