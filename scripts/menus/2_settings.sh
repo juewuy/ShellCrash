@@ -289,10 +289,10 @@ set_fw_filter(){ #流量过滤
 	touch "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter
 	[ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ] && mac_return=OFF || mac_return=ON
 	echo "-----------------------------------------------"
-    echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
-    echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
-    echo -e " 3 过滤QUIC协议:	\033[36m$quic_rj\033[0m   ————优化视频性能"
-    echo -e " 4 过滤CN_IP(6)列表:	\033[36m$cn_ip_route\033[0m   ————优化性能，不兼容Fake-ip"
+    echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m	————用于过滤P2P流量"
+    echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m	————使用黑/白名单进行过滤"
+    echo -e " 3 过滤QUIC协议:	\033[36m$quic_rj\033[0m	————优化视频性能"
+    echo -e " 4 过滤CN_IP(6)列表:	\033[36m$cn_ip_route\033[0m	————优化性能，不兼容Fake-ip"
 	echo -e " 5 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"
 	echo -e " 6 自定义保留地址ipv4网段:	需要以保留地址为访问目标的环境"
     echo "-----------------------------------------------"
@@ -303,23 +303,6 @@ set_fw_filter(){ #流量过滤
     0)
 	;;
     1)
-        set_common_ports() {
-            if [ "$common_ports" = "OFF" ]; then
-                echo -e "\033[33m当前代理端口为：【$multiport】\033[0m"
-                echo -e "\033[31m注意，MIX模式下，非常用端口的域名连接将不受影响！！\033[0m"
-                read -p "是否修改默认端口？(1/0) > " res
-                [ "$res" = "1" ] && {
-                    read -p "请输入自定义端口,注意用小写逗号分隔 > " text
-                    [ -n "$text" ] && setconfig multiport $text && echo -e "\033[33m已设为代理【$multiport】端口！！\033[0m"
-                }
-                common_ports=ON
-                sleep 1
-            else
-                echo -e "\033[33m已设为代理全部端口！！\033[0m"
-                common_ports=OFF
-            fi
-            setconfig common_ports $common_ports
-        }
         echo "-----------------------------------------------"
         if [ -n "$(pidof CrashCore)" ]; then
             read -p "切换时将停止服务，是否继续？(1/0) > " res
@@ -399,7 +382,81 @@ set_fw_filter(){ #流量过滤
 	;;
     esac
 }
-
+set_common_ports() {
+	[ -z "$multiport" ] && multiport='22,80,443,8080,8443'
+	echo "-----------------------------------------------"
+	echo -e "\033[31m注意：\033[0mMIX模式下，所有fake-ip来源的非常用端口流量不会被过滤"
+	[ -n "$common_ports" ] && 
+	echo -e "当前放行端口：\033[36m$multiport\033[0m"
+	echo "-----------------------------------------------"
+	echo -e " 1 启用/关闭端口过滤:	\033[36m$common_ports\033[0m"
+	echo -e " 2 添加放行端口"
+	echo -e " 3 移除指定放行端口"
+	echo -e " 4 重置默认放行端口"
+	echo -e " 5 重置为旧版放行端口"
+	echo -e " 0 返回上级菜单"
+	echo "-----------------------------------------------"
+	read -p "请输入对应数字 > " num
+	case $num in
+	1)
+		if [ "$common_ports" = ON ];then
+			common_ports=OFF
+		else
+			common_ports=ON
+		fi
+		setconfig common_ports "$common_ports"
+		set_common_ports
+	;;
+	2)
+		port_count=$(echo "$multiport" | awk -F',' '{print NF}' )
+		if [ "$port_count" -ge 15 ];then
+			echo -e "\033[31m最多支持设置放行15个端口，请先减少一些！\033[0m"
+		else
+			read -p "请输入要放行的端口号 > " port
+			if echo ",$multiport," | grep -q ",$port,";then	
+				echo -e "\033[31m输入错误！请勿重复添加！\033[0m"
+			elif [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
+			else
+				multiport=$(echo "$multiport,$port" | sed "s/^,//")
+				setconfig multiport "$multiport"
+			fi
+		fi
+		sleep 1
+		set_common_ports
+	;;
+	3)
+		read -p "请输入要移除的端口号 > " port
+		if echo ",$multiport," | grep -q ",$port,";then	
+			if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
+			else
+				multiport=$(echo ",$multiport," | sed "s/,$port//; s/^,//; s/,$//")
+				setconfig multiport "$multiport"
+			fi
+		else
+			echo -e "\033[31m输入错误！请输入已添加过的端口！\033[0m"
+		fi
+		sleep 1
+		set_common_ports
+	;;
+	4)
+		multiport=''
+		setconfig multiport
+		sleep 1
+		set_common_ports
+	;;
+	5)
+		multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
+		setconfig multiport "$multiport"
+		sleep 1
+		set_common_ports
+	;;
+	*)
+		errornum
+	;;
+	esac
+}
 set_cust_host_ipv4() { #自定义ipv4透明路由网段
 	[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="OFF"
 	echo "-----------------------------------------------"
@@ -636,7 +693,6 @@ set_adv_config() { #端口设置
     [ -z "$secret" ] && secret=未设置
     [ -z "$table" ] && table=100
     [ -z "$authentication" ] && auth=未设置 || auth=******
-	[ -z "$multiport" ] && multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
     inputport() {
         read -p "请输入端口号(1-65535) > " portx
 		. "$CRASHDIR"/menus/check_port.sh #加载测试函数
@@ -655,7 +711,6 @@ set_adv_config() { #端口设置
     echo -e " 4 修改DNS监听端口：	\033[36m$dns_port\033[0m"
     echo -e " 5 修改面板访问端口：	\033[36m$db_port\033[0m"
     echo -e " 6 设置面板访问密码：	\033[36m$secret\033[0m"
-    echo -e " 7 修改默认端口过滤：	\033[36m$multiport\033[0m"
     echo -e " 8 自定义本机host地址：	\033[36m$host\033[0m"
     echo -e " 9 自定义路由表：	\033[36m$table,$((table + 1))\033[0m"
     echo -e " 0 返回上级菜单"
@@ -711,22 +766,6 @@ set_adv_config() { #端口设置
         if [ -n "$secret" ]; then
             [ "$secret" = "0" ] && secret=""
             setconfig secret $secret
-            echo -e "\033[32m设置成功！！！\033[0m"
-        fi
-        set_adv_config
-	;;
-    7)
-        echo "-----------------------------------------------"
-        echo -e "需配合\033[32m仅代理常用端口\033[0m功能使用"
-        echo -e "多个端口请用小写逗号分隔，例如：\033[33m143,80,443\033[0m"
-        echo -e "输入 0 重置为默认端口"
-        echo "-----------------------------------------------"
-        read -p "请输入需要指定劫持的端口 > " multiport
-        if [ -n "$multiport" ]; then
-            [ "$multiport" = "0" ] && multiport="22,80,143,194,443,465,587,853,993,995,5222,8080,8443"
-            common_ports=ON
-            setconfig multiport "$multiport"
-            setconfig common_ports "$common_ports"
             echo -e "\033[32m设置成功！！！\033[0m"
         fi
         set_adv_config

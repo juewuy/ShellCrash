@@ -6,7 +6,7 @@
 #缺省值
 [ -z "$macfilter_type" ] && macfilter_type='黑名单'
 [ -z "$common_ports" ] && common_ports='ON'
-[ -z "$multiport" ] && multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
+[ -z "$multiport" ] && multiport='22,80,443,8080,8443'
 [ "$common_ports" = "ON" ] && ports="-m multiport --dports $multiport"
 [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
 [ -z "$dns_mod" ] && dns_mod='redir_host'
