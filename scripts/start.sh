@@ -40,7 +40,7 @@ start)
     #使用不同方式启动服务
 	if [ "$firewall_area" = "5" ]; then #主旁转发
         . "$CRASHDIR"/starts/fw_start.sh
-    elif [ "$start_old" = "已开启" ]; then
+    elif [ "$start_old" = "ON" ]; then
         start_l
     elif [ -f /etc/rc.common ] && grep -q 'procd' /proc/1/comm; then
         /etc/init.d/shellcrash start

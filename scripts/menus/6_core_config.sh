@@ -122,13 +122,13 @@ setrules(){ #自定义规则
 	;;
 	4)
 		echo "-----------------------------------------------"
-		if [ "$proxies_bypass" = "未启用" ];then
+		if [ "$proxies_bypass" = "OFF" ];then
 			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
 			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
 			read -p "启用节点绕过？(1/0) > " res
-			[ "$res" = "1" ] && proxies_bypass=已启用
+			[ "$res" = "1" ] && proxies_bypass=ON
 		else
-			proxies_bypass=未启用
+			proxies_bypass=OFF
 		fi
 		setconfig proxies_bypass $proxies_bypass
 		sleep 1
@@ -322,13 +322,13 @@ setproxies(){ #自定义clash节点
 	;;
 	4)
 		echo "-----------------------------------------------"
-		if [ "$proxies_bypass" = "未启用" ];then
+		if [ "$proxies_bypass" = "OFF" ];then
 			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
 			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
 			read -p "启用节点绕过？(1/0) > " res
-			[ "$res" = "1" ] && proxies_bypass=已启用
+			[ "$res" = "1" ] && proxies_bypass=ON
 		else
-			proxies_bypass=未启用
+			proxies_bypass=OFF
 		fi
 		setconfig proxies_bypass $proxies_bypass
 		sleep 1
@@ -363,7 +363,7 @@ gen_clash_providers(){ #生成clash的providers配置文件
       interval: 600
 EOF
 		[ "$crashcore" = 'meta' ] && {
-		[ "$skip_cert" != "未开启" ] && skip_cert_verify='skip-cert-verify: true'
+		[ "$skip_cert" != "OFF" ] && skip_cert_verify='skip-cert-verify: true'
 		cat >> $TMPDIR/providers/providers.yaml <<EOF
     override:
       udp: true
@@ -453,7 +453,7 @@ EOF
 EOF
 		fi
 		#通用部分生成
-		[ "$skip_cert" != "未开启" ] && override_tls='true' || override_tls='false'
+		[ "$skip_cert" != "OFF" ] && override_tls='true' || override_tls='false'
 		cat >> "$TMPDIR"/providers/providers.json <<EOF
       "health_check": {
         "enabled": true,

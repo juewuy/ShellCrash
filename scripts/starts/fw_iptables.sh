@@ -34,8 +34,8 @@ start_ipt_route() { #iptables-route通用工具
         "$1" $w -t "$2" -A "$4" -d $ip -j RETURN
     done
     #绕过CN_IP
-    [ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f "$BINDIR"/cn_ip.txt ] && "$1" $w -t "$2" -A "$4" -m set --match-set cn_ip dst -j RETURN 2>/dev/null
-    [ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "已开启" ] && [ -f "$BINDIR"/cn_ipv6.txt ] && "$1" $w -t "$2" -A "$4" -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
+    [ "$1" = iptables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "ON" ] && [ -f "$BINDIR"/cn_ip.txt ] && "$1" $w -t "$2" -A "$4" -m set --match-set cn_ip dst -j RETURN 2>/dev/null
+    [ "$1" = ip6tables ] && [ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" = "ON" ] && [ -f "$BINDIR"/cn_ipv6.txt ] && "$1" $w -t "$2" -A "$4" -m set --match-set cn_ip6 dst -j RETURN 2>/dev/null
     #局域网mac地址黑名单过滤
     [ "$3" = 'PREROUTING' ] && [ "$macfilter_type" != "白名单" ] && {
         [ -s "$CRASHDIR"/configs/mac ] &&
@@ -65,8 +65,8 @@ start_ipt_route() { #iptables-route通用工具
         fi
         #将所在链指定流量指向shellcrash表
         "$1" $w -t "$2" -I "$3" -p "$5" $ports -j "$4"
-        [ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "已开启" ] && [ "$1" = iptables ] && "$1" $w -t "$2" -I "$3" -p "$5" -d 28.0.0.0/8 -j "$4"
-        [ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "已开启" ] && [ "$1" = ip6tables ] && "$1" $w -t "$2" -I "$3" -p "$5" -d fc00::/16 -j "$4"
+        [ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "ON" ] && [ "$1" = iptables ] && "$1" $w -t "$2" -I "$3" -p "$5" -d 28.0.0.0/8 -j "$4"
+        [ "$dns_mod" = "mix" -o "$dns_mod" = "fake-ip" ] && [ "$common_ports" = "ON" ] && [ "$1" = ip6tables ] && "$1" $w -t "$2" -I "$3" -p "$5" -d fc00::/16 -j "$4"
     }
     [ "$5" = "tcp" -o "$5" = "all" ] && proxy_set "$1" "$2" "$3" "$4" tcp
     [ "$5" = "udp" -o "$5" = "all" ] && proxy_set "$1" "$2" "$3" "$4" udp
@@ -170,7 +170,7 @@ start_iptables() { #iptables配置总入口
         JUMP="REDIRECT --to-ports $redir_port" #跳转劫持的具体命令
         [ "$lan_proxy" = true ] && {
             start_ipt_route iptables nat PREROUTING shellcrash tcp #ipv4-局域网tcp转发
-            [ "$ipv6_redir" = "已开启" ] && {
+            [ "$ipv6_redir" = "ON" ] && {
                 if $ip6table -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
                     start_ipt_route ip6tables nat PREROUTING shellcrashv6 tcp #ipv6-局域网tcp转发
                 else
@@ -180,7 +180,7 @@ start_iptables() { #iptables配置总入口
         }
         [ "$local_proxy" = true ] && {
             start_ipt_route iptables nat OUTPUT shellcrash_out tcp #ipv4-本机tcp转发
-            [ "$ipv6_redir" = "已开启" ] && {
+            [ "$ipv6_redir" = "ON" ] && {
                 if $ip6table -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
                     start_ipt_route ip6tables nat OUTPUT shellcrashv6_out tcp #ipv6-本机tcp转发
                 else
@@ -207,7 +207,7 @@ start_iptables() { #iptables配置总入口
         else
             logger "当前设备内核可能缺少kmod_ipt_tproxy模块支持，已放弃启动相关规则！" 31
         fi
-        [ "$ipv6_redir" = "已开启" ] && {
+        [ "$ipv6_redir" = "ON" ] && {
             if $ip6table -j TPROXY -h 2>/dev/null | grep -q '\--on-port'; then
                 JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
                 [ "$lan_proxy" = true ] && start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark all
@@ -240,7 +240,7 @@ start_iptables() { #iptables配置总入口
         else
             logger "当前设备内核可能缺少x_mark模块支持，已放弃启动相关规则！" 31
         fi
-        [ "$ipv6_redir" = "已开启" ] && [ "$crashcore" != clashpre ] && {
+        [ "$ipv6_redir" = "ON" ] && [ "$crashcore" != clashpre ] && {
             if $ip6table -j MARK -h 2>/dev/null | grep -q '\--set-mark'; then
                 [ "$lan_proxy" = true ] && {
                     [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && $ip6table -I FORWARD -o utun -j ACCEPT
@@ -252,13 +252,13 @@ start_iptables() { #iptables配置总入口
             fi
         }
     }
-    [ "$vm_redir" = "已开启" ] && [ -n "$$vm_ipv4" ] && {
+    [ "$vm_redir" = "ON" ] && [ -n "$$vm_ipv4" ] && {
         JUMP="REDIRECT --to-ports $redir_port"                    #跳转劫持的具体命令
         start_ipt_dns iptables PREROUTING shellcrash_vm_dns       #ipv4-局域网dns转发
         start_ipt_route iptables nat PREROUTING shellcrash_vm tcp #ipv4-局域网tcp转发
     }
     #启动DNS劫持
-    [ "$dns_no" != "已禁用" -a "$dns_redir" != "已开启" -a "$firewall_area" -le 3 ] && {
+    [ "$dns_no" != "已禁用" -a "$dns_redir" != "ON" -a "$firewall_area" -le 3 ] && {
         [ "$lan_proxy" = true ] && {
             start_ipt_dns iptables PREROUTING shellcrash_dns #ipv4-局域网dns转发
             if $ip6table -j REDIRECT -h 2>/dev/null | grep -q '\--to-ports'; then
@@ -271,8 +271,8 @@ start_iptables() { #iptables配置总入口
         [ "$local_proxy" = true ] && start_ipt_dns iptables OUTPUT shellcrash_dns_out #ipv4-本机dns转发
     }
     #屏蔽QUIC
-    [ "$quic_rj" = '已启用' -a "$lan_proxy" = true -a "$redir_mod" != "Redir模式" ] && {
-        [ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "已开启" ] && {
+    [ "$quic_rj" = 'ON' -a "$lan_proxy" = true -a "$redir_mod" != "Redir模式" ] && {
+        [ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "ON" ] && {
             set_cn_ip='-m set ! --match-set cn_ip dst'
             set_cn_ip6='-m set ! --match-set cn_ip6 dst'
         }

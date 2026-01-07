@@ -18,7 +18,7 @@
 #设置循环检测面板端口以判定服务启动是否成功
 . "$CRASHDIR"/libs/start_wait.sh
 if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
-	[ "$start_old" = "已开启" ] && [ ! -L "$TMPDIR"/CrashCore ] && rm -f "$TMPDIR"/CrashCore	#删除缓存目录内核文件
+	[ "$start_old" = "ON" ] && [ ! -L "$TMPDIR"/CrashCore ] && rm -f "$TMPDIR"/CrashCore	#删除缓存目录内核文件
 	. "$CRASHDIR"/starts/fw_start.sh										#配置防火墙流量劫持
 	date +%s >"$TMPDIR"/crash_start_time                                    #标记启动时间
 	#TG机器人守护进程
@@ -42,7 +42,7 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 			cronset '2fjdi124dd12s' "$line"
 		done <"$CRASHDIR"/task/running
 	}
-	[ "$start_old" = "已开启" ] && cronset '保守模式守护进程' "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh shellcrash #ShellCrash保守模式守护进程"
+	[ "$start_old" = "ON" ] && cronset '保守模式守护进程' "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh shellcrash #ShellCrash保守模式守护进程"
 	#加载条件任务
 	[ -s "$CRASHDIR"/task/afstart ] && { . "$CRASHDIR"/task/afstart; } &
 	[ -s "$CRASHDIR"/task/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {

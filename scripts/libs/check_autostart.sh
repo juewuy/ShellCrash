@@ -1,5 +1,5 @@
 check_autostart(){
-	if [ "$start_old" = "已开启" ];then
+	if [ "$start_old" = ON ];then
 		[ ! -f "$CRASHDIR"/.dis_startup ] && return 0
 	elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
 		[ -n "$(find /etc/rc.d -name '*shellcrash')" ] && return 0

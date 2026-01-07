@@ -13,6 +13,6 @@ check_core() { #检查及下载内核文件
         core_webget || logger "核心下载失败，请重新运行或更换安装源！" 31  
     }
     [ ! -x "$TMPDIR"/CrashCore ] && chmod +x "$TMPDIR"/CrashCore 2>/dev/null                               #自动授权
-    [ "$start_old" != "已开启" -a "$(cat /proc/1/comm)" = "systemd" ] && restorecon -RF "$CRASHDIR" 2>/dev/null #修复SELinux权限问题
+    [ "$start_old" != "ON" -a "$(cat /proc/1/comm)" = "systemd" ] && restorecon -RF "$CRASHDIR" 2>/dev/null #修复SELinux权限问题
     return 0
 }

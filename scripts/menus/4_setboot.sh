@@ -20,11 +20,11 @@ disable_autostart(){
 }
 
 setboot() { #启动设置菜单
-    [ -z "$start_old" ] && start_old=未开启
+    [ -z "$start_old" ] && start_old=OFF
     [ -z "$start_delay" -o "$start_delay" = 0 ] && delay=未设置 || delay="${start_delay}秒"
     check_autostart && auto_set="\033[33m禁止" || auto_set="\033[32m允许"
-    [ "${BINDIR}" = "$CRASHDIR" ] && mini_clash=未开启 || mini_clash=已开启
-    [ -z "$network_check" ] && network_check=已开启
+    [ "${BINDIR}" = "$CRASHDIR" ] && mini_clash=OFF || mini_clash=ON
+    [ -z "$network_check" ] && network_check=ON
     echo "-----------------------------------------------"
     echo -e "\033[30;47m欢迎使用启动设置菜单：\033[0m"
     echo "-----------------------------------------------"
@@ -53,17 +53,17 @@ setboot() { #启动设置菜单
         setboot
 	;;
     2)
-        if [ "$start_old" = "未开启" ] >/dev/null 2>&1; then
+        if [ "$start_old" = "OFF" ] >/dev/null 2>&1; then
             echo -e "\033[33m改为使用保守模式启动服务！！\033[0m"
             disable_autostart
-            start_old=已开启
+            start_old=ON
             setconfig start_old "$start_old"
             "$CRASHDIR"/start.sh stop
         else
             if grep -qE 'procd|systemd|s6' /proc/1/comm || rc-status -r >/dev/null 2>&1; then
                 echo -e "\033[32m改为使用系统守护进程启动服务！！\033[0m"
                 "$CRASHDIR"/start.sh cronset "ShellCrash初始化"
-                start_old=未开启
+                start_old=OFF
                 setconfig start_old "$start_old"
                 "$CRASHDIR"/start.sh stop
 
@@ -93,10 +93,10 @@ setboot() { #启动设置菜单
 	;;
     4)
         dir_size=$(df "$CRASHDIR" | awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' | grep Ava | awk '{print $2}')
-        if [ "$mini_clash" = "未开启" ]; then
+        if [ "$mini_clash" = "OFF" ]; then
             if [ "$dir_size" -gt 20480 ]; then
                 echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
-            elif [ "$start_old" != '已开启' -a "$(cat /proc/1/comm)" = "systemd" ]; then
+            elif [ "$start_old" != 'ON' -a "$(cat /proc/1/comm)" = "systemd" ]; then
                 echo -e "\033[33m不支持systemd启动模式，请先启用保守模式！\033[0m"
             else
                 [ "$BINDIR" = "$CRASHDIR" ] && BINDIR="$TMPDIR"
@@ -165,10 +165,10 @@ setboot() { #启动设置菜单
         echo -e "\033[32m启用时，会导致部分性能较差或者拨号较慢的设备可能会因查询超时导致启动失败！\033[0m"
         read -p "是否切换？(1/0) > " res
         [ "$res" = '1' ] && {
-            if [ "$network_check" = "已禁用" ]; then
-                network_check=已启用
+            if [ "$network_check" = "OFF" ]; then
+                network_check=ON
             else
-                network_check=已禁用
+                network_check=OFF
             fi
             setconfig network_check "$network_check"
         }

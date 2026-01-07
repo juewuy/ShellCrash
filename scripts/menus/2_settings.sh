@@ -6,8 +6,8 @@ __IS_MODULE_2_SETTINGS_LOADED=1
 
 settings() { #功能设置
     #获取设置默认显示
-    [ -z "$skip_cert" ] && skip_cert=已开启
-	[ -z "$sniffer" ] && sniffer=未启用
+    [ -z "$skip_cert" ] && skip_cert=ON
+	[ -z "$sniffer" ] && sniffer=OFF
 	[ -z "$dns_mod" ] && dns_mod='redir_host'
     #
     echo "-----------------------------------------------"
@@ -53,19 +53,19 @@ settings() { #功能设置
 	;;
     4)
         echo "-----------------------------------------------"
-        if [ "$skip_cert" = "未开启" ] >/dev/null 2>&1; then
+        if [ "$skip_cert" = "OFF" ] >/dev/null 2>&1; then
             echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
-            skip_cert=已开启
+            skip_cert=ON
         else
             echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
-            skip_cert=未开启
+            skip_cert=OFF
         fi
         setconfig skip_cert $skip_cert
         settings
 	;;
     5)
         echo "-----------------------------------------------"
-        if [ "$sniffer" = "未启用" ]; then
+        if [ "$sniffer" = "OFF" ]; then
             if [ "$crashcore" = "clash" ]; then
                 rm -rf ${TMPDIR}/CrashCore
                 rm -rf "$CRASHDIR"/CrashCore
@@ -74,11 +74,11 @@ settings() { #功能设置
                 setconfig crashcore $crashcore
                 echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
             fi
-            sniffer=已启用
+            sniffer=ON
         elif [ "$crashcore" = "clashpre" -a "$dns_mod" = "redir_host" ]; then
             echo -e "\033[31m使用clashpre内核且开启redir-host模式时无法关闭！\033[0m"
         else
-            sniffer=未启用
+            sniffer=OFF
         fi
         setconfig sniffer $sniffer
         settings
@@ -283,11 +283,11 @@ set_redir_mod() { #路由模式设置
     esac
 }
 set_fw_filter(){ #流量过滤
-	[ -z "$common_ports" ] && common_ports=已开启
-	[ -z "$quic_rj" ] && quic_rj=未开启
-    [ -z "$cn_ip_route" ] && cn_ip_route=未开启	
+	[ -z "$common_ports" ] && common_ports=ON
+	[ -z "$quic_rj" ] && quic_rj=OFF
+    [ -z "$cn_ip_route" ] && cn_ip_route=OFF	
 	touch "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter
-	[ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ] && mac_return=未开启 || mac_return=已启用
+	[ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ] && mac_return=OFF || mac_return=ON
 	echo "-----------------------------------------------"
     echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m   ————用于过滤P2P流量"
     echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m   ————使用黑/白名单进行过滤"
@@ -304,7 +304,7 @@ set_fw_filter(){ #流量过滤
 	;;
     1)
         set_common_ports() {
-            if [ "$common_ports" = "未开启" ]; then
+            if [ "$common_ports" = "OFF" ]; then
                 echo -e "\033[33m当前代理端口为：【$multiport】\033[0m"
                 echo -e "\033[31m注意，MIX模式下，非常用端口的域名连接将不受影响！！\033[0m"
                 read -p "是否修改默认端口？(1/0) > " res
@@ -312,11 +312,11 @@ set_fw_filter(){ #流量过滤
                     read -p "请输入自定义端口,注意用小写逗号分隔 > " text
                     [ -n "$text" ] && setconfig multiport $text && echo -e "\033[33m已设为代理【$multiport】端口！！\033[0m"
                 }
-                common_ports=已开启
+                common_ports=ON
                 sleep 1
             else
                 echo -e "\033[33m已设为代理全部端口！！\033[0m"
-                common_ports=未开启
+                common_ports=OFF
             fi
             setconfig common_ports $common_ports
         }
@@ -341,12 +341,12 @@ set_fw_filter(){ #流量过滤
     3)
         echo "-----------------------------------------------"
         if [ -n "$(echo "$redir_mod" | grep -oE '混合|Tproxy|Tun')" ]; then
-            if [ "$quic_rj" = "未开启" ]; then
+            if [ "$quic_rj" = "OFF" ]; then
                 echo -e "\033[33m已禁止QUIC流量通过ShellCrash内核！！\033[0m"
-                quic_rj=已启用
+                quic_rj=ON
             else
                 echo -e "\033[33m已取消禁止QUIC协议流量！！\033[0m"
-                quic_rj=未开启
+                quic_rj=OFF
             fi
             setconfig quic_rj $quic_rj
         else
@@ -357,14 +357,14 @@ set_fw_filter(){ #流量过滤
 	;;
     4)
         if [ -n "$(ipset -v 2>/dev/null)" ] || [ "$firewall_mod" = 'nftables' ]; then
-            if [ "$cn_ip_route" = "未开启" ]; then
+            if [ "$cn_ip_route" = "OFF" ]; then
                 echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
                 echo -e "\033[31m注意！！！此功能会导致全局模式及一切CN相关规则失效！！！\033[0m"
-                cn_ip_route=已开启
+                cn_ip_route=ON
                 sleep 2
             else
                 echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
-                cn_ip_route=未开启
+                cn_ip_route=OFF
             fi
             setconfig cn_ip_route $cn_ip_route
         else
@@ -401,7 +401,7 @@ set_fw_filter(){ #流量过滤
 }
 
 set_cust_host_ipv4() { #自定义ipv4透明路由网段
-	[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="未启用"
+	[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="OFF"
 	echo "-----------------------------------------------"
 	echo -e "当前默认透明路由的网段为: \033[32m$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'br' | grep -v 'iot' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ' && echo) \033[0m"
 	echo -e "当前已添加的自定义网段为:\033[36m$cust_host_ipv4\033[0m"
@@ -412,10 +412,10 @@ set_cust_host_ipv4() { #自定义ipv4透明路由网段
 	read -p "请输入对应的序号或需要额外添加的网段 > " text
 	case "$text" in
 	2)
-		if [ "$replace_default_host_ipv4" == "未启用" ]; then
-			replace_default_host_ipv4="已启用"
+		if [ "$replace_default_host_ipv4" == "OFF" ]; then
+			replace_default_host_ipv4="ON"
 		else
-			replace_default_host_ipv4="未启用"
+			replace_default_host_ipv4="OFF"
 		fi
 		setconfig replace_default_host_ipv4 "$replace_default_host_ipv4"
 		set_cust_host_ipv4
@@ -678,7 +678,7 @@ set_adv_config() { #端口设置
             setconfig authentication
             echo 密码已移除！
         else
-            if [ "$local_proxy" = "已开启" -a "$local_type" = "环境变量" ]; then
+            if [ "$local_proxy" = "ON" -a "$local_type" = "环境变量" ]; then
                 echo "-----------------------------------------------"
                 echo -e "\033[33m请先禁用本机劫持功能或使用增强模式！\033[0m"
                 sleep 1
@@ -724,7 +724,7 @@ set_adv_config() { #端口设置
         read -p "请输入需要指定劫持的端口 > " multiport
         if [ -n "$multiport" ]; then
             [ "$multiport" = "0" ] && multiport="22,80,143,194,443,465,587,853,993,995,5222,8080,8443"
-            common_ports=已开启
+            common_ports=ON
             setconfig multiport "$multiport"
             setconfig common_ports "$common_ports"
             echo -e "\033[32m设置成功！！！\033[0m"
@@ -769,7 +769,7 @@ set_adv_config() { #端口设置
     esac
 }
 set_firewall_area() { #路由范围设置
-    [ -z "$vm_redir" ] && vm_redir='未开启'
+    [ -z "$vm_redir" ] && vm_redir='OFF'
     echo "-----------------------------------------------"
     echo -e "\033[31m注意：\033[0m基于桥接网卡的Docker/虚拟机流量，请单独启用！"
     echo -e "\033[33m如你使用了第三方DNS如smartdns等，请勿启用本机劫持或使用shellcrash用户执行！\033[0m"
@@ -837,7 +837,7 @@ set_firewall_vm(){
 	case "$num" in
 	1)
 		if [ -n "$vm_ipv4" ]; then
-			vm_redir=已开启
+			vm_redir=ON
 		else
 			echo -e "\033[33m请先运行容器再运行脚本或者手动设置网段\033[0m"
 		fi
@@ -846,10 +846,10 @@ set_firewall_vm(){
 		echo -e "多个网段请用空格连接，可运行容器后使用【ip route】命令查看网段地址"
 		echo -e "示例：\033[32m10.88.0.0/16 172.17.0.0/16\033[0m"
 		read -p "请输入自定义网段 > " text
-		[ -n "$text" ] && vm_ipv4=$text && vm_redir=已开启
+		[ -n "$text" ] && vm_ipv4=$text && vm_redir=ON
 	;;
 	3)
-		vm_redir=未开启
+		vm_redir=OFF
 		unset vm_ipv4
 	;;
 	*) ;;
@@ -858,8 +858,8 @@ set_firewall_vm(){
 	setconfig vm_ipv4 "'$vm_ipv4'"
 }
 set_ipv6() { #ipv6设置
-    [ -z "$ipv6_redir" ] && ipv6_redir=未开启
-    [ -z "$ipv6_dns" ] && ipv6_dns=已开启
+    [ -z "$ipv6_redir" ] && ipv6_redir=OFF
+    [ -z "$ipv6_dns" ] && ipv6_dns=ON
     echo "-----------------------------------------------"
     echo -e " 1 ipv6透明路由:  \033[36m$ipv6_redir\033[0m  ——劫持ipv6流量"
     [ "$disoverride" != "1" ] && echo -e " 2 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"
@@ -869,19 +869,19 @@ set_ipv6() { #ipv6设置
     case "$num" in
     0) ;;
     1)
-        if [ "$ipv6_redir" = "未开启" ]; then
-            ipv6_support=已开启
-            ipv6_redir=已开启
+        if [ "$ipv6_redir" = "OFF" ]; then
+            ipv6_support=ON
+            ipv6_redir=ON
             sleep 2
         else
-            ipv6_redir=未开启
+            ipv6_redir=OFF
         fi
         setconfig ipv6_redir $ipv6_redir
         setconfig ipv6_support $ipv6_support
         set_ipv6
 	;;
     2)
-        [ "$ipv6_dns" = "未开启" ] && ipv6_dns=已开启 || ipv6_dns=未开启
+        [ "$ipv6_dns" = "OFF" ] && ipv6_dns=ON || ipv6_dns=OFF
         setconfig ipv6_dns $ipv6_dns
         set_ipv6
 	;;

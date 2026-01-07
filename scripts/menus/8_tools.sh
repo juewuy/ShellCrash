@@ -83,7 +83,7 @@ tools() {
 	    #获取设置默认显示
 	    grep -qE "^\s*[^#].*otapredownload" /etc/crontabs/root >/dev/null 2>&1 && mi_update=禁用 || mi_update=启用
 	    [ "$mi_mi_autoSSH" = "已配置" ] && mi_mi_autoSSH_type=32m已配置 || mi_mi_autoSSH_type=31m未配置
-	    [ -f "$CRASHDIR"/tools/tun.ko ] && mi_tunfix=32m已启用 || mi_tunfix=31m未启用
+	    [ -f "$CRASHDIR"/tools/tun.ko ] && mi_tunfix=32mON || mi_tunfix=31mOFF
 	
 	    echo "-----------------------------------------------"
 	    echo -e "\033[30;47m欢迎使用其他工具菜单：\033[0m"
@@ -222,14 +222,14 @@ mi_autoSSH() {
 #日志菜单
 log_pusher() {
 	while true; do
-	    [ -n "$push_TG" ] && stat_TG=32m已启用 || stat_TG=33m未启用
-	    [ -n "$push_Deer" ] && stat_Deer=32m已启用 || stat_Deer=33m未启用
-	    [ -n "$push_bark" ] && stat_bark=32m已启用 || stat_bark=33m未启用
-	    [ -n "$push_Po" ] && stat_Po=32m已启用 || stat_Po=33m未启用
-	    [ -n "$push_PP" ] && stat_PP=32m已启用 || stat_PP=33m未启用
-	    [ -n "$push_SynoChat" ] && stat_SynoChat=32m已启用 || stat_SynoChat=33m未启用
-	    [ -n "$push_Gotify" ] && stat_Gotify=32m已启用 || stat_Gotify=33m未启用
-	    [ "$task_push" = 1 ] && stat_task=32m已启用 || stat_task=33m未启用
+	    [ -n "$push_TG" ] && stat_TG=32mON || stat_TG=33mOFF
+	    [ -n "$push_Deer" ] && stat_Deer=32mON || stat_Deer=33mOFF
+	    [ -n "$push_bark" ] && stat_bark=32mON || stat_bark=33mOFF
+	    [ -n "$push_Po" ] && stat_Po=32mON || stat_Po=33mOFF
+	    [ -n "$push_PP" ] && stat_PP=32mON || stat_PP=33mOFF
+	    [ -n "$push_SynoChat" ] && stat_SynoChat=32mON || stat_SynoChat=33mOFF
+	    [ -n "$push_Gotify" ] && stat_Gotify=32mON || stat_Gotify=33mOFF
+	    [ "$task_push" = 1 ] && stat_task=32mON || stat_task=33mOFF
 	    [ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
 	    echo "-----------------------------------------------"
 	    echo -e " 1 Telegram推送	——\033[$stat_TG\033[0m"
@@ -537,7 +537,7 @@ testcommand(){
 		if [ "$firewall_mod" = "nftables" ];then
 			nft list table inet shellcrash | sed '/set cn_ip {/,/}/d;/set cn_ip6 {/,/}/d;/^[[:space:]]*}/d'
 		else
-			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 -o "$vm_redir" = "已开启" ] && {
+			[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 -o "$vm_redir" = "ON" ] && {
 				echo "----------------Redir+DNS---------------------"
 				iptables -t nat -L PREROUTING --line-numbers
 				iptables -t nat -L shellcrash_dns --line-numbers
@@ -559,7 +559,7 @@ testcommand(){
 					iptables -t mangle -L shellcrash_mark_out --line-numbers
 				}
 			}
-			[ "$ipv6_redir" = "已开启" ] && {
+			[ "$ipv6_redir" = "ON" ] && {
 				[ "$firewall_area" = 1 -o "$firewall_area" = 3 ] && {
 					ip6tables -t nat -L >/dev/null 2>&1 && {
 						echo "-------------IPV6-Redir+DNS-------------------"
@@ -574,7 +574,7 @@ testcommand(){
 					}
 				}
 			}
-			[ "$vm_redir" = "已开启" ] && {
+			[ "$vm_redir" = "ON" ] && {
 						echo "-------------vm-Redir-------------------"
 						iptables -t nat -L shellcrash_vm --line-numbers
 						iptables -t nat -L shellcrash_vm_dns --line-numbers
@@ -717,13 +717,13 @@ userguide(){
 			setconfig dns_mod mix
 			setconfig firewall_area '1'
 			#默认启用绕过CN-IP
-			setconfig cn_ip_route 已开启
+			setconfig cn_ip_route ON
 			#自动识别IPV6
 			[ -n "$(ip a 2>&1 | grep -w 'inet6' | grep -E 'global' | sed 's/.*inet6.//g' | sed 's/scope.*$//g')" ] && {
-				setconfig ipv6_redir 已开启
-				setconfig ipv6_support 已开启
-				setconfig ipv6_dns 已开启
-				setconfig cn_ipv6_route 已开启
+				setconfig ipv6_redir ON
+				setconfig ipv6_support ON
+				setconfig ipv6_dns ON
+				setconfig cn_ipv6_route ON
 			}
 			#设置开机启动
 			[ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
@@ -747,7 +747,7 @@ userguide(){
 		2)
 			setconfig redir_mod "Redir模式"
 			[ -n "$(echo $cputype | grep -E "linux.*mips.*")" ] && setconfig crashcore "clash"
-			setconfig common_ports "未开启"
+			setconfig common_ports "OFF"
 			setconfig firewall_area '2'
 		    ;;
 		3)

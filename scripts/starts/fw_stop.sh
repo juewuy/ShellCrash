@@ -7,9 +7,9 @@
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/starts/fw_getlanip.sh && getlanip #获取局域网host地址
 #缺省值
-[ -z "$common_ports" ] && common_ports='已开启'
+[ -z "$common_ports" ] && common_ports='ON'
 [ -z "$multiport" ] && multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
-[ "$common_ports" = "已开启" ] && ports="-m multiport --dports $multiport"
+[ "$common_ports" = "ON" ] && ports="-m multiport --dports $multiport"
 #重置iptables相关规则
 ckcmd iptables && {
 	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
@@ -43,7 +43,7 @@ ckcmd iptables && {
 	#tun
 	$iptable -D FORWARD -o utun -j ACCEPT 2>/dev/null
 	#屏蔽QUIC
-	[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" != "未开启" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
+	[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" != "OFF" ] && set_cn_ip='-m set ! --match-set cn_ip dst'
 	$iptable -D INPUT -p udp --dport 443 $set_cn_ip -j REJECT 2>/dev/null
 	$iptable -D FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT 2>/dev/null
 	#公网访问
@@ -93,7 +93,7 @@ ckcmd ip6tables && {
 	#tun
 	$ip6table -D FORWARD -o utun -j ACCEPT 2>/dev/null
 	#屏蔽QUIC
-	[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" != "未开启" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
+	[ "$dns_mod" != "fake-ip" ] && [ "$cn_ip_route" != "OFF" ] && set_cn_ip6='-m set ! --match-set cn_ip6 dst'
 	$ip6table -D INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT 2>/dev/null
 	$ip6table -D FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT 2>/dev/null
 	#公网访问
@@ -120,13 +120,6 @@ ckcmd ip6tables && {
 #清理ipset规则
 ipset destroy cn_ip >/dev/null 2>&1
 ipset destroy cn_ip6 >/dev/null 2>&1
-#移除dnsmasq转发规则
-[ "$dns_redir" = "已开启" ] && {
-	uci del dhcp.@dnsmasq[-1].server >/dev/null 2>&1
-	uci set dhcp.@dnsmasq[0].noresolv=0 2>/dev/null
-	uci commit dhcp >/dev/null 2>&1
-	/etc/init.d/dnsmasq restart >/dev/null 2>&1
-}
 #清理路由规则
 ip rule del fwmark $fwmark table $table 2>/dev/null
 ip route flush table $table 2>/dev/null

@@ -1,5 +1,5 @@
 
-if [ "$start_old" != "已开启" ] && ckcmd journalctl; then
+if [ "$start_old" != "ON" ] && ckcmd journalctl; then
 	journalctl -u shellcrash >"$TMPDIR"/core_test.log
 else
 	PID=$(pidof CrashCore) && [ -n "$PID" ] && kill -9 "$PID" >/dev/null 2>&1

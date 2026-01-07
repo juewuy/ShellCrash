@@ -163,7 +163,7 @@ fi
 	setconfig firewall_area '1'
 	setconfig firewall_mod 'nftables'
 	setconfig release_type 'master'
-	setconfig start_old '未开启'
+	setconfig start_old 'OFF'
 	echo "$CRASHDIR/menu.sh" >> /etc/profile
 	cat > /usr/bin/crash <<'EOF'
 #!/bin/sh
@@ -226,6 +226,8 @@ sed -i "s/redir_mod=Nft基础/redir_mod=Redir模式/g" "$CFG_PATH"
 sed -i "s/redir_mod=Nft混合/redir_mod=Tproxy模式/g" "$CFG_PATH"
 sed -i "s/redir_mod=Tproxy混合/redir_mod=Tproxy模式/g" "$CFG_PATH"
 sed -i "s/redir_mod=纯净模式/firewall_area=4/g" "$CFG_PATH"
-sed -i "s/hosts_opt=未启用/hosts_opt=OFF/g" "$CFG_PATH"
+#变量统一使用ON/OFF
+sed -i 's/=\(已启用\|已开启\)$/=ON/'  "$CFG_PATH"
+sed -i 's/=\(未启用\|未开启\)$/=OFF/' "$CFG_PATH"
 
 echo -e "\033[32m脚本初始化完成,请输入\033[30;47m $my_alias \033[0;33m命令开始使用！\033[0m"

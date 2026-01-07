@@ -97,7 +97,7 @@ EOF
 EOF
     fi
     #生成dns.json
-    [ "$ipv6_dns" != "未开启" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
+    [ "$ipv6_dns" != "OFF" ] && strategy='prefer_ipv4' || strategy='ipv4_only'
     #获取detour出口
 	auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '自动' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//')
     [ -z "$auto_detour" ] && auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//')
@@ -189,7 +189,7 @@ EOF
 EOF
     #生成add_route.json
     #域名嗅探配置
-    [ "$sniffer" = "已启用" ] && sniffer_set='{ "action": "sniff", "timeout": "500ms" },'
+    [ "$sniffer" = ON ] && sniffer_set='{ "action": "sniff", "timeout": "500ms" },'
 	[ "$ts_service" = ON ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
     cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
@@ -257,7 +257,7 @@ EOF
 		. "$CRASHDIR"/libs/sb_inbounds.sh
 	}
     if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
-        [ "ipv6_redir" = '已开启' ] && ipv6_address='"fe80::e5c5:2469:d09b:609a/64",'
+        [ "ipv6_redir" = 'ON' ] && ipv6_address='"fe80::e5c5:2469:d09b:609a/64",'
         cat >>"$TMPDIR"/jsons/tun.json <<EOF
 {
   "inbounds": [
@@ -336,7 +336,7 @@ EOF
     sed -i '/"process_name": "[^"]*",/d' "$TMPDIR"/jsons/route.json
     sed -i 's/"auto_detect_interface": true/"auto_detect_interface": false/g' "$TMPDIR"/jsons/route.json
     #跳过本地tls证书验证
-    if [ "$skip_cert" != "未开启" ]; then
+    if [ "$skip_cert" != "OFF" ]; then
         sed -i 's/"insecure": false/"insecure": true/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json 2>/dev/null
     else
         sed -i 's/"insecure": true/"insecure": false/' "$TMPDIR"/jsons/outbounds.json "$TMPDIR"/jsons/providers.json 2>/dev/null
