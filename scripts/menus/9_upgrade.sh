@@ -715,145 +715,158 @@ done
 }
 
 #Dashboard
-getdb(){ 
-	dblink="${update_url}/"
-	echo "-----------------------------------------------"
-	echo 正在连接服务器获取安装文件…………
-	get_bin "$TMPDIR"/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
-	if [ "$?" = "1" ];then
-		echo "-----------------------------------------------"
-		echo -e "\033[31m文件下载失败！\033[0m"
-		echo "-----------------------------------------------"
-		error_down
-		setdb
-	else
-		echo -e "\033[33m下载成功，正在解压文件！\033[0m"
-		mkdir -p $dbdir > /dev/null
-		tar -zxf "$TMPDIR/clashdb.tar.gz" ${tar_para} -C $dbdir > /dev/null
-		[ $? -ne 0 ] && echo "文件解压失败！" && rm -rf "$TMPDIR"/clashfm.tar.gz && exit 1
-		#修改默认host和端口
-		if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "zashboard" ];then
-			sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
-			sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
-		elif [ "$db_type" = "meta_xd" ];then
-			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/_nuxt/*.js
-		else
-			sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
-		fi
-		#写入配置文件
-		setconfig hostdir "'$hostdir'"
-		echo "-----------------------------------------------"
-		echo -e "\033[32m面板安装成功！\033[36m如未生效，请使用【Ctrl+F5】强制刷新浏览器！！！\033[0m"
-		rm -rf "$TMPDIR"/clashdb.tar.gz
-	fi
-	sleep 1
+getdb() {
+    dblink="${update_url}/"
+    echo "-----------------------------------------------"
+    echo "正在连接服务器获取安装文件…………"
+    get_bin "$TMPDIR"/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
+    if [ "$?" = "1" ]; then
+        echo "-----------------------------------------------"
+        echo -e "\033[31m文件下载失败！\033[0m"
+        echo "-----------------------------------------------"
+        error_down
+        return 1
+    else
+        echo -e "\033[33m下载成功，正在解压文件！\033[0m"
+        mkdir -p $dbdir >/dev/null
+        tar -zxf "$TMPDIR/clashdb.tar.gz" ${tar_para} -C $dbdir >/dev/null
+        [ $? -ne 0 ] && echo "文件解压失败！" && rm -rf "$TMPDIR"/clashfm.tar.gz && exit 1
+        #修改默认host和端口
+        if [ "$db_type" = "clashdb" -o "$db_type" = "meta_db" -o "$db_type" = "zashboard" ]; then
+            sed -i "s/127.0.0.1/${host}/g" $dbdir/assets/*.js
+            sed -i "s/9090/${db_port}/g" $dbdir/assets/*.js
+        elif [ "$db_type" = "meta_xd" ]; then
+            sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/_nuxt/*.js
+        else
+            sed -i "s/127.0.0.1:9090/${host}:${db_port}/g" $dbdir/*.html
+        fi
+        #写入配置文件
+        setconfig hostdir "'$hostdir'"
+        echo "-----------------------------------------------"
+        echo -e "\033[32m面板安装成功！\033[36m如未生效，请使用【Ctrl+F5】强制刷新浏览器！！！\033[0m"
+        rm -rf "$TMPDIR"/clashdb.tar.gz
+    fi
+    sleep 1
 }
-setdb(){
-	dbdir(){
-		if [ -f /www/clash/CNAME -o -f "$CRASHDIR"/ui/CNAME ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
-			echo "-----------------------------------------------"
-			read -p "是否升级/覆盖安装？[1/0] > " res
-			if [ "$res" = 1 ]; then
-				rm -rf "$BINDIR"/ui
-				[ -f /www/clash/CNAME ] && rm -rf /www/clash && dbdir=/www/clash
-				[ -f "$CRASHDIR"/ui/CNAME ] && rm -rf "$CRASHDIR"/ui && dbdir="$CRASHDIR"/ui
-				getdb
-			else
-				setdb
-				echo -e "\033[33m安装已取消！\033[0m"
-			fi
-		elif [ -w /www -a -n "$(pidof nginx)" ];then
-			echo "-----------------------------------------------"
-			echo -e "请选择面板\033[33m安装目录：\033[0m"
-			echo "-----------------------------------------------"
-			echo -e " 1 在${CRASHDIR}/ui目录安装"
-			echo -e " 2 在/www/clash目录安装"
-			echo "-----------------------------------------------"
-			echo " 0 返回上级菜单"
-			read -p "请输入对应数字 > " num
 
-			if [ "$num" = '1' ]; then
-				dbdir="$CRASHDIR"/ui
-				hostdir=":$db_port/ui"
-				getdb
-			elif [ "$num" = '2' ]; then
-				dbdir=/www/clash
-				hostdir='/clash'
-				getdb
-			else
-				setdb
-				echo -e "\033[33m安装已取消！\033[0m"
-			fi
-		else
-				dbdir="$CRASHDIR"/ui
-				hostdir=":$db_port/ui"
-				getdb
-		fi
-	}
+dbdir() {
+    if [ -f /www/clash/CNAME -o -f "$CRASHDIR"/ui/CNAME ]; then
+        echo "-----------------------------------------------"
+        echo -e "\033[31m检测到您已经安装过本地面板了！\033[0m"
+        echo "-----------------------------------------------"
+        read -p "是否升级/覆盖安装？[1/0] > " res
+        if [ "$res" = 1 ]; then
+            rm -rf "$BINDIR"/ui
+            [ -f /www/clash/CNAME ] && rm -rf /www/clash && dbdir=/www/clash
+            [ -f "$CRASHDIR"/ui/CNAME ] && rm -rf "$CRASHDIR"/ui && dbdir="$CRASHDIR"/ui
+            getdb
+        else
+            echo -e "\033[33m安装已取消！\033[0m"
+            return 1
+        fi
+    elif [ -w /www -a -n "$(pidof nginx)" ]; then
+        echo "-----------------------------------------------"
+        echo -e "请选择面板\033[33m安装目录：\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 在${CRASHDIR}/ui目录安装"
+        echo -e " 2 在/www/clash目录安装"
+        echo "-----------------------------------------------"
+        echo " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            return 0
+            ;;
+        1)
+            dbdir="$CRASHDIR"/ui
+            hostdir=": $db_port/ui"
+            getdb
+            ;;
+        2)
+            dbdir=/www/clash
+            hostdir='/clash'
+            getdb
+            ;;
+        *)
+            errornum
+            sleep 1
+            return 1
+            ;;
+        esac
+    else
+        dbdir="$CRASHDIR"/ui
+        hostdir=":$db_port/ui"
+        getdb
+    fi
+}
 
-	echo "-----------------------------------------------"
-	echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
-	echo -e "\033[32m打开管理面板的速度更快且更稳定\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "请选择面板\033[33m安装类型：\033[0m"
-	echo "-----------------维护中------------------------"
-	echo -e " 1 安装\033[32mzashboard面板\033[0m(约2.2mb)"
-	echo -e " 2 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
-	echo -e " 3 安装\033[32mYacd-Meta魔改面板\033[0m(约1.7mb)"
-	echo "---------------已停止维护----------------------"
-	echo -e " 4 安装\033[32m基础面板\033[0m(约500kb)"
-	echo -e " 5 安装\033[32mMeta基础面板\033[0m(约800kb)"
-	echo -e " 6 安装\033[32mYacd面板\033[0m(约1.1mb)"
-	echo "-----------------------------------------------"
-	echo -e " 9 卸载\033[33m本地面板\033[0m"
-	echo " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-
-	case "$num" in
-	0) ;;
-	1)
-		db_type=zashboard
-		setconfig external_ui_url "https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip"
-		dbdir
-		;;
-	2)
-		db_type=meta_xd
-		setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/meta_xd.tar.gz"
-		dbdir
-		;;
-	3)
-		db_type=meta_yacd
-		dbdir
-		;;
-	4)
-		db_type=clashdb
-		dbdir
-		;;
-	5)
-		db_type=meta_db
-		dbdir
-		;;
-	6)
-		db_type=yacd
-		dbdir
-		;;
-	9)
-		read -p "确认卸载本地面板？(1/0) > " res
-		if [ "$res" = 1 ];then
-			rm -rf /www/clash
-			rm -rf "$CRASHDIR"/ui
-			rm -rf "$BINDIR"/ui
-			echo "-----------------------------------------------"
-			echo -e "\033[31m面板已经卸载！\033[0m"
-			sleep 1
-		fi
-		;;
-	*)
-		errornum
-		;;
-	esac
+setdb() {
+    while true; do
+        echo "-----------------------------------------------"
+        echo -e "\033[36m安装本地版dashboard管理面板\033[0m"
+        echo -e "\033[32m打开管理面板的速度更快且更稳定\033[0m"
+        echo "-----------------------------------------------"
+        echo -e "请选择面板\033[33m安装类型：\033[0m"
+        echo "-----------------维护中------------------------"
+        echo -e " 1 安装\033[32mzashboard面板\033[0m(约2.2mb)"
+        echo -e " 2 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
+        echo -e " 3 安装\033[32mYacd-Meta魔改面板\033[0m(约1.7mb)"
+        echo "---------------已停止维护----------------------"
+        echo -e " 4 安装\033[32m基础面板\033[0m(约500kb)"
+        echo -e " 5 安装\033[32mMeta基础面板\033[0m(约800kb)"
+        echo -e " 6 安装\033[32mYacd面板\033[0m(约1.1mb)"
+        echo "-----------------------------------------------"
+        echo -e " 9 卸载\033[33m本地面板\033[0m"
+        echo " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            db_type=zashboard
+            setconfig external_ui_url "https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip"
+            dbdir
+            ;;
+        2)
+            db_type=meta_xd
+            setconfig external_ui_url "https://raw.githubusercontent.com/juewuy/ShellCrash/update/bin/dashboard/meta_xd.tar.gz"
+            dbdir
+            ;;
+        3)
+            db_type=meta_yacd
+            dbdir
+            ;;
+        4)
+            db_type=clashdb
+            dbdir
+            ;;
+        5)
+            db_type=meta_db
+            dbdir
+            ;;
+        6)
+            db_type=yacd
+            dbdir
+            ;;
+        9)
+            read -p "确认卸载本地面板？(1/0) > " res
+            if [ "$res" = 1 ]; then
+                rm -rf /www/clash
+                rm -rf "$CRASHDIR"/ui
+                rm -rf "$BINDIR"/ui
+                echo "-----------------------------------------------"
+                echo -e "\033[31m面板已经卸载！\033[0m"
+                sleep 1
+            fi
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
 
 #根证书
