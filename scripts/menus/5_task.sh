@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/sh
 # Copyright (C) Juewuy
 
 [ -n "$__IS_MODULE_5_TASK_LOADED" ] && return
