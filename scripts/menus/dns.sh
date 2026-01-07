@@ -7,6 +7,7 @@ __IS_MODULE_DNS_LOADED=1
 set_dns_mod() { #DNS模式设置
 	[ -z "$hosts_opt" ] && hosts_opt=ON
     [ -z "$dns_protect" ] && dns_protect=ON
+	[ -z "$ecs_subnet" ] && ecs_subnet=OFF || ecs_subnet=ON
     echo "-----------------------------------------------"
     echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
     echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
@@ -17,7 +18,8 @@ set_dns_mod() { #DNS模式设置
 	echo "-----------------------------------------------"
     echo -e " 4 DNS防泄漏：  \033[36m$dns_protect\033[0m	———启用时少量网站可能连接卡顿"
     echo -e " 5 Hosts优化：  \033[36m$hosts_opt\033[0m	———调用本机hosts并劫持NTP服务"
-    echo -e " 6 DNS劫持端口：\033[36m$dns_redir_port\033[0m	———用于兼容第三方DNS服务"
+	echo -e " 6 ECS优化：    \033[36m$ecs_subnet\033[0m	———解决CDN下载浪费流量等问题"
+    echo -e " 7 DNS劫持端口：\033[36m$dns_redir_port\033[0m	———用于兼容第三方DNS服务"
     [ "$dns_mod" = "mix" ] &&
     echo -e " 8 管理MIX模式\033[33mFake-ip过滤列表\033[0m"
     echo -e " 9 修改\033[36mDNS服务器\033[0m"
@@ -68,6 +70,11 @@ set_dns_mod() { #DNS模式设置
         set_dns_mod
 	;;
     6)
+		[ "$ecs_subnet" = "ON" ] && ecs_subnet=OFF || ecs_subnet=ON
+		setconfig ecs_subnet "$ecs_subnet"
+		set_dns_mod
+	;;
+    7)
         echo "-----------------------------------------------"
         echo -e "\033[31m仅限搭配第三方DNS服务(AdGuard、SmartDNS……)使用！\033[0m"
 		echo -e "\033[33m设置为第三方DNS服务的监听端口即可修改防火墙劫持！\n建议在第三方DNS服务中将上游DNS指向【localhost:$dns_port】\033[0m"

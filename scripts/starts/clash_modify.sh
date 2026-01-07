@@ -16,6 +16,15 @@ modify_yaml() {
     #Meta内核专属配置
     [ "$crashcore" = 'meta' ] && {
         [ "$redir_mod" != "纯净模式" ] && [ -z "$(grep 'PROCESS' "$CRASHDIR"/yamls/*.yaml)" ] && find_process='find-process-mode: "off"'
+		#ecs优化
+		[ "$ecs_subnet" = ON ] && {
+			. "$CRASHDIR"/libs/get_ecsip.sh
+			if [ -n "$ecs_address" ];then
+				dns_fallback=$(echo "$dns_fallback, " | sed "s|, |#ecs-override=true\&ecs=$ecs_address, |g" | sed 's|, $||')
+			else
+				logger "自动获取ecs网段失败！"
+			fi
+		}
     }
     #dns配置
     [ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {

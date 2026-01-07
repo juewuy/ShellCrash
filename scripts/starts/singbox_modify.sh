@@ -63,8 +63,7 @@ modify_json() {
 EOF
     #生成add_hosts.json
     if [ "$hosts_opt" != "OFF" ]; then #本机hosts
-        sys_hosts=/etc/hosts
-        [ -s /data/etc/custom_hosts ] && sys_hosts=/data/etc/custom_hosts
+        [ -s /data/etc/custom_hosts ] && custom_hosts='"/data/etc/custom_hosts",'
         #NTP劫持
         cat >"$TMPDIR"/jsons/add_hosts.json <<EOF
 {
@@ -74,8 +73,9 @@ EOF
         "type": "hosts",
         "tag": "hosts",
         "path": [
-          "$sys_hosts",
-          "$HOME/.hosts"
+          $custom_hosts
+          "$HOME/.hosts",
+		  "/etc/hosts"
         ],
         "predefined": {
           "localhost": [
@@ -103,6 +103,8 @@ EOF
     [ -z "$auto_detour" ] && auto_detour=$(grep -E '"type": "urltest"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//')
     [ -z "$auto_detour" ] && auto_detour=$(grep -E '"type": "selector"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//')
     [ -z "$auto_detour" ] && auto_detour='"DIRECT"'
+	#ecs优化
+	[ "$ecs_subnet" = ON ] && . "$CRASHDIR"/libs/get_ecsip.sh
     #根据dns模式生成
     [ "$dns_mod" = "redir_host" ] && {
         global_dns=dns_proxy
@@ -127,20 +129,25 @@ EOF
     #防泄露设置
     [ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
     #生成add_rule_set.json
-    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '"tag" *:[[:space:]]*"cn"' "$CRASHDIR"/jsons/*.json &&
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '"tag" *:[[:space:]]*"cn"' "$CRASHDIR"/jsons/*.json && {
+		[ "$crashcore" = "singboxr" ] && srs_path='"path": "./ruleset/cn.srs",'
         cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
   "route": {
     "rule_set": [
       {
         "tag": "cn",
-        "type": "local",
-        "path": "./ruleset/cn.srs"
+        "type": "remote",
+        "format": "binary",
+        $srs_path
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs",
+        "download_detour": "DIRECT"
       }
     ]
   }
 }
 EOF
+}
     cat >"$TMPDIR"/jsons/dns.json <<EOF
 {
   "dns": {
@@ -150,6 +157,7 @@ EOF
         $(parse_singbox_dns "$dns_fallback")
 		"routing_mark": $routing_mark,
 		"detour": $auto_detour,
+		"client_subnet": "$ecs_address",
         "domain_resolver": "dns_resolver"
       },
       {
