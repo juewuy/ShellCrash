@@ -7,7 +7,7 @@
     { "tag": "✨ 自动选择（去高倍率）", "type": "urltest", "use_all_providers": true, "exclude": "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|[0-9][0-9]+))" },
 
     { "tag": "🤖 AI 平台", "type": "selector", "outbounds": ["🚀 节点选择", "🤖 AI节点（过滤港澳）", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
-    { "tag": "🤖 AI节点（过滤港澳）", "type": "urltest", "use_all_providers": true, "exclude": "(?i)(🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)" },
+    { "tag": "🤖 AI节点（过滤港澳）", "type": "urltest", "use_all_providers": true, "exclude": "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)" },
     { "tag": "🎬 奈飞视频", "type": "selector", "outbounds": ["🚀 节点选择", "🎬 奈飞节点", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
     { "tag": "🎬 奈飞节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(NF|奈飞|解锁|Netflix|NETFLIX|Media)" },
     { "tag": "▶️ 油管视频", "type": "selector", "outbounds": ["🚀 节点选择", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
