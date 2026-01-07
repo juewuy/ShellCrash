@@ -1,4 +1,4 @@
-#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 251231
+#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 260107
 
 #此版本为Maozai根据ACL4SSR规则修改优化而来，尽量在保持原有的基础上进行优化。
 #数据源采用了DustinWin/ruleset_geodata和MetaCubeX/meta-rules-dat两个开源项目的规则，感谢原作者的辛勤付出。
@@ -10,8 +10,8 @@
 proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, ✨ 自动选择（去高倍率）, 🛠️ 手动切换, ⚖️ 负载均衡, 🚑 故障转移, 🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🛠️ 手动切换, type: select, include-all: true, proxies: [🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: ♻️ 自动选择, type: url-test, interval: 1800, tolerance: 50, include-all: true}
-  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
+  - {name: ♻️ 自动选择, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)"}
+  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
   - {name: ⚖️ 负载均衡, type: load-balance, interval: 1800, include-all: true, hidden: true}
   - {name: 🚑 故障转移, type: fallback, interval: 1800, include-all: true, hidden: true}
 
@@ -63,164 +63,167 @@ rule-providers:
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ai.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ai.mrs"
   youtube:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/youtube.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/youtube.mrs"
   netflix:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/netflix.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/netflix.mrs"
   telegramip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/telegramip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/telegramip.mrs"
   trackerslist:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/trackerslist.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/trackerslist.mrs"
   applications:
     type: http
     format: text
     interval: 86400
     behavior: classical
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/applications.list"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/applications.list"
   private:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/private.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/private.mrs"
   privateip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/privateip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/privateip.mrs"
   networktest:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/networktest.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/networktest.mrs"
   apple-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/apple-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/apple-cn.mrs"
   google-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/google-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/google-cn.mrs"
   googlefcm:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/googlefcm.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/googlefcm.mrs"
   steamcn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/steam@cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@refs/heads/meta/geo/geosite/steam@cn.mrs"
   microsoft-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/microsoft-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/microsoft-cn.mrs"
   games-cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games-cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games-cn.mrs"
   games:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games.mrs"
   gamesip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/gamesip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/gamesip.mrs"
   mediaip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/mediaip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/mediaip.mrs"
   media:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/media.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/media.mrs"
   cnip:
     type: http
     format: mrs
     interval: 86400
     behavior: ipcidr
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
   proxy:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/proxy.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/proxy.mrs"
   cn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn.mrs"
   ads:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
     proxy: DIRECT
-    url: "https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ads.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/ads.mrs"
 
 #规则顺序
 rules:
+  - DOMAIN-SUFFIX,captive.apple.com,DIRECT
+  - DOMAIN-SUFFIX,kamo.teracloud.jp,DIRECT
+
   - RULE-SET,privateip,🔒 私有网络,no-resolve
   - RULE-SET,private,🔒 私有网络
   - RULE-SET,telegramip,📲 电报消息,no-resolve
