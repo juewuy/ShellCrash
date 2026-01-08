@@ -1,0 +1,86 @@
+# ===== Common Prompts =====
+MENU_ERR_INPUT="Please enter a valid letter or number!"
+
+MENU_RESTART_NOTICE="Changes have been detected. Please restart the service!"
+MENU_RESTART_ASK="Restart the service now? (1/0) > "
+
+MENU_PORT_CONFLICT_TITLE="The port is occupied by the following process. The core may fail to start!"
+MENU_PORT_CONFLICT_HINT="Please modify the default port configuration!"
+
+MENU_CORE_LOADED_OK="Core loaded successfully!"
+MENU_CORE_LOADED_BAD="The core file is invalid. It may be corrupted or incompatible with the CPU architecture!"
+MENU_CORE_REMOVED="The core file has been removed. Please verify and upload it again!"
+
+MENU_CFG_LOADED_OK="Configuration file loaded successfully!"
+
+MENU_OVERRIDE_WARN="You have disabled configuration overwrite. This will cause many features to be unavailable!"
+MENU_OVERRIDE_ASK="Cancel the disable setting?"
+
+# ===== Welcome & Status =====
+MENU_WELCOME="Welcome to ShellCrash!"
+MENU_VERSION_LABEL="Version:"
+
+MENU_RUN_ON="Running"
+MENU_RUN_SET="Configured"
+MENU_RUN_OFF="Not running"
+
+MENU_IP_DF="Device IP Address"
+
+MENU_AUTOSTART_ON="Autostart is enabled!"
+MENU_AUTOSTART_OFF="Autostart is disabled!"
+MENU_AUTOSTART_DEBUG="Running in debug mode!"
+
+MENU_MEM_USED="Memory usage:"
+MENU_RUNNING_TIME="Running time:"
+
+MENU_TG_CHANNEL="Telegram Channel:"
+MENU_TG_URL="https://t.me/ShellClash"
+
+# ===== /tmp File Detection =====
+MENU_TMP_CORE_FOUND="Available core file found:"
+MENU_TMP_CORE_ASK="Load this core file? (The current service will be stopped)"
+
+MENU_TMP_CFG_FOUND="Kernel configuration file found:"
+MENU_TMP_CFG_ASK="Load as the configuration file? (1/0) > "
+
+# ===== Main Menu =====
+MENU_MAIN_1="Start / Restart Service"
+MENU_MAIN_2="Feature Settings"
+MENU_MAIN_3="Stop Service"
+MENU_MAIN_4="Startup Settings"
+MENU_MAIN_5="Scheduled Tasks"
+MENU_MAIN_6="Configuration Management"
+MENU_MAIN_7="Access & Control"
+MENU_MAIN_8="Tools & Optimization"
+MENU_MAIN_9="Updates & Support"
+MENU_MAIN_0="Exit Script"
+
+MENU_MAIN_PROMPT="Please enter a number > "
+
+# ===== Service Operations =====
+MENU_SERVICE_STOPPED="Service has been stopped!"
+
+# ===== Test / Debug =====
+MENU_TEST_RUNNING="Running test mode. If errors occur, please take a screenshot and seek assistance."
+MENU_TEST_DONE_OK="Test completed! No issues found. Please restart the service."
+MENU_TEST_DONE_FAIL="Test completed!"
+MENU_TEST_LOG_HINT="Full execution log can be found at:"
+
+MENU_ERROR_FOUND="Error found:"
+
+# ===== Command Line Help =====
+MENU_CLI_WELCOME="Welcome to ShellCrash"
+
+MENU_CLI_TEST="Test Mode"
+MENU_CLI_HELP="Help List"
+MENU_CLI_UNINSTALL="Uninstall Script"
+MENU_CLI_INIT="Initialize Script"
+MENU_CLI_DEBUG="Debug Mode"
+
+MENU_CLI_START="Start Service"
+MENU_CLI_STOP="Stop Service"
+MENU_CLI_BOOT_INIT="Boot Initialization"
+
+MENU_HELP_ONLINE="Online Support:"
+MENU_HELP_BLOG="Official Blog:"
+MENU_HELP_GITHUB="Release Page:"
