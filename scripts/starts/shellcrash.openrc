@@ -6,7 +6,7 @@ description="Custom proxy service for ShellCrash"
 #获取目录
 CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
 [ -z "$CRASHDIR" ] && CRASHDIR=$(cat ~/.bashrc | grep CRASHDIR | awk -F "\"" '{print $2}')
-source ${CRASHDIR}/configs/command.env #加载启动命令和启动目录
+. ${CRASHDIR}/configs/command.env #加载启动命令和启动目录
 
 # PID 文件
 pidfile="/run/shellcrash.pid"
@@ -21,7 +21,7 @@ start() {
 
     # 如果 firewal_area=5 则运行主旁转发脚本
     if grep -q 'firewall_area=5' "$CRASHDIR/configs/ShellCrash.cfg" 2>/dev/null; then
-        "$CRASHDIR/start.sh" start_firewall
+        "$CRASHDIR"/starts/fw_start.sh
         eend $? "Firewall start failed"
         return
     fi
@@ -34,7 +34,7 @@ start() {
     fi
 
     # 必要文件检测
-    "$CRASHDIR/start.sh" bfstart
+    "$CRASHDIR"/starts/bfstart.sh
     if [ "$?" != "0" ]; then
         eend 1 "bfstart check failed"
         return
@@ -53,7 +53,7 @@ start() {
     [ $ret -ne 0 ] && return
 
     # 启动后操作
-    "$CRASHDIR/start.sh" afstart &
+    "$CRASHDIR"/starts/afstart.sh &
 }
 
 stop() {
@@ -67,7 +67,7 @@ stop() {
     rm -f "${pidfile}"
 
     # 清理 firewall、proxy
-    "$CRASHDIR/start.sh" stop_firewall
+    "$CRASHDIR"/starts/fw_stop.sh
 
     eend $?
 }

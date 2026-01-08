@@ -23,6 +23,31 @@ on:
         description: 'build tags'
         required: false
         type: string
+      tag6:
+        description: 'ziptype(tar.gz|upx|gz)'
+        required: true
+        type: string
+        
+  workflow_call:
+    inputs:
+      tag1:
+        required: true
+        type: string
+      tag2:
+        required: true
+        type: string
+      tag3:
+        required: false
+        type: string
+      tag4:
+        required: false
+        type: string
+      tag5:
+        required: false
+        type: string
+      tag6:
+        required: true
+        type: string
         
 jobs:
   go:
@@ -50,6 +75,7 @@ jobs:
         id: meta
         run: |
           version=${{ github.event.inputs.tag2 }}
+          [ "$version" = Alpha ] && version="Alpha-$(date +"%Y%m%d")"
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
             echo tags='' >> $GITHUB_OUTPUT
@@ -119,22 +145,6 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{needs.go.outputs.version}}
-          
-      - name: Set variables
-        run: |
-            VERSION="${GITHUB_REF_NAME,,}-$(git rev-parse --short HEAD)"
-            VERSION="${VERSION//\//-}"
-            PackageVersion="$(curl -s "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" | jq -r '.tag_name' | sed 's/v//g' | awk -F '.' '{$NF = $NF + 1; print}' OFS='.').${VERSION/-/.}"
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION=${{ github.event.inputs.version }}
-              PackageVersion="${VERSION#v}"
-            fi
-            echo "VERSION=${VERSION}" >> $GITHUB_ENV
-            echo "PackageVersion=${PackageVersion}" >> $GITHUB_ENV
-            echo "BUILDTIME=$(date)" >> $GITHUB_ENV
-            echo "CGO_ENABLED=0" >> $GITHUB_ENV
-            echo "BUILDTAG=-extldflags --static" >> $GITHUB_ENV
-            echo "GOTOOLCHAIN=local" >> $GITHUB_ENV    
         
       - name: Update CA
         run: |
@@ -145,13 +155,14 @@ jobs:
       - name: build core
         id: build
         run: |
-            go env
-            go build -v -tags "${TAGS}" -o meta -trimpath -ldflags "${BUILDTAG} -X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -X 'github.com/metacubex/mihomo/constant.BuildTime=${BUILDTIME}' -w -s -buildid="
+            go build -v -tags "${TAGS}" -o meta -trimpath -ldflags "-extldflags --static -X 'github.com/metacubex/mihomo/constant.Version=${VERSION}' -X 'github.com/metacubex/mihomo/constant.BuildTime=$(date)' -w -s -buildid="
+      
       - name: Upload file to workspace
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
           path: meta
+          overwrite: true
           
   push_to_git:
     needs: 
@@ -159,8 +170,9 @@ jobs:
       - meta
     runs-on: ubuntu-latest
     env: 
-      RELEASE: ${{ github.event.inputs.tag3 }}
-      PUSHDIR: ${{ github.event.inputs.tag4 }}
+      RELEASE: ${{ inputs.tag3 }}
+      PUSHDIR: ${{ inputs.tag4 }}
+      ZIPTYPE: ${{ inputs.tag6 }}    
       VERSION: ${{needs.meta.outputs.version}}
     steps:
       - name: Checkout ShellCrash
@@ -174,7 +186,30 @@ jobs:
         with:
           path: ./tmp
           
+      - name: Zip core by upx
+        if: env.ZIPTYPE == 'upx'
+        run: |    
+          wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+          wget https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
+          tar xf upx-3.96-amd64_linux.tar.xz
+          tar xf upx-3.94-amd64_linux.tar.xz
+          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
+            [ ! -f ./tmp/linux-${arch}/meta ] && continue
+            mv -f ./tmp/linux-${arch}/meta ./tmp/clash-linux-${arch}.upx
+            chmod +x ./tmp/clash-linux-${arch}.upx
+            case "${arch}" in
+              armv5|mips* )
+                ./upx-3.94-amd64_linux/upx --no-lzma ./tmp/clash-linux-${arch}.upx
+              ;;
+              *)
+                ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/clash-linux-${arch}.upx
+              ;;
+            esac
+          done
+          rm -rf upx-3.9*
+         
       - name: Zip core by tar
+        if: env.ZIPTYPE == 'tar.gz'
         run: |      
           for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
             [ ! -f ./tmp/linux-${arch}/meta ] && continue
@@ -183,15 +218,24 @@ jobs:
             tar --no-same-owner -zcvf ./tmp/clash-linux-${arch}.tar.gz -C ./tmp CrashCore
           done
           
+      - name: Zip core by gz
+        if: env.ZIPTYPE == 'gz'
+        run: |        
+          for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
+            [ ! -f ./tmp/linux-${arch}/meta ] && continue
+            mv -f ./tmp/linux-${arch}/meta ./tmp/clash-linux-${arch}
+            chmod +x ./tmp/clash-linux-${arch}
+            gzip ./tmp/clash-linux-${arch}
+          done
+                    
       - name: Commit and push
         if: ${{ env.PUSHDIR != '' }}
         run: |
-          crashcore='meta'
+          [ "${{ inputs.tag1 }}" = MetaCubeX/mihomo ] && crashcore='meta'
           mkdir -p ./bin/${crashcore}
-          rm -fr ./bin/${crashcore}/*
-          mv -f ./tmp/clash-linux-*.tar.gz ./bin/${crashcore}/
+          mv -f ./tmp/clash-linux-* ./bin/${crashcore}/
           rm -fr ./tmp
-          sed -i "s/${crashcore}_v=.*/${crashcore}_v=${VERSION}/" ./bin/version
+          [ "${{ inputs.tag6 }}" = tar.gz ] && sed -i "s/${crashcore}_v=.*/${crashcore}_v=${VERSION}/" ./bin/version
           git config --global user.email "github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
           git add . && git commit -m "更新${crashcore}内核至${VERSION}" || exit 0
           git push
@@ -219,3 +263,6 @@ jobs:
         with:
           retain_days: 1
           keep_minimum_runs: 2      
+
+
+

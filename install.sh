@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 # Copyright (C) Juewuy
 
 [ -z "$url" ] && url="https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev"
@@ -9,10 +9,13 @@ echo "**                 欢迎使用                  **"
 echo "**                ShellCrash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
-#内置工具
+
+# Check available capacity
 dir_avail() {
-    df $2 $1 | awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' | grep -E 'Ava|可用' | awk '{print $2}'
+	df -h >/dev/null 2>&1 && h="$2"
+    df -P $h "${1:-.}" 2>/dev/null | awk 'NR==2 {print $4}'
 }
+
 ckcmd() { #检查命令
     if command -v sh >/dev/null 2>&1;then
         command -v "$1" >/dev/null 2>&1
@@ -45,6 +48,7 @@ error_down() {
     $echo "请参考 \033[32mhttps://github.com/juewuy/ShellCrash/blob/master/README_CN.md"
     $echo "\033[33m使用其他安装源重新安装！\033[0m"
 }
+
 #安装及初始化
 set_alias() {
     echo "-----------------------------------------------"
@@ -60,6 +64,7 @@ set_alias() {
     1) my_alias=crash ;;
     2) my_alias=sc ;;
     3) my_alias=mm ;;
+    0) echo "安装已取消"; exit 1 ;;
     *) my_alias=$res ;;
     esac
     cmd=$(ckcmd "$my_alias" | grep 'menu.sh')
@@ -69,6 +74,7 @@ set_alias() {
         set_alias
     }
 }
+
 gettar() {
     webget /tmp/ShellCrash.tar.gz "$url/ShellCrash.tar.gz"
     if [ "$result" != "200" ]; then

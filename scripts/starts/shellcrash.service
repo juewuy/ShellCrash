@@ -5,12 +5,11 @@ After=network.target
 [Service]
 Type=simple
 User=shellcrash
-User=shellcrash
 StandardOutput=null
-ExecStartPre=/etc/ShellCrash/start.sh bfstart
+ExecStartPre=/etc/ShellCrash/starts/bfstart.sh
 ExecStart=/etc/ShellCrash/CrashCore run -D /etc/ShellCrash -C /tmp/ShellCrash/jsons >/dev/null
-ExecStartPost=/etc/ShellCrash/start.sh afstart
-ExecStopPost=/etc/ShellCrash/start.sh stop_firewall
+ExecStartPost=/etc/ShellCrash/starts/afstart.sh
+ExecStopPost=/etc/ShellCrash/starts/fw_stop.sh
 Restart=on-abnormal
 RestartSec=10s
 LimitNOFILE=infinity

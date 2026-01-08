@@ -2,8 +2,8 @@ version: "3.9"
 
 services:
   shellclash:
-    image: shellclash:latest
-    container_name: shellclash
+    image: juewuy/shellcrash:latest
+    container_name: shellcrash
     networks:
       macvlan_lan:
         ipv4_address: 192.168.31.222
