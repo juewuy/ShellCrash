@@ -12,7 +12,7 @@ startover() {
     if [ "$redir_mod" = "纯净模式" ]; then
         echo "-----------------------------------------------"
         echo -e "其他设备可以使用PAC配置连接：\033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
-        echo -e "或者使用HTTP/SOCK5方式连接：IP{\033[36m$host\033[0m}端口{\033[36m$mix_port\033[0m}"
+        echo -e "或者使用HTTP/SOCK5方式连接：IP{\033[36m$host\033[0m}Port{\033[36m$mix_port\033[0m}"
     fi
     return 0
 }
