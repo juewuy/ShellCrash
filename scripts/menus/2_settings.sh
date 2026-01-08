@@ -4,139 +4,138 @@
 [ -n "$__IS_MODULE_2_SETTINGS_LOADED" ] && return
 __IS_MODULE_2_SETTINGS_LOADED=1
 
-settings() { #功能设置
-    #获取设置默认显示
-    [ -z "$skip_cert" ] && skip_cert=ON
-	[ -z "$sniffer" ] && sniffer=OFF
-	[ -z "$dns_mod" ] && dns_mod='redir_host'
-    #
-    echo "-----------------------------------------------"
-    echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " 1 路由模式设置:	\033[36m$redir_mod\033[0m"
-	echo -e " 2 DNS设置：		\033[36m$dns_mod\033[0m"
-	echo -e " 3 透明路由\033[32m流量过滤\033[0m"
-    [ "$disoverride" != "1" ] && {
-        echo -e " 4 跳过证书验证：	\033[36m$skip_cert\033[0m"
-		echo -e " 5 启用域名嗅探:	\033[36m$sniffer\033[0m"
-		echo -e " 6 自定义\033[32m端口及秘钥\033[0m"
-    }
-    echo -e " 8 ipv6设置：		\033[36m$ipv6_redir\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
-    echo -e " 0 返回上级菜单 \033[0m"
-    echo "-----------------------------------------------"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0)
-	;;
-    1)
-        if [ "$USER" != "root" -a "$USER" != "admin" ]; then
-            echo "-----------------------------------------------"
-            read -p "非root用户可能无法正确配置其他模式！依然尝试吗？(1/0) > " res
-            [ "$res" = 1 ] && set_redir_mod
-        else
-            set_redir_mod
-        fi
-		sleep 1
-        settings
-	;;
-    2)
-		. "$CRASHDIR"/menus/dns.sh && set_dns_mod
-        sleep 1
-        settings
-	;;
-    3)
-        . "$CRASHDIR"/menus/fw_filter.sh && set_fw_filter
-		sleep 1
-        settings
-	;;
-    4)
+# 功能设置
+settings() {
+    while true; do
+        # 获取设置默认显示
+        [ -z "$skip_cert" ] && skip_cert=ON
+        [ -z "$sniffer" ] && sniffer=OFF
+        [ -z "$dns_mod" ] && dns_mod='redir_host'
+
         echo "-----------------------------------------------"
-        if [ "$skip_cert" = "OFF" ] >/dev/null 2>&1; then
-            echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
-            skip_cert=ON
-        else
-            echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
-            skip_cert=OFF
-        fi
-        setconfig skip_cert $skip_cert
-        settings
-	;;
-    5)
+        echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
         echo "-----------------------------------------------"
-        if [ "$sniffer" = "OFF" ]; then
-            if [ "$crashcore" = "clash" ]; then
-                rm -rf ${TMPDIR}/CrashCore
-                rm -rf "$CRASHDIR"/CrashCore
-                rm -rf "$CRASHDIR"/CrashCore.tar.gz
-                crashcore=meta
-                setconfig crashcore $crashcore
-                echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
-            fi
-            sniffer=ON
-        elif [ "$crashcore" = "clashpre" -a "$dns_mod" = "redir_host" ]; then
-            echo -e "\033[31m使用clashpre内核且开启redir-host模式时无法关闭！\033[0m"
-        else
-            sniffer=OFF
-        fi
-        setconfig sniffer $sniffer
-        settings
-	;;
-    6)
-        if [ -n "$(pidof CrashCore)" ]; then
-            echo "-----------------------------------------------"
-            echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
-            read -p "是否停止服务？(1/0) > " res
-            if [ "$res" = "1" ]; then
-                "$CRASHDIR"/start.sh stop
-                set_adv_config
-            fi
-        else
-            set_adv_config
-        fi
-        settings
-	;;
-    8)
-        set_ipv6
-        settings
-	;;
-    9)
-		echo "-----------------------------------------------"
-        echo -e " 1 备份脚本设置"
-        echo -e " 2 还原脚本设置"
-        echo -e " 3 重置脚本设置"
-        echo -e " 0 返回上级菜单"
+        echo -e " 1 路由模式设置:	\033[36m$redir_mod\033[0m"
+        echo -e " 2 DNS设置：		\033[36m$dns_mod\033[0m"
+        echo -e " 3 透明路由\033[32m流量过滤\033[0m"
+        [ "$disoverride" != "1" ] && {
+            echo -e " 4 跳过证书验证：	\033[36m$skip_cert\033[0m"
+            echo -e " 5 启用域名嗅探:	\033[36m$sniffer\033[0m"
+            echo -e " 6 自定义\033[32m端口及秘钥\033[0m"
+        }
+        echo -e " 8 ipv6设置：		\033[36m$ipv6_redir\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
+        echo -e " 0 返回上级菜单 \033[0m"
         echo "-----------------------------------------------"
         read -p "请输入对应数字 > " num
-        if [ -z "$num" ]; then
-            errornum
-        elif [ "$num" = 0 ]; then
-            i=
-        elif [ "$num" = 1 ]; then
-            cp -f "$CFG_PATH" "$CFG_PATH".bak
-            echo -e "\033[32m脚本设置已备份！\033[0m"
-        elif [ "$num" = 2 ]; then
-            if [ -f "$CFG_PATH.bak" ]; then
-                mv -f "$CFG_PATH" "$CFG_PATH".bak2
-                mv -f "$CFG_PATH".bak "$CFG_PATH"
-                mv -f "$CFG_PATH".bak2 "$CFG_PATH".bak
-                echo -e "\033[32m脚本设置已还原！(被覆盖的配置已备份！)\033[0m"
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$USER" != "root" -a "$USER" != "admin" ]; then
+                echo "-----------------------------------------------"
+                read -p "非root用户可能无法正确配置其他模式！依然尝试吗？(1/0) > " res
+                [ "$res" = 1 ] && set_redir_mod
             else
-                echo -e "\033[31m找不到备份文件，请先备份脚本设置！\033[0m"
+                set_redir_mod
             fi
-        elif [ "$num" = 3 ]; then
-            mv -f "$CFG_PATH" "$CFG_PATH".bak
-            . "$CRASHDIR"/init.sh >/dev/null
-            echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
-        fi
-        echo -e "\033[33m请重新启动脚本！\033[0m"
-        exit 0
-	;;
-    *)
-        errornum
-	;;
-    esac
+            sleep 1
+            ;;
+        2)
+            . "$CRASHDIR"/menus/dns.sh && set_dns_mod
+            sleep 1
+            ;;
+        3)
+            . "$CRASHDIR"/menus/fw_filter.sh && set_fw_filter
+            sleep 1
+            ;;
+        4)
+            echo "-----------------------------------------------"
+            if [ "$skip_cert" = "OFF" ] >/dev/null 2>&1; then
+                echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
+                skip_cert=ON
+            else
+                echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
+                skip_cert=OFF
+            fi
+            setconfig skip_cert $skip_cert
+            ;;
+        5)
+            echo "-----------------------------------------------"
+            if [ "$sniffer" = "OFF" ]; then
+                if [ "$crashcore" = "clash" ]; then
+                    rm -rf ${TMPDIR}/CrashCore
+                    rm -rf "$CRASHDIR"/CrashCore
+                    rm -rf "$CRASHDIR"/CrashCore.tar.gz
+                    crashcore=meta
+                    setconfig crashcore $crashcore
+                    echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
+                fi
+                sniffer=ON
+            elif [ "$crashcore" = "clashpre" -a "$dns_mod" = "redir_host" ]; then
+                echo -e "\033[31m使用clashpre内核且开启redir-host模式时无法关闭！\033[0m"
+            else
+                sniffer=OFF
+            fi
+            setconfig sniffer $sniffer
+            ;;
+        6)
+            if [ -n "$(pidof CrashCore)" ]; then
+                echo "-----------------------------------------------"
+                echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
+                read -p "是否停止服务？(1/0) > " res
+                if [ "$res" = "1" ]; then
+                    "$CRASHDIR"/start.sh stop
+                    set_adv_config
+                fi
+            else
+                set_adv_config
+            fi
+            ;;
+        8)
+            set_ipv6
+            ;;
+        9)
+            echo "-----------------------------------------------"
+            echo -e " 1 备份脚本设置"
+            echo -e " 2 还原脚本设置"
+            echo -e " 3 重置脚本设置"
+            echo -e " 0 返回上级菜单"
+            echo "-----------------------------------------------"
+            read -p "请输入对应数字 > " num
+            if [ -z "$num" ]; then
+                errornum
+            elif [ "$num" = 0 ]; then
+                i=
+            elif [ "$num" = 1 ]; then
+                cp -f "$CFG_PATH" "$CFG_PATH".bak
+                echo -e "\033[32m脚本设置已备份！\033[0m"
+            elif [ "$num" = 2 ]; then
+                if [ -f "$CFG_PATH.bak" ]; then
+                    mv -f "$CFG_PATH" "$CFG_PATH".bak2
+                    mv -f "$CFG_PATH".bak "$CFG_PATH"
+                    mv -f "$CFG_PATH".bak2 "$CFG_PATH".bak
+                    echo -e "\033[32m脚本设置已还原！(被覆盖的配置已备份！)\033[0m"
+                else
+                    echo -e "\033[31m找不到备份文件，请先备份脚本设置！\033[0m"
+                fi
+            elif [ "$num" = 3 ]; then
+                mv -f "$CFG_PATH" "$CFG_PATH".bak
+                . "$CRASHDIR"/init.sh >/dev/null
+                echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
+            fi
+            echo -e "\033[33m请重新启动脚本！\033[0m"
+            exit 0
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
 
 set_redir_mod() { #路由模式设置
