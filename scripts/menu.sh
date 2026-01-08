@@ -109,8 +109,8 @@ ckstatus() { #脚本启动前检查
     echo "-----------------------------------------------"
     #检查新手引导
     if [ -z "$userguide" ]; then
+		. "$CRASHDIR"/menus/userguide.sh && userguide
         setconfig userguide 1
-        . "$CRASHDIR"/menus/userguide.sh && userguide
     fi
     #检查执行权限
     [ ! -x "$CRASHDIR"/start.sh ] && chmod +x "$CRASHDIR"/start.sh
