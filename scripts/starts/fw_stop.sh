@@ -8,8 +8,10 @@
 . "$CRASHDIR"/starts/fw_getlanip.sh && getlanip #获取局域网host地址
 #缺省值
 [ -z "$common_ports" ] && common_ports='ON'
-[ -z "$multiport" ] && multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
+[ -z "$multiport" ] && multiport='22,80,443,8080,8443'
 [ "$common_ports" = "ON" ] && ports="-m multiport --dports $multiport"
+[ -f "$CRASHDIR"/configs/gateway.cfg ] && . "$CRASHDIR"/configs/gateway.cfg
+accept_ports=$(echo "$fw_wan_ports,$vms_port,$sss_port" | sed "s/,,/,/g ;s/^,// ;s/,$//")
 #重置iptables相关规则
 ckcmd iptables && {
 	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
@@ -51,8 +53,8 @@ ckcmd iptables && {
 	for ip in $host_ipv4; do
 		$iptable -D INPUT -s $ip -j ACCEPT 2>/dev/null
 	done
-	$iptable -D INPUT -p tcp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
-	$iptable -D INPUT -p udp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
+	$iptable -D INPUT -p tcp -m multiport --dports "$accept_ports" -j ACCEPT 2>/dev/null
+	$iptable -D INPUT -p udp -m multiport --dports "$accept_ports" -j ACCEPT 2>/dev/null
 	$iptable -D INPUT -p tcp -m multiport --dports "$mix_port,$db_port,$dns_port" -j REJECT 2>/dev/null
 	$iptable -D INPUT -p udp -m multiport --dports "$mix_port,$db_port,$dns_port" -j REJECT 2>/dev/null
 	#清理shellcrash自建表
@@ -101,8 +103,8 @@ ckcmd ip6tables && {
 	for ip in $host_ipv6; do
 		$ip6table -D INPUT -s $ip -j ACCEPT 2>/dev/null
 	done
-	$ip6table -D INPUT -p tcp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
-	$ip6table -D INPUT -p udp -m multiport --dports "$fw_wan_ports" -j ACCEPT 2>/dev/null
+	$ip6table -D INPUT -p tcp -m multiport --dports "$accept_ports" -j ACCEPT 2>/dev/null
+	$ip6table -D INPUT -p udp -m multiport --dports "$accept_ports" -j ACCEPT 2>/dev/null
 	$ip6table -D INPUT -p tcp -m multiport --dports "$mix_port,$db_port,$dns_port" -j REJECT 2>/dev/null
 	$ip6table -D INPUT -p udp -m multiport --dports "$mix_port,$db_port,$dns_port" -j REJECT 2>/dev/null
 	#清理shellcrash自建表

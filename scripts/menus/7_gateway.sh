@@ -28,7 +28,13 @@ gateway(){
 	case "$num" in
 	0) ;;
 	1)
-		set_fw_wan
+        echo "-----------------------------------------------"
+        if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
+            read -p "需要先停止服务，是否继续？(1/0) > " res
+            [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_fw_wan
+        else
+            set_fw_wan
+        fi
 		gateway
 	;;
 	2)

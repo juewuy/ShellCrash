@@ -304,7 +304,7 @@ set_fw_filter(){ #流量过滤
 	;;
     1)
         echo "-----------------------------------------------"
-        if [ -n "$(pidof CrashCore)" ]; then
+        if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
             read -p "切换时将停止服务，是否继续？(1/0) > " res
             [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_common_ports
         else

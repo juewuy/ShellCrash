@@ -53,7 +53,7 @@ modify_json() {
     }
     cat "$TMPDIR"/format.json | sed -n '/"route":/,/^\(  "[a-z]\|}\)/p' | sed '$d' >>"$TMPDIR"/jsons/route.json
     #生成endpoints.json
-	[ "$ts_service" = ON ] || [ "$wg_service" = ON ] && {
+	[ "$ts_service" = ON ] || [ "$wg_service" = ON ] && [ "$zip_type" != upx ] && {
 		. "$CRASHDIR"/configs/gateway.cfg
 		. "$CRASHDIR"/libs/sb_endpoints.sh
 	}
@@ -104,7 +104,10 @@ EOF
     [ -z "$auto_detour" ] && auto_detour=$(grep -E '"type": "selector"' -A 1 "$TMPDIR"/jsons/outbounds.json | grep '"tag":' | head -n 1 | sed 's/^[[:space:]]*"tag": //;s/,$//')
     [ -z "$auto_detour" ] && auto_detour='"DIRECT"'
 	#ecs优化
-	[ "$ecs_subnet" = ON ] && . "$CRASHDIR"/libs/get_ecsip.sh
+	[ "$ecs_subnet" = ON ] && {
+		. "$CRASHDIR"/libs/get_ecsip.sh
+		client_subnet='"client_subnet": "'"$ecs_address"'",'
+	}
     #根据dns模式生成
     [ "$dns_mod" = "redir_host" ] && {
         global_dns=dns_proxy
@@ -157,7 +160,6 @@ EOF
         $(parse_singbox_dns "$dns_fallback")
 		"routing_mark": $routing_mark,
 		"detour": $auto_detour,
-		"client_subnet": "$ecs_address",
         "domain_resolver": "dns_resolver"
       },
       {
@@ -191,6 +193,7 @@ EOF
     "final": "dns_proxy",
 	"strategy": "$strategy",
     "independent_cache": true,
+	$client_subnet
     "reverse_mapping": true
   }
 }

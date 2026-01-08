@@ -7,7 +7,7 @@ __IS_MODULE_DNS_LOADED=1
 set_dns_mod() { #DNS模式设置
 	[ -z "$hosts_opt" ] && hosts_opt=ON
     [ -z "$dns_protect" ] && dns_protect=ON
-	[ -z "$ecs_subnet" ] && ecs_subnet=OFF || ecs_subnet=ON
+	[ -z "$ecs_subnet" ] && ecs_subnet=OFF
     echo "-----------------------------------------------"
     echo -e "当前DNS运行模式为：\033[47;30m $dns_mod \033[0m"
     echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"

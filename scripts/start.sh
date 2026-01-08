@@ -16,13 +16,13 @@
 . "$CRASHDIR"/libs/web_save.sh
 #特殊脚本
 bfstart(){
-	"$CRASHDIR"/starts/bfstart.sh
+	. "$CRASHDIR"/starts/bfstart.sh
 }
 afstart(){
-	"$CRASHDIR"/starts/afstart.sh
+	. "$CRASHDIR"/starts/afstart.sh
 }
 stop_firewall(){
-	"$CRASHDIR"/starts/fw_stop.sh
+	. "$CRASHDIR"/starts/fw_stop.sh
 }
 #保守模式启动
 start_l(){
