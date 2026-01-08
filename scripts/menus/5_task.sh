@@ -69,7 +69,7 @@ task_user_del(){ #自定义命令删除
 	echo "-----------------------------------------------"
 	cat "$CRASHDIR"/task/task.user 2>/dev/null | grep -Ev '^#' | awk -F '#' '{print $1" "$3}'
 	echo "-----------------------------------------------"
-	echo 0 返回上级菜单
+	echo "0 返回上级菜单"
 	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
 	if [ -n "$num" ];then
@@ -323,65 +323,64 @@ task_recom(){ #任务推荐
 		echo -e "任务【在每日的3点0分重启服务】\033[32m添加成功！\033[0m"
 	}
 }
-task_menu(){ #任务菜单
-	#检测并创建自定义任务文件
-	[ -f "$CRASHDIR"/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' > "$CRASHDIR"/task/task.user
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m欢迎使用自动任务功能：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 添加\033[32m自动任务\033[0m"
-	echo -e " 2 管理\033[33m任务列表\033[0m"
-	echo -e " 3 查看\033[36m任务日志\033[0m"
-	echo -e " 4 配置\033[36m日志推送\033[0m"
-	echo -e " 5 添加\033[33m自定义任务\033[0m"
-	echo -e " 6 删除\033[33m自定义任务\033[0m"
-	echo -e " 7 使用\033[32m推荐设置\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		task_add
-		task_menu
-	;;
-	2)
-		task_manager
-		rm -rf "$TMPDIR"/task_list
-		task_menu
-	;;
-	3)
-		if [ -n "$(cat "$TMPDIR"/ShellCrash.log | grep '任务【')" ];then
-			echo "-----------------------------------------------"
-			cat "$TMPDIR"/ShellCrash.log | grep '任务【'
-		else
-			echo -e "\033[31m未找到任务相关执行日志！\033[0m"
-		fi
-		sleep 1
-		task_menu
-	;;
-	4)
-		echo "-----------------------------------------------"
-		echo -e "\033[36m请在日志工具中配置相关推送通道及推送开关\033[0m"
-		. "$CRASHDIR"/menus/8_tools.sh && log_pusher
-		task_menu
-	;;
-	5)
-		task_user_add
-		task_menu
-	;;
-	6)
-		task_user_del
-		task_menu
-	;;
-	7)
-		task_recom
-		task_menu
-	;;
-	*)
-		errornum
-	;;
 
-	esac
+# 任务菜单
+task_menu() {
+    while true; do
+        #检测并创建自定义任务文件
+        [ -f "$CRASHDIR"/task/task.user ] || echo '#任务ID(必须>200并顺序排列)#任务命令#任务说明(#号隔开，任务命令和说明中都不允许包含#号)' >"$CRASHDIR"/task/task.user
+        echo "-----------------------------------------------"
+        echo -e "\033[30;47m欢迎使用自动任务功能：\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 添加\033[32m自动任务\033[0m"
+        echo -e " 2 管理\033[33m任务列表\033[0m"
+        echo -e " 3 查看\033[36m任务日志\033[0m"
+        echo -e " 4 配置\033[36m日志推送\033[0m"
+        echo -e " 5 添加\033[33m自定义任务\033[0m"
+        echo -e " 6 删除\033[33m自定义任务\033[0m"
+        echo -e " 7 使用\033[32m推荐设置\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            task_add
+            ;;
+        2)
+            task_manager
+            rm -rf "$TMPDIR"/task_list
+            ;;
+        3)
+            if [ -n "$(cat "$TMPDIR"/ShellCrash.log | grep '任务【')" ]; then
+                echo "-----------------------------------------------"
+                cat "$TMPDIR"/ShellCrash.log | grep '任务【'
+            else
+                echo -e "\033[31m未找到任务相关执行日志！\033[0m"
+            fi
+            sleep 1
+            ;;
+        4)
+            echo "-----------------------------------------------"
+            echo -e "\033[36m请在日志工具中配置相关推送通道及推送开关\033[0m"
+            . "$CRASHDIR"/menus/8_tools.sh && log_pusher
+            ;;
+        5)
+            task_user_add
+            ;;
+        6)
+            task_user_del
+            ;;
+        7)
+            task_recom
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
