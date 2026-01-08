@@ -84,7 +84,12 @@ set_dns_mod() { #DNS模式设置
 			dns_redir_port="$dns_port"
 			setconfig dns_redir_port
 		elif [ "$num" -lt 65535 -a "$num" -ge 1 ];then
-			if [ -n "$(netstat -ntul | grep -E ":$num[[:space:]]")" ];then
+			if ckcmd netstat;then
+				port_test=$(netstat -ntul | grep -E ":$num[[:space:]]")
+			else
+				port_test=0
+			fi
+			if [ -n "$port_test" ];then
 				dns_redir_port="$num"
 				setconfig dns_redir_port "$dns_redir_port"
 			else
