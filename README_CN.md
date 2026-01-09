@@ -171,7 +171,7 @@ crash -h     # 查看命令帮助列表
 
 ---
 
-## 🔗 相关链接
+## :link: 相关链接
 - 常见问题：[Juewuy's Blog](https://juewuy.github.io/chang-jian-wen-ti/)
 - 更新日志：[Release History](https://github.com/juewuy/ShellCrash/releases)
 - 交流反馈：[Telegram 讨论组](https://t.me/ShellClash)
