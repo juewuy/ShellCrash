@@ -746,77 +746,78 @@ set_singbox_adv(){ #自定义singbox配置文件
 		echo "-----------------------------------------------"
 		echo -e "使用前请务必参考配置教程:\033[32;4m https://juewuy.github.io/nWTjEpkSK \033[0m"
 }
-override(){ #配置文件覆写
-	[ -z "$rule_link" ] && rule_link=1
-	[ -z "$server_link" ] && server_link=1
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
-	echo -e " 2 管理\033[36m自定义规则\033[0m"
-	echo "$crashcore" | grep -q 'singbox' || {
-		echo -e " 3 管理\033[33m自定义节点\033[0m"
-		echo -e " 4 管理\033[36m自定义策略组\033[0m"
-	}
-	echo -e " 5 \033[32m自定义\033[0m高级功能"
-	[ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
-	echo "-----------------------------------------------"
-	[ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		if [ -n "$(pidof CrashCore)" ];then
-			echo "-----------------------------------------------"
-			echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
-			read -p "是否停止服务？(1/0) > " res
-			if [ "$res" = "1" ];then
-				"$CRASHDIR"/start.sh stop
-				setport
-			fi
-		else
-			setport
-		fi
-		override
-	;;
-	2)
-		setrules
-		override
-	;;
-	3)
-		setproxies
-		override
-	;;
-	4)
-		setgroups
-		override
-	;;
-	5)
-		echo "$crashcore" | grep -q 'singbox' && set_singbox_adv || set_clash_adv
-		sleep 3
-		override
-	;;
-	9)
-		echo "-----------------------------------------------"
-		echo -e "\033[33m此功能可能会导致严重问题！启用后脚本中大部分功能都将禁用！！！\033[0m"
-		echo -e "如果你不是非常了解$crashcore的运行机制，切勿开启！\033[0m"
-		echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
-		echo "-----------------------------------------------"
-		sleep 2
-		read -p "我确认遇到问题可以自行解决[1/0] > " res
-		[ "$res" = '1' ] && {
-			disoverride=1
-			setconfig disoverride $disoverride
-			echo "-----------------------------------------------"
-			echo -e "\033[32m设置成功！\033[0m"
-		}
-		override
-	;;
-	*)
-		errornum
-	;;
-	esac
+
+# 配置文件覆写
+override() {
+    while true; do
+        [ -z "$rule_link" ] && rule_link=1
+        [ -z "$server_link" ] && server_link=1
+        echo "-----------------------------------------------"
+        echo -e "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 自定义\033[32m端口及秘钥\033[0m"
+        echo -e " 2 管理\033[36m自定义规则\033[0m"
+        echo "$crashcore" | grep -q 'singbox' || {
+            echo -e " 3 管理\033[33m自定义节点\033[0m"
+            echo -e " 4 管理\033[36m自定义策略组\033[0m"
+        }
+        echo -e " 5 \033[32m自定义\033[0m高级功能"
+        [ "$disoverride" != 1 ] && echo -e " 9 \033[33m禁用\033[0m配置文件覆写"
+        echo "-----------------------------------------------"
+        [ "$inuserguide" = 1 ] || echo -e " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ -n "$(pidof CrashCore)" ]; then
+                echo "-----------------------------------------------"
+                echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
+                read -p "是否停止服务？(1/0) > " res
+                if [ "$res" = "1" ]; then
+                    "$CRASHDIR"/start.sh stop
+                    setport
+                fi
+            else
+                setport
+            fi
+            ;;
+        2)
+            setrules
+            ;;
+        3)
+            setproxies
+            ;;
+        4)
+            setgroups
+            ;;
+        5)
+            echo "$crashcore" | grep -q 'singbox' && set_singbox_adv || set_clash_adv
+            sleep 3
+            ;;
+        9)
+            echo "-----------------------------------------------"
+            echo -e "\033[33m此功能可能会导致严重问题！启用后脚本中大部分功能都将禁用！！！\033[0m"
+            echo -e "如果你不是非常了解$crashcore的运行机制，切勿开启！\033[0m"
+            echo -e "\033[33m继续后如出现任何问题，请务必自行解决，一切提问恕不受理！\033[0m"
+            echo "-----------------------------------------------"
+            sleep 2
+            read -p "我确认遇到问题可以自行解决[1/0] > " res
+            [ "$res" = '1' ] && {
+                disoverride=1
+                setconfig disoverride $disoverride
+                echo "-----------------------------------------------"
+                echo -e "\033[32m设置成功！\033[0m"
+            }
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
 
 gen_link_config(){ #选择在线规则
