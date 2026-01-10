@@ -279,8 +279,8 @@ install() {
     gettar
     echo "-----------------------------------------------"
     echo "ShellCrash 已经安装成功!"
-    [ "$profile" = "~/.bashrc" ] && echo "请执行【. ~/.bashrc > /dev/null】命令以加载环境变量！"
-    [ -n "$(ls -l /bin/sh | grep -oE 'zsh')" ] && echo "请执行【. ~/.zshrc > /dev/null】命令以加载环境变量！"
+    [ "$profile" = "~/.bashrc" ] && echo "请执行【. ~/.bashrc > /dev/null】命令以更新环境变量！"
+    [ -n "$(ls -l /bin/sh | grep -oE 'zsh')" ] && echo "请执行【. ~/.zshrc > /dev/null】命令以更新环境变量！"
     echo "-----------------------------------------------"
     $echo "\033[33m输入\033[30;47m $my_alias \033[0;33m命令即可管理！！！\033[0m"
     echo "-----------------------------------------------"
