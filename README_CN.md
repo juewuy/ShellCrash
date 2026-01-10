@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <strong>一款在 Shell 环境下便捷部署与管理 Mihomo/sing-box 内核的脚本工具</strong>
+  <strong>一款在 Shell 环境下便捷部署与管理 mihomo/sing-box 内核的脚本工具</strong>
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 ## :rocket: 核心特性
 
-- **多内核支持**：在 Shell 环境下便捷管理及切换 **Mihomo** 与 **sing-box** 内核。
+- **多内核支持**：在 Shell 环境下便捷管理及切换 **mihomo** 与 **sing-box** 内核。
 - **灵活配置管理**：支持在线导入订阅连结及配置文件，简化配置流程。
 - **自动化任务**：支持配置定时任务，实现配置文件与规则的自动定时更新。
 - **图形化面板**：支持在线安装并使用本地 Web 面板（Dashboard），直观管理内置规则与流量。
@@ -151,7 +151,7 @@ export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
 
 ---
 
-## 📖 使用说明
+## :book: 使用说明
 
 安装完成后，在终端输入以下指令即可启动管理界面：
 
