@@ -8,72 +8,74 @@ __IS_MODULE_7_GATEWAY_LOADED=1
 . "$CRASHDIR"/menus/check_port.sh
 . "$CRASHDIR"/libs/gen_base64.sh
 
-#访问与控制主菜单
-gateway(){
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 配置\033[33m公网访问防火墙			\033[32m$fw_wan\033[0m"
-	echo -e " 2 配置\033[36mTelegram专属控制机器人		\033[32m$bot_tg_service\033[0m"
-	echo -e " 3 配置\033[36mDDNS自动域名\033[0m"
-	[ "$disoverride" != "1" ] && {
-		echo -e " 4 自定义\033[33m公网Vmess入站\033[0m节点		\033[32m$vms_service\033[0m"
-		echo -e " 5 自定义\033[33m公网ShadowSocks入站\033[0m节点	\033[32m$sss_service\033[0m"
-		echo -e " 6 配置\033[36mTailscale内网穿透\033[0m(限Singbox)	\033[32m$ts_service\033[0m"
-		echo -e " 7 配置\033[36mWireguard客户端\033[0m(限Singbox)	\033[32m$wg_service\033[0m"
-	}
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
+# 访问与控制主菜单
+gateway() {
+    while true; do
         echo "-----------------------------------------------"
-        if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
-            read -p "需要先停止服务，是否继续？(1/0) > " res
-            [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_fw_wan
-        else
-            set_fw_wan
-        fi
-		gateway
-	;;
-	2)
-		set_bot_tg
-		gateway
-	;;
-	3)
-		. "$CRASHDIR"/menus/ddns.sh && ddns_menu
-		gateway
-	;;
-	4)
-		set_vmess
-		gateway
-	;;
-	5)
-		set_shadowsocks
-		gateway
-	;;
-	6)
-		if echo "$crashcore" | grep -q 'sing';then
-			set_tailscale
-		else
-			echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
-			sleep 1
-		fi
-		gateway
-	;;
-	7)
-		if echo "$crashcore" | grep -q 'sing';then
-			set_wireguard
-		else
-			echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
-			sleep 1
-		fi
-		gateway
-	;;
-	*) errornum ;;
-	esac
+        echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 配置\033[33m公网访问防火墙			\033[32m$fw_wan\033[0m"
+        echo -e " 2 配置\033[36mTelegram专属控制机器人		\033[32m$bot_tg_service\033[0m"
+        echo -e " 3 配置\033[36mDDNS自动域名\033[0m"
+        [ "$disoverride" != "1" ] && {
+            echo -e " 4 自定义\033[33m公网Vmess入站\033[0m节点		\033[32m$vms_service\033[0m"
+            echo -e " 5 自定义\033[33m公网ShadowSocks入站\033[0m节点	\033[32m$sss_service\033[0m"
+            echo -e " 6 配置\033[36mTailscale内网穿透\033[0m(限Singbox)	\033[32m$ts_service\033[0m"
+            echo -e " 7 配置\033[36mWireguard客户端\033[0m(限Singbox)	\033[32m$wg_service\033[0m"
+        }
+        echo -e " 0 返回上级菜单"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            echo "-----------------------------------------------"
+            if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
+                read -p "需要先停止服务，是否继续？(1/0) > " res
+                [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_fw_wan
+            else
+                set_fw_wan
+            fi
+            ;;
+        2)
+            set_bot_tg
+            ;;
+        3)
+            . "$CRASHDIR"/menus/ddns.sh && ddns_menu
+            ;;
+        4)
+            set_vmess
+            ;;
+        5)
+            set_shadowsocks
+            ;;
+        6)
+            if echo "$crashcore" | grep -q 'sing'; then
+                set_tailscale
+            else
+                echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
+                sleep 1
+            fi
+            ;;
+        7)
+            if echo "$crashcore" | grep -q 'sing'; then
+                set_wireguard
+            else
+                echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
+                sleep 1
+            fi
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
+
 #公网防火墙
 set_fw_wan() {
 	[ -z "$fw_wan" ] && fw_wan=ON
