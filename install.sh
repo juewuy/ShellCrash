@@ -12,17 +12,19 @@ echo "***********************************************"
 
 # Check available capacity
 dir_avail() {
-	df -h >/dev/null 2>&1 && h="$2"
+    df -h >/dev/null 2>&1 && h="$2"
     df -P $h "${1:-.}" 2>/dev/null | awk 'NR==2 {print $4}'
 }
 
-ckcmd() { #检查命令
-    if command -v sh >/dev/null 2>&1;then
+# 检查命令
+ckcmd() {
+    if command -v sh >/dev/null 2>&1; then
         command -v "$1" >/dev/null 2>&1
     else
         type "$1" >/dev/null 2>&1
     fi
 }
+
 webget() {
     #参数【$1】代表下载目录，【$2】代表在线地址
     #参数【$3】代表输出显示，【$4】不启用重定向
@@ -44,35 +46,50 @@ webget() {
         [ $? -eq 0 ] && result="200"
     fi
 }
+
 error_down() {
     $echo "请参考 \033[32mhttps://github.com/juewuy/ShellCrash/blob/master/README_CN.md"
     $echo "\033[33m使用其他安装源重新安装！\033[0m"
 }
 
-#安装及初始化
+# 安装及初始化
 set_alias() {
-    echo "-----------------------------------------------"
-    $echo "\033[36m请选择一个别名，或使用自定义别名：\033[0m"
-    echo "-----------------------------------------------"
-    $echo " 1 【\033[32mcrash\033[0m】"
-    $echo " 2 【\033[32m sc \033[0m】"
-    $echo " 3 【\033[32m mm \033[0m】"
-    $echo " 0 退出安装"
-    echo "-----------------------------------------------"
-    read -p "请输入相应数字或自定义别名 > " res
-    case "$res" in
-    1) my_alias=crash ;;
-    2) my_alias=sc ;;
-    3) my_alias=mm ;;
-    0) echo "安装已取消"; exit 1 ;;
-    *) my_alias=$res ;;
-    esac
-    cmd=$(ckcmd "$my_alias" | grep 'menu.sh')
-    ckcmd "$my_alias" && [ -z "$cmd" ] && {
-        $echo "\033[33m此别名和当前系统内置命令/别名冲突，请换一个！\033[0m"
-        sleep 1
-        set_alias
-    }
+    while true; do
+        echo "-----------------------------------------------"
+        $echo "\033[36m请选择一个别名，或使用自定义别名：\033[0m"
+        echo "-----------------------------------------------"
+        $echo " 1 【\033[32mcrash\033[0m】"
+        $echo " 2 【\033[32m sc \033[0m】"
+        $echo " 3 【\033[32m mm \033[0m】"
+        $echo " 0 退出安装"
+        echo "-----------------------------------------------"
+        read -p "请输入相应数字或自定义别名 > " res
+        case "$res" in
+        0)
+            echo "安装已取消"
+            exit 1
+            ;;
+        1)
+            my_alias=crash
+            ;;
+        2)
+            my_alias=sc
+            ;;
+        3)
+            my_alias=mm
+            ;;
+        *)
+            my_alias=$res
+            ;;
+        esac
+        cmd=$(ckcmd "$my_alias" | grep 'menu.sh')
+        ckcmd "$my_alias" && [ -z "$cmd" ] && {
+            $echo "\033[33m此别名和当前系统内置命令/别名冲突，请换一个！\033[0m"
+            sleep 1
+            continue
+        }
+        break
+    done
 }
 
 gettar() {
@@ -83,9 +100,9 @@ gettar() {
         exit 1
     else
         $CRASHDIR/start.sh stop 2>/dev/null
-        #解压
+        # 解压
         echo "-----------------------------------------------"
-        echo 开始解压文件！
+        echo "开始解压文件！"
         mkdir -p $CRASHDIR >/dev/null
         tar -zxf '/tmp/ShellCrash.tar.gz' -C $CRASHDIR/ || tar -zxf '/tmp/ShellCrash.tar.gz' --no-same-owner -C $CRASHDIR/
         if [ -s $CRASHDIR/init.sh ]; then
@@ -132,7 +149,7 @@ set_asus_dir() {
 set_cust_dir() {
     while true; do
         echo "-----------------------------------------------"
-        echo '可用路径 剩余空间:'
+        echo '可用路径 剩余空间：'
         df -h | awk '{print $6,$4}' | sed 1d
         echo '路径是必须带 / 的格式，注意写入虚拟内存(/tmp,/opt,/sys...)的文件会在重启后消失！！！'
         read -p "请输入自定义路径 > " dir
@@ -257,7 +274,7 @@ setdir() {
 
 install() {
     echo "-----------------------------------------------"
-    echo 开始从服务器获取安装文件！
+    echo "开始从服务器获取安装文件！"
     echo "-----------------------------------------------"
     gettar
     echo "-----------------------------------------------"
@@ -268,6 +285,7 @@ install() {
     $echo "\033[33m输入\033[30;47m $my_alias \033[0;33m命令即可管理！！！\033[0m"
     echo "-----------------------------------------------"
 }
+
 setversion() {
     echo "-----------------------------------------------"
     $echo "\033[33m请选择想要安装的版本：\033[0m"
@@ -286,7 +304,8 @@ setversion() {
     *) ;;
     esac
 }
-#特殊固件识别及标记
+
+# 特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && {
     systype=Padavan #老毛子固件
     initdir='/etc/storage/started_script.sh'
@@ -299,9 +318,9 @@ setversion() {
 [ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot   #NETGEAR设备
 
-#检查root权限
+# 检查root权限
 if [ "$USER" != "root" -a -z "$systype" ]; then
-    echo 当前用户:$USER
+    echo "当前用户:$USER"
     $echo "\033[31m请尽量使用root用户（不要直接使用sudo命令！）执行安装!\033[0m"
     echo "-----------------------------------------------"
     read -p "仍要安装？可能会产生未知错误！(1/0) > " res
@@ -311,12 +330,13 @@ fi
 if [ -n "$(echo $url | grep master)" ]; then
     setversion
 fi
-#获取版本信息
+
+# 获取版本信息
 webget /tmp/version "$url/version" echooff
 [ "$result" = "200" ] && versionsh=$(cat /tmp/version)
 rm -rf /tmp/version
 
-#输出
+# 输出
 $echo "最新版本：\033[32m$versionsh\033[0m"
 echo "-----------------------------------------------"
 $echo "\033[44m如遇问题请加TG群反馈：\033[42;30m t.me/ShellClash \033[0m"
