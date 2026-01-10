@@ -489,36 +489,42 @@ set_firewall_vm(){
 	setconfig vm_redir $vm_redir
 	setconfig vm_ipv4 "'$vm_ipv4'"
 }
-set_ipv6() { #ipv6设置
-    [ -z "$ipv6_redir" ] && ipv6_redir=OFF
-    [ -z "$ipv6_dns" ] && ipv6_dns=ON
-    echo "-----------------------------------------------"
-    echo -e " 1 ipv6透明路由:  \033[36m$ipv6_redir\033[0m  ——劫持ipv6流量"
-    [ "$disoverride" != "1" ] && echo -e " 2 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"
-    echo -e " 0 返回上级菜单"
-    echo "-----------------------------------------------"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0) ;;
-    1)
-        if [ "$ipv6_redir" = "OFF" ]; then
-            ipv6_support=ON
-            ipv6_redir=ON
-            sleep 2
-        else
-            ipv6_redir=OFF
-        fi
-        setconfig ipv6_redir $ipv6_redir
-        setconfig ipv6_support $ipv6_support
-        set_ipv6
-	;;
-    2)
-        [ "$ipv6_dns" = "OFF" ] && ipv6_dns=ON || ipv6_dns=OFF
-        setconfig ipv6_dns $ipv6_dns
-        set_ipv6
-	;;
-    *)
-        errornum
-	;;
-    esac
+
+# ipv6设置
+set_ipv6() {
+    while true; do
+        [ -z "$ipv6_redir" ] && ipv6_redir=OFF
+        [ -z "$ipv6_dns" ] && ipv6_dns=ON
+        echo "-----------------------------------------------"
+        echo -e " 1 ipv6透明路由:  \033[36m$ipv6_redir\033[0m  ——劫持ipv6流量"
+        [ "$disoverride" != "1" ] && echo -e " 2 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"
+        echo -e " 0 返回上级菜单"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$ipv6_redir" = "OFF" ]; then
+                ipv6_support=ON
+                ipv6_redir=ON
+                sleep 2
+            else
+                ipv6_redir=OFF
+            fi
+            setconfig ipv6_redir $ipv6_redir
+            setconfig ipv6_support $ipv6_support
+            ;;
+        2)
+            [ "$ipv6_dns" = "OFF" ] && ipv6_dns=ON || ipv6_dns=OFF
+            setconfig ipv6_dns $ipv6_dns
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
