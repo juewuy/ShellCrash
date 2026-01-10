@@ -228,140 +228,158 @@ switch_core(){ #clash与singbox内核切换
 		}
 	}
 }
-getcore(){ #下载内核文件
-	. "$CRASHDIR"/libs/core_tools.sh #调用下载工具
-	[ -z "$crashcore" ] && crashcore=meta
-	[ -z "$cpucore" ] && check_cpucore
-	[ "$crashcore" = unknow ] && setcoretype
-	echo "$crashcore" | grep -q 'singbox' && core_new=singbox || core_new=clash
-	#获取在线内核文件
-	echo "-----------------------------------------------"
-	echo "正在在线获取$crashcore核心文件……"
-	core_webget 
-	case "$?" in
-	0)
-		echo -e "\033[32m$crashcore核心下载成功！\033[0m"
-		sleep 1
-		switch_core
-	;;
-	1)
-		echo -e "\033[31m核心文件下载失败！\033[0m"
-		[ -z "$custcorelink" ] && error_down
-	;;
-	*)
-		echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
-		rm -rf ${TMPDIR}/core_new
-		rm -rf ${TMPDIR}/core_new.tar.gz
-		setcpucore
-	;;
-	esac
+
+# 下载内核文件
+getcore() {
+    # 调用下载工具
+    . "$CRASHDIR"/libs/core_tools.sh
+
+    [ -z "$crashcore" ] && crashcore=meta
+    [ -z "$cpucore" ] && check_cpucore
+    [ "$crashcore" = unknow ] && setcoretype
+    echo "$crashcore" | grep -q 'singbox' && core_new=singbox || core_new=clash
+    # 获取在线内核文件
+    echo "-----------------------------------------------"
+    echo "正在在线获取$crashcore核心文件......"
+    core_webget
+    case "$?" in
+    0)
+        echo -e "\033[32m$crashcore核心下载成功！\033[0m"
+        sleep 1
+        switch_core
+        ;;
+    1)
+        echo -e "\033[31m核心文件下载失败！\033[0m"
+        [ -z "$custcorelink" ] && error_down
+        ;;
+    *)
+        echo -e "\033[31m核心文件下载成功但校验失败！请尝试手动指定CPU版本\033[0m"
+        rm -rf ${TMPDIR}/core_new
+        rm -rf ${TMPDIR}/core_new.tar.gz
+        setcpucore
+        ;;
+    esac
 }
-setcustcore(){ #自定义内核
-	checkcustcore(){
-		[ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
-		#通过githubapi获取内核信息
-		echo -e "\033[32m正在获取内核文件链接！\033[0m"
-		webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
-		if [ "$?" = 0 ];then
-			release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
-			release_date=$(cat "$TMPDIR"/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
-			update_date=$(cat "$TMPDIR"/github_api | grep '"updated_at":' | head -n 1 | awk -F '"' '{print $4}')
-			[ -n "$(echo $cpucore | grep mips)" ] && cpu_type=mips || cpu_type=$cpucore
-			cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$"  | sed 's/"//' > "$TMPDIR"/core.list
-			rm -rf "$TMPDIR"/github_api
-			#
-			if [ -s "$TMPDIR"/core.list ];then
-				echo "-----------------------------------------------"
-				echo -e "内核版本：\033[36m$release_tag\033[0m"
-				echo -e "发布时间：\033[33m$release_date\033[0m"
-				echo -e "更新时间：\033[32m$update_date\033[0m"
-				echo "-----------------------------------------------"
-				echo -e "\033[33m请确认内核信息并选择：\033[0m"
-				cat "$TMPDIR"/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
-				echo -e " 0 返回上级菜单"
-				echo "-----------------------------------------------"
-				read -p "请输入对应数字 > " num
-				case "$num" in
-				0)
-					setcustcore
-				;;
-				[1-9]|[1-9][0-9])
-					if [ "$num" -le "$(wc -l < "$TMPDIR"/core.list)" ];then
-						custcorelink=$(sed -n "$num"p "$TMPDIR"/core.list)
-						getcore
-					else
-						errornum
-					fi
-				;;
-				*)
-					errornum
-				;;
-				esac
-			else
-				echo -e "\033[31m找不到可用内核，可能是作者没有编译相关CPU架构版本的内核文件！\033[0m"
-				sleep 1
-			fi
-		else
-			echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
-			sleep 1
-		fi
-		rm -rf "$TMPDIR"/core.list
-	}
-	[ -z "$cpucore" ] && check_cpucore
-	echo "-----------------------------------------------"
-	echo -e "\033[36m此处内核通常源自互联网采集，此处致谢各位开发者！\033[0m"
-	echo -e "\033[33m自定义内核未经过完整适配，使用出现问题请自行解决！\033[0m"
-	echo -e "\033[31m自定义内核已适配定时任务，但不支持小闪存模式！\033[0m"
-	echo -e "\033[32m如遇到网络错误请先启动ShellCrash服务！\033[0m"
-	[ -n "$custcore" ] && {
-	echo "-----------------------------------------------"
-	echo -e "当前内核为：\033[36m$custcore\033[0m"
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[33m请选择需要使用的核心！\033[0m"
-	echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核"
-	echo -e "2 \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)"
-	echo -e "3 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本官方内核"
-	echo -e "4 Premium-2023.08.17内核(已停止维护)"
-	echo -e "9 \033[33m自定义内核链接 \033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	1)
-		project=MetaCubeX/mihomo
-		api_tag=latest
-		crashcore=meta
-		checkcustcore
-	;;
-	2)
-		project=vernesong/mihomo
-		api_tag=Prerelease-Alpha
-		crashcore=meta
-		checkcustcore
-	;;
-	3)
-		project=SagerNet/sing-box
-		api_tag=latest
-		crashcore=singbox
-		checkcustcore
-	;;
-	4)
-		project=juewuy/ShellCrash
-		api_tag=clash.premium.latest
-		crashcore=clashpre
-		checkcustcore
-	;;
-	9)
-		read -p "请输入自定义内核的链接地址(必须是以.tar.gz或.gz结尾的压缩文件) > " link
-		[ -n "$link" ] && custcorelink="$link"
-		setcoretype
-		getcore
-	;;
-	*)
-	;;
-	esac
+
+checkcustcore() {
+    [ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
+    # 通过githubapi获取内核信息
+    echo -e "\033[32m正在获取内核文件链接！\033[0m"
+    webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
+    if [ "$?" = 0 ]; then
+        release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
+        release_date=$(cat "$TMPDIR"/github_api | grep '"published_at":' | awk -F '"' '{print $4}')
+        update_date=$(cat "$TMPDIR"/github_api | grep '"updated_at":' | head -n 1 | awk -F '"' '{print $4}')
+        [ -n "$(echo $cpucore | grep mips)" ] && cpu_type=mips || cpu_type=$cpucore
+        cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE "https://github.com/${project}/releases/download.*linux.*${cpu_type}.*\.gz\"$" | sed 's/"//' >"$TMPDIR"/core.list
+        rm -rf "$TMPDIR"/github_api
+
+        if [ -s "$TMPDIR"/core.list ]; then
+            echo "-----------------------------------------------"
+            echo -e "内核版本：\033[36m$release_tag\033[0m"
+            echo -e "发布时间：\033[33m$release_date\033[0m"
+            echo -e "更新时间：\033[32m$update_date\033[0m"
+            echo "-----------------------------------------------"
+            echo -e "\033[33m请确认内核信息并选择：\033[0m"
+            cat "$TMPDIR"/core.list | grep -oE "$release_tag.*" | sed 's|.*/||' | awk '{print " "NR" "$1}'
+            echo -e " 0 返回上级菜单"
+            echo "-----------------------------------------------"
+            read -p "请输入对应数字 > " num
+            case "$num" in
+            0)
+                return 0
+                ;;
+            [1-9] | [1-9][0-9])
+                if [ "$num" -le "$(wc -l <"$TMPDIR"/core.list)" ]; then
+                    custcorelink=$(sed -n "$num"p "$TMPDIR"/core.list)
+                    getcore
+                else
+                    errornum
+                    sleep 1
+                fi
+                ;;
+            *)
+                errornum
+                sleep 1
+                ;;
+            esac
+        else
+            echo -e "\033[31m找不到可用内核，可能是作者没有编译相关CPU架构版本的内核文件！\033[0m"
+            sleep 1
+        fi
+    else
+        echo -e "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
+        sleep 1
+    fi
+    rm -rf "$TMPDIR"/core.list
 }
+
+# 自定义内核
+setcustcore() {
+    while true; do
+        [ -z "$cpucore" ] && check_cpucore
+        echo "-----------------------------------------------"
+        echo -e "\033[36m此处内核通常源自互联网采集，此处致谢各位开发者！\033[0m"
+        echo -e "\033[33m自定义内核未经过完整适配，使用出现问题请自行解决！\033[0m"
+        echo -e "\033[31m自定义内核已适配定时任务，但不支持小闪存模式！\033[0m"
+        echo -e "\033[32m如遇到网络错误请先启动ShellCrash服务！\033[0m"
+        [ -n "$custcore" ] && {
+            echo "-----------------------------------------------"
+            echo -e "当前内核为：\033[36m$custcore\033[0m"
+        }
+        echo "-----------------------------------------------"
+        echo -e "\033[33m请选择需要使用的核心！\033[0m"
+        echo -e "1 \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核"
+        echo -e "2 \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)"
+        echo -e "3 \033[36mSagerNet/sing-box\033[32m@release\033[0m版本官方内核"
+        echo -e "4 Premium-2023.08.17内核(已停止维护)"
+        echo -e "9 \033[33m自定义内核链接 \033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            project=MetaCubeX/mihomo
+            api_tag=latest
+            crashcore=meta
+            checkcustcore
+            ;;
+        2)
+            project=vernesong/mihomo
+            api_tag=Prerelease-Alpha
+            crashcore=meta
+            checkcustcore
+            ;;
+        3)
+            project=SagerNet/sing-box
+            api_tag=latest
+            crashcore=singbox
+            checkcustcore
+            ;;
+        4)
+            project=juewuy/ShellCrash
+            api_tag=clash.premium.latest
+            crashcore=clashpre
+            checkcustcore
+            ;;
+        9)
+            read -p "请输入自定义内核的链接地址(必须是以.tar.gz或.gz结尾的压缩文件) > " link
+            [ -n "$link" ] && custcorelink="$link"
+            setcoretype
+            getcore
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
+}
+
 setziptype(){
 	echo "-----------------------------------------------"
 	echo -e "请选择内核内核分支及压缩方式：\033[0m"
