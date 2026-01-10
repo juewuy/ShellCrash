@@ -54,20 +54,22 @@ ShellCrash 旨在兼容绝大多数基于 Linux 内核的网络设备：
 
 > 使用 wget 安装（jsDelivr CDN 源）
 ```sh
-sudo -i # 切换至root用户，若需密码，请输入
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
-  && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
-  && bash /tmp/install.sh \
-  && . /etc/profile &> /dev/null
+sudo /bin/sh -c "
+    export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master'  && \
+    wget -q --no-check-certificate -O /tmp/install.sh \$url/install.sh     && \
+    bash /tmp/install.sh                                                   && \
+    . /etc/profile >/dev/null 2>&1
+"
 ```
 
 > 或使用 curl 安装（作者私人源）
 
 ```sh
-sudo -i # 切换至root用户，若需密码，请输入
-export url='https://gh.jwsc.eu.org/master' \
-  && bash -c "$(curl -kfsSl $url/install.sh)" \
-  && . /etc/profile &> /dev/null
+sudo /bin/sh -c "
+    export url='https://gh.jwsc.eu.org/master' && \
+    bash -c \"\$(curl -kfsSl \$url/install.sh)\" && \
+    . /etc/profile >/dev/null 2>&1
+"
 ```
 
 ### :satellite: 路由器设备安装
