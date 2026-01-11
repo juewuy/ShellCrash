@@ -535,176 +535,176 @@ EOF
 		rm -rf "$TMPDIR"/providers
 	fi
 }
-setproviders(){ #自定义providers
-	. "$CRASHDIR"/libs/set_cron.sh
-	. "$CRASHDIR"/libs/web_get_bin.sh 
-	#获取模版名称
-	if [ -z "$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg)" ];then
-		provider_temp_des=$(sed -n "1 p" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $1}')
-	else
-		provider_temp_file=$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
-		provider_temp_des=$(grep "$provider_temp_file" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $1}')
-		[ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
-	fi
-	echo "-----------------------------------------------"
-	echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers服务商\033[0m"
-	echo -e "\033[33m支持在线及本地的Yaml格式配置导入\033[0m"
-	[ -s "$CRASHDIR"/configs/providers.cfg ] && {
-		echo "-----------------------------------------------"
-		echo -e "\033[36m输入对应数字可管理providers服务商\033[0m"
-		cat "$CRASHDIR"/configs/providers.cfg | awk -F "#" '{print " "NR" "$1" "$2}'
-	}
-	echo -e " d \033[31m清空\033[0mproviders服务商列表"
-	echo -e " e \033[33m清理\033[0mproviders目录文件"
-	echo "-----------------------------------------------"
-	echo -e "\033[36m按照a-b-c的顺序即可完成配置生成\033[0m"
-	echo -e " a \033[36m添加\033[0mproviders服务商/节点"
-	echo -e " b 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
-	echo -e " c \033[32m生成\033[0m基于providers的配置文件"
-	echo "-----------------------------------------------"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应字母或数字 > " num
-	case "$num" in
-	0)
-	;;
-	[1-9]|[1-9][0-9])
-		provider_name=$(sed -n "$num p" "$CRASHDIR"/configs/providers.cfg | awk '{print $1}')
-		provider_url=$(sed -n "$num p" "$CRASHDIR"/configs/providers.cfg | awk '{print $2}')
-		if [ -z "$provider_name" ];then
-			errornum
-		else
-			echo "-----------------------------------------------"
-			echo -e " 1 修改名称：\033[36m$provider_name\033[0m"
-			echo -e " 2 修改链接地址：\033[32m$provider_url\033[0m"
-			echo -e " 3 生成\033[33m仅包含此链接\033[0m的配置文件"
-			echo -e " 4 \033[31m移除此链接\033[0m"
-			echo "-----------------------------------------------"
-			echo -e " 0 返回上级菜单"
-			read -p "请选择需要执行的操作 > " num
-			case "$num" in
-			0)
-			;;
-			1)
-				read -p "请输入名称或者代号(不可重复,不支持纯数字)  > " name
-				if [ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" "$CRASHDIR"/configs/providers.cfg;then
-					sed -i "s|$provider_name $provider_url|$name $provider_url|" "$CRASHDIR"/configs/providers.cfg
-				else
-					echo -e "\033[31m输入错误，请重新输入！\033[0m"
-				fi
-			;;
-			2)
-				read -p "请输入链接地址或本地相对路径 > " link
-				if [ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && [ -z "$(grep "$link" "$CRASHDIR"/configs/providers.cfg)" ];then
-					link=$(echo $link | sed 's/\&/\\\&/g') #特殊字符添加转义
-					sed -i "s|$provider_name $provider_url|$provider_name $link|" "$CRASHDIR"/configs/providers.cfg
-				else
-					echo -e "\033[31m输入错误，请重新输入！\033[0m"
-				fi
-			;;
-			3)
-				gen_${coretype}_providers $provider_name $provider_url
-			;;
-			4)
-				sed -i "/^$provider_name /d" "$CRASHDIR"/configs/providers.cfg
-			;;
-			*)
-				errornum
-			;;
-			esac
-			sleep 1
-		fi
-		setproviders
-	;;
-	a)
-		echo "-----------------------------------------------"
-		echo -e "支持填写在线的\033[32mYClash订阅地址\033[0m或者\033[32m本地Clash配置文件\033[0m"
-		echo -e "本地配置文件请放在\033[32m$CRASHDIR\033[0m目录下，并填写相对路径如【\033[32m./providers/test.yaml\033[0m】"
-		echo "-----------------------------------------------"
-		read -p "请输入链接地址或本地相对路径 > " link
-		link=$(echo $link | sed 's/ //g') #去空格
-		[ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
-			read -p "请输入名称或代号(不可重复,不支持纯数字) > " name
-			name=$(echo $name | sed 's/ //g')
-			[ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" "$CRASHDIR"/configs/providers.cfg && {
-				echo "-----------------------------------------------"
-				echo -e "名称：\033[36m$name\033[0m"
-				echo -e "链接地址/路径：\033[32m$link\033[0m"
-				read -p "确认添加？(1/0) > " res
-					[ "$res" = 1 ] && {
-						echo "$name $link" >> "$CRASHDIR"/configs/providers.cfg
-						echo -e "\033[32mproviders已添加！\033[0m"
-					}
-			}
-		}
-		[ "$?" != 0 ] && echo -e "\033[31m输入错误，操作已取消！\033[0m"
-		sleep 1
-		setproviders
-	;;
-	c)
-		echo "-----------------------------------------------"
-		if [ -s "$CRASHDIR"/configs/providers.cfg ];then
-			echo -e "\033[33msingboxr与mihomo内核的providers配置文件不互通！\033[0m"
-			echo "-----------------------------------------------"
-			read -p "确认生成${coretype}配置文件？(1/0) > " res
-			[ "$res" = "1" ] && {
-				gen_${coretype}_providers
-			}
-		else
-			echo -e "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
-			sleep 1
-		fi
-		setproviders
-	;;
-	b)
-		echo "-----------------------------------------------"
-		echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
-		echo -e "\033[33m请选择在线模版：\033[0m"
-		echo "-----------------------------------------------"
-		cat "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print " "NR" "$1}'
-		echo "-----------------------------------------------"
-		echo -e " a 使用\033[36m本地模版\033[0m"
-		echo "-----------------------------------------------"
-		read -p "请输入对应字母或数字 > " num
-		case "$num" in
-		0)
-		;;
-		a)
-			read -p "请输入模版的路径(绝对路径) > " dir
-			if [ -s $dir ];then
-				provider_temp_file=$dir
-				setconfig provider_temp_${coretype} $provider_temp_file
-				echo -e "\033[32m设置成功！\033[0m"
-			else
-				echo -e "\033[31m输入错误，找不到对应模版文件！\033[0m"
-			fi
-			sleep 1
-		;;
-		*)
-			provider_temp_file=$(sed -n "$num p" "$CRASHDIR"/configs/${coretype}_providers.list 2>/dev/null | awk '{print $2}')
-			if [ -z "$provider_temp_file" ];then
-				errornum
-			else
-				setconfig provider_temp_${coretype} $provider_temp_file
-			fi
-		;;
-		esac
-		setproviders
-	;;
-	d)
-		read -p "确认清空全部链接？(1/0) > " res
-		[ "$res" = "1" ] && rm -rf "$CRASHDIR"/configs/providers.cfg
-		setproviders
-	;;
-	e)
-		echo -e "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
-		read -p "是否继续？(1/0) > " res
-		[ "$res" = "1" ] && rm -rf "$CRASHDIR"/providers
-		setproviders
-	;;
-	*)
-		errornum
-	;;
-	esac
+
+# 自定义providers
+setproviders() {
+    . "$CRASHDIR"/libs/set_cron.sh
+    . "$CRASHDIR"/libs/web_get_bin.sh
+    while true; do
+        # 获取模版名称
+        if [ -z "$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg)" ]; then
+            provider_temp_des=$(sed -n "1 p" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $1}')
+        else
+            provider_temp_file=$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
+            provider_temp_des=$(grep "$provider_temp_file" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $1}')
+            [ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
+        fi
+        echo "-----------------------------------------------"
+        echo -e "\033[33m你可以在这里快捷管理与生成自定义的providers服务商\033[0m"
+        echo -e "\033[33m支持在线及本地的Yaml格式配置导入\033[0m"
+        [ -s "$CRASHDIR"/configs/providers.cfg ] && {
+            echo "-----------------------------------------------"
+            echo -e "\033[36m输入对应数字可管理providers服务商\033[0m"
+            cat "$CRASHDIR"/configs/providers.cfg | awk -F "#" '{print " "NR" "$1" "$2}'
+        }
+        echo -e " d \033[31m清空\033[0mproviders服务商列表"
+        echo -e " e \033[33m清理\033[0mproviders目录文件"
+        echo "-----------------------------------------------"
+        echo -e "\033[36m按照a-b-c的顺序即可完成配置生成\033[0m"
+        echo -e " a \033[36m添加\033[0mproviders服务商/节点"
+        echo -e " b 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
+        echo -e " c \033[32m生成\033[0m基于providers的配置文件"
+        echo "-----------------------------------------------"
+        echo -e " 0 返回上级菜单"
+        read -p "请输入对应字母或数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        [1-9] | [1-9][0-9])
+            provider_name=$(sed -n "$num p" "$CRASHDIR"/configs/providers.cfg | awk '{print $1}')
+            provider_url=$(sed -n "$num p" "$CRASHDIR"/configs/providers.cfg | awk '{print $2}')
+            if [ -z "$provider_name" ]; then
+                errornum
+            else
+                echo "-----------------------------------------------"
+                echo -e " 1 修改名称：\033[36m$provider_name\033[0m"
+                echo -e " 2 修改链接地址：\033[32m$provider_url\033[0m"
+                echo -e " 3 生成\033[33m仅包含此链接\033[0m的配置文件"
+                echo -e " 4 \033[31m移除此链接\033[0m"
+                echo "-----------------------------------------------"
+                echo -e " 0 返回上级菜单"
+                read -p "请选择需要执行的操作 > " num
+                case "$num" in
+                "" | 0) ;;
+                1)
+                    read -p "请输入名称或者代号(不可重复,不支持纯数字)  > " name
+                    if [ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" "$CRASHDIR"/configs/providers.cfg; then
+                        sed -i "s|$provider_name $provider_url|$name $provider_url|" "$CRASHDIR"/configs/providers.cfg
+                    else
+                        echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                    fi
+                    ;;
+                2)
+                    read -p "请输入链接地址或本地相对路径 > " link
+                    if [ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && [ -z "$(grep "$link" "$CRASHDIR"/configs/providers.cfg)" ]; then
+                        link=$(echo $link | sed 's/\&/\\\&/g') #特殊字符添加转义
+                        sed -i "s|$provider_name $provider_url|$provider_name $link|" "$CRASHDIR"/configs/providers.cfg
+                    else
+                        echo -e "\033[31m输入错误，请重新输入！\033[0m"
+                    fi
+                    ;;
+                3)
+                    gen_${coretype}_providers $provider_name $provider_url
+                    ;;
+                4)
+                    sed -i "/^$provider_name /d" "$CRASHDIR"/configs/providers.cfg
+                    ;;
+                *)
+                    errornum
+                    ;;
+                esac
+            fi
+            sleep 1
+            ;;
+        a)
+            echo "-----------------------------------------------"
+            echo -e "支持填写在线的\033[32mYClash订阅地址\033[0m或者\033[32m本地Clash配置文件\033[0m"
+            echo -e "本地配置文件请放在\033[32m$CRASHDIR\033[0m目录下，并填写相对路径如【\033[32m./providers/test.yaml\033[0m】"
+            echo "-----------------------------------------------"
+            read -p "请输入链接地址或本地相对路径 > " link
+            link=$(echo $link | sed 's/ //g') #去空格
+            [ -n "$(echo $link | grep -E '.*\..*|^\./')" ] && {
+                read -p "请输入名称或代号(不可重复,不支持纯数字) > " name
+                name=$(echo $name | sed 's/ //g')
+                [ -n "$name" ] && [ -z "$(echo "$name" | grep -E '^[0-9]+$')" ] && ! grep -q "$name" "$CRASHDIR"/configs/providers.cfg && {
+                    echo "-----------------------------------------------"
+                    echo -e "名称：\033[36m$name\033[0m"
+                    echo -e "链接地址/路径：\033[32m$link\033[0m"
+                    read -p "确认添加？(1/0) > " res
+                    [ "$res" = 1 ] && {
+                        echo "$name $link" >>"$CRASHDIR"/configs/providers.cfg
+                        echo -e "\033[32mproviders已添加！\033[0m"
+                    }
+                }
+            }
+            [ "$?" != 0 ] && echo -e "\033[31m输入错误，操作已取消！\033[0m"
+            sleep 1
+            ;;
+        c)
+            echo "-----------------------------------------------"
+            if [ -s "$CRASHDIR"/configs/providers.cfg ]; then
+                echo -e "\033[33msingboxr与mihomo内核的providers配置文件不互通！\033[0m"
+                echo "-----------------------------------------------"
+                read -p "确认生成${coretype}配置文件？(1/0) > " res
+                [ "$res" = "1" ] && {
+                    gen_${coretype}_providers
+                }
+            else
+                echo -e "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
+                sleep 1
+            fi
+            ;;
+        b)
+            echo "-----------------------------------------------"
+            echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
+            echo -e "\033[33m请选择在线模版：\033[0m"
+            echo "-----------------------------------------------"
+            cat "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print " "NR" "$1}'
+            echo "-----------------------------------------------"
+            echo -e " a 使用\033[36m本地模版\033[0m"
+            echo "-----------------------------------------------"
+            read -p "请输入对应字母或数字 > " num
+            case "$num" in
+            "" | 0) ;;
+            a)
+                read -p "请输入模版的路径(绝对路径) > " dir
+                if [ -s $dir ]; then
+                    provider_temp_file=$dir
+                    setconfig provider_temp_${coretype} $provider_temp_file
+                    echo -e "\033[32m设置成功！\033[0m"
+                else
+                    echo -e "\033[31m输入错误，找不到对应模版文件！\033[0m"
+                fi
+                sleep 1
+                ;;
+            *)
+                provider_temp_file=$(sed -n "$num p" "$CRASHDIR"/configs/${coretype}_providers.list 2>/dev/null | awk '{print $2}')
+                if [ -z "$provider_temp_file" ]; then
+                    errornum
+                    sleep 1
+                else
+                    setconfig provider_temp_${coretype} $provider_temp_file
+                fi
+                ;;
+            esac
+            ;;
+        d)
+            read -p "确认清空全部链接？(1/0) > " res
+            [ "$res" = "1" ] && rm -rf "$CRASHDIR"/configs/providers.cfg
+            ;;
+        e)
+            echo -e "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
+            read -p "是否继续？(1/0) > " res
+            [ "$res" = "1" ] && rm -rf "$CRASHDIR"/providers
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
 
 set_clash_adv(){ #自定义clash高级规则
