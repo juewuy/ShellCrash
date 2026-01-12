@@ -200,20 +200,21 @@ EOF
 EOF
     #生成add_route.json
     #域名嗅探配置
-    [ "$sniffer" = ON ] && sniffer_set='{ "action": "sniff", "timeout": "500ms" },'
-	[ "$ts_service" = ON ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
+    [ "$sniffer" = ON ] && ! grep -Eq '"action" *:[[:space:]]*"sniff"' "$CRASHDIR"/jsons/*.json && sniffer_set='{ "action": "sniff", "timeout": "500ms" },'
+    [ "$ts_service" = ON ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
+    sed -i '/"clash_mode".*"outbound"/d' "$CRASHDIR"/jsons/*.json
     cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {
-	"default_domain_resolver": "dns_resolver",
+    "default_domain_resolver": "dns_resolver",
     "default_mark": $routing_mark,
-	"rules": [
-	  { "inbound": [ "dns-in" ], "action": "hijack-dns" },
-	  $tailscale_set
-	  $sniffer_set
-      { "clash_mode": "Direct" , "outbound": "DIRECT" },
-      { "clash_mode": "Global" , "outbound": "GLOBAL" }
-	]
+    "rules": [
+      { "inbound": [ "dns-in" ], "action": "hijack-dns" },
+      $tailscale_set
+      $sniffer_set
+      { "clash_mode": [ "Direct" ] , "outbound": "DIRECT" },
+      { "clash_mode": [ "Global" ], "outbound": "GLOBAL" }
+    ]
   }
 }
 EOF
