@@ -988,45 +988,48 @@ gen_core_config_link(){ #在线生成工具
 		fi
 	done
 }
-set_core_config_link(){ #直接导入配置
-	echo "-----------------------------------------------"
-	echo -e "\033[32m仅限导入完整的配置文件链接！！！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e "注意：\033[31m此功能不兼容“跳过证书验证”功能，部分老旧\n设备可能出现x509报错导致节点不通\033[0m"
-	echo -e "你也可以搭配在线订阅转换网站或者自建SubStore使用"
-	echo "$crashcore" | grep -q 'singbox' &&echo -e "singbox内核建议使用\033[32;4mhttps://subv.jwsc.eu.org/\033[0m转换"
-	echo "-----------------------------------------------"
-	echo -e "\033[33m0 返回上级菜单\033[0m"
-	echo "-----------------------------------------------"
-	read -p "请输入完整链接 > " link
-	test=$(echo $link | grep -iE "tp.*://" )
-	link=`echo ${link/\ \(*\)/''}`   #删除恶心的超链接内容
-	link=`echo ${link//\&/\\\&}`   #处理分隔符
-	if [ -n "$link" -a -n "$test" ];then
-		echo "-----------------------------------------------"
-		echo -e 请检查输入的链接是否正确：
-		echo -e "\033[4;32m$link\033[0m"
-		read -p "确认导入配置文件？原配置文件将被备份![1/0] > " res
-			if [ "$res" = '1' ]; then
-				#将用户链接写入配置
-				Url=''
-				Https="$link"
-				setconfig Https "'$Https'"
-				setconfig Url
-				#获取在线yaml文件
-				jump_core_config
-			else
-				set_core_config_link
-			fi
-	elif [ "$link" = 0 ];then
-		i=
-	else
-		echo "-----------------------------------------------"
-		echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
-		echo -e "\033[33m仅支持http、https、ftp以及ftps链接！\033[0m"
-		sleep 1
-		set_core_config_link
-	fi
+
+# 直接导入配置
+set_core_config_link() {
+    while true; do
+        echo "-----------------------------------------------"
+        echo -e "\033[32m仅限导入完整的配置文件链接！！！\033[0m"
+        echo "-----------------------------------------------"
+        echo -e "注意：\033[31m此功能不兼容“跳过证书验证”功能，部分老旧\n设备可能出现x509报错导致节点不通\033[0m"
+        echo -e "你也可以搭配在线订阅转换网站或者自建SubStore使用"
+        echo "$crashcore" | grep -q 'singbox' && echo -e "singbox内核建议使用\033[32;4mhttps://subv.jwsc.eu.org/\033[0m转换"
+        echo "-----------------------------------------------"
+        echo -e "\033[33m0 返回上级菜单\033[0m"
+        echo "-----------------------------------------------"
+        read -p "请输入完整链接 > " link
+        test=$(echo $link | grep -iE "tp.*://")
+        link=$(echo ${link/\ \(*\)/''}) # 删除恶心的超链接内容
+        link=$(echo ${link//\&/\\&})    # 处理分隔符
+        if [ -n "$link" -a -n "$test" ]; then
+            echo "-----------------------------------------------"
+            echo -e "请检查输入的链接是否正确："
+            echo -e "\033[4;32m$link\033[0m"
+            read -p "确认导入配置文件？原配置文件将被备份![1/0] > " res
+            if [ "$res" = '1' ]; then
+                # 将用户链接写入配置
+                Url=''
+                Https="$link"
+                setconfig Https "'$Https'"
+                setconfig Url
+                # 获取在线yaml文件
+                jump_core_config
+                break
+            fi
+        elif [ "$link" = 0 ]; then
+            i=
+            break
+        else
+            echo "-----------------------------------------------"
+            echo -e "\033[31m请输入正确的配置文件链接地址！！！\033[0m"
+            echo -e "\033[33m仅支持http、https、ftp以及ftps链接！\033[0m"
+            sleep 1
+        fi
+    done
 }
 
 # 配置文件主界面
