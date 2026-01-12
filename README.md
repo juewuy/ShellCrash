@@ -1,10 +1,7 @@
-<h1 align="center">
-  <br>ShellCrash<br>
-</h1>
-
+<h1 align="center">ShellCrash</h1>
 
 <p align="center">
-	<a target="_blank" href="https://github.com/MetaCubeX/mihomo/releases">
+  <a target="_blank" href="https://github.com/MetaCubeX/mihomo/releases">
     <img src="https://img.shields.io/github/release/MetaCubeX/mihomo.svg?style=flat-square&label=Core">
   </a>
   <a target="_blank" href="https://github.com/juewuy/ShellCrash/releases">
@@ -12,182 +9,170 @@
   </a>
 </p>
 
-[中文](README_CN.md) | English
+<p align="center">
+  <strong>A powerful script tool for the convenient deployment and management of mihomo/sing-box kernels in Shell environments.</strong>
+</p>
+
+<p align="center">
+  <a href="README_CN.md">简体中文</a> | English
+</p>
 
 ---
 
-## Overview
+## :rocket: Core Features
 
-ShellCrash is a lightweight Shell-based management script that enables convenient use of the **Mihomo / Sing-box** core across a wide range of Linux-based systems.
+- **Multi-Kernel Support**: Easily manage and switch between **mihomo** and **sing-box** kernels directly within the Shell environment.
+- **Flexible Configuration Management**: Supports online import of subscription links and configuration files to simplify the setup process.
+- **Automated Tasks**: Configure scheduled tasks for automatic updates of configuration files and rules.
+- **Graphical Dashboard**: Support for online installation and use of local Web Dashboards to intuitively manage built-in rules and traffic.
+- **Multiple Operation Modes**: Supports switching between various traffic forwarding modes, including Router mode and Local mode.
+- **One-Click Maintenance**: Built-in online update functionality to keep the script and features up to date.
 
-Key features include:
+## :computer: Device Support
 
-- Run and manage Mihomo / Sing-box directly from a Shell environment
-- Fully Shell-based management with minimal dependencies
-- Import subscription links and configuration URLs online
-- Schedule automated tasks, including periodic configuration updates
-- Install and manage built-in rules via a local web control panel
-- Switch seamlessly between multiple operating modes (e.g. router mode, local mode)
-- Support in-place online updates
+ShellCrash is designed to be compatible with the vast majority of network devices based on the Linux kernel:
 
-## Supported Platforms
+* **Router Devices**: Supports various firmwares based on OpenWrt or its derivatives.
+* **Linux Servers**: Supports devices running standard Linux distributions (e.g., Debian, CentOS, Armbian, Ubuntu, etc.).
+* **Third-Party Firmware**: Compatible with Padavan (Conservative Mode), Pandora, and ASUS/Merlin firmware.
+* **Customized Devices**: Compatible with other specialized network devices developed using the Linux kernel.
 
-ShellCrash is designed to work across a broad range of Linux-based devices, including:
+> For additional device support, please submit an [Issue](https://github.com/juewuy/ShellCrash/issues) or provide feedback in the [Telegram Group](https://t.me/ShellClash) (please include the device model and the output of the `uname -a` command).
 
-- Routers based on **OpenWrt** or OpenWrt-derived custom firmware
-- Standard Linux distributions such as **Debian**, **CentOS**, **Armbian**, and similar
-- **Padavan** firmware (conservative mode), **Pandora** firmware, and **ASUS / Merlin** firmware
-- Other embedded or customised systems built on the Linux kernel
+---
 
-> If your device is not listed above, please open an issue or provide feedback in the Telegram group. When reporting, include the device model and the output of `uname -a`.
+## :hammer_and_wrench: Installation Guide
 
-## Frequently Asked Questions
-
-- [ShellCrash FAQ | Juewuy's Blog](https://juewuy.github.io/chang-jian-wen-ti/)
-
-## Getting Started
+> [!TIP]
+> If you encounter connection failures or SSL-related issues, please try switching to an alternative installation mirror.
 
 ### Prerequisites
+1. Ensure the device has **SSH** enabled and **Root privileges** obtained (Linux systems with a GUI can use the terminal directly).
+2. Connect to the device using an SSH tool (such as PuTTY, JuiceSSH, or the system's built-in terminal).
 
-- SSH access must be enabled on the target device
-- Root privileges are required (Linux systems with a desktop environment may use the built-in terminal)
+### :penguin: Standard Linux Device Installation
 
-Use an SSH client such as **PuTTY**, **JuiceSSH**, or the system terminal to connect to your router or Linux host.
+> [!IMPORTANT]
+> Please perform the installation as the root user.
 
-### Installation
-
-Follow the instructions below according to your device type. Execute the commands in an SSH session and follow the on-screen prompts to complete installation.
-
-> **Note**  
-> If you encounter connection failures or SSL-related errors, try switching to a different installation mirror.
-
-#### Standard Linux Distributions
-
+> Install via wget (jsDelivr CDN source)
 ```sh
-sudo -i  # Switch to root user (enter password if prompted)
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
+export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
   && bash /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
 
-Alternative mirror:
+> Or install via curl (Author's private source)
 
 ```sh
-sudo -i
-export url='https://gh.jwsc.eu.org/master' \
+export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
   && bash -c "$(curl -kfsSl $url/install.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
-#### Router Devices (curl)
+### :satellite: Router Device Installation
 
+**Installation via `curl`:**
+> GitHub Source (Recommended for overseas environments or environments with proxy access)
 ```sh
-# GitHub source (may require a proxy)
-export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' \
+export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https://raw.githubusercontent.com/juewuy/ShellCrash/master)' \
   && sh -c "$(curl -kfsSl $url/install.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
-Alternative mirrors:
+> Or jsDelivr CDN source
 
 ```sh
-# jsDelivr CDN
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
+export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
   && sh -c "$(curl -kfsSl $url/install.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
+> Or Author's private source
 ```sh
-# Author's private mirror
-export url='https://gh.jwsc.eu.org/master' \
+export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
   && sh -c "$(curl -kfsSl $url/install.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
-#### Router Devices (wget)
-
+**Installation via `wget`:**
+> GitHub Source (Recommended for overseas environments or environments with proxy access)
 ```sh
-# GitHub source (may require a proxy)
-export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master' \
+export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https://raw.githubusercontent.com/juewuy/ShellCrash/master)' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
 
-Alternative mirror:
-
+> Or jsDelivr CDN source
 ```sh
-# jsDelivr CDN
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
+export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
 
-#### Legacy Devices (older wget versions)
+### :pager: Installation for Legacy Devices with Older `wget` Versions
 
+> Author's private HTTP beta source
 ```sh
-# HTTP mirror for legacy environments
-export url='http://t.jwsc.eu.org' \
+export url='[http://t.jwsc.eu.org](http://t.jwsc.eu.org)' \
   && wget -q -O /tmp/install.sh $url/install.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
 
-#### Virtual Machines
 
-For virtual machine deployments, using an **Alpine Linux** image is strongly recommended.
-
+### :cloud: Virtual Machines
+- **Alpine Linux VM**: It is highly recommended to use an Alpine image for optimal compatibility.
 ```sh
-# Install required dependencies
+# Install necessary dependencies
 apk add --no-cache wget openrc ca-certificates tzdata nftables iproute2 dcron
 
-# Run the installer
-export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
+# Execute installation command
+export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
 
-#### Docker
+ ### :whale: Docker 
 
-An official Docker image is available:
+ Please visit the official Docker image:
 
 - [ShellCrash on Docker Hub](https://hub.docker.com/r/juewuy/shellcrash)
 
-### Local Installation
 
-If online installation is not possible, please refer to the following guide for offline or local installation:
+### :package: Local Installation
 
-- [Local ShellCrash Installation Guide | Juewuy's Blog](https://juewuy.github.io/bdaz)
+If online installation is not possible, please follow the guide for local installation:
 
-## Usage
+- [Local ShellCrash Installation Tutorial | Juewuy's Blog](https://juewuy.github.io/bdaz)
 
-After installation, the management script can be accessed using the following commands:
+---
 
-```sh
-crash        # Enter interactive mode
-crash -h     # Display help information
+## :book: Usage Instructions
+
+After installation, enter the following commands in the terminal to launch the management interface:
+
+```shell
+crash        # Launch the interactive script menu
+crash -h     # View the list of command help
 ```
 
-## Runtime Dependencies
+### Running Dependencies
+| Component | Necessity | Description |
+| :--- | :--- | :--- |
+| curl / wget | Mandatory | Required for node saving, online installation, and update operations. |
+| iptables / nftables | Critical | Without these, the script can only run in Pure Mode. |
+| crontab | Low | Required for scheduled tasks; otherwise, they will not function. |
+| net-tools | Very Low | Used for automatic port occupancy detection. |
+| ubus / iproute-doc | Very Low | Used for automatically obtaining the local Host address. |
 
-Most systems already include the majority of the following dependencies. Missing low-priority components can usually be ignored if functionality is unaffected.
+---
 
-| Dependency | Priority | Notes |
-|---|---|---|
-| curl / wget | Required | Needed for installation, updates, and node persistence |
-| iptables / nftables | Important | Without these, only clean mode is available |
-| crontab | Low | Required for scheduled tasks |
-| net-tools | Very low | Used for detecting port usage |
-| ubus / iproute-doc | Very low | Used to obtain the local host address |
-
-## Changelog
-
-- [Release History](https://github.com/juewuy/ShellCrash/releases)
-
-## Community
-
-- [Telegram Discussion Group](https://t.me/ShellClash)
-
+## :link: Related Links
+- FAQ: [Juewuy's Blog](https://juewuy.github.io/chang-jian-wen-ti/)
+- Changelog: [Release History](https://github.com/juewuy/ShellCrash/releases)
+- Discussion: [Telegram Group](https://t.me/ShellClash)
