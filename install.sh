@@ -108,7 +108,7 @@ webget() {
     if curl --version >/dev/null 2>&1; then
         [ "$3" = "echooff" ] && progress='-s' || progress='-#'
         [ -z "$4" ] && redirect='-L' || redirect=''
-        result=$(curl -w %{http_code} --connect-timeout 5 $progress $redirect -ko $1 $2)
+        result=$(curl -w %{http_code} --connect-timeout 5 "$progress" "$redirect" -ko "$1" "$2")
 
         # === original version ===
         # [ -n "$(echo $result | grep -e ^2)" ] && result="200"
@@ -129,7 +129,7 @@ webget() {
         fi
         [ "$3" = "echoon" ] && progress=''
         [ "$3" = "echooff" ] && progress='-q'
-        wget $progress $redirect $certificate $timeout -O $1 $2
+        wget "$progress" "$redirect" "$certificate" "$timeout" -O "$1" "$2"
         [ $? -eq 0 ] && result="200"
     fi
 }
@@ -189,12 +189,12 @@ gettar() {
         exit 1
     else
         content_line "下载成功"
-        $CRASHDIR/start.sh stop 2>/dev/null
+        "$CRASHDIR"/start.sh stop 2>/dev/null
         # 解压
         content_line "开始解压文件......"
-        mkdir -p $CRASHDIR >/dev/null
-        tar -zxf '/tmp/ShellCrash.tar.gz' -C $CRASHDIR/ || tar -zxf '/tmp/ShellCrash.tar.gz' --no-same-owner -C $CRASHDIR/
-        if [ -s $CRASHDIR/init.sh ]; then
+        mkdir -p "$CRASHDIR" >/dev/null
+        tar -zxf '/tmp/ShellCrash.tar.gz' -C "$CRASHDIR"/ || tar -zxf '/tmp/ShellCrash.tar.gz' --no-same-owner -C "$CRASHDIR"/
+        if [ -s "$CRASHDIR"/init.sh ]; then
             content_line "解压成功"
             separator_line "="
             set_alias
@@ -330,7 +330,7 @@ set_cust_dir() {
             return 1
             ;;
         *)
-            if [ "$(dir_avail "$dir")" = 0 ] || [ -n "$(echo $dir | grep -E 'tmp|opt|sys')" ]; then
+            if [ "$(dir_avail "$dir")" = 0 ] || [ -n "$(echo "$dir" | grep -E 'tmp|opt|sys')" ]; then
                 invalid_input_retry
                 continue
             fi
@@ -640,7 +640,7 @@ separator_line "="
 [ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot   # NETGEAR设备
 
 # 检查root权限
-if [ "$USER" != "root" -a -z "$systype" ]; then
+if [ "$USER" != "root" ] && [ -z "$systype" ]; then
     while true; do
         double_line_break
         separator_line "="
