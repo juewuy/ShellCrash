@@ -1,0 +1,85 @@
+# ===== 通用提示 =====
+MENU_ERR_INPUT="请输入正确的字母或数字！"
+
+MENU_RESTART_NOTICE="检测到已变更的内容，请重启服务！"
+MENU_RESTART_ASK="是否现在重启服务？(1/0) > "
+
+MENU_PORT_CONFLICT_TITLE="检测到端口被以下进程占用！内核可能无法正常启动！"
+MENU_PORT_CONFLICT_HINT="请修改默认端口配置！"
+
+MENU_CORE_LOADED_OK="内核加载完成！"
+MENU_CORE_LOADED_BAD="检测到不可用的内核文件！可能是文件受损或CPU架构不匹配！"
+MENU_CORE_REMOVED="内核文件已移除，请认真检查后重新上传！"
+
+MENU_CFG_LOADED_OK="配置文件加载完成！"
+
+MENU_OVERRIDE_WARN="你已经禁用了配置文件覆写功能，这会导致大量脚本功能无法使用！"
+MENU_OVERRIDE_ASK="是否取消禁用？"
+
+# ===== 欢迎与状态 =====
+MENU_WELCOME="欢迎使用ShellCrash！"
+MENU_VERSION_LABEL="版本："
+
+MENU_RUN_ON="正在运行"
+MENU_RUN_SET="已设置"
+MENU_RUN_OFF="没有运行"
+
+MENU_IP_DF="设备IP地址"
+
+MENU_AUTOSTART_ON="已设置开机启动！"
+MENU_AUTOSTART_OFF="未设置开机启动！"
+MENU_AUTOSTART_DEBUG="并处于debug状态！"
+
+MENU_MEM_USED="当前内存占用："
+MENU_RUNNING_TIME="已运行："
+
+MENU_TG_CHANNEL="TG频道："
+MENU_TG_URL="https://t.me/ShellClash"
+
+# ===== /tmp 文件检测 =====
+MENU_TMP_CORE_FOUND="发现可用的内核文件："
+MENU_TMP_CORE_ASK="是否加载(会停止当前服务)？"
+
+MENU_TMP_CFG_FOUND="发现内核配置文件："
+MENU_TMP_CFG_ASK="是否加载为配置文件？(1/0) > "
+
+MENU_MAIN_1="启动/重启服务"
+MENU_MAIN_2="功能设置"
+MENU_MAIN_3="停止服务"
+MENU_MAIN_4="启动设置"
+MENU_MAIN_5="自动任务"
+MENU_MAIN_6="配置文件管理"
+MENU_MAIN_7="访问与控制"
+MENU_MAIN_8="工具与优化"
+MENU_MAIN_9="更新与支持"
+MENU_MAIN_0="退出脚本"
+
+MENU_MAIN_PROMPT="请输入对应数字 > "
+
+# ===== 服务操作 =====
+MENU_SERVICE_STOPPED="服务已停止！"
+
+# ===== 测试 / 调试 =====
+MENU_TEST_RUNNING="正在测试运行！如发现错误请截图后前往咨询"
+MENU_TEST_DONE_OK="测试完成！没有发现问题，请重新启动服务~"
+MENU_TEST_DONE_FAIL="测试完成！"
+MENU_TEST_LOG_HINT="完整执行记录请查看："
+
+MENU_ERROR_FOUND="发现错误："
+
+# ===== 命令行帮助 =====
+MENU_CLI_WELCOME="欢迎使用ShellCrash"
+
+MENU_CLI_TEST="测试模式"
+MENU_CLI_HELP="帮助列表"
+MENU_CLI_UNINSTALL="卸载脚本"
+MENU_CLI_INIT="初始化脚本"
+MENU_CLI_DEBUG="测试运行"
+
+MENU_CLI_START="启动服务"
+MENU_CLI_STOP="停止服务"
+MENU_CLI_BOOT_INIT="开机初始化"
+
+MENU_HELP_ONLINE="在线求助："
+MENU_HELP_BLOG="官方博客："
+MENU_HELP_GITHUB="发布页面："

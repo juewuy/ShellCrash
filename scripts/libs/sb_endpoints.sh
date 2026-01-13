@@ -2,7 +2,10 @@
 # Copyright (C) Juewuy
 
 [ "$ts_service" = ON ] && {
-	[ "$ts_subnet" = true ] && advertise_routes='"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"'
+	[ "$ts_subnet" = true ] && {
+		. "$CRASHDIR"/starts/fw_getlanip.sh && getlanip
+		advertise_routes=$(echo "$host_ipv4"|sed 's/[[:space:]]\+/", "/g; s/^/"/; s/$/"/')
+	}
 	[ -z "$ts_exit_node" ] && ts_exit_node=false
 	[ -z "$ts_hostname" ] && ts_hostname='ShellCrash'
 	cat >"$TMPDIR"/jsons/tailscale.json <<EOF
