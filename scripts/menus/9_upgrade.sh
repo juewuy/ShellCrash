@@ -9,51 +9,56 @@ __IS_MODULE_9_UPGRADE_LOADED=1
 . "$CRASHDIR"/libs/web_get_bin.sh
 
 
-# ============================== menu formatter tools ==============================
-# Set the total width of the menu
-# (Adjusting this number will automatically change the entire menu, including the separator lines)
-# Note: The number represents the number of columns that appear when the "||" appears on the right.
+# ================================= table format tools =================================
+# >>>>>>>>>>>>>>
+
+# set the total width of the menu
+# (adjusting this number will automatically change the entire menu, including the separator lines)
+# note: The number represents the number of columns that appear when the "||" appears on the right
 TABLE_WIDTH=60
 
-# Define two extra-long template strings in advance
+# define two extra-long template strings in advance
 # (the length should be greater than the expected TABLE_WIDTH)
 FULL_EQ="===================================================================================================="
 FULL_DASH="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
 
-# Function to print content lines
+# function to print content lines
 # (using cursor jump)
-print_content_line() {
-    echo -e "${1}\033[${TABLE_WIDTH}G||"
+content_line() {
+    echo -e " ${1}\033[${TABLE_WIDTH}G||"
 }
 
-# Increase the spacing between the front and back forms to improve readability
+# function to print sub content lines
+# for printing accompanying instructions
+sub_content_line() {
+    echo -e "    ${1}\033[${TABLE_WIDTH}G||"
+    content_line
+}
+
+# increase the spacing between the front
+# and back forms to improve readability
 double_line_break() {
     printf "\n\n"
 }
 
-# Function to print separators
+# function to print separators
 # (using string slicing)
-# Parameter $1: Pass in "=" or "-"
-print_separator_line() {
+# parameter $1: pass in "=" or "-"
+separator_line() {
     local separator_type="$1"
     local output_line=""
-
-    # Calculate the length to be cut: width minus 1
-    # (because || occupies space, and it starts from the TABLE_WIDTH cell)
     local len=$((TABLE_WIDTH - 1))
 
     if [ "$separator_type" == "=" ]; then
-        # Extract characters from FULL_EQ up to output_line
         output_line="${FULL_EQ:0:$len}"
     else
-        # Extract from FULL_DASH
         output_line="${FULL_DASH:0:$len}"
     fi
 
-    # Print out the truncated line + the ending ||
     echo "${output_line}||"
 }
-# ============================================================
+# <<<<<<<<<<<<<<
+# ================================= table format tools =================================
 
 
 error_down(){
@@ -71,30 +76,30 @@ upgrade() {
         core_v_new=$(eval echo \$"$crashcore"_v)
 
         # Automatically generate '====' lines
-        print_separator_line "="
+        separator_line "="
 
-        print_content_line " \033[30;47m更新与支持\033[0m"
+        content_line "\033[30;47m更新与支持\033[0m"
 
         # Automatically generate '- - - ' lines
-        print_separator_line "-"
+        separator_line "-"
 
-        print_content_line " 当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
+        content_line "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
         [ "$(dir_avail "$CRASHDIR")" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
-            print_content_line " \033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
+            content_line "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
         }
-        print_separator_line "-"
-        print_content_line " 1)  更新\033[36m管理脚本      \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
-        print_content_line " 2)  切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
-        print_content_line " 3)  更新\033[32m数据库文件\033[0m                 > \033[32m$GeoIP_v\033[0m"
-        print_content_line " 4)  安装本地\033[35mDashboard\033[0m面板"
-        print_content_line " 5)  安装/更新本地\033[33m根证书文件\033[0m"
-        print_content_line " 6)  查看\033[32mPAC\033[0m自动代理配置"
-        print_content_line " 7)  切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
-        print_content_line " 8)  \033[32m配置自动更新\033[0m"
-        print_content_line " 9)  \033[31m卸载ShellCrash\033[0m"
-        print_content_line " 99)  \033[36m鸣谢！\033[0m"
-        print_content_line " 0)  返回上级菜单"
-        print_separator_line "="
+        separator_line "-"
+        content_line "1)  更新\033[36m管理脚本      \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
+        content_line "2)  切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
+        content_line "3)  更新\033[32m数据库文件\033[0m                 > \033[32m$GeoIP_v\033[0m"
+        content_line "4)  安装本地\033[35mDashboard\033[0m面板"
+        content_line "5)  安装/更新本地\033[33m根证书文件\033[0m"
+        content_line "6)  查看\033[32mPAC\033[0m自动代理配置"
+        content_line "7)  切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
+        content_line "8)  \033[32m配置自动更新\033[0m"
+        content_line "9)  \033[31m卸载ShellCrash\033[0m"
+        content_line "99)  \033[36m鸣谢！\033[0m"
+        content_line "0)  返回上级菜单"
+        separator_line "="
 
         read -p "请输入对应数字> " num
         case "$num" in
@@ -119,10 +124,10 @@ upgrade() {
             setcrt
             ;;
         6)
-            print_separator_line "="
-            print_content_line "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
-            print_content_line "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
-            print_separator_line "="
+            separator_line "="
+            content_line "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
+            content_line "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
+            separator_line "="
             sleep 2
             ;;
         7)
@@ -135,48 +140,48 @@ upgrade() {
             . "$CRASHDIR"/menus/uninstall.sh && uninstall
             ;;
         99)
-            print_separator_line "="
-            print_content_line " 感谢以下项目和作者！"
-            print_separator_line "-"
+            separator_line "="
+            content_line "感谢以下项目和作者！"
+            separator_line "-"
 
-            print_content_line " \033[32mClash项目           \033[0m作者：\033[36mDreamacro\033[0m"
-            print_content_line ""
+            content_line "\033[32mClash项目           \033[0m作者：\033[36mDreamacro\033[0m"
+            content_line ""
 
-            print_content_line " \033[32msing-box项目        \033[0m作者：\033[36mSagerNet\033[0m"
-            print_content_line " 项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
-            print_content_line ""
+            content_line "\033[32msing-box项目        \033[0m作者：\033[36mSagerNet\033[0m"
+            content_line "项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
+            content_line ""
 
-            print_content_line " \033[32mMetaCubeX项目       \033[0m作者：\033[36mMetaCubeX\033[0m"
-            print_content_line " 项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
-            print_content_line ""
+            content_line "\033[32mMetaCubeX项目       \033[0m作者：\033[36mMetaCubeX\033[0m"
+            content_line "项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
+            content_line ""
 
-            print_content_line " \033[32mYACD面板项目        \033[0m作者：\033[36mhaishanh\033[0m"
-            print_content_line " 项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
-            print_content_line ""
+            content_line "\033[32mYACD面板项目        \033[0m作者：\033[36mhaishanh\033[0m"
+            content_line "项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
+            content_line ""
 
-            print_content_line " \033[32mzashboard项目       \033[0m作者：\033[36mZephyruso\033[0m"
-            print_content_line " 项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
-            print_content_line ""
+            content_line "\033[32mzashboard项目       \033[0m作者：\033[36mZephyruso\033[0m"
+            content_line "项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
+            content_line ""
 
-            print_content_line " \033[32mSubconverter        \033[0m作者：\033[36mtindy2013\033[0m"
-            print_content_line " 项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
-            print_content_line ""
+            content_line "\033[32mSubconverter        \033[0m作者：\033[36mtindy2013\033[0m"
+            content_line "项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
+            content_line ""
 
-            print_content_line " \033[32msing-box分支项目    \033[0m作者：\033[36mPuerNya\033[0m"
-            print_content_line " 项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
-            print_content_line ""
+            content_line "\033[32msing-box分支项目    \033[0m作者：\033[36mPuerNya\033[0m"
+            content_line "项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
+            content_line ""
 
-            print_content_line " \033[32msing-box分支项目    \033[0m作者：\033[36mreF1nd\033[0m"
-            print_content_line " 项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
-            print_content_line ""
+            content_line "\033[32msing-box分支项目    \033[0m作者：\033[36mreF1nd\033[0m"
+            content_line "项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
+            content_line ""
 
-            print_content_line " \033[32mDustinWin相关项目   \033[0m作者：\033[36mDustinWin\033[0m"
-            print_content_line " 作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
-            print_content_line ""
+            content_line "\033[32mDustinWin相关项目   \033[0m作者：\033[36mDustinWin\033[0m"
+            content_line "作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
+            content_line ""
 
-            print_separator_line "-"
-            print_content_line " 特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
-            print_separator_line "="
+            separator_line "-"
+            content_line "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
+            separator_line "="
             sleep 2
             ;;
         *)
@@ -207,7 +212,7 @@ checkupdate(){
 }
 
 #更新脚本
-getscripts(){ 
+getscripts(){
 	get_bin "$TMPDIR"/ShellCrash.tar.gz ShellCrash.tar.gz
 	if [ "$?" != "0" ];then
 		echo -e "\033[33m文件下载失败！\033[0m"
@@ -321,7 +326,7 @@ getcore(){ #下载内核文件
 	#获取在线内核文件
 	echo "-----------------------------------------------"
 	echo "正在在线获取$crashcore核心文件……"
-	core_webget 
+	core_webget
 	case "$?" in
 	0)
 		echo -e "\033[32m$crashcore核心下载成功！\033[0m"
@@ -458,16 +463,16 @@ setziptype(){
 	read -p "请输入对应数字 > " num
 	case "$num" in
 	0) ;;
-	1) 
+	1)
 		zip_type='upx'
 	;;
-	2) 
+	2)
 		zip_type='tar.gz'
 	;;
-	3) 
+	3)
 		zip_type='gz'
 	;;
-	*) 
+	*)
 		errornum
 	;;
 	esac
@@ -905,24 +910,24 @@ dbdir() {
 
 setdb() {
     while true; do
-	    print_separator_line "="
-	    print_content_line " \033[36m安装 dashboard 管理面板到本地\033[0m"
-	    print_content_line " \033[32m打开管理面板的速度更快且更稳定\033[0m"
-	    print_separator_line "-"
-	
-	    print_content_line " 请选择面板\033[33m安装类型：\033[0m"
-	    print_content_line "    - - - - - - -维护中- - - - - - -"
-	    print_content_line " 1) 安装\033[32mzashboard面板\033[0m(约2.2mb)"
-	    print_content_line " 2) 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
-	    print_content_line " 3) 安装\033[32mYacd-Meta魔改面板\033[0m(约1.7mb)"
-	    print_content_line "    - - - - - -已停止维护- - - - - -"
-	    print_content_line " 4) 安装\033[32m基础面板\033[0m(约500kb)"
-	    print_content_line " 5) 安装\033[32mMeta基础面板\033[0m(约800kb)"
-	    print_content_line " 6) 安装\033[32mYacd面板\033[0m(约1.1mb)"
-	    print_content_line ""
-	    print_content_line " 9) 卸载\033[33m本地面板\033[0m"
-	    print_content_line " 0) 返回上级菜单"
-	    print_separator_line "="
+	    separator_line "="
+	    content_line "\033[36m安装 dashboard 管理面板到本地\033[0m"
+	    content_line "\033[32m打开管理面板的速度更快且更稳定\033[0m"
+	    separator_line "-"
+
+	    content_line "请选择面板\033[33m安装类型：\033[0m"
+	    content_line "   - - - - - - -维护中- - - - - - -"
+	    content_line "1) 安装\033[32mzashboard面板\033[0m(约2.2mb)"
+	    content_line "2) 安装\033[32mMetaXD面板\033[0m(约1.5mb)"
+	    content_line "3) 安装\033[32mYacd-Meta魔改面板\033[0m(约1.7mb)"
+	    content_line "   - - - - - -已停止维护- - - - - -"
+	    content_line "4) 安装\033[32m基础面板\033[0m(约500kb)"
+	    content_line "5) 安装\033[32mMeta基础面板\033[0m(约800kb)"
+	    content_line "6) 安装\033[32mYacd面板\033[0m(约1.1mb)"
+	    content_line ""
+	    content_line "9) 卸载\033[33m本地面板\033[0m"
+	    content_line "0) 返回上级菜单"
+	    separator_line "="
 
         read -p "请输入对应数字 > " num
         case "$num" in
@@ -1050,7 +1055,7 @@ setserver() {
 		[ "$release_type" = master ] && release_name=公测版
 		[ "$release_type" = dev ] && release_name=开发版
 		[ -n "$url_id" ] && url_name=$(grep "$url_id" "$CRASHDIR"/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name="$update_url"
-	
+
 		echo "-----------------------------------------------"
 		echo -e "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
 		echo -e "当前版本：\033[4;33m$release_name\033[0m 当前源：\033[4;32m$url_name\033[0m"
