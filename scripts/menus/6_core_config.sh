@@ -372,13 +372,13 @@ EOF
 		}
 	}
 	if [ -z "$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg)" ];then
-		provider_temp_file="$TMPDIR/$(sed -n "1 p" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $2}')"
+		provider_temp_file="$(sed -n "1 p" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $2}')"
 	else
 		provider_temp_file=$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
 	fi
 	echo "-----------------------------------------------"
-	if [ -s "$provider_temp_file" ];then
-		ln -sf "$provider_temp_file" "$TMPDIR"/provider_temp_file
+	if [ -s "$TMPDIR/$provider_temp_file" ];then
+		ln -sf "$TMPDIR/$provider_temp_file" "$TMPDIR"/provider_temp_file
 	else
 		echo -e "\033[33m正在获取在线模版！\033[0m"
 		get_bin "$TMPDIR"/provider_temp_file "rules/${coretype}_providers/$provider_temp_file"
@@ -416,7 +416,7 @@ EOF
 	cut -c 1- "$TMPDIR"/providers/providers.yaml "$TMPDIR"/providers/proxy-groups.yaml "$TMPDIR"/providers/rules.yaml > "$TMPDIR"/config.yaml
 	rm -rf "$TMPDIR"/providers
 	#调用内核测试
-	. "$CRASHDIR"/libs/core_tools.sh && core_find && "$TMPDIR"/CrashCore -t -d "$BINDIR" -f "$TMPDIR"/config.yaml
+	. "$CRASHDIR"/starts/check_core.sh && check_core && "$TMPDIR"/CrashCore -t -d "$BINDIR" -f "$TMPDIR"/config.yaml
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！\033[0m"
 		mkdir -p "$CRASHDIR"/yamls
@@ -518,7 +518,7 @@ EOF
 	cat "$TMPDIR"/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" > "$TMPDIR"/providers/outbounds.json
 	rm -rf "$TMPDIR"/provider_temp_file
 	#调用内核测试
-	. "$CRASHDIR"/libs/core_tools.sh && core_find && "$TMPDIR"/CrashCore merge "$TMPDIR"/config.json -C "$TMPDIR"/providers
+	. "$CRASHDIR"/starts/check_core.sh && check_core && "$TMPDIR"/CrashCore merge "$TMPDIR"/config.json -C "$TMPDIR"/providers
 	if [ "$?" = 0 ];then
 		echo -e "\033[32m配置文件生成成功！如果启动超时建议更新里手动安装Singbox-srs数据库常用包！\033[0m"
 		mkdir -p "$CRASHDIR"/jsons
