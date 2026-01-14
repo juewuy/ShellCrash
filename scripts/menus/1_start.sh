@@ -3,49 +3,65 @@
 
 [ -n "$__IS_MODULE_1_START_LOADED" ] && return
 __IS_MODULE_1_START_LOADED=1
+load_lang 1_start
 
-#启动相关
+# ===== 启动完成提示 =====
 startover() {
     echo -ne "                                   \r"
-    echo -e "\033[32m服务已启动！\033[0m"
-    echo -e "请使用 \033[4;36mhttp://$host$hostdir\033[0m 管理内置规则"
+    echo -e "\033[32m$START_SERVICE_OK\033[0m"
+    echo -e "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m $START_WEB_HINT2"
+
     if [ "$redir_mod" = "纯净模式" ]; then
         echo "-----------------------------------------------"
-        echo -e "其他设备可以使用PAC配置连接：\033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
-        echo -e "或者使用HTTP/SOCK5方式连接：IP{\033[36m$host\033[0m}Port{\033[36m$mix_port\033[0m}"
+        echo -e "$START_PAC_HINT \033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
+        echo -e "$START_PROXY_HINT IP{\033[36m$host\033[0m} Port{\033[36m$mix_port\033[0m}"
     fi
     return 0
 }
+
+# ===== 启动核心 =====
 start_core() {
     if echo "$crashcore" | grep -q 'singbox'; then
-        core_config="$CRASHDIR"/jsons/config.json
+        core_config="$CRASHDIR/jsons/config.json"
     else
-        core_config="$CRASHDIR"/yamls/config.yaml
+        core_config="$CRASHDIR/yamls/config.yaml"
     fi
+
     echo "-----------------------------------------------"
-    if [ ! -s $core_config -a -s "$CRASHDIR"/configs/providers.cfg ]; then
-        echo -e "\033[33m没有找到${crashcore}配置文件，尝试生成providers配置文件！\033[0m"
+
+    if [ ! -s "$core_config" ] && [ -s "$CRASHDIR/configs/providers.cfg" ]; then
+        echo -e "\033[33m$START_NO_CORE_CFG_TRY_GEN\033[0m"
+
         [ "$crashcore" = singboxr ] && coretype=singbox
         [ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
-        . "$CRASHDIR"/menus/6_core_config.sh && gen_${coretype}_providers
-    elif [ -s $core_config -o -n "$Url" -o -n "$Https" ]; then
-        "$CRASHDIR"/start.sh start
-        #设置循环检测以判定服务启动是否成功
-		. "$CRASHDIR"/libs/start_wait.sh
-        [ -n "$test" -o -n "$(pidof CrashCore)" ] && {
-			#启动TG机器人
-			[ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_start
-			startover
-		}
+
+        . "$CRASHDIR/menus/6_core_config.sh" && gen_${coretype}_providers
+
+    elif [ -s "$core_config" ] || [ -n "$Url" ] || [ -n "$Https" ]; then
+        "$CRASHDIR/start.sh" start
+
+        # 循环检测服务启动状态
+        . "$CRASHDIR/libs/start_wait.sh"
+
+        [ -n "$test" ] || pidof CrashCore >/dev/null && {
+            # 启动 TG 机器人
+            if [ "$bot_tg_service" = ON ]; then
+                . "$CRASHDIR/menus/bot_tg_service.sh" && bot_tg_start
+            fi
+            startover
+        }
+
     else
-        echo -e "\033[31m没有找到${crashcore}配置文件，请先导入配置文件！\033[0m"
-        . "$CRASHDIR"/menus/6_core_config.sh && set_core_config
+        echo -e "\033[31m$START_NO_CORE_CFG_IMPORT_FIRST\033[0m"
+        . "$CRASHDIR/menus/6_core_config.sh" && set_core_config
     fi
 }
+
+# ===== 启动服务入口 =====
 start_service() {
     if [ "$firewall_area" = 5 ]; then
-        "$CRASHDIR"/start.sh start
-        echo -e "\033[32m已完成防火墙设置！\033[0m"
+        "$CRASHDIR/start.sh" start
+        echo -e "\033[32m$START_FIREWALL_DONE\033[0m"
     else
         start_core
     fi
