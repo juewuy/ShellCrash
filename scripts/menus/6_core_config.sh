@@ -372,13 +372,13 @@ EOF
 		}
 	}
 	if [ -z "$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg)" ];then
-		provider_temp_file="$TMPDIR/$(sed -n "1 p" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $2}')"
+		provider_temp_file="$(sed -n "1 p" "$CRASHDIR"/configs/${coretype}_providers.list | awk '{print $2}')"
 	else
 		provider_temp_file=$(grep "provider_temp_${coretype}" "$CRASHDIR"/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
 	fi
 	echo "-----------------------------------------------"
-	if [ -s "$provider_temp_file" ];then
-		ln -sf "$provider_temp_file" "$TMPDIR"/provider_temp_file
+	if [ -s "$TMPDIR/$provider_temp_file" ];then
+		ln -sf "$TMPDIR/$provider_temp_file" "$TMPDIR"/provider_temp_file
 	else
 		echo -e "\033[33m正在获取在线模版！\033[0m"
 		get_bin "$TMPDIR"/provider_temp_file "rules/${coretype}_providers/$provider_temp_file"
