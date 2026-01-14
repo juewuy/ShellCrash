@@ -37,6 +37,7 @@ case "$1" in
 start)
     [ -n "$(pidof CrashCore)" ] && $0 stop #禁止多实例
     stop_firewall                          #清理路由策略
+	rm -f "CRASHDIR"/.start_error #移除自启失败标记
     #使用不同方式启动服务
 	if [ "$firewall_area" = "5" ]; then #主旁转发
         . "$CRASHDIR"/starts/fw_start.sh

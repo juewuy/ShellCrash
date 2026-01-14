@@ -1,6 +1,9 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
+ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
+	
 start_ipt_route() { #iptables-route通用工具
     #$1:iptables/ip6tables	$2:所在的表(nat/mangle) $3:所在的链(OUTPUT/PREROUTING)	$4:新创建的shellcrash链表	$5:tcp/udp/all
     #区分ipv4/ipv6
@@ -28,7 +31,10 @@ start_ipt_route() { #iptables-route通用工具
         "$1" $w -t "$2" -A "$4" -m owner --gid-owner $gid -j RETURN
     done
     [ "$firewall_area" = 5 ] && "$1" $w -t "$2" -A "$4" -s $bypass_host -j RETURN
-    [ -z "$ports" ] && "$1" $w -t "$2" -A "$4" -p tcp -m multiport --dports "$mix_port,$redir_port,$tproxy_port" -j RETURN
+    [ -z "$ports" ] && {
+		"$1" $w -t "$2" -A "$4" -p tcp -m multiport --dports "$mix_port,$redir_port,$tproxy_port" -j RETURN
+		"$1" $w -t "$2" -A "$4" -p udp -m multiport --dports "$mix_port,$redir_port,$tproxy_port" -j RETURN
+	}
     #跳过目标保留地址及目标本机网段
     for ip in $HOST_IP $RESERVED_IP; do
         "$1" $w -t "$2" -A "$4" -d $ip -j RETURN
@@ -130,8 +136,6 @@ start_ipt_dns() { #iptables-dns通用工具
     "$1" $w -t nat -I "$2" -p udp --dport 53 -j "$3"
 }
 start_ipt_wan() { #iptables公网防火墙
-	ckcmd iptables && iptables -h | grep -q '\-w' && iptable='iptables -w' || iptable=iptables
-	ckcmd ip6tables && ip6tables -h | grep -q '\-w' && ip6table='ip6tables -w' || ip6table=ip6tables
 	ipt_wan_accept(){
 		$iptable -I INPUT -p "$1" -m multiport --dports "$accept_ports" -j ACCEPT
 		ckcmd ip6tables && $ip6table -I INPUT -p "$1" -m multiport --dports "$accept_ports" -j ACCEPT
@@ -141,7 +145,7 @@ start_ipt_wan() { #iptables公网防火墙
 		ckcmd ip6tables && $ip6table -I INPUT -p "$1" -m multiport --dports "$reject_ports" -j REJECT
 	}
 	#端口拦截
-	reject_ports="$mix_port,$db_port,$dns_port"
+	reject_ports="$mix_port,$db_port"
 	ipt_wan_reject tcp
 	ipt_wan_reject udp
 	#端口放行
