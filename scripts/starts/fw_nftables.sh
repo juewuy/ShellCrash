@@ -146,7 +146,7 @@ start_nft_wan() { #nftables公网防火墙
 		nft add rule inet shellcrash input udp dport $fw_wan_nfports meta mark set 0x67890 accept
 	}
 	#端口拦截
-	reject_ports="{ $mix_port, $db_port, $dns_port }"
+	reject_ports="{ $mix_port, $db_port }"
 	nft add rule inet shellcrash input ip saddr {$HOST_IP} accept
 	nft add rule inet shellcrash input ip6 saddr {$HOST_IP6} accept
 	nft add rule inet shellcrash input tcp dport $reject_ports reject
