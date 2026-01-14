@@ -43,8 +43,8 @@ ShellCrash 旨在兼容绝大多数基于 Linux 内核的网络设备：
 
 ## :hammer_and_wrench: 安装指南
 
-> **提示**  
-> 若遇到连接失败或与SSL相关问题，请尝试切换至其他安装镜站。
+> [!TIP]
+> 若遇到连接失败或SSL相关问题，请尝试切换至其他安装镜像站。
 
 ### 前置条件
 1. 确保设备已开启 **SSH** 并获得 **Root 权限**（带图形介面的 Linux 系统可直接使用终端）。
@@ -52,9 +52,11 @@ ShellCrash 旨在兼容绝大多数基于 Linux 内核的网络设备：
 
 ### :penguin: 标准 Linux 设备安装
 
+> [!IMPORTANT]
+> 请以 root 用户进行安装。
+
 > 使用 wget 安装（jsDelivr CDN 源）
 ```sh
-sudo -i # 切换至root用户，若需密码，请输入
 export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
   && bash /tmp/install.sh \
@@ -64,7 +66,6 @@ export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master' \
 > 或使用 curl 安装（作者私人源）
 
 ```sh
-sudo -i # 切换至root用户，若需密码，请输入
 export url='https://gh.jwsc.eu.org/master' \
   && bash -c "$(curl -kfsSl $url/install.sh)" \
   && . /etc/profile &> /dev/null

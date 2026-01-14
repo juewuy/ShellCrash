@@ -20,11 +20,13 @@ web_save() { #最小化保存面板节点选择
         }
     done <"$TMPDIR"/web_proxies
     rm -rf "$TMPDIR"/web_proxies
-    #对比文件，如果有变动且不为空则写入磁盘，否则清除缓存
-    for file in web_save web_configs; do
-        if [ -s "$TMPDIR"/${file} ]; then
-            . "$CRASHDIR"/libs/compare.sh && compare "$TMPDIR"/${file} "$CRASHDIR"/configs/${file}
-            [ "$?" = 0 ] && rm -rf "$TMPDIR"/${file} || mv -f "$TMPDIR"/${file} "$CRASHDIR"/configs/${file}
+    #对比文件，如果有变动则写入磁盘，否则清除缓存
+    for file in web_save; do
+        if [ -s "$TMPDIR/$file" ]; then
+            . "$CRASHDIR"/libs/compare.sh && compare "$TMPDIR/$file" "$CRASHDIR/configs/$file"
+            [ "$?" = 0 ] && rm -f "$TMPDIR/$file" || mv -f "$TMPDIR/$file" "$CRASHDIR/configs/$file"
+		else
+			rm -f "$CRASHDIR/configs/$file" #空文件时移除旧文件
         fi
     done
 }

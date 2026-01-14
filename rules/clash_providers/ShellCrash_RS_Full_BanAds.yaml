@@ -1,4 +1,4 @@
-#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 260109
+#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 260111
 
 #此版本为Maozai根据ACL4SSR规则修改优化而来，尽量在保持原有的基础上进行优化。
 #数据源采用了DustinWin/ruleset_geodata和MetaCubeX/meta-rules-dat两个开源项目的规则，感谢原作者的辛勤付出。
@@ -46,9 +46,9 @@ proxy-groups:
 
   - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
   - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)", exclude-filter: "(?i)(仙台)"}
-  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇺🇸|美|洛杉矶|圣何塞|西雅图|纽约|波特兰|旧金山|us|unitedstates|united states)", exclude-filter: "(?i)(南美|中美|拉美|亚美尼亚|美属)"}
+  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇺🇸|美|洛杉矶|圣何塞|西雅图|纽约|波特兰|旧金山|休斯|达拉斯|硅谷|堪萨斯|迈阿密|凤凰城|芝加哥|奥勒姆|us|unitedstates|united states)", exclude-filter: "(?i)(南美|中美|拉美|亚美尼亚|美属)"}
   - {name: 🇯🇵 日本节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇯🇵|日|东京|大阪|埼玉|九州|仙台|jp|japan)", exclude-filter: "(?i)(尼日利亚|尼日尔|日内瓦)"}
-  - {name: 🇪🇺 欧洲节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇪🇺|欧|德|英|法|荷|俄罗斯|西班牙|意大利|瑞士|瑞典|土耳其|挪威|芬兰|丹麦|比利时|爱尔兰|奥地利|波兰|葡萄牙|乌克兰|希腊|捷克|匈牙利|罗马尼亚|保加利亚|冰岛|克罗地亚)"}
+  - {name: 🇪🇺 欧洲节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇪🇺|欧|德|英|法|荷|俄罗斯|西班牙|意大利|瑞士|瑞典|土耳其|挪威|芬兰|丹麦|比利时|爱尔兰|奥地利|波兰|葡萄牙|乌克兰|希腊|捷克|匈牙利|罗马尼亚|保加利亚|冰岛|克罗地亚|阿姆斯特丹)"}
   - {name: 🇰🇷 韩国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇰🇷|韩|韓|首尔|kr|kor)"}
   - {name: 🇸🇬 狮城节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"}
 
@@ -221,8 +221,8 @@ rule-providers:
 
 #规则顺序
 rules:
-  - DOMAIN-SUFFIX,captive.apple.com,DIRECT
-  - DOMAIN-SUFFIX,kamo.teracloud.jp,DIRECT
+  - DOMAIN-SUFFIX,captive.apple.com,🍎 苹果服务
+  - DOMAIN-SUFFIX,kamo.teracloud.jp,🀄️ 国内流量
 
   - RULE-SET,privateip,🔒 私有网络,no-resolve
   - RULE-SET,private,🔒 私有网络

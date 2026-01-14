@@ -1,0 +1,11 @@
+# ===== Startup =====
+START_SERVICE_OK="Service started successfully!"
+START_WEB_HINT="Please use"
+START_WEB_HINT2="manage built-in rules"
+START_PAC_HINT="Other devices can connect using PAC configuration:"
+START_PROXY_HINT="Or connect using HTTP / SOCKS5:"
+
+# ===== Startup Flow =====
+START_NO_CORE_CFG_TRY_GEN="Core configuration not found. Attempting to generate providers configuration!"
+START_NO_CORE_CFG_IMPORT_FIRST="Core configuration not found. Please import a configuration first!"
+START_FIREWALL_DONE="Firewall configuration completed!"
