@@ -1,4 +1,4 @@
-#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 260107
+#ShellCrash-ruleset 全分组规则+去广告 For mihomo By Maozai 260111
 
 #此版本为Maozai根据ACL4SSR规则修改优化而来，尽量在保持原有的基础上进行优化。
 #数据源采用了DustinWin/ruleset_geodata和MetaCubeX/meta-rules-dat两个开源项目的规则，感谢原作者的辛勤付出。
@@ -11,12 +11,12 @@ proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, ✨ 自动选择（去高倍率）, 🛠️ 手动切换, ⚖️ 负载均衡, 🚑 故障转移, 🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🛠️ 手动切换, type: select, include-all: true, proxies: [🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: ♻️ 自动选择, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)"}
-  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
-  - {name: ⚖️ 负载均衡, type: load-balance, interval: 1800, include-all: true, hidden: true}
-  - {name: 🚑 故障转移, type: fallback, interval: 1800, include-all: true, hidden: true}
-
+  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)`(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
+  - {name: ⚖️ 负载均衡, type: load-balance, interval: 1800, include-all: true, hidden: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)"}
+  - {name: 🚑 故障转移, type: fallback, interval: 1800, include-all: true, hidden: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)"}
+  #
   - {name: 🤖 AI 平台, type: select, proxies: [🚀 节点选择, 🤖 AI节点（过滤港澳）, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
-  - {name: 🤖 AI节点（过滤港澳）, type: url-test, interval: 3600, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)", hidden: true}
+  - {name: 🤖 AI节点（过滤港澳）, type: url-test, interval: 3600, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)`(?i)(🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)", hidden: true}
   - {name: 🎬 奈飞视频, type: select, proxies: [🚀 节点选择, 🎬 奈飞节点, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🎬 奈飞节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(NF|奈飞|解锁|Netflix|NETFLIX|Media)", hidden: true}
   - {name: ▶️ 油管视频, type: select, proxies: [🚀 节点选择, 🎯 本地直连, ♻️ 自动选择, 🛠️ 手动切换, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
@@ -45,10 +45,10 @@ proxy-groups:
   - {name: 🎯 本地直连, type: select, proxies: [DIRECT], hidden: true}
 
   - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
-  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)"}
-  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇺🇸|美|洛杉矶|圣何塞|西雅图|纽约|波特兰|旧金山|us|unitedstates|united states)"}
-  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇯🇵|日|东京|大阪|埼玉|九州|jp|japan)"}
-  - {name: 🇪🇺 欧洲节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇪🇺|欧|德|英|法|荷|俄罗斯|西班牙|意大利|瑞士|瑞典|土耳其|挪威|芬兰|丹麦|比利时|爱尔兰|奥地利|波兰|葡萄牙|乌克兰|希腊|捷克|匈牙利|罗马尼亚|保加利亚|冰岛|克罗地亚)"}
+  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)", exclude-filter: "(?i)(仙台)"}
+  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇺🇸|美|洛杉矶|圣何塞|西雅图|纽约|波特兰|旧金山|休斯|达拉斯|硅谷|堪萨斯|迈阿密|凤凰城|芝加哥|奥勒姆|us|unitedstates|united states)", exclude-filter: "(?i)(南美|中美|拉美|亚美尼亚|美属)"}
+  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇯🇵|日|东京|大阪|埼玉|九州|仙台|jp|japan)", exclude-filter: "(?i)(尼日利亚|尼日尔|日内瓦)"}
+  - {name: 🇪🇺 欧洲节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇪🇺|欧|德|英|法|荷|俄罗斯|西班牙|意大利|瑞士|瑞典|土耳其|挪威|芬兰|丹麦|比利时|爱尔兰|奥地利|波兰|葡萄牙|乌克兰|希腊|捷克|匈牙利|罗马尼亚|保加利亚|冰岛|克罗地亚|阿姆斯特丹)"}
   - {name: 🇰🇷 韩国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇰🇷|韩|韓|首尔|kr|kor)"}
   - {name: 🇸🇬 狮城节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"}
 
@@ -221,8 +221,8 @@ rule-providers:
 
 #规则顺序
 rules:
-  - DOMAIN-SUFFIX,captive.apple.com,DIRECT
-  - DOMAIN-SUFFIX,kamo.teracloud.jp,DIRECT
+  - DOMAIN-SUFFIX,captive.apple.com,🍎 苹果服务
+  - DOMAIN-SUFFIX,kamo.teracloud.jp,🀄️ 国内流量
 
   - RULE-SET,privateip,🔒 私有网络,no-resolve
   - RULE-SET,private,🔒 私有网络

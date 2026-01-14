@@ -4,284 +4,283 @@
 [ -n "$__IS_MODULE_2_SETTINGS_LOADED" ] && return
 __IS_MODULE_2_SETTINGS_LOADED=1
 
-settings() { #功能设置
-    #获取设置默认显示
-    [ -z "$skip_cert" ] && skip_cert=ON
-	[ -z "$sniffer" ] && sniffer=OFF
-	[ -z "$dns_mod" ] && dns_mod='redir_host'
-    #
-    echo "-----------------------------------------------"
-    echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " 1 路由模式设置:	\033[36m$redir_mod\033[0m"
-	echo -e " 2 DNS设置：		\033[36m$dns_mod\033[0m"
-	echo -e " 3 透明路由\033[32m流量过滤\033[0m"
-    [ "$disoverride" != "1" ] && {
-        echo -e " 4 跳过证书验证：	\033[36m$skip_cert\033[0m"
-		echo -e " 5 启用域名嗅探:	\033[36m$sniffer\033[0m"
-		echo -e " 6 自定义\033[32m端口及秘钥\033[0m"
-    }
-    echo -e " 8 ipv6设置：		\033[36m$ipv6_redir\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
-    echo -e " 0 返回上级菜单 \033[0m"
-    echo "-----------------------------------------------"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0)
-	;;
-    1)
-        if [ "$USER" != "root" -a "$USER" != "admin" ]; then
-            echo "-----------------------------------------------"
-            read -p "非root用户可能无法正确配置其他模式！依然尝试吗？(1/0) > " res
-            [ "$res" = 1 ] && set_redir_mod
-        else
-            set_redir_mod
-        fi
-		sleep 1
-        settings
-	;;
-    2)
-		. "$CRASHDIR"/menus/dns.sh && set_dns_mod
-        sleep 1
-        settings
-	;;
-    3)
-        . "$CRASHDIR"/menus/fw_filter.sh && set_fw_filter
-		sleep 1
-        settings
-	;;
-    4)
+# 功能设置
+settings() {
+    while true; do
+        # 获取设置默认显示
+        [ -z "$skip_cert" ] && skip_cert=ON
+        [ -z "$sniffer" ] && sniffer=OFF
+        [ -z "$dns_mod" ] && dns_mod='redir_host'
+
         echo "-----------------------------------------------"
-        if [ "$skip_cert" = "OFF" ] >/dev/null 2>&1; then
-            echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
-            skip_cert=ON
-        else
-            echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
-            skip_cert=OFF
-        fi
-        setconfig skip_cert $skip_cert
-        settings
-	;;
-    5)
+        echo -e "\033[30;47m欢迎使用功能设置菜单：\033[0m"
         echo "-----------------------------------------------"
-        if [ "$sniffer" = "OFF" ]; then
-            if [ "$crashcore" = "clash" ]; then
-                rm -rf ${TMPDIR}/CrashCore
-                rm -rf "$CRASHDIR"/CrashCore
-                rm -rf "$CRASHDIR"/CrashCore.tar.gz
-                crashcore=meta
-                setconfig crashcore $crashcore
-                echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
-            fi
-            sniffer=ON
-        elif [ "$crashcore" = "clashpre" -a "$dns_mod" = "redir_host" ]; then
-            echo -e "\033[31m使用clashpre内核且开启redir-host模式时无法关闭！\033[0m"
-        else
-            sniffer=OFF
-        fi
-        setconfig sniffer $sniffer
-        settings
-	;;
-    6)
-        if [ -n "$(pidof CrashCore)" ]; then
-            echo "-----------------------------------------------"
-            echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
-            read -p "是否停止服务？(1/0) > " res
-            if [ "$res" = "1" ]; then
-                "$CRASHDIR"/start.sh stop
-                set_adv_config
-            fi
-        else
-            set_adv_config
-        fi
-        settings
-	;;
-    8)
-        set_ipv6
-        settings
-	;;
-    9)
-		echo "-----------------------------------------------"
-        echo -e " 1 备份脚本设置"
-        echo -e " 2 还原脚本设置"
-        echo -e " 3 重置脚本设置"
-        echo -e " 0 返回上级菜单"
+        echo -e " 1 路由模式设置:	\033[36m$redir_mod\033[0m"
+        echo -e " 2 DNS设置：		\033[36m$dns_mod\033[0m"
+        echo -e " 3 透明路由\033[32m流量过滤\033[0m"
+        [ "$disoverride" != "1" ] && {
+            echo -e " 4 跳过证书验证：	\033[36m$skip_cert\033[0m"
+            echo -e " 5 启用域名嗅探:	\033[36m$sniffer\033[0m"
+            echo -e " 6 自定义\033[32m端口及秘钥\033[0m"
+        }
+        echo -e " 8 ipv6设置：		\033[36m$ipv6_redir\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 9 \033[31m重置/备份/还原\033[0m脚本设置"
+        echo -e " 0 返回上级菜单 \033[0m"
         echo "-----------------------------------------------"
         read -p "请输入对应数字 > " num
-        if [ -z "$num" ]; then
-            errornum
-        elif [ "$num" = 0 ]; then
-            i=
-        elif [ "$num" = 1 ]; then
-            cp -f "$CFG_PATH" "$CFG_PATH".bak
-            echo -e "\033[32m脚本设置已备份！\033[0m"
-        elif [ "$num" = 2 ]; then
-            if [ -f "$CFG_PATH.bak" ]; then
-                mv -f "$CFG_PATH" "$CFG_PATH".bak2
-                mv -f "$CFG_PATH".bak "$CFG_PATH"
-                mv -f "$CFG_PATH".bak2 "$CFG_PATH".bak
-                echo -e "\033[32m脚本设置已还原！(被覆盖的配置已备份！)\033[0m"
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$USER" != "root" -a "$USER" != "admin" ]; then
+                echo "-----------------------------------------------"
+                read -p "非root用户可能无法正确配置其他模式！依然尝试吗？(1/0) > " res
+                [ "$res" = 1 ] && set_redir_mod
             else
-                echo -e "\033[31m找不到备份文件，请先备份脚本设置！\033[0m"
+                set_redir_mod
             fi
-        elif [ "$num" = 3 ]; then
-            mv -f "$CFG_PATH" "$CFG_PATH".bak
-            . "$CRASHDIR"/init.sh >/dev/null
-            echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
-        fi
-        echo -e "\033[33m请重新启动脚本！\033[0m"
-        exit 0
-	;;
-    *)
-        errornum
-	;;
-    esac
+            sleep 1
+            ;;
+        2)
+            . "$CRASHDIR"/menus/dns.sh && set_dns_mod
+            sleep 1
+            ;;
+        3)
+            . "$CRASHDIR"/menus/fw_filter.sh && set_fw_filter
+            sleep 1
+            ;;
+        4)
+            echo "-----------------------------------------------"
+            if [ "$skip_cert" = "OFF" ] >/dev/null 2>&1; then
+                echo -e "\033[33m已设为开启跳过本地证书验证！！\033[0m"
+                skip_cert=ON
+            else
+                echo -e "\033[33m已设为禁止跳过本地证书验证！！\033[0m"
+                skip_cert=OFF
+            fi
+            setconfig skip_cert $skip_cert
+            ;;
+        5)
+            echo "-----------------------------------------------"
+            if [ "$sniffer" = "OFF" ]; then
+                if [ "$crashcore" = "clash" ]; then
+                    rm -rf ${TMPDIR}/CrashCore
+                    rm -rf "$CRASHDIR"/CrashCore
+                    rm -rf "$CRASHDIR"/CrashCore.tar.gz
+                    crashcore=meta
+                    setconfig crashcore $crashcore
+                    echo "已将ShellCrash内核切换为Meta内核！域名嗅探依赖Meta或者高版本clashpre内核！"
+                fi
+                sniffer=ON
+            elif [ "$crashcore" = "clashpre" -a "$dns_mod" = "redir_host" ]; then
+                echo -e "\033[31m使用clashpre内核且开启redir-host模式时无法关闭！\033[0m"
+            else
+                sniffer=OFF
+            fi
+            setconfig sniffer $sniffer
+            ;;
+        6)
+            if [ -n "$(pidof CrashCore)" ]; then
+                echo "-----------------------------------------------"
+                echo -e "\033[33m检测到服务正在运行，需要先停止服务！\033[0m"
+                read -p "是否停止服务？(1/0) > " res
+                if [ "$res" = "1" ]; then
+                    "$CRASHDIR"/start.sh stop
+                    set_adv_config
+                fi
+            else
+                set_adv_config
+            fi
+            ;;
+        8)
+            set_ipv6
+            ;;
+        9)
+            echo "-----------------------------------------------"
+            echo -e " 1 备份脚本设置"
+            echo -e " 2 还原脚本设置"
+            echo -e " 3 重置脚本设置"
+            echo -e " 0 返回上级菜单"
+            echo "-----------------------------------------------"
+            read -p "请输入对应数字 > " num
+            if [ -z "$num" ]; then
+                errornum
+            elif [ "$num" = 0 ]; then
+                i=
+            elif [ "$num" = 1 ]; then
+                cp -f "$CFG_PATH" "$CFG_PATH".bak
+                echo -e "\033[32m脚本设置已备份！\033[0m"
+            elif [ "$num" = 2 ]; then
+                if [ -f "$CFG_PATH.bak" ]; then
+                    mv -f "$CFG_PATH" "$CFG_PATH".bak2
+                    mv -f "$CFG_PATH".bak "$CFG_PATH"
+                    mv -f "$CFG_PATH".bak2 "$CFG_PATH".bak
+                    echo -e "\033[32m脚本设置已还原！(被覆盖的配置已备份！)\033[0m"
+                else
+                    echo -e "\033[31m找不到备份文件，请先备份脚本设置！\033[0m"
+                fi
+            elif [ "$num" = 3 ]; then
+                mv -f "$CFG_PATH" "$CFG_PATH".bak
+                . "$CRASHDIR"/init.sh >/dev/null
+                echo -e "\033[32m脚本设置已重置！(旧文件已备份！)\033[0m"
+            fi
+            echo -e "\033[33m请重新启动脚本！\033[0m"
+            exit 0
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
 
-set_redir_mod() { #路由模式设置
-    set_redir_config() {
-        setconfig redir_mod $redir_mod
-        setconfig dns_mod $dns_mod
-        echo "-----------------------------------------------"
-        echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
-    }
-    [ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 || modprobe tun 2>/dev/null && sup_tun=1
-    [ -z "$firewall_area" ] && firewall_area=1
-    [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
-    [ -z "$redir_mod" ] && redir_mod='纯净模式'
-    firewall_area_dsc=$(echo "仅局域网 仅本机 局域网+本机 纯净模式 主-旁转发($bypass_host)" | cut -d' ' -f$firewall_area)
+set_redir_config() {
+    setconfig redir_mod $redir_mod
+    setconfig dns_mod $dns_mod
     echo "-----------------------------------------------"
-    echo -e "当前路由模式为：\033[47;30m$redir_mod\033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
-    echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
-    echo "-----------------------------------------------"
-    [ $firewall_area -le 3 ] && {
-        echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
-        echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
-        echo -e " 3 \033[32mTproxy模式\033[0m：   Tproxy转发TCP&UDP"
-        echo -e " 4 \033[33mTun模式\033[0m：      Tun转发TCP&UDP(占用高不推荐)"
+    echo -e "\033[36m已设为 $redir_mod ！！\033[0m"
+}
+
+# 路由模式设置
+set_redir_mod() {
+    while true; do
+        [ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 || modprobe tun 2>/dev/null && sup_tun=1
+        [ -z "$firewall_area" ] && firewall_area=1
+        [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
+        [ -z "$redir_mod" ] && redir_mod='纯净模式'
+        firewall_area_dsc=$(echo "仅局域网 仅本机 局域网+本机 纯净模式 主-旁转发($bypass_host)" | cut -d' ' -f$firewall_area)
         echo "-----------------------------------------------"
-    }
-    [ "$firewall_area" = 5 ] && {
-        echo -e " 5 \033[32mTCP旁路转发\033[0m：    仅转发TCP流量至旁路由"
-        echo -e " 6 \033[36mT&U旁路转发\033[0m：    转发TCP&UDP流量至旁路由"
+        echo -e "当前路由模式为：\033[47;30m$redir_mod\033[0m；ShellCrash核心为：\033[47;30m $crashcore \033[0m"
+        echo -e "\033[33m切换模式后需要手动重启服务以生效！\033[0m"
         echo "-----------------------------------------------"
-    }
-    echo -e " 7 设置路由劫持范围：	\033[47;30m$firewall_area_dsc\033[0m"
-    echo -e " 8 容器/虚拟机劫持：	\033[47;30m$vm_redir\033[0m"
-    echo -e " 9 切换防火墙应用：	\033[47;30m$firewall_mod\033[0m"
-	echo "-----------------------------------------------"
-    echo " 0 返回上级菜单"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0) ;;
-    1)
-        redir_mod=Redir模式
-        set_redir_config
-        set_redir_mod
-	;;
-    2)
-        if [ -n "$sup_tun" ]; then
-            redir_mod=混合模式
+        [ $firewall_area -le 3 ] && {
+            echo -e " 1 \033[32mRedir模式\033[0m：    Redir转发TCP，不转发UDP"
+            echo -e " 2 \033[36m混合模式\033[0m：     Redir转发TCP，Tun转发UDP"
+            echo -e " 3 \033[32mTproxy模式\033[0m：   Tproxy转发TCP&UDP"
+            echo -e " 4 \033[33mTun模式\033[0m：      Tun转发TCP&UDP(占用高不推荐)"
+            echo "-----------------------------------------------"
+        }
+        [ "$firewall_area" = 5 ] && {
+            echo -e " 5 \033[32mTCP旁路转发\033[0m：    仅转发TCP流量至旁路由"
+            echo -e " 6 \033[36mT&U旁路转发\033[0m：    转发TCP&UDP流量至旁路由"
+            echo "-----------------------------------------------"
+        }
+        echo -e " 7 设置路由劫持范围：	\033[47;30m$firewall_area_dsc\033[0m"
+        echo -e " 8 容器/虚拟机劫持：	\033[47;30m$vm_redir\033[0m"
+        echo -e " 9 切换防火墙应用：	\033[47;30m$firewall_mod\033[0m"
+        echo "-----------------------------------------------"
+        echo " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            redir_mod=Redir模式
             set_redir_config
-        else
-            echo -e "\033[31m设备未检测到Tun内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
-            sleep 1
-        fi
-        set_redir_mod
-	;;
-    3)
-        if [ "$firewall_mod" = "iptables" ]; then
-            if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ]; then
-                read -p "xiaomi设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
-                [ "$res" = '1' ] && {
-                    /data/shellcrash_init.sh tproxyfix
+            ;;
+        2)
+            if [ -n "$sup_tun" ]; then
+                redir_mod=混合模式
+                set_redir_config
+            else
+                echo -e "\033[31m设备未检测到Tun内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
+                sleep 1
+            fi
+            ;;
+        3)
+            if [ "$firewall_mod" = "iptables" ]; then
+                if [ -f /etc/init.d/qca-nss-ecm -a "$systype" = "mi_snapshot" ]; then
+                    read -p "xiaomi设备的QOS服务与本模式冲突，是否禁用相关功能？(1/0) > " res
+                    [ "$res" = '1' ] && {
+                        /data/shellcrash_init.sh tproxyfix
+                        redir_mod=Tproxy模式
+                        set_redir_config
+                    }
+                elif grep -qE '^TPROXY$' /proc/net/ip_tables_targets || modprobe xt_TPROXY >/dev/null 2>&1; then
                     redir_mod=Tproxy模式
                     set_redir_config
-                }
-            elif grep -qE '^TPROXY$' /proc/net/ip_tables_targets || modprobe xt_TPROXY >/dev/null 2>&1; then
-                redir_mod=Tproxy模式
+                else
+                    echo -e "\033[31m设备未检测到iptables-mod-tproxy模块，请尝试其他模式或者安装相关依赖！\033[0m"
+                    sleep 1
+                fi
+            elif [ "$firewall_mod" = "nftables" ]; then
+                if modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy; then
+                    redir_mod=Tproxy模式
+                    set_redir_config
+                else
+                    echo -e "\033[31m设备未检测到nft_tproxy内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
+                    sleep 1
+                fi
+            fi
+            ;;
+        4)
+            if [ -n "$sup_tun" ]; then
+                redir_mod=Tun模式
                 set_redir_config
             else
-                echo -e "\033[31m设备未检测到iptables-mod-tproxy模块，请尝试其他模式或者安装相关依赖！\033[0m"
+                echo -e "\033[31m设备未检测到Tun内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
                 sleep 1
             fi
-        elif [ "$firewall_mod" = "nftables" ]; then
-            if modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy; then
-                redir_mod=Tproxy模式
-                set_redir_config
-            else
-                echo -e "\033[31m设备未检测到nft_tproxy内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
-                sleep 1
-            fi
-        fi
-        set_redir_mod
-	;;
-    4)
-        if [ -n "$sup_tun" ]; then
-            redir_mod=Tun模式
+            ;;
+        5)
+            redir_mod='TCP旁路转发'
             set_redir_config
-        else
-            echo -e "\033[31m设备未检测到Tun内核模块，请尝试其他模式或者安装相关依赖！\033[0m"
+            ;;
+        6)
+            redir_mod='T&U旁路转发'
+            set_redir_config
+            ;;
+        7)
+            set_firewall_area
+            ;;
+        8)
+            set_firewall_vm
+            ;;
+        9)
+            if [ "$firewall_mod" = 'iptables' ]; then
+                if nft add table inet shellcrash 2>/dev/null; then
+                    firewall_mod=nftables
+                    redir_mod=Redir模式
+                    setconfig redir_mod $redir_mod
+                else
+                    echo -e "\033[31m当前设备未安装nftables或者nftables版本过低(<1.0.2),无法切换！\033[0m"
+                fi
+            elif [ "$firewall_mod" = 'nftables' ]; then
+                if ckcmd iptables; then
+                    firewall_mod=iptables
+                    redir_mod=Redir模式
+                    setconfig redir_mod $redir_mod
+                else
+                    echo -e "\033[31m当前设备未安装iptables,无法切换！\033[0m"
+                fi
+            else
+                iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
+                nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
+                if [ -n "$firewall_mod" ]; then
+                    redir_mod=Redir模式
+                    setconfig redir_mod $redir_mod
+                    setconfig firewall_mod $firewall_mod
+                else
+                    echo -e "\033[31m检测不到可用的防火墙应用(iptables/nftables),无法切换！\033[0m"
+                fi
+            fi
             sleep 1
-        fi
-        set_redir_mod
-	;;
-    5)
-        redir_mod='TCP旁路转发'
-        set_redir_config
-        set_redir_mod
-	;;
-    6)
-        redir_mod='T&U旁路转发'
-        set_redir_config
-        set_redir_mod
-	;;
-    7)
-        set_firewall_area
-        set_redir_mod
-	;;
-    8)
-        set_firewall_vm
-        set_redir_mod
-	;;
-    9)
-        if [ "$firewall_mod" = 'iptables' ]; then
-            if nft add table inet shellcrash 2>/dev/null; then
-                firewall_mod=nftables
-                redir_mod=Redir模式
-                setconfig redir_mod $redir_mod
-            else
-                echo -e "\033[31m当前设备未安装nftables或者nftables版本过低(<1.0.2),无法切换！\033[0m"
-            fi
-        elif [ "$firewall_mod" = 'nftables' ]; then
-            if ckcmd iptables; then
-                firewall_mod=iptables
-                redir_mod=Redir模式
-                setconfig redir_mod $redir_mod
-            else
-                echo -e "\033[31m当前设备未安装iptables,无法切换！\033[0m"
-            fi
-        else
-            iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
-            nft add table inet shellcrash 2>/dev/null && firewall_mod=nftables
-            if [ -n "$firewall_mod" ]; then
-                redir_mod=Redir模式
-                setconfig redir_mod $redir_mod
-                setconfig firewall_mod $firewall_mod
-            else
-                echo -e "\033[31m检测不到可用的防火墙应用(iptables/nftables),无法切换！\033[0m"
-            fi
-        fi
-        sleep 1
-        setconfig firewall_mod $firewall_mod
-        set_redir_mod
-	;;
-    *)
-        errornum
-	;;
-    esac
+            setconfig firewall_mod $firewall_mod
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
+
 set_adv_config() { #端口设置
     . "$CFG_PATH" >/dev/null
     [ -z "$secret" ] && secret=未设置
@@ -490,36 +489,42 @@ set_firewall_vm(){
 	setconfig vm_redir $vm_redir
 	setconfig vm_ipv4 "'$vm_ipv4'"
 }
-set_ipv6() { #ipv6设置
-    [ -z "$ipv6_redir" ] && ipv6_redir=OFF
-    [ -z "$ipv6_dns" ] && ipv6_dns=ON
-    echo "-----------------------------------------------"
-    echo -e " 1 ipv6透明路由:  \033[36m$ipv6_redir\033[0m  ——劫持ipv6流量"
-    [ "$disoverride" != "1" ] && echo -e " 2 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"
-    echo -e " 0 返回上级菜单"
-    echo "-----------------------------------------------"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0) ;;
-    1)
-        if [ "$ipv6_redir" = "OFF" ]; then
-            ipv6_support=ON
-            ipv6_redir=ON
-            sleep 2
-        else
-            ipv6_redir=OFF
-        fi
-        setconfig ipv6_redir $ipv6_redir
-        setconfig ipv6_support $ipv6_support
-        set_ipv6
-	;;
-    2)
-        [ "$ipv6_dns" = "OFF" ] && ipv6_dns=ON || ipv6_dns=OFF
-        setconfig ipv6_dns $ipv6_dns
-        set_ipv6
-	;;
-    *)
-        errornum
-	;;
-    esac
+
+# ipv6设置
+set_ipv6() {
+    while true; do
+        [ -z "$ipv6_redir" ] && ipv6_redir=OFF
+        [ -z "$ipv6_dns" ] && ipv6_dns=ON
+        echo "-----------------------------------------------"
+        echo -e " 1 ipv6透明路由:  \033[36m$ipv6_redir\033[0m  ——劫持ipv6流量"
+        [ "$disoverride" != "1" ] && echo -e " 2 ipv6-DNS解析:  \033[36m$ipv6_dns\033[0m  ——决定内置DNS是否返回ipv6地址"
+        echo -e " 0 返回上级菜单"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$ipv6_redir" = "OFF" ]; then
+                ipv6_support=ON
+                ipv6_redir=ON
+                sleep 2
+            else
+                ipv6_redir=OFF
+            fi
+            setconfig ipv6_redir $ipv6_redir
+            setconfig ipv6_support $ipv6_support
+            ;;
+        2)
+            [ "$ipv6_dns" = "OFF" ] && ipv6_dns=ON || ipv6_dns=OFF
+            setconfig ipv6_dns $ipv6_dns
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }

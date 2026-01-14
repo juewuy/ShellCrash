@@ -7,6 +7,8 @@ proxy-groups:
   - {name: 🎮 游戏服务, type: select, proxies: [🎯 全球直连, 👑 高级节点, 🚀 节点选择]}
   - {name: 🪟 微软服务, type: select, proxies: [🎯 全球直连, 🚀 节点选择]}
   - {name: 🇬 谷歌服务, type: select, proxies: [🎯 全球直连, 🚀 节点选择]}
+  - {name: 🎥 奈飞视频, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 📹 油管视频, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🌍 国外媒体, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🎮 游戏平台, type: select, proxies: [🚀 节点选择, 🎯 全球直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🍎 苹果服务, type: select, proxies: [🎯 全球直连, 🚀 节点选择]}
@@ -77,6 +79,22 @@ rule-providers:
     url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/games-cn.mrs"
     interval: 86400
 
+  netflix:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./ruleset/netflix.mrs
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/netflix.mrs"
+    interval: 86400
+
+  youtube:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./ruleset/youtube.mrs
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/youtube.mrs"
+    interval: 86400
+
   media:
     type: http
     behavior: domain
@@ -141,6 +159,14 @@ rule-providers:
     url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
     interval: 86400
 
+  netflixip:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./ruleset/netflixip.mrs
+    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/netflixip.mrs"
+    interval: 86400
+
   mediaip:
     type: http
     behavior: ipcidr
@@ -172,6 +198,8 @@ rules:
   - RULE-SET,apple-cn,🍎 苹果服务
   - RULE-SET,google-cn,🇬 谷歌服务
   - RULE-SET,games-cn,🎮 游戏服务
+  - RULE-SET,netflix,🎥 奈飞视频
+  - RULE-SET,youtube,📹 油管视频
   - RULE-SET,media,🌍 国外媒体
   - RULE-SET,games,🎮 游戏平台
   - RULE-SET,ai,🤖 AI 平台
@@ -180,6 +208,7 @@ rules:
   - RULE-SET,cn,🛡️ 直连域名
   - RULE-SET,privateip,🔒 私有网络,no-resolve
   - RULE-SET,cnip,🀄️ 直连 IP
+  - RULE-SET,netflixip,🎥 奈飞视频
   - RULE-SET,mediaip,🌍 国外媒体
   - RULE-SET,gamesip,🎮 游戏平台
   - RULE-SET,telegramip,📲 电报消息,no-resolve

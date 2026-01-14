@@ -8,72 +8,74 @@ __IS_MODULE_7_GATEWAY_LOADED=1
 . "$CRASHDIR"/menus/check_port.sh
 . "$CRASHDIR"/libs/gen_base64.sh
 
-#访问与控制主菜单
-gateway(){
-	echo "-----------------------------------------------"
-	echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 配置\033[33m公网访问防火墙			\033[32m$fw_wan\033[0m"
-	echo -e " 2 配置\033[36mTelegram专属控制机器人		\033[32m$bot_tg_service\033[0m"
-	echo -e " 3 配置\033[36mDDNS自动域名\033[0m"
-	[ "$disoverride" != "1" ] && {
-		echo -e " 4 自定义\033[33m公网Vmess入站\033[0m节点		\033[32m$vms_service\033[0m"
-		echo -e " 5 自定义\033[33m公网ShadowSocks入站\033[0m节点	\033[32m$sss_service\033[0m"
-		echo -e " 6 配置\033[36mTailscale内网穿透\033[0m(限Singbox)	\033[32m$ts_service\033[0m"
-		echo -e " 7 配置\033[36mWireguard客户端\033[0m(限Singbox)	\033[32m$wg_service\033[0m"
-	}
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
+# 访问与控制主菜单
+gateway() {
+    while true; do
         echo "-----------------------------------------------"
-        if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
-            read -p "需要先停止服务，是否继续？(1/0) > " res
-            [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_fw_wan
-        else
-            set_fw_wan
-        fi
-		gateway
-	;;
-	2)
-		set_bot_tg
-		gateway
-	;;
-	3)
-		. "$CRASHDIR"/menus/ddns.sh && ddns_menu
-		gateway
-	;;
-	4)
-		set_vmess
-		gateway
-	;;
-	5)
-		set_shadowsocks
-		gateway
-	;;
-	6)
-		if echo "$crashcore" | grep -q 'sing';then
-			set_tailscale
-		else
-			echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
-			sleep 1
-		fi
-		gateway
-	;;
-	7)
-		if echo "$crashcore" | grep -q 'sing';then
-			set_wireguard
-		else
-			echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
-			sleep 1
-		fi
-		gateway
-	;;
-	*) errornum ;;
-	esac
+        echo -e "\033[30;47m欢迎使用访问与控制菜单：\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 配置\033[33m公网访问防火墙			\033[32m$fw_wan\033[0m"
+        echo -e " 2 配置\033[36mTelegram专属控制机器人		\033[32m$bot_tg_service\033[0m"
+        echo -e " 3 配置\033[36mDDNS自动域名\033[0m"
+        [ "$disoverride" != "1" ] && {
+            echo -e " 4 自定义\033[33m公网Vmess入站\033[0m节点		\033[32m$vms_service\033[0m"
+            echo -e " 5 自定义\033[33m公网ShadowSocks入站\033[0m节点	\033[32m$sss_service\033[0m"
+            echo -e " 6 配置\033[36mTailscale内网穿透\033[0m(限Singbox)	\033[32m$ts_service\033[0m"
+            echo -e " 7 配置\033[36mWireguard客户端\033[0m(限Singbox)	\033[32m$wg_service\033[0m"
+        }
+        echo -e " 0 返回上级菜单"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            echo "-----------------------------------------------"
+            if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
+                read -p "需要先停止服务，是否继续？(1/0) > " res
+                [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_fw_wan
+            else
+                set_fw_wan
+            fi
+            ;;
+        2)
+            set_bot_tg
+            ;;
+        3)
+            . "$CRASHDIR"/menus/ddns.sh && ddns_menu
+            ;;
+        4)
+            set_vmess
+            ;;
+        5)
+            set_shadowsocks
+            ;;
+        6)
+            if echo "$crashcore" | grep -q 'sing'; then
+                set_tailscale
+            else
+                echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
+                sleep 1
+            fi
+            ;;
+        7)
+            if echo "$crashcore" | grep -q 'sing'; then
+                set_wireguard
+            else
+                echo -e "\033[33m$crashcore内核暂不支持此功能，请先更换内核！\033[0m"
+                sleep 1
+            fi
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
+
 #公网防火墙
 set_fw_wan() {
 	[ -z "$fw_wan" ] && fw_wan=ON
@@ -228,104 +230,103 @@ set_bot_tg(){
 	;;
 	esac		
 }
-#自定义入站
-set_vmess(){
-	echo "-----------------------------------------------"
-	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
-	echo -e "      \033[31m切勿用于搭建违法翻墙节点，违者后果自负！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 \033[32m启用/关闭\033[0mVmess入站	\033[32m$vms_service\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$vms_port\033[0m"
-	echo -e " 3 设置\033[33mWS-path(可选)\033[0m：	\033[33m$vms_ws_path\033[0m"
-	echo -e " 4 设置\033[36m秘钥-uuid\033[0m：	\033[36m$vms_uuid\033[0m"
-	echo -e " 5 一键生成\033[32m随机秘钥\033[0m"
-	echo -e " 6 设置\033[36m混淆host(可选)\033[0m：	\033[33m$vms_host\033[0m"
-	gen_base64 1 >/dev/null 2>&1 &&
-	echo -e " 7 一键生成\033[32m分享链接\033[0m"
-	echo -e " 0 返回上级菜单 \033[0m"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
-		if [ "$vms_service" = ON ];then
-			vms_service=OFF
-			setconfig vms_service "$vms_service"
-		else
-			if [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
-				vms_service=ON
-				setconfig vms_service "$vms_service"
-			else
-				echo -e "\033[31m请先完成必选设置！\033[0m"
-				sleep 1
-			fi
-		fi
-		set_vmess
-	;;
-	2)
-		read -p "请输入端口号(输入0删除) > " text
-		if [ "$text" = 0 ];then
-			vms_port=''
-			setconfig vms_port "" "$GT_CFG_PATH"
-		elif check_port "$text"; then
-			vms_port="$text"
-			setconfig vms_port "$text" "$GT_CFG_PATH"
-		else
-			sleep 1
-		fi
-		set_vmess
-	;;
-	3)
-		read -p "请输入ws-path路径(输入0删除) > " text
-		if [ "$text" = 0 ];then
-			vms_ws_path=''
-			setconfig vms_ws_path "" "$GT_CFG_PATH"
-		elif echo "$text" |grep -qE '^/';then
-			vms_ws_path="$text"
-			setconfig vms_ws_path "$text" "$GT_CFG_PATH"
-		else
-			echo -e "\033[31m不是合法的path路径，必须以【/】开头！\033[0m"
-			sleep 1
-		fi
-		set_vmess
-	;;
-	4)
-		read -p "请输入UUID(输入0删除) > " text
-		if [ "$text" = 0 ];then
-			vms_uuid=''
-			setconfig vms_uuid "" "$GT_CFG_PATH"
-		elif echo "$text" |grep -qiE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';then
-			vms_uuid="$text"
-			setconfig vms_uuid "$text" "$GT_CFG_PATH"
-		else
-			echo -e "\033[31m不是合法的UUID格式，请重新输入或使用随机生成功能！\033[0m"
-			sleep 1
-		fi
-		set_vmess
-	;;
-	5)
-		vms_uuid=$(cat /proc/sys/kernel/random/uuid)
-		setconfig vms_uuid "$vms_uuid" "$GT_CFG_PATH"
-		sleep 1
-		set_vmess
-	;;
-	6)
-		read -p "请输入免流混淆host(输入0删除) > " text
-		if [ "$text" = 0 ];then
-			vms_host=''
-			setconfig vms_host "" "$GT_CFG_PATH"
-		else
-			vms_host="$text"
-			setconfig vms_host "$text" "$GT_CFG_PATH"
-		fi
-		set_vmess
-	;;
-	7)
-		read -p "请输入本机公网IP(4/6)或域名 > " host_wan
-		if [ -n "$host_wan" ] && [ -n "$vms_port" ] && [ -n "$vms_uuid" ];then
-			[ -n "$vms_ws_path" ] && vms_net=ws
-			vms_json=$(cat <<EOF
+
+# 自定义入站
+set_vmess() {
+    while true; do
+        echo "-----------------------------------------------"
+        echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
+        echo -e "      \033[31m切勿用于搭建违法翻墙节点，违者后果自负！\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 \033[32m启用/关闭\033[0mVmess入站	\033[32m$vms_service\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$vms_port\033[0m"
+        echo -e " 3 设置\033[33mWS-path(可选)\033[0m：	\033[33m$vms_ws_path\033[0m"
+        echo -e " 4 设置\033[36m秘钥-uuid\033[0m：	\033[36m$vms_uuid\033[0m"
+        echo -e " 5 一键生成\033[32m随机秘钥\033[0m"
+        echo -e " 6 设置\033[36m混淆host(可选)\033[0m：	\033[33m$vms_host\033[0m"
+        gen_base64 1 >/dev/null 2>&1 &&
+            echo -e " 7 一键生成\033[32m分享链接\033[0m"
+        echo -e " 0 返回上级菜单 \033[0m"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$vms_service" = ON ]; then
+                vms_service=OFF
+                setconfig vms_service "$vms_service"
+            else
+                if [ -n "$vms_port" ] && [ -n "$vms_uuid" ]; then
+                    vms_service=ON
+                    setconfig vms_service "$vms_service"
+                else
+                    echo -e "\033[31m请先完成必选设置！\033[0m"
+                    sleep 1
+                fi
+            fi
+            ;;
+        2)
+            read -p "请输入端口号(输入0删除) > " text
+            if [ "$text" = 0 ]; then
+                vms_port=''
+                setconfig vms_port "" "$GT_CFG_PATH"
+            elif check_port "$text"; then
+                vms_port="$text"
+                setconfig vms_port "$text" "$GT_CFG_PATH"
+            else
+                sleep 1
+            fi
+            ;;
+        3)
+            read -p "请输入ws-path路径(输入0删除) > " text
+            if [ "$text" = 0 ]; then
+                vms_ws_path=''
+                setconfig vms_ws_path "" "$GT_CFG_PATH"
+            elif echo "$text" | grep -qE '^/'; then
+                vms_ws_path="$text"
+                setconfig vms_ws_path "$text" "$GT_CFG_PATH"
+            else
+                echo -e "\033[31m不是合法的path路径，必须以【/】开头！\033[0m"
+                sleep 1
+            fi
+            ;;
+        4)
+            read -p "请输入UUID(输入0删除) > " text
+            if [ "$text" = 0 ]; then
+                vms_uuid=''
+                setconfig vms_uuid "" "$GT_CFG_PATH"
+            elif echo "$text" | grep -qiE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
+                vms_uuid="$text"
+                setconfig vms_uuid "$text" "$GT_CFG_PATH"
+            else
+                echo -e "\033[31m不是合法的UUID格式，请重新输入或使用随机生成功能！\033[0m"
+                sleep 1
+            fi
+            ;;
+        5)
+            vms_uuid=$(cat /proc/sys/kernel/random/uuid)
+            setconfig vms_uuid "$vms_uuid" "$GT_CFG_PATH"
+            sleep 1
+            ;;
+        6)
+            read -p "请输入免流混淆host(输入0删除) > " text
+            if [ "$text" = 0 ]; then
+                vms_host=''
+                setconfig vms_host "" "$GT_CFG_PATH"
+            else
+                vms_host="$text"
+                setconfig vms_host "$text" "$GT_CFG_PATH"
+            fi
+            ;;
+        7)
+            read -p "请输入本机公网IP(4/6)或域名 > " host_wan
+            if [ -n "$host_wan" ] && [ -n "$vms_port" ] && [ -n "$vms_uuid" ]; then
+                [ -n "$vms_ws_path" ] && vms_net=ws
+                vms_json=$(
+                    cat <<EOF
 {
   "v": "2",
   "ps": "ShellCrash_vms_in",
@@ -339,19 +340,24 @@ set_vmess(){
   "host": "$vms_host"
 }
 EOF
-)
-			vms_link="vmess://$(gen_base64 "$vms_json")"
-			echo "-----------------------------------------------"
-			echo -e "你的分享链接是(请勿随意分享给他人):\n\033[32m$vms_link\033[0m"
-		else
-			echo -e "\033[31m请先完成必选设置！\033[0m"
-		fi
-		sleep 1
-		set_vmess
-	;;
-	*) errornum ;;
-	esac		
+                )
+                vms_link="vmess://$(gen_base64 "$vms_json")"
+                echo "-----------------------------------------------"
+                echo -e "你的分享链接是(请勿随意分享给他人):\n\033[32m$vms_link\033[0m"
+            else
+                echo -e "\033[31m请先完成必选设置！\033[0m"
+            fi
+            sleep 1
+            ;;
+        *)
+            errornum
+            sleep 1
+            break
+            ;;
+        esac
+    done
 }
+
 set_shadowsocks(){
 	echo "-----------------------------------------------"
 	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"

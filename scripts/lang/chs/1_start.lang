@@ -1,0 +1,11 @@
+# ===== 启动完成 =====
+START_SERVICE_OK="服务已启动！"
+START_WEB_HINT="请使用"
+START_WEB_HINT2="管理内置规则"
+START_PAC_HINT="其他设备可使用 PAC 配置："
+START_PROXY_HINT="或使用 HTTP / SOCKS5 方式连接："
+
+# ===== 启动流程 =====
+START_NO_CORE_CFG_TRY_GEN="没有找到核心配置文件，尝试生成 providers 配置文件！"
+START_NO_CORE_CFG_IMPORT_FIRST="没有找到核心配置文件，请先导入配置文件！"
+START_FIREWALL_DONE="已完成防火墙设置！"

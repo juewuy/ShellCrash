@@ -6,6 +6,9 @@
 . "$CRASHDIR"/libs/get_config.sh
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && . "$CRASHDIR"/init.sh >/dev/null 2>&1
 [ ! -f "$TMPDIR" ] && mkdir -p "$TMPDIR"
+
+#当上次启动失败时终止自启动
+[ -f "CRASHDIR"/.start_error ] && exit 1
 #加载工具
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/check_target.sh
@@ -18,6 +21,7 @@
 [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
 [ -z "$dns_mod" ] && dns_mod='redir_host'
 [ -z "$redir_mod" ] && firewall_area='4'
+routing_mark=$((fwmark + 2))
 
 makehtml() { #生成面板跳转文件
     cat >"$BINDIR"/ui/index.html <<EOF
@@ -69,7 +73,7 @@ EOF
     [ "$?" = 0 ] && rm -rf "$TMPDIR"/shellcrash_pac || mv -f "$TMPDIR"/shellcrash_pac "$BINDIR"/ui/pac
 }
 
-routing_mark=$((fwmark + 2))
+
 #检测网络连接
 [ "$network_check" != "OFF" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && . "$CRASHDIR"/starts/check_network.sh && check_network
 [ ! -d "$BINDIR"/ui ] && mkdir -p "$BINDIR"/ui
@@ -99,7 +103,7 @@ if echo "$crashcore" | grep -q 'singbox'; then
 	if [ "$disoverride" != "1" ];then
 		. "$CRASHDIR"/starts/singbox_modify.sh && modify_json
 	else
-		ln -sf "$core_config" "$TMPDIR"/config.json
+		ln -sf "$core_config" "$TMPDIR"/configs/config.json
 	fi
 else
 	. "$CRASHDIR"/starts/clash_check.sh && clash_check

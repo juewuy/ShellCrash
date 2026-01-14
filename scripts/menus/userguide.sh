@@ -123,5 +123,5 @@ userguide(){
 	echo "-----------------------------------------------"
 	read -p "立即启动服务？(1/0) > " res
 	[ "$res" = 1 ] && start_core && sleep 2
-	main_menu
+	return 0
 }

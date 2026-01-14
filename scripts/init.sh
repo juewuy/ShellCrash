@@ -102,7 +102,7 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 #设置更新地址
 [ -n "$url" ] && setconfig update_url $url
 #设置环境变量
-[ -w /opt/etc/profile ] && profile=/opt/etc/profile
+[ -w /opt/etc/profile ] && [ "$systype" = "Padavan" ] && profile=/opt/etc/profile
 [ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
 [ -z "$profile" ] && profile=/etc/profile
 if [ -n "$profile" ]; then

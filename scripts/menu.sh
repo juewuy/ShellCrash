@@ -109,8 +109,8 @@ ckstatus() { #脚本启动前检查
     echo "-----------------------------------------------"
     #检查新手引导
     if [ -z "$userguide" ]; then
+		. "$CRASHDIR"/menus/userguide.sh && userguide
         setconfig userguide 1
-        . "$CRASHDIR"/menus/userguide.sh && userguide
     fi
     #检查执行权限
     [ ! -x "$CRASHDIR"/start.sh ] && chmod +x "$CRASHDIR"/start.sh
@@ -159,88 +159,82 @@ ckstatus() { #脚本启动前检查
 }
 
 main_menu() {
-    ckstatus
+    while true; do
+        ckstatus
 
-    echo -e " 1 \033[32m$MENU_MAIN_1\033[0m"
-    echo -e " 2 \033[36m$MENU_MAIN_2\033[0m"
-    echo -e " 3 \033[31m$MENU_MAIN_3\033[0m"
-    echo -e " 4 \033[33m$MENU_MAIN_4\033[0m"
-    echo -e " 5 \033[32m$MENU_MAIN_5\033[0m"
-    echo -e " 6 \033[36m$MENU_MAIN_6\033[0m"
-    echo -e " 7 \033[33m$MENU_MAIN_7\033[0m"
-    echo -e " 8 $MENU_MAIN_8"
-    echo -e " 9 \033[32m$MENU_MAIN_9\033[0m"
-    echo "-----------------------------------------------"
-    echo -e " 0 $MENU_MAIN_0"
-
-    read -p "$MENU_MAIN_PROMPT" num
-
-    case "$num" in
-    0)
-        exit
-	;;
-    1)
-        start_service
-        exit
-	;;
-    2)
-        checkcfg=$(cat "$CFG_PATH")
-        . "$CRASHDIR"/menus/2_settings.sh && settings
-        if [ -n "$PID" ]; then
-            checkcfg_new=$(cat "$CFG_PATH")
-            [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-        fi
-        main_menu
-	;;
-    3)
-        [ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
-		"$CRASHDIR"/start.sh stop
-        sleep 1
+        echo -e " 1 \033[32m$MENU_MAIN_1\033[0m"
+        echo -e " 2 \033[36m$MENU_MAIN_2\033[0m"
+        echo -e " 3 \033[31m$MENU_MAIN_3\033[0m"
+        echo -e " 4 \033[33m$MENU_MAIN_4\033[0m"
+        echo -e " 5 \033[32m$MENU_MAIN_5\033[0m"
+        echo -e " 6 \033[36m$MENU_MAIN_6\033[0m"
+        echo -e " 7 \033[33m$MENU_MAIN_7\033[0m"
+        echo -e " 8 $MENU_MAIN_8"
+        echo -e " 9 \033[32m$MENU_MAIN_9\033[0m"
         echo "-----------------------------------------------"
-        echo -e "\033[31m$corename$MENU_SERVICE_STOPPED\033[0m"
-        main_menu
-	;;
-    4)
-        . "$CRASHDIR"/menus/4_setboot.sh && setboot
-        main_menu
-	;;
-    5)
-        . "$CRASHDIR"/menus/5_task.sh && task_menu
-        main_menu
-	;;
-    6)
-        . "$CRASHDIR"/menus/6_core_config.sh && set_core_config
-        main_menu
-	;;
-    7)
-		GT_CFG_PATH="$CRASHDIR"/configs/gateway.cfg
-		touch "$GT_CFG_PATH"
-        checkcfg=$(cat "$CFG_PATH" "$GT_CFG_PATH")
-        . "$CRASHDIR"/menus/7_gateway.sh && gateway
-        if [ -n "$PID" ]; then
-            checkcfg_new=$(cat "$CFG_PATH" "$GT_CFG_PATH")
-            [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-        fi
-        main_menu
-	;;
-    8)
-        . "$CRASHDIR"/menus/8_tools.sh && tools
-        main_menu
-	;;
-    9)
-        checkcfg=$(cat "$CFG_PATH")
-        . "$CRASHDIR"/menus/9_upgrade.sh && upgrade
-        if [ -n "$PID" ]; then
-            checkcfg_new=$(cat "$CFG_PATH")
-            [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
-        fi
-        main_menu
-	;;
-    *)
-        errornum
-        exit
-	;;
-    esac
+        echo -e " 0 $MENU_MAIN_0"
+
+        read -p "$MENU_MAIN_PROMPT" num
+
+        case "$num" in
+        "" | 0)
+            exit
+            ;;
+        1)
+            start_service
+            exit
+            ;;
+        2)
+            checkcfg=$(cat "$CFG_PATH")
+            . "$CRASHDIR"/menus/2_settings.sh && settings
+            if [ -n "$PID" ]; then
+                checkcfg_new=$(cat "$CFG_PATH")
+                [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+            fi
+            ;;
+        3)
+            [ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
+            "$CRASHDIR"/start.sh stop
+            sleep 1
+            echo "-----------------------------------------------"
+            echo -e "\033[31m$corename$MENU_SERVICE_STOPPED\033[0m"
+            ;;
+        4)
+            . "$CRASHDIR"/menus/4_setboot.sh && setboot
+            ;;
+        5)
+            . "$CRASHDIR"/menus/5_task.sh && task_menu
+            ;;
+        6)
+            . "$CRASHDIR"/menus/6_core_config.sh && set_core_config
+            ;;
+        7)
+            GT_CFG_PATH="$CRASHDIR"/configs/gateway.cfg
+            touch "$GT_CFG_PATH"
+            checkcfg=$(cat "$CFG_PATH" "$GT_CFG_PATH")
+            . "$CRASHDIR"/menus/7_gateway.sh && gateway
+            if [ -n "$PID" ]; then
+                checkcfg_new=$(cat "$CFG_PATH" "$GT_CFG_PATH")
+                [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+            fi
+            ;;
+        8)
+            . "$CRASHDIR"/menus/8_tools.sh && tools
+            ;;
+        9)
+            checkcfg=$(cat "$CFG_PATH")
+            . "$CRASHDIR"/menus/9_upgrade.sh && upgrade
+            if [ -n "$PID" ]; then
+                checkcfg_new=$(cat "$CFG_PATH")
+                [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
+            fi
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
 
 case "$1" in
