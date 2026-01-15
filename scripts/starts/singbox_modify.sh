@@ -202,7 +202,6 @@ EOF
     #域名嗅探配置
     [ "$sniffer" = ON ] && ! grep -Eq '"action" *:[[:space:]]*"sniff"' "$CRASHDIR"/jsons/*.json && sniffer_set='{ "action": "sniff", "timeout": "500ms" },'
     [ "$ts_service" = ON ] && tailscale_set='{ "inbound": [ "ts-ep" ], "port": 53, "action": "hijack-dns" },'
-    sed -i '/"clash_mode".*"outbound"/d' "$CRASHDIR"/jsons/*.json
     cat >"$TMPDIR"/jsons/add_route.json <<EOF
 {
   "route": {
