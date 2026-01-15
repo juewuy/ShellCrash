@@ -208,24 +208,27 @@ jobs:
       - name: Zip core by upx
         if: env.ZIPTYPE == 'upx'
         run: |    
-          wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
-          wget https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
-          tar xf upx-3.96-amd64_linux.tar.xz
-          tar xf upx-3.94-amd64_linux.tar.xz
+          for upxv in 3.94 3.96 5.1.0;do
+            wget https://github.com/upx/upx/releases/download/v$upxv/upx-$upxv-amd64_linux.tar.xz
+            tar xf upx-$upxv-amd64_linux.tar.xz
+          done
           for arch in amd64 armv5 armv7 arm64 386 mips-softfloat mipsle-hardfloat mipsle-softfloat;do
             [ ! -f ./tmp/linux-${arch}/sing-box ] && continue
             mv -f ./tmp/linux-${arch}/sing-box ./tmp/singbox-linux-${arch}.upx
             chmod +x ./tmp/singbox-linux-${arch}.upx
             case "${arch}" in
               armv5|mips* )
-                ./upx-3.94-amd64_linux/upx --no-lzma ./tmp/singbox-linux-${arch}.upx
+                ./upx-3.94-amd64_linux/upx --no-lzma ./tmp/clash-linux-${arch}.upx
+              ;;
+              armv7|386)
+                ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/clash-linux-${arch}.upx
               ;;
               *)
-                ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/singbox-linux-${arch}.upx
+                ./upx-5.1.0-amd64_linux/upx ./tmp/clash-linux-${arch}.upx
               ;;
             esac
           done
-          rm -rf upx-3.9*
+          rm -rf upx-*
          
       - name: Zip core by tar
         if: env.ZIPTYPE == 'tar.gz'
