@@ -76,79 +76,82 @@ gateway() {
     done
 }
 
-#公网防火墙
+# 公网防火墙
 set_fw_wan() {
-	[ -z "$fw_wan" ] && fw_wan=ON
-	echo "-----------------------------------------------"
-	echo -e "\033[31m注意：\033[0m如在vps运行，还需在vps安全策略对相关端口同时放行"
-	[ -n "$fw_wan_ports" ] && 
-	echo -e "当前手动放行端口：\033[36m$fw_wan_ports\033[0m"
-	[ -n "$vms_port$sss_port" ] && 
-	echo -e "当前自动放行端口：\033[36m$vms_port $sss_port\033[0m"
-	echo -e "默认拦截端口：\033[33m$dns_port,$mix_port,$db_port\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 启用/关闭公网防火墙:	\033[36m$fw_wan\033[0m"
-	echo -e " 2 添加放行端口(可包含默认拦截端口)"
-	echo -e " 3 移除指定手动放行端口"
-	echo -e " 4 清空全部手动放行端口"
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case $num in
-	1)
-		if [ "$fw_wan" = ON ];then
-			read -p "确认关闭防火墙？这会带来极大的安全隐患！(1/0) > " res
-			[ "$res" = 1 ] && fw_wan=OFF || fw_wan=ON
-		else
-			fw_wan=ON
-		fi
-		setconfig fw_wan "$fw_wan"
-		set_fw_wan
-	;;
-	2)
-		port_count=$(echo "$fw_wan_ports" | awk -F',' '{print NF}' )
-		if [ "$port_count" -ge 10 ];then
-			echo -e "\033[31m最多支持设置放行10个端口，请先减少一些！\033[0m"
-		else
-			read -p "请输入要放行的端口号 > " port
-			if echo ",$fw_wan_ports," | grep -q ",$port,";then	
-				echo -e "\033[31m输入错误！请勿重复添加！\033[0m"
-			elif [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
-			else
-				fw_wan_ports=$(echo "$fw_wan_ports,$port" | sed "s/^,//")
-				setconfig fw_wan_ports "$fw_wan_ports"
-			fi
-		fi
-		sleep 1
-		set_fw_wan
-	;;
-	3)
-		read -p "请输入要移除的端口号 > " port
-		if echo ",$fw_wan_ports," | grep -q ",$port,";then	
-			if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
-			else
-				fw_wan_ports=$(echo ",$fw_wan_ports," | sed "s/,$port//; s/^,//; s/,$//")
-				setconfig fw_wan_ports "$fw_wan_ports"
-			fi
-		else
-			echo -e "\033[31m输入错误！请输入已添加过的端口！\033[0m"
-		fi
-		sleep 1
-		set_fw_wan
-	;;
-	4)
-		fw_wan_ports=''
-		setconfig fw_wan_ports
-		sleep 1
-		set_fw_wan
-	;;
-	*)
-		errornum
-	;;
-	esac
+    while true; do
+        [ -z "$fw_wan" ] && fw_wan=ON
+        echo "-----------------------------------------------"
+        echo -e "\033[31m注意：\033[0m如在vps运行，还需在vps安全策略对相关端口同时放行"
+        [ -n "$fw_wan_ports" ] &&
+            echo -e "当前手动放行端口：\033[36m$fw_wan_ports\033[0m"
+        [ -n "$vms_port$sss_port" ] &&
+            echo -e "当前自动放行端口：\033[36m$vms_port $sss_port\033[0m"
+        echo -e "默认拦截端口：\033[33m$dns_port,$mix_port,$db_port\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 启用/关闭公网防火墙:	\033[36m$fw_wan\033[0m"
+        echo -e " 2 添加放行端口(可包含默认拦截端口)"
+        echo -e " 3 移除指定手动放行端口"
+        echo -e " 4 清空全部手动放行端口"
+        echo -e " 0 返回上级菜单"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case $num in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$fw_wan" = ON ]; then
+                read -p "确认关闭防火墙？这会带来极大的安全隐患！(1/0) > " res
+                [ "$res" = 1 ] && fw_wan=OFF || fw_wan=ON
+            else
+                fw_wan=ON
+            fi
+            setconfig fw_wan "$fw_wan"
+            ;;
+        2)
+            port_count=$(echo "$fw_wan_ports" | awk -F',' '{print NF}')
+            if [ "$port_count" -ge 10 ]; then
+                echo -e "\033[31m最多支持设置放行10个端口，请先减少一些！\033[0m"
+            else
+                read -p "请输入要放行的端口号 > " port
+                if echo ",$fw_wan_ports," | grep -q ",$port,"; then
+                    echo -e "\033[31m输入错误！请勿重复添加！\033[0m"
+                elif [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+                    echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
+                else
+                    fw_wan_ports=$(echo "$fw_wan_ports,$port" | sed "s/^,//")
+                    setconfig fw_wan_ports "$fw_wan_ports"
+                fi
+            fi
+            sleep 1
+            ;;
+        3)
+            read -p "请输入要移除的端口号 > " port
+            if echo ",$fw_wan_ports," | grep -q ",$port,"; then
+                if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+                    echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
+                else
+                    fw_wan_ports=$(echo ",$fw_wan_ports," | sed "s/,$port//; s/^,//; s/,$//")
+                    setconfig fw_wan_ports "$fw_wan_ports"
+                fi
+            else
+                echo -e "\033[31m输入错误！请输入已添加过的端口！\033[0m"
+            fi
+            sleep 1
+            ;;
+        4)
+            fw_wan_ports=''
+            setconfig fw_wan_ports
+            sleep 1
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
+
 #tg_BOT相关
 set_bot_tg_config(){
 	setconfig TG_TOKEN "$TOKEN" "$GT_CFG_PATH"
