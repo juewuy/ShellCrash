@@ -218,13 +218,13 @@ jobs:
             chmod +x ./tmp/singbox-linux-${arch}.upx
             case "${arch}" in
               armv5|mips* )
-                ./upx-3.94-amd64_linux/upx --no-lzma ./tmp/clash-linux-${arch}.upx
+                ./upx-3.94-amd64_linux/upx --no-lzma ./tmp/singbox-linux-${arch}.upx
               ;;
               armv7|386)
-                ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/clash-linux-${arch}.upx
+                ./upx-3.96-amd64_linux/upx --no-lzma ./tmp/singbox-linux-${arch}.upx
               ;;
               *)
-                ./upx-5.1.0-amd64_linux/upx ./tmp/clash-linux-${arch}.upx
+                ./upx-5.1.0-amd64_linux/upx ./tmp/singbox-linux-${arch}.upx
               ;;
             esac
           done
