@@ -9,9 +9,9 @@ __IS_MODULE_5_TASK_LOADED=1
 . "$CRASHDIR"/libs/set_cron.sh
 #任务工具
 set_cron(){
-	[ -z $week ] && week=*
-	[ -z $hour ] && hour=*
-	[ -z $min ] && min=0
+	[ -z "$week" ] && week=*
+	[ -z "$hour" ] && hour=*
+	[ -z "$min" ] && min=0
 	echo "-----------------------------------------------"
 	echo -e "\033[33m$cron_time\033[0m执行任务:\033[36m$task_name\033[0m"
 	read -p  "是否确认添加定时任务？(1/0) > " res
@@ -26,14 +26,14 @@ set_cron(){
 set_service(){
 	# 参数1代表要任务类型,参数2代表任务ID,参数3代表任务描述,参数4代表running任务cron时间
 	task_file="$CRASHDIR"/task/$1
-	[ -s $task_file ] && sed -i "/$3/d" $task_file
+	[ -s "$task_file" ] && sed -i "/$3/d" "$task_file"
 	 #运行时每分钟执行的任务特殊处理
 	if [ "$1" = "running" ];then
 		task_txt="$4 $CRASHDIR/task/task.sh $2 $3"
-		echo "$task_txt" >> $task_file
+		echo "$task_txt" >> "$task_file"
 		[ -n "$(pidof CrashCore)" ] && cronset "$3" "$task_txt"
 	else
-		echo "$CRASHDIR/task/task.sh $2 $3" >> $task_file
+		echo "$CRASHDIR/task/task.sh $2 $3" >> "$task_file"
 	fi
 	echo -e "任务【$3】\033[32m添加成功！\033[0m"
 	sleep 1
@@ -259,14 +259,14 @@ task_manager() {
                 if [ "$task_id" = 0 ]; then
                     read -p "旧版任务不支持管理，是否移除?(1/0) > " res
                     [ "$res" = 1 ] && {
-                        cronname=$(echo $task_txt | awk -F '-' '{print $2}')
-                        croncmd -l >$TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
+                        cronname=$(echo "$task_txt" | awk -F '-' '{print $2}')
+                        croncmd -l >"$TMPDIR"/conf && sed -i "/$cronname/d" "$TMPDIR"/conf && croncmd $TMPDIR/conf
                         sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
-                        rm -f $TMPDIR/conf
+                        rm -f "$TMPDIR"/conf
                     }
                     break
                 else
-                    task_des=$(echo $task_txt | awk '{print $2}')
+                    task_des=$(echo "$task_txt" | awk '{print $2}')
                     task_name=$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $3}')
                     echo "-----------------------------------------------"
                     echo -e "当前任务为：\033[36m $task_des\033[0m"
@@ -282,14 +282,14 @@ task_manager() {
                         return 0
                         ;;
                     1)
-                        task_type && task_del $task_des
+                        task_type && task_del "$task_des"
                         ;;
                     2)
-                        task_del $task_des
+                        task_del "$task_des"
                         ;;
                     3)
                         task_command=$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $2}')
-                        eval $task_command && task_res='执行成功！' || task_res='执行失败！'
+                        eval "$task_command" && task_res='执行成功！' || task_res='执行失败！'
                         echo -e "\033[33m任务【$task_des】$task_res\033[0m"
                         sleep 1
                         ;;
