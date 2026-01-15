@@ -87,7 +87,7 @@ stop)
     else
         stop_firewall #清理路由策略
     fi
-    PID=$(pidof CrashCore) && [ -n "$PID" ] && ckcmd killall && killall CrashCore 2>/dev/null
+    killall CrashCore 2>/dev/null
     #清理缓存目录
     rm -rf "$TMPDIR"/CrashCore
     ;;
