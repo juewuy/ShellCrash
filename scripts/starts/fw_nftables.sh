@@ -1,8 +1,8 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-RESERVED_IP=$(echo $reserve_ipv4 | sed 's/ /, /g')
-RESERVED_IP6=$(echo "$reserve_ipv6 $host_ipv6" | sed 's/ /, /g')
+RESERVED_IP=$(echo $reserve_ipv4 | sed 's/[[:space:]]\+/, /g')
+RESERVED_IP6=$(echo "$reserve_ipv6 $host_ipv6" | sed 's/[[:space:]]\+/, /g')
 
 add_ip6_route(){
 	#过滤保留地址及本机地址
@@ -22,9 +22,9 @@ add_ip6_route(){
 start_nft_route() { #nftables-route通用工具
     #$1:name  $2:hook(prerouting/output)  $3:type(nat/mangle/filter)  $4:priority(-100/-150)
     [ "$common_ports" = "ON" ] && PORTS=$(echo $multiport | sed 's/,/, /g')
-	[ "$1" = 'prerouting' ] && HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
-    [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
-    [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
+	[ "$1" = 'prerouting' ] && HOST_IP=$(echo $host_ipv4 | sed 's/[[:space:]]\+/, /g')
+    [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/[[:space:]]\+/, /g')"
+    [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/[[:space:]]\+/, /g')"
     #添加新链
     nft add chain inet shellcrash $1 { type $3 hook $2 priority $4 \; }
     [ "$1" = 'prerouting_vm' ] && nft add rule inet shellcrash $1 ip saddr != {$HOST_IP} return #仅代理虚拟机流量
@@ -83,10 +83,10 @@ start_nft_route() { #nftables-route通用工具
 	}
     #局域网ipv6支持
     if [ "$ipv6_redir" = "ON" -a "$1" = 'prerouting' -a "$firewall_area" != 5 ]; then
-		HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
+		HOST_IP6=$(echo $host_ipv6 | sed 's/[[:space:]]\+/, /g')
         add_ip6_route "$1"
     elif [ "$ipv6_redir" = "ON" -a "$1" = 'output' -a \( "$firewall_area" = 2 -o "$firewall_area" = 3 \) ]; then
-        HOST_IP6="::1, $(echo $host_ipv6 | sed 's/ /, /g')"
+        HOST_IP6="::1, $(echo $host_ipv6 | sed 's/[[:space:]]\+/, /g')"
 		add_ip6_route "$1"
     else
         nft add rule inet shellcrash $1 meta nfproto ipv6 return
@@ -105,11 +105,11 @@ start_nft_route() { #nftables-route通用工具
 }
 start_nft_dns() { #nftables-dns
 	[ "$1" = 'prerouting' ] && {
-		HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
-		HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
+		HOST_IP=$(echo $host_ipv4 | sed 's/[[:space:]]\+/, /g')
+		HOST_IP6=$(echo $host_ipv6 | sed 's/[[:space:]]\+/, /g')
 	}
-    [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/ /, /g')"
-    [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/ /, /g')"
+    [ "$1" = 'output' ] && HOST_IP="127.0.0.0/8, $(echo $local_ipv4 | sed 's/[[:space:]]\+/, /g')"
+    [ "$1" = 'prerouting_vm' ] && HOST_IP="$(echo $vm_ipv4 | sed 's/[[:space:]]\+/, /g')"
     nft add chain inet shellcrash "$1"_dns { type nat hook $2 priority -100 \; }
     #过滤非dns请求
     nft add rule inet shellcrash "$1"_dns udp dport != 53 return
@@ -133,8 +133,8 @@ start_nft_dns() { #nftables-dns
     nft add rule inet shellcrash "$1"_dns tcp dport 53 redirect to "$dns_redir_port"
 }
 start_nft_wan() { #nftables公网防火墙
-	HOST_IP=$(echo $host_ipv4 | sed 's/ /, /g')
-	HOST_IP6=$(echo $host_ipv6 | sed 's/ /, /g')
+	HOST_IP=$(echo $host_ipv4 | sed 's/[[:space:]]\+/, /g')
+	HOST_IP6=$(echo $host_ipv6 | sed 's/[[:space:]]\+/, /g')
     nft add chain inet shellcrash input { type filter hook input priority -100 \; }
     nft add rule inet shellcrash input iif lo accept #本机请求全放行
 	#端口放行
