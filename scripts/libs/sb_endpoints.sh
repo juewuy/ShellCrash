@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-[ "$ts_service" = ON ] && {
+[ "$ts_service" = ON ] && grep -q '"tailscale"' "$CRASHDIR"/jsons/endpoints.json && {
 	[ "$ts_subnet" = true ] && {
 		. "$CRASHDIR"/starts/fw_getlanip.sh && getlanip
 		advertise_routes=$(echo "$host_ipv4"|sed 's/[[:space:]]\+/", "/g; s/^/"/; s/$/"/')
@@ -26,7 +26,7 @@
 EOF
 }
 
-[ "$wg_service" = ON ] && {
+[ "$wg_service" = ON ] && grep -q '"wireguard"' "$CRASHDIR"/jsons/endpoints.json && {
 	[ -n "$wg_ipv6" ] && wg_ipv6_add=", \"$wg_ipv6\""
 	cat >"$TMPDIR"/jsons/wireguard.json <<EOF
 {

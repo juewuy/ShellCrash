@@ -103,7 +103,7 @@ if echo "$crashcore" | grep -q 'singbox'; then
 	if [ "$disoverride" != "1" ];then
 		. "$CRASHDIR"/starts/singbox_modify.sh && modify_json
 	else
-		ln -sf "$core_config" "$TMPDIR"/configs/config.json
+		ln -sf "$core_config" "$TMPDIR"/jsons/config.json
 	fi
 else
 	. "$CRASHDIR"/starts/clash_check.sh && clash_check
