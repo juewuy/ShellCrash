@@ -35,7 +35,7 @@ start_core() {
         [ "$crashcore" = singboxr ] && coretype=singbox
         [ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
 
-        . "$CRASHDIR/menus/6_core_config.sh" && gen_${coretype}_providers
+        . "$CRASHDIR/menus/6_core_config.sh" && gen_"${coretype}"_providers
 
     elif [ -s "$core_config" ] || [ -n "$Url" ] || [ -n "$Https" ]; then
         "$CRASHDIR/start.sh" start
