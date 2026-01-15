@@ -667,7 +667,7 @@ if [ "$USER" != "root" ] && [ -z "$systype" ]; then
     done
 fi
 
-if [ -n "$(echo "$url" | grep master)" ]; then
+if echo "$url" | grep -q 'master'; then
     setversion
 fi
 
