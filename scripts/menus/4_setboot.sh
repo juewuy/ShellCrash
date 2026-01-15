@@ -84,7 +84,7 @@ setboot() {
             case "$sec" in
             [0-9] | [0-9][0-9] | [0-2][0-9][0-9] | 300)
                 start_delay=$sec
-                setconfig start_delay $sec
+                setconfig start_delay "$sec"
                 echo -e "\033[32m设置成功！\033[0m"
                 ;;
             *)
