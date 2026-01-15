@@ -484,63 +484,67 @@ set_shadowsocks(){
 	*) errornum ;;
 	esac		
 }
-#自定义端点
-set_tailscale(){
-	[ -n "$ts_auth_key" ] && ts_auth_key_info='*********'
-	echo "-----------------------------------------------"
-	echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译Tailscale模块\n如需使用请先前往自定义内核更新完整版内核文件！"
-	echo -e "创建秘钥:\033[32;4mhttps://login.tailscale.com/admin/settings/keys\033[0m"
-	echo -e "访问非本机目标需允许通告:\033[32;4mhttps://login.tailscale.com\033[0m"
-	echo -e "访问非本机目标需在终端设置使用Subnet或EXIT-NODE模式"
-	echo "-----------------------------------------------"
-	echo -e " 1 \033[32m启用/关闭\033[0mTailscale服务	\033[32m$ts_service\033[0m"
-	echo -e " 2 设置\033[36m秘钥\033[0m(Auth Key)		$ts_auth_key_info"
-	echo -e " 3 通告路由\033[33m内网地址\033[0m(Subnet)	\033[36m$ts_subnet\033[0m"
-	echo -e " 4 通告路由\033[31m全部流量\033[0m(EXIT-NODE)	\033[36m$ts_exit_node\033[0m"
-	echo -e " 5 设置\033[36m设备名称\033[0m(可选)		$ts_hostname"
-	echo -e " 0 返回上级菜单 \033[0m"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
-		if [ -n "$ts_auth_key" ];then
-			[ "$ts_service" = ON ] && ts_service=OFF || ts_service=ON
-			setconfig ts_service "$ts_service"
-		else
-			echo -e "\033[31m请先设置秘钥！\033[0m"
-			sleep 1
-		fi
-		set_tailscale
-	;;
-	2)
-		read -p "请输入秘钥(输入0删除) > " text
-		[ "$text" = 0 ] && unset ts_auth_key ts_auth_key_info || ts_auth_key="$text"
-		setconfig ts_auth_key "$ts_auth_key" "$GT_CFG_PATH"
-		set_tailscale
-	;;
-	3)
-		[ "$ts_subnet" = true ] && ts_subnet=false || ts_subnet=true
-		setconfig ts_subnet "$ts_subnet" "$GT_CFG_PATH"
-		set_tailscale
-	;;
-	4)
-		[ "$ts_exit_node" = true ] && ts_exit_node=false || {
-			ts_exit_node=true
-			echo -e "\033[31m注意：\033[0m目前exitnode的官方DNS有bug，要么启用域名嗅探并禁用TailscaleDNS，\n要么必须在网页设置Globalname servers为分配的本设备子网IP且启用override"
-			sleep 3
-		}
-		setconfig ts_exit_node "$ts_exit_node" "$GT_CFG_PATH"
-		set_tailscale
-	;;
-	5)
-		read -p "请输入希望在Tailscale显示的设备名称 > " ts_hostname
-		setconfig ts_hostname "$ts_hostname" "$GT_CFG_PATH"
-		set_tailscale
-	;;
-	*) errornum ;;
-	esac		
+
+# 自定义端点
+set_tailscale() {
+    while true; do
+        [ -n "$ts_auth_key" ] && ts_auth_key_info='*********'
+        echo "-----------------------------------------------"
+        echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译Tailscale模块\n如需使用请先前往自定义内核更新完整版内核文件！"
+        echo -e "创建秘钥:\033[32;4mhttps://login.tailscale.com/admin/settings/keys\033[0m"
+        echo -e "访问非本机目标需允许通告:\033[32;4mhttps://login.tailscale.com\033[0m"
+        echo -e "访问非本机目标需在终端设置使用Subnet或EXIT-NODE模式"
+        echo "-----------------------------------------------"
+        echo -e " 1 \033[32m启用/关闭\033[0mTailscale服务	\033[32m$ts_service\033[0m"
+        echo -e " 2 设置\033[36m秘钥\033[0m(Auth Key)		$ts_auth_key_info"
+        echo -e " 3 通告路由\033[33m内网地址\033[0m(Subnet)	\033[36m$ts_subnet\033[0m"
+        echo -e " 4 通告路由\033[31m全部流量\033[0m(EXIT-NODE)	\033[36m$ts_exit_node\033[0m"
+        echo -e " 5 设置\033[36m设备名称\033[0m(可选)		$ts_hostname"
+        echo -e " 0 返回上级菜单 \033[0m"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ -n "$ts_auth_key" ]; then
+                [ "$ts_service" = ON ] && ts_service=OFF || ts_service=ON
+                setconfig ts_service "$ts_service"
+            else
+                echo -e "\033[31m请先设置秘钥！\033[0m"
+                sleep 1
+            fi
+            ;;
+        2)
+            read -p "请输入秘钥(输入0删除) > " text
+            [ "$text" = 0 ] && unset ts_auth_key ts_auth_key_info || ts_auth_key="$text"
+            setconfig ts_auth_key "$ts_auth_key" "$GT_CFG_PATH"
+            ;;
+        3)
+            [ "$ts_subnet" = true ] && ts_subnet=false || ts_subnet=true
+            setconfig ts_subnet "$ts_subnet" "$GT_CFG_PATH"
+            ;;
+        4)
+            [ "$ts_exit_node" = true ] && ts_exit_node=false || {
+                ts_exit_node=true
+                echo -e "\033[31m注意：\033[0m目前exitnode的官方DNS有bug，要么启用域名嗅探并禁用TailscaleDNS，\n要么必须在网页设置Globalname servers为分配的本设备子网IP且启用override"
+                sleep 3
+            }
+            setconfig ts_exit_node "$ts_exit_node" "$GT_CFG_PATH"
+            ;;
+        5)
+            read -p "请输入希望在Tailscale显示的设备名称 > " ts_hostname
+            setconfig ts_hostname "$ts_hostname" "$GT_CFG_PATH"
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
+
 set_wireguard(){
 	[ -n "$wg_public_key" ] && wgp_key_info='*********' || unset wgp_key_info
 	[ -n "$wg_private_key" ] && wgv_key_info='*********' || unset wgv_key_info
