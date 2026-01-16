@@ -6,11 +6,12 @@ crondir="$(crond -h 2>&1 | grep -oE 'Default:.*' | awk -F ":" '{print $2}')"
 tmpcron="$TMPDIR"/cron_tmp
 
 croncmd() { #定时任务工具
-	if [ -w "$crondir" ] && [ -n "$USER" ];then
+	if [ -n "$(crontab -h 2>&1 | grep '\-l')" ]; then
+        crontab "$1"
+	elif [ -w "$crondir" ] && [ -n "$USER" ];then
 		[ "$1" = "-l" ] && cat "$crondir"/"$USER" 2>/dev/null
 		[ -f "$1" ] && cat "$1" >"$crondir"/"$USER"
-	elif [ -n "$(crontab -h 2>&1 | grep '\-l')" ]; then
-        crontab "$1"
+		killall -HUP crond 2>/dev/null
 	else
 		echo "找不到可用的crond或者crontab应用！No available crond or crontab application can be found!"
 	fi
