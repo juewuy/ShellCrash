@@ -498,7 +498,6 @@ log_pusher() {
 
 #测试菜单
 testcommand(){
-	echo "$crashcore" | grep -q 'singbox' && config_path=${JSONSDIR}/config.json || config_path=${YAMLSDIR}/config.yaml
 	echo "-----------------------------------------------"
 	echo -e "\033[30;47m这里是测试命令菜单\033[0m"
 	echo -e "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
@@ -585,8 +584,9 @@ testcommand(){
 		exit;
 	    ;;
 	5)
+        echo "$crashcore" | grep -q 'singbox' && config_path="$CRASHDIR"/jsons/config.json || config_path="$CRASHDIR"/yamls/config.yaml
 		echo "-----------------------------------------------"
-		sed -n '1,40p' ${config_path}
+        sed -n '1,40p' "$config_path"
 		echo "-----------------------------------------------"
 		exit;
 		;;
