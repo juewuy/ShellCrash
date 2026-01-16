@@ -1,0 +1,101 @@
+# =================================================
+# Settings main menu
+# =================================================
+SET_MENU_TITLE="欢迎使用功能设置菜单："
+SET_MENU_REDIR="路由模式设置"
+SET_MENU_DNS="DNS设置"
+SET_MENU_FW_FILTER="透明路由流量过滤"
+SET_MENU_SKIP_CERT="跳过证书验证"
+SET_MENU_SNIFFER="启用域名嗅探"
+SET_MENU_ADV_PORT="自定义端口及密钥"
+SET_MENU_IPV6="IPv6设置"
+SET_MENU_RESET="重置/备份/还原脚本设置"
+
+# =================================================
+# Main menu messages
+# =================================================
+SET_WARN_NONROOT="非root用户可能无法正确配置其他模式，是否继续？"
+SET_SKIP_CERT_ON="已开启跳过本地证书验证！"
+SET_SKIP_CERT_OFF="已关闭跳过本地证书验证！"
+
+SET_SNIFFER_CORE_SWITCH="已自动切换至Meta内核（域名嗅探需要）"
+SET_SNIFFER_LOCKED="当前内核与DNS模式组合下，域名嗅探无法关闭！"
+
+SET_CORE_RUNNING="检测到服务正在运行，需要先停止服务！"
+SET_CORE_STOP_CONFIRM="是否停止服务？"
+
+# =================================================
+# Backup / Restore / Reset
+# =================================================
+SET_BACKUP="备份脚本设置"
+SET_RESTORE="还原脚本设置"
+SET_RESET="重置脚本设置"
+
+SET_BACKUP_OK="脚本设置已备份！"
+SET_RESTORE_OK="脚本设置已还原！（被覆盖配置已备份）"
+SET_RESET_OK="脚本设置已重置！（旧配置已备份）"
+SET_BACKUP_MISS="未找到备份文件，请先备份！"
+SET_NEED_RESTART="请重新启动脚本以生效！"
+
+# =================================================
+# Redir mode
+# =================================================
+SET_REDIR_DEFAULT="Redir模式"
+SET_REDIR_CURRENT="当前路由模式为："
+SET_CORE_CURRENT="ShellCrash 核心为："
+SET_REDIR_RESTART_HINT="切换模式后需要手动重启服务以生效！"
+
+SET_REDIR_APPLIED="已设为"
+
+SET_REDIR_REDIR="Redir模式"
+SET_REDIR_MIX="混合模式"
+SET_REDIR_TPROXY="Tproxy模式"
+SET_REDIR_TUN="Tun模式"
+
+SET_REDIR_REDIRDES="Redir转发TCP，不转发UDP"
+SET_REDIR_MIXDES="Redir转发TCP，Tun转发UDP"
+SET_REDIR_TPROXYDES="Tproxy转发TCP&UDP"
+SET_REDIR_TUNDES="Tun转发TCP&UDP(占用高不推荐)"
+
+SET_NO_TUN="设备未检测到Tun内核模块，请安装相关依赖或选择其他模式！"
+
+# =================================================
+# Firewall / VM
+# =================================================
+SET_FW_AREA="设置路由劫持范围"
+SET_VM_REDIR="容器/虚拟机劫持"
+SET_FW_SWITCH="切换防火墙应用"
+
+SET_FW_AREA_DESC="仅局域网 仅本机 局域网+本机 纯净模式 旁路转发"
+
+FW_AREA_NOTE="如你使用了第三方DNS如smartdns等，请勿启用本机劫持或使用shellcrash用户执行！"
+FW_AREA_LAN="仅劫持局域网流量"
+FW_AREA_LOCAL="仅劫持本机流量"
+FW_AREA_BOTH="劫持局域网 + 本机流量"
+FW_AREA_NONE="不配置流量劫持（纯净模式）"
+
+VM_DETECT_DESC="默认的容器/虚拟机网段为："
+VM_ENABLE_AUTO="启用劫持并使用自动检测的网段"
+VM_ENABLE_MANUAL="启用劫持并手动指定网段"
+VM_DISABLE="禁用劫持"
+VM_INPUT_INFO="多个网段请用空格连接，可使用【ip route】命令查看，例如："
+VM_INPUT_NET="请输入自定义网段"
+
+# =================================================
+# Advanced config
+# =================================================
+ADV_HTTP_PORT="修改HTTP/SOCKS5端口"
+ADV_HTTP_AUTH="设置HTTP/SOCKS5认证"
+ADV_REDIR_PORT="修改Redir/Tproxy端口"
+ADV_DNS_PORT="修改DNS监听端口"
+ADV_PANEL_PORT="修改面板访问端口"
+ADV_PANEL_PASS="设置面板访问密码"
+ADV_PANEL_PASS_INPUT="请输入面板访问密码（输入0删除）"
+ADV_HOST="自定义本机 Host 地址"
+ADV_TABLE="自定义路由表"
+
+# =================================================
+# IPv6
+# =================================================
+IPV6_REDIR="IPv6透明路由（劫持IPv6流量）"
+IPV6_DNS="IPv6-DNS解析（是否返回IPv6地址）"

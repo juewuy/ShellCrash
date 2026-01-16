@@ -1,0 +1,101 @@
+# =================================================
+# Settings main menu
+# =================================================
+SET_MENU_TITLE="Welcome to the Function Settings Menu:"
+SET_MENU_REDIR="Routing Mode"
+SET_MENU_DNS="DNS Settings"
+SET_MENU_FW_FILTER="Transparent Routing Traffic Filter"
+SET_MENU_SKIP_CERT="Skip Certificate Verification"
+SET_MENU_SNIFFER="Enable Domain Sniffing"
+SET_MENU_ADV_PORT="Custom Ports and Secrets"
+SET_MENU_IPV6="IPv6 Settings"
+SET_MENU_RESET="Reset / Backup / Restore Script Settings"
+
+# =================================================
+# Main menu messages
+# =================================================
+SET_WARN_NONROOT="Non-root users may not be able to configure some modes correctly. Continue anyway?"
+SET_SKIP_CERT_ON="Skipping local certificate verification is now ENABLED!"
+SET_SKIP_CERT_OFF="Skipping local certificate verification is now DISABLED!"
+
+SET_SNIFFER_CORE_SWITCH="Automatically switched to Meta core (required for domain sniffing)"
+SET_SNIFFER_LOCKED="Domain sniffing cannot be disabled with the current core and DNS mode combination!"
+
+SET_CORE_RUNNING="Service is currently running and must be stopped first!"
+SET_CORE_STOP_CONFIRM="Do you want to stop the service?"
+
+# =================================================
+# Backup / Restore / Reset
+# =================================================
+SET_BACKUP="Backup Script Settings"
+SET_RESTORE="Restore Script Settings"
+SET_RESET="Reset Script Settings"
+
+SET_BACKUP_OK="Script settings have been backed up!"
+SET_RESTORE_OK="Script settings have been restored! (Overwritten config has been backed up)"
+SET_RESET_OK="Script settings have been reset! (Old config has been backed up)"
+SET_BACKUP_MISS="Backup file not found. Please back up first!"
+SET_NEED_RESTART="Please restart the script for changes to take effect!"
+
+# =================================================
+# Redir mode
+# =================================================
+SET_REDIR_DEFAULT="Redir Mode"
+SET_REDIR_CURRENT="Current routing mode:"
+SET_CORE_CURRENT="ShellCrash core:"
+SET_REDIR_RESTART_HINT="You must manually restart the service for the change to take effect!"
+
+SET_REDIR_APPLIED="Routing mode set to"
+
+SET_REDIR_REDIR="Redir Mode"
+SET_REDIR_MIX="Mixed Mode"
+SET_REDIR_TPROXY="Tproxy Mode"
+SET_REDIR_TUN="Tun Mode"
+
+SET_REDIR_REDIRDES="Redirect TCP traffic only (no UDP)"
+SET_REDIR_MIXDES="Redirect TCP via Redir, UDP via Tun"
+SET_REDIR_TPROXYDES="Tproxy forwards both TCP UDP"
+SET_REDIR_TUNDES="Tun forwards both TCP UDP (high resource usage)"
+
+SET_NO_TUN="Tun kernel module not detected. Please install required dependencies or select another mode!"
+
+# =================================================
+# Firewall / VM
+# =================================================
+SET_FW_AREA="Set Routing Hijack Scope"
+SET_VM_REDIR="Container / VM Hijacking"
+SET_FW_SWITCH="Switch Firewall Backend"
+
+SET_FW_AREA_DESC="LAN Only Local Only LAN+Local Pure Mode Bypass Forwarding"
+
+FW_AREA_NOTE="If you are using a third-party DNS like SmartDNS, \ndo not enable local hijacking or run the service as a ShellCrash user"
+FW_AREA_LAN="Hijack LAN traffic only"
+FW_AREA_LOCAL="Hijack local device traffic only"
+FW_AREA_BOTH="Hijack both LAN and local device traffic"
+FW_AREA_NONE="Do not hijack traffic (Pure mode)"
+
+VM_DETECT_DESC="Default Container/VM Subnet:"
+VM_ENABLE_AUTO="Enable hijacking using automatically detected subnets"
+VM_ENABLE_MANUAL="Enable hijacking and manually specify subnets"
+VM_DISABLE="Disable hijacking"
+VM_INPUT_INFO="Separate multiple segments with spaces. Check your configuration using ip route. Example:"
+VM_INPUT_NET="Please enter cust subnets"
+
+# =================================================
+# Advanced config
+# =================================================
+ADV_HTTP_PORT="Change HTTP / SOCKS5 Port"
+ADV_HTTP_AUTH="Set HTTP / SOCKS5 Authentication"
+ADV_REDIR_PORT="Change Redir / Tproxy Ports"
+ADV_DNS_PORT="Change DNS Listening Port"
+ADV_PANEL_PORT="Change Web Panel Port"
+ADV_PANEL_PASS="Set Web Panel Password"
+ADV_PANEL_PASS_INPUT="Enter web panel password (enter 0 to remove)"
+ADV_HOST="Custom Local Host Address"
+ADV_TABLE="Custom Routing Table"
+
+# =================================================
+# IPv6
+# =================================================
+IPV6_REDIR="IPv6 Transparent Routing (Hijack IPv6 Traffic)"
+IPV6_DNS="IPv6 DNS Resolution (Return IPv6 addresses)"

@@ -1,0 +1,5 @@
+
+COMMON_INPUT="Please enter a number"
+COMMON_BACK="Back"
+COMMON_SUCCESS="Successfully set!"
+COMMON_UNSET="Not set"
