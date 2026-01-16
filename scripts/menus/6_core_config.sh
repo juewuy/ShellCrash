@@ -7,138 +7,159 @@ __IS_MODULE_6_CORECONFIG_LOADED=1
 YAMLSDIR="$CRASHDIR"/yamls
 JSONSDIR="$CRASHDIR"/jsons
 
-#导入订阅、配置文件相关
-setrules(){ #自定义规则
-	set_rule_type(){
-		echo "-----------------------------------------------"
-		echo -e "\033[33m请选择规则类型\033[0m"
-		echo $rule_type | awk -F ' ' '{for(i=1;i<=NF;i++){print i" "$i}}'
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0) ;;
-		[0-9]*)
-			if [ $num -gt $(echo $rule_type | awk -F " " '{print NF}') ];then
-				errornum
-			else
-				rule_type_set=$(echo $rule_type|cut -d' ' -f$num)
-				echo "-----------------------------------------------"
-				echo -e "\033[33m请输入规则语句，可以是域名、泛域名、IP网段或者其他匹配规则类型的内容\033[0m"
-				read -p "请输入对应规则 > " rule_state_set
-				[ -n "$rule_state_set" ] && set_group_type || errornum
-			fi
-		;;
-		*)
-			errornum
-		;;
-		esac
-	}
-	set_group_type(){
-		echo "-----------------------------------------------"
-		echo -e "\033[36m请选择具体规则\033[0m"
-		echo -e "\033[33m此处规则读取自现有配置文件，如果你后续更换配置文件时运行出错，请尝试重新添加\033[0m"
-		echo $rule_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0) ;;
-		[0-9]*)
-			if [ $num -gt $(echo $rule_group | awk -F "#" '{print NF}') ];then
-				errornum
-			else
-				rule_group_set=$(echo $rule_group|cut -d'#' -f$num)
-				rule_all="- ${rule_type_set},${rule_state_set},${rule_group_set}"
-				[ -n "$(echo IP-CIDR SRC-IP-CIDR IP-CIDR6|grep "$rule_type_set")" ] && rule_all="${rule_all},no-resolve"
-				echo "$rule_all" >> "$YAMLSDIR"/rules.yaml
-				echo "-----------------------------------------------"
-				echo -e "\033[32m添加成功！\033[0m"
-			fi
-		;;
-		*)
-			errornum
-		;;
-		esac
-	}
-	del_rule_type(){
-		echo -e "输入对应数字即可移除相应规则:"
-		sed -i '/^ *$/d; /^#/d' "$YAMLSDIR"/rules.yaml
-		cat "$YAMLSDIR"/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
-		echo "-----------------------------------------------"
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字 > " num
-		case "$num" in
-		0)	;;
-		'')	;;
-		*)
-			if [ "$num" -le "$(wc -l < "$YAMLSDIR"/rules.yaml)" ];then
-				sed -i "${num}d" "$YAMLSDIR"/rules.yaml
-				sleep 1
-				del_rule_type
-			else
-				errornum
-			fi
-		;;
-		esac
-	}
-	get_rule_group(){
-		. "$CRASHDIR"/libs/web_save.sh
-		get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector|URLTest|LoadBalance"' | grep -aoE '"name":.*"now":".*",' | awk -F '"' '{print "#"$4}' | tr -d '\n'
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
-	echo -e "如需批量操作，请手动编辑：\033[36m $YAMLSDIR/rules.yaml\033[0m"
-	echo -e "\033[33msingbox和clash共用此处规则，可无缝切换！\033[0m"
-	echo -e "大量规则请尽量使用rule-set功能添加，\033[31m此处过量添加可能导致启动卡顿！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 新增自定义规则"
-	echo -e " 2 移除自定义规则"
-	echo -e " 3 清空规则列表"
-	echo "$crashcore" | grep -q 'singbox' || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN PROCESS-NAME"
-		rule_group="DIRECT#REJECT$(get_rule_group)"
-		set_rule_type
-		setrules
-	;;
-	2)
-		echo "-----------------------------------------------"
-		if [ -s "$YAMLSDIR"/rules.yaml ];then
-			del_rule_type
-		else
-			echo -e "请先添加自定义规则！"
-			sleep 1
-		fi
-		setrules
-	;;
-	3)
-		read -p "确认清空全部自定义规则？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' "$YAMLSDIR"/rules.yaml
-		setrules
-	;;
-	4)
-		echo "-----------------------------------------------"
-		if [ "$proxies_bypass" = "OFF" ];then
-			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
-			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
-			read -p "启用节点绕过？(1/0) > " res
-			[ "$res" = "1" ] && proxies_bypass=ON
-		else
-			proxies_bypass=OFF
-		fi
-		setconfig proxies_bypass $proxies_bypass
-		sleep 1
-		setrules
-	;;
-	*)
-		errornum
-	;;
-	esac
+# 导入订阅、配置文件相关
+# 自定义规则
+setrules() {
+
+    set_rule_type() {
+        echo "-----------------------------------------------"
+        echo -e "\033[33m请选择规则类型\033[0m"
+        echo "$rule_type" | awk -F ' ' '{for(i=1;i<=NF;i++){print i" "$i}}'
+        echo -e " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0) ;;
+        [0-9]*)
+            if [ "$num" -gt $(echo $rule_type | awk -F " " '{print NF}') ]; then
+                errornum
+                sleep 1
+            else
+                rule_type_set=$(echo "$rule_type" | cut -d' ' -f"$num")
+                echo "-----------------------------------------------"
+                echo -e "\033[33m请输入规则语句，可以是域名、泛域名、IP网段或者其他匹配规则类型的内容\033[0m"
+                read -p "请输入对应规则 > " rule_state_set
+                if [ -n "$rule_state_set" ]; then
+                    set_group_type
+                else
+                    errornum
+                    slepp 1
+                fi
+            fi
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    }
+
+    set_group_type() {
+        echo "-----------------------------------------------"
+        echo -e "\033[36m请选择具体规则\033[0m"
+        echo -e "\033[33m此处规则读取自现有配置文件，如果你后续更换配置文件时运行出错，请尝试重新添加\033[0m"
+        echo "$rule_group" | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+        echo -e " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0) ;;
+        [0-9]*)
+            if [ "$num" -gt "$(echo "$rule_group" | awk -F "#" '{print NF}')" ]; then
+                errornum
+                sleep 1
+            else
+                rule_group_set=$(echo "$rule_group" | cut -d'#' -f"$num")
+                rule_all="- ${rule_type_set},${rule_state_set},${rule_group_set}"
+                echo "IP-CIDR SRC-IP-CIDR IP-CIDR6" | grep -q -- "$rule_type_set" && rule_all="${rule_all},no-resolve"
+
+                echo "$rule_all" >>"$YAMLSDIR"/rules.yaml
+                echo "-----------------------------------------------"
+                echo -e "\033[32m添加成功！\033[0m"
+            fi
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    }
+
+    del_rule_type() {
+        while true; do
+            echo -e "输入对应数字即可移除相应规则:"
+            sed -i '/^ *$/d; /^#/d' "$YAMLSDIR"/rules.yaml
+            cat "$YAMLSDIR"/rules.yaml | grep -Ev '^#' | awk -F "#" '{print " "NR" "$1$2$3}'
+            echo "-----------------------------------------------"
+            echo -e " 0 返回上级菜单"
+            read -p "请输入对应数字 > " num
+            case "$num" in
+            "" | 0)
+                break
+                ;;
+            *)
+                if [ "$num" -le "$(wc -l <"$YAMLSDIR"/rules.yaml)" ]; then
+                    sed -i "${num}d" "$YAMLSDIR"/rules.yaml
+                    sleep 1
+                else
+                    errornum
+                    sleep 1
+                    break
+                fi
+                ;;
+            esac
+        done
+    }
+
+    get_rule_group() {
+        . "$CRASHDIR"/libs/web_save.sh
+        get_save http://127.0.0.1:${db_port}/proxies | sed 's/:{/!/g' | awk -F '!' '{for(i=1;i<=NF;i++) print $i}' | grep -aE '"Selector|URLTest|LoadBalance"' | grep -aoE '"name":.*"now":".*",' | awk -F '"' '{print "#"$4}' | tr -d '\n'
+    }
+
+    while true; do
+        echo "-----------------------------------------------"
+        echo -e "\033[33m你可以在这里快捷管理自定义规则\033[0m"
+        echo -e "如需批量操作，请手动编辑：\033[36m $YAMLSDIR/rules.yaml\033[0m"
+        echo -e "\033[33msingbox和clash共用此处规则，可无缝切换！\033[0m"
+        echo -e "大量规则请尽量使用rule-set功能添加，\033[31m此处过量添加可能导致启动卡顿！\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 新增自定义规则"
+        echo -e " 2 移除自定义规则"
+        echo -e " 3 清空规则列表"
+        echo "$crashcore" | grep -q 'singbox' || echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
+        echo -e " 0 返回上级菜单"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            rule_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN PROCESS-NAME"
+            rule_group="DIRECT#REJECT$(get_rule_group)"
+            set_rule_type
+            ;;
+        2)
+            echo "-----------------------------------------------"
+            if [ -s "$YAMLSDIR"/rules.yaml ]; then
+                del_rule_type
+            else
+                echo -e "请先添加自定义规则！"
+                sleep 1
+            fi
+            ;;
+        3)
+            read -p "确认清空全部自定义规则？(1/0) > " res
+            [ "$res" = "1" ] && sed -i '/^\s*[^#]/d' "$YAMLSDIR"/rules.yaml
+            ;;
+        4)
+            echo "-----------------------------------------------"
+            if [ "$proxies_bypass" = "OFF" ]; then
+                echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
+                echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
+                read -p "启用节点绕过？(1/0) > " res
+                [ "$res" = "1" ] && proxies_bypass=ON
+            else
+                proxies_bypass=OFF
+            fi
+            setconfig proxies_bypass "$proxies_bypass"
+            sleep 1
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
+
 setgroups(){ #自定义clash策略组
 	set_group_type(){
 		echo "-----------------------------------------------"
