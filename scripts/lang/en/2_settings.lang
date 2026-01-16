@@ -66,7 +66,7 @@ SET_FW_AREA="Set Routing Hijack Scope"
 SET_VM_REDIR="Container / VM Hijacking"
 SET_FW_SWITCH="Switch Firewall Backend"
 
-SET_FW_AREA_DESC="LAN Only Local Only LAN+Local Pure Mode Bypass Forwarding"
+SET_FW_AREA_DESC="LAN only|Local only|LAN&Local|Pure mode|Bypass:"
 
 FW_AREA_NOTE="If you are using a third-party DNS like SmartDNS, \ndo not enable local hijacking or run the service as a ShellCrash user"
 FW_AREA_LAN="Hijack LAN traffic only"

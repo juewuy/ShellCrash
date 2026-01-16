@@ -143,7 +143,7 @@ set_redir_mod() {
         [ -z "$firewall_area" ] && firewall_area=1
         [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
         [ -z "$redir_mod" ] && redir_mod='纯净模式'
-        firewall_area_dsc=$(echo "仅局域网 仅本机 局域网+本机 纯净模式 主-旁转发($bypass_host)" | cut -d' ' -f$firewall_area)
+        firewall_area_dsc=$(echo "$SET_FW_AREA_DESC($bypass_host)" | cut -d'|' -f$firewall_area)
         echo "-----------------------------------------------"
         echo -e "$SET_REDIR_CURRENT \033[47;30m$redir_mod\033[0m ; $SET_CORE_CURRENT \033[47;30m$crashcore\033[0m"
         echo -e "\033[33m$SET_REDIR_RESTART_HINT\033[0m"

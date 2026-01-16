@@ -66,7 +66,7 @@ SET_FW_AREA="设置路由劫持范围"
 SET_VM_REDIR="容器/虚拟机劫持"
 SET_FW_SWITCH="切换防火墙应用"
 
-SET_FW_AREA_DESC="仅局域网 仅本机 局域网+本机 纯净模式 旁路转发"
+SET_FW_AREA_DESC="仅局域网|仅本机|局域网+本机|纯净模式|旁路转发"
 
 FW_AREA_NOTE="如你使用了第三方DNS如smartdns等，请勿启用本机劫持或使用shellcrash用户执行！"
 FW_AREA_LAN="仅劫持局域网流量"
