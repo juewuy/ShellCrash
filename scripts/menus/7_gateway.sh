@@ -83,7 +83,7 @@ set_fw_wan() {
 	echo -e "当前手动放行端口：\033[36m$fw_wan_ports\033[0m"
 	[ -n "$vms_port$sss_port" ] && 
 	echo -e "当前自动放行端口：\033[36m$vms_port $sss_port\033[0m"
-	echo -e "默认拦截端口：\033[33m$dns_port,$mix_port,$db_port\033[0m"
+	echo -e "默认拦截端口：\033[33m$mix_port,$db_port\033[0m"
 	echo "-----------------------------------------------"
 	echo -e " 1 启用/关闭公网防火墙:	\033[36m$fw_wan\033[0m"
 	echo -e " 2 添加放行端口(可包含默认拦截端口)"
