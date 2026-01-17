@@ -170,7 +170,7 @@ start_iptables() { #iptables配置总入口
     #启动公网访问防火墙
     [ "$fw_wan" != OFF ] && start_ipt_wan
     #分模式设置流量劫持
-    [ "$redir_mod" = "Redir模式" -o "$redir_mod" = "混合模式" ] && {
+    [ "$redir_mod" = "Redir" -o "$redir_mod" = "Mix" ] && {
         JUMP="REDIRECT --to-ports $redir_port" #跳转劫持的具体命令
         [ "$lan_proxy" = true ] && {
             start_ipt_route iptables nat PREROUTING shellcrash tcp #ipv4-局域网tcp转发
@@ -193,7 +193,7 @@ start_iptables() { #iptables配置总入口
             }
         }
     }
-    [ "$redir_mod" = "Tproxy模式" ] && {
+    [ "$redir_mod" = "Tproxy" ] && {
         modprobe xt_TPROXY >/dev/null 2>&1
         JUMP="TPROXY --on-port $tproxy_port --tproxy-mark $fwmark" #跳转劫持的具体命令
         if $iptable -j TPROXY -h 2>/dev/null | grep -q '\--on-port'; then
@@ -230,14 +230,14 @@ start_iptables() { #iptables配置总入口
             fi
         }
     }
-    [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" -o "$redir_mod" = "T&U旁路转发" -o "$redir_mod" = "TCP旁路转发" ] && {
+    [ "$redir_mod" = "Tun" -o "$redir_mod" = "Mix" -o "$redir_mod" = "T&U旁路转发" -o "$redir_mod" = "TCP旁路转发" ] && {
         JUMP="MARK --set-mark $fwmark" #跳转劫持的具体命令
-        [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "T&U旁路转发" ] && protocol=all
-        [ "$redir_mod" = "混合模式" ] && protocol=udp
+        [ "$redir_mod" = "Tun" -o "$redir_mod" = "T&U旁路转发" ] && protocol=all
+        [ "$redir_mod" = "Mix" ] && protocol=udp
         [ "$redir_mod" = "TCP旁路转发" ] && protocol=tcp
         if $iptable -j MARK -h 2>/dev/null | grep -q '\--set-mark'; then
             [ "$lan_proxy" = true ] && {
-                [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && $iptable -I FORWARD -o utun -j ACCEPT
+                [ "$redir_mod" = "Tun" -o "$redir_mod" = "Mix" ] && $iptable -I FORWARD -o utun -j ACCEPT
                 start_ipt_route iptables mangle PREROUTING shellcrash_mark $protocol
             }
             [ "$local_proxy" = true ] && start_ipt_route iptables mangle OUTPUT shellcrash_mark_out $protocol
@@ -247,7 +247,7 @@ start_iptables() { #iptables配置总入口
         [ "$ipv6_redir" = "ON" ] && [ "$crashcore" != clashpre ] && {
             if $ip6table -j MARK -h 2>/dev/null | grep -q '\--set-mark'; then
                 [ "$lan_proxy" = true ] && {
-                    [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && $ip6table -I FORWARD -o utun -j ACCEPT
+                    [ "$redir_mod" = "Tun" -o "$redir_mod" = "Mix" ] && $ip6table -I FORWARD -o utun -j ACCEPT
                     start_ipt_route ip6tables mangle PREROUTING shellcrashv6_mark $protocol
                 }
                 [ "$local_proxy" = true ] && start_ipt_route ip6tables mangle OUTPUT shellcrashv6_mark_out $protocol
@@ -275,16 +275,16 @@ start_iptables() { #iptables配置总入口
         [ "$local_proxy" = true ] && start_ipt_dns iptables OUTPUT shellcrash_dns_out #ipv4-本机dns转发
     }
     #屏蔽QUIC
-    [ "$quic_rj" = 'ON' -a "$lan_proxy" = true -a "$redir_mod" != "Redir模式" ] && {
+    [ "$quic_rj" = 'ON' -a "$lan_proxy" = true -a "$redir_mod" != "Redir" ] && {
         [ "$dns_mod" != "fake-ip" -a "$cn_ip_route" = "ON" ] && {
             set_cn_ip='-m set ! --match-set cn_ip dst'
             set_cn_ip6='-m set ! --match-set cn_ip6 dst'
         }
-        [ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
+        [ "$redir_mod" = "Tun" -o "$redir_mod" = "Mix" ] && {
             $iptable -I FORWARD -p udp --dport 443 -o utun $set_cn_ip -j REJECT >/dev/null 2>&1
             $ip6table -I FORWARD -p udp --dport 443 -o utun $set_cn_ip6 -j REJECT >/dev/null 2>&1
         }
-        [ "$redir_mod" = "Tproxy模式" ] && {
+        [ "$redir_mod" = "Tproxy" ] && {
             $iptable -I INPUT -p udp --dport 443 $set_cn_ip -j REJECT >/dev/null 2>&1
             $ip6table -I INPUT -p udp --dport 443 $set_cn_ip6 -j REJECT >/dev/null 2>&1
         }

@@ -57,7 +57,9 @@ SET_REDIR_MIXDES="Redirect TCP via Redir, UDP via Tun"
 SET_REDIR_TPROXYDES="Tproxy forwards both TCP UDP"
 SET_REDIR_TUNDES="Tun forwards both TCP UDP (high resource usage)"
 
-SET_NO_TUN="Tun kernel module not detected. Please install required dependencies or select another mode!"
+SET_NO_MOD="The kernel module not detected："
+SET_NO_MOD2="Please install required dependencies or select another mode!"
+XIAOMI_QOS="Xiaomi QoS service conflicts with the current mode. Disable related features?"
 
 # =================================================
 # Firewall / VM
@@ -73,6 +75,9 @@ FW_AREA_LAN="Hijack LAN traffic only"
 FW_AREA_LOCAL="Hijack local device traffic only"
 FW_AREA_BOTH="Hijack both LAN and local device traffic"
 FW_AREA_NONE="Do not hijack traffic (Pure mode)"
+FW_NO_NFTABLES="nftables is not installed, or the version is too old (< 1.0.2). Unable to switch!"
+FW_NO_IPTABLES="iptables is not installed. Unable to switch!"
+FW_NO_FIREWALL_BACKEND="No available firewall backend detected (iptables / nftables). Unable to switch!"
 
 VM_DETECT_DESC="Default Container/VM Subnet:"
 VM_ENABLE_AUTO="Enable hijacking using automatically detected subnets"
@@ -80,7 +85,11 @@ VM_ENABLE_MANUAL="Enable hijacking and manually specify subnets"
 VM_DISABLE="Disable hijacking"
 VM_INPUT_INFO="Separate multiple segments with spaces. Check your configuration using ip route. Example:"
 VM_INPUT_NET="Please enter cust subnets"
+VM_NO_NET_DETECTED="No container or VM subnet detected. Please start the container first, or configure the subnet manually!"
+VM_INPUT_DESC="Multiple subnets should be separated by spaces. You can check them using the 'ip route' command, for example:"
 
+#inputport
+INPUT_PORT="Input port"
 # =================================================
 # Advanced config
 # =================================================
@@ -93,7 +102,23 @@ ADV_PANEL_PASS="Set Web Panel Password"
 ADV_PANEL_PASS_INPUT="Enter web panel password (enter 0 to remove)"
 ADV_HOST="Custom Local Host Address"
 ADV_TABLE="Custom Routing Table"
-
+# Advanced auth
+ADV_AUTH_FORMAT_DESC="Format must be \033[32musername:password\033[0m, separated by a colon!"
+ADV_AUTH_WARN="Avoid using special characters to prevent unexpected issues!"
+ADV_AUTH_REMOVE_HINT="Enter 0 to remove authentication"
+ADV_AUTH_INPUT="Please enter HTTP / SOCKS5 username and password"
+ADV_AUTH_REMOVED="Authentication information has been removed!"
+ADV_AUTH_ENV_CONFLICT="Please disable local hijacking or switch to enhanced mode first!"
+ADV_AUTH_INVALID="Invalid input format. Please try again!"
+# Host
+ADV_HOST_WARN_LAN="If your LAN subnet is not 192.168.x / 172.16.x / 10.x, you must modify it!"
+ADV_HOST_WARN_CHANGE="If the local host address changes after setting, please update it again!"
+ADV_HOST_INPUT="Please enter a custom host address (enter 0 to remove)"
+ADV_HOST_REMOVED="Custom host address removed. Please rerun the script to auto-detect!"
+ADV_HOST_INVALID="Invalid input. Please check carefully!"
+# Routing table
+ADV_TABLE_WARN="Only required when routing table conflicts occur in Tproxy, Tun, or Mixed mode!"
+ADV_TABLE_INPUT="Please enter the routing table ID (do not modify unless necessary, recommended 102-125)"
 # =================================================
 # IPv6
 # =================================================

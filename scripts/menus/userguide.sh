@@ -20,12 +20,12 @@ forwhat() {
         case "$num" in
         "" | 1)
             # 设置运行模式
-            redir_mod="混合模式"
+            redir_mod="Mix"
             echo "$cputype" | grep -Eq 'linux.*mips.*' && {
                 if grep -qE '^TPROXY$' /proc/net/ip_tables_targets || modprobe xt_TPROXY >/dev/null 2>&1; then
-                    redir_mod="Tproxy模式"
+                    redir_mod="Tproxy"
                 else
-                    redir_mod="Redir模式"
+                    redir_mod="Redir"
                 fi
             }
 
@@ -67,7 +67,7 @@ forwhat() {
             break
             ;;
         2)
-            setconfig redir_mod "Redir模式"
+            setconfig redir_mod "Redir"
             echo "$cputype" | grep -Eq "linux.*mips.*" && setconfig crashcore "clash"
             setconfig common_ports "OFF"
             setconfig firewall_area '2'

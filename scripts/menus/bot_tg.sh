@@ -160,7 +160,7 @@ download_file(){
 }
 ### --- 具体操作函数 --- ###
 do_start_fw(){
-	[ -z "$redir_mod_bf" ] && redir_mod_bf='Redir模式'
+	[ -z "$redir_mod_bf" ] && redir_mod_bf='Redir'
 	redir_mod=$redir_mod_bf
 	setconfig redir_mod $redir_mod
 	"$CRASHDIR"/start.sh start_firewall
@@ -168,8 +168,8 @@ do_start_fw(){
 }
 do_stop_fw(){
 	redir_mod_bf=$redir_mod
-	redir_mod='纯净模式'
-	setconfig redir_mod $redir_mod
+	firewall_area=4
+	setconfig firewall_area 4
 	"$CRASHDIR"/start.sh stop_firewall
     echo "ShellCrash 已切换到纯净模式！" > "$LOGFILE"
 }
@@ -238,7 +238,7 @@ polling(){
 		[ -n "$FILE_ID" ] && download_file
 		[ -n "$CALLBACK" ] && case "$CALLBACK" in
 			"start_redir")
-				if [ "$redir_mod" = '纯净模式' ];then
+				if [ "$firewall_area" = 4 ];then
 					do_start_fw
 					send_msg  "已切换到$redir_mod_bf！"
 				else
@@ -248,7 +248,7 @@ polling(){
 				continue
 			;;
 			"stop_redir")
-				if [ "$redir_mod" != '纯净模式' ];then
+				if [ "$firewall_area" != 4 ];then
 					do_stop_fw
 					send_msg  "已切换到纯净模式"
 				else

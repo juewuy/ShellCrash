@@ -5,8 +5,8 @@ clash_check() { #clash启动前检查
     #检测是否存在高级版规则或者tun模式
     if [ "$crashcore" = "clash" ]; then
         [ -n "$(cat $core_config | grep -aiE '^script:|proxy-providers|rule-providers|rule-set')" ] ||
-            [ "$redir_mod" = "混合模式" ] ||
-            [ "$redir_mod" = "Tun模式" ] && core_exchange meta '当前内核不支持的配置'
+            [ "$redir_mod" = "Mix" ] ||
+            [ "$redir_mod" = "Tun" ] && core_exchange meta '当前内核不支持的配置'
     fi
     [ "$crashcore" = "clash" ] && [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep '0:7890' /etc/passwd)" ] &&
         core_exchange meta '当前内核不支持非root用户启用本机代理'

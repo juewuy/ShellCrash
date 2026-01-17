@@ -267,7 +267,7 @@ EOF
 		. "$CRASHDIR"/configs/gateway.cfg
 		. "$CRASHDIR"/libs/sb_inbounds.sh
 	}
-    if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
+    if [ "$redir_mod" = "Mix" -o "$redir_mod" = "Tun" ]; then
         [ "ipv6_redir" = 'ON' ] && ipv6_address='"fe80::e5c5:2469:d09b:609a/64",'
         cat >>"$TMPDIR"/jsons/tun.json <<EOF
 {

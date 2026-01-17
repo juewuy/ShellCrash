@@ -57,7 +57,9 @@ SET_REDIR_MIXDES="Redir转发TCP，Tun转发UDP"
 SET_REDIR_TPROXYDES="Tproxy转发TCP&UDP"
 SET_REDIR_TUNDES="Tun转发TCP&UDP(占用高不推荐)"
 
-SET_NO_TUN="设备未检测到Tun内核模块，请安装相关依赖或选择其他模式！"
+SET_NO_MOD="设备未检测到内核模块："
+SET_NO_MOD2="请尝试其他模式或者安装相关依赖！"
+XIAOMI_QOS="小米设备的 QoS 服务与当前模式冲突，是否禁用相关功能？"
 
 # =================================================
 # Firewall / VM
@@ -73,6 +75,9 @@ FW_AREA_LAN="仅劫持局域网流量"
 FW_AREA_LOCAL="仅劫持本机流量"
 FW_AREA_BOTH="劫持局域网 + 本机流量"
 FW_AREA_NONE="不配置流量劫持（纯净模式）"
+FW_NO_NFTABLES="当前设备未安装 nftables，或 nftables 版本过低（< 1.0.2），无法切换！"
+FW_NO_IPTABLES="当前设备未安装 iptables，无法切换！"
+FW_NO_FIREWALL_BACKEND="检测不到可用的防火墙应用（iptables / nftables），无法切换！"
 
 VM_DETECT_DESC="默认的容器/虚拟机网段为："
 VM_ENABLE_AUTO="启用劫持并使用自动检测的网段"
@@ -80,7 +85,11 @@ VM_ENABLE_MANUAL="启用劫持并手动指定网段"
 VM_DISABLE="禁用劫持"
 VM_INPUT_INFO="多个网段请用空格连接，可使用【ip route】命令查看，例如："
 VM_INPUT_NET="请输入自定义网段"
+VM_NO_NET_DETECTED="未检测到容器或虚拟机网段，请先运行容器后再运行脚本，或选择手动设置网段！"
+VM_INPUT_DESC="多个网段请使用空格分隔，可通过【ip route】命令查看，例如："
 
+#inputport
+INPUT_PORT="请输入端口号"
 # =================================================
 # Advanced config
 # =================================================
@@ -93,6 +102,23 @@ ADV_PANEL_PASS="设置面板访问密码"
 ADV_PANEL_PASS_INPUT="请输入面板访问密码（输入0删除）"
 ADV_HOST="自定义本机 Host 地址"
 ADV_TABLE="自定义路由表"
+# Advanced auth
+ADV_AUTH_FORMAT_DESC="格式必须为 \033[32m用户名:密码\033[0m，请使用英文冒号分隔！"
+ADV_AUTH_WARN="请尽量不要使用特殊符号，以避免产生未知错误！"
+ADV_AUTH_REMOVE_HINT="输入 0 可删除认证信息"
+ADV_AUTH_INPUT="请输入 HTTP / SOCKS5 用户名及密码"
+ADV_AUTH_REMOVED="认证信息已移除！"
+ADV_AUTH_ENV_CONFLICT="请先禁用本机劫持功能或使用增强模式！"
+ADV_AUTH_INVALID="输入格式错误，请重新输入！"
+# Host
+ADV_HOST_WARN_LAN="如果你的局域网网段不是 192.168.x / 172.16.x / 10.x，请务必修改！"
+ADV_HOST_WARN_CHANGE="设置后如本机 Host 地址发生变化，请务必重新修改！"
+ADV_HOST_INPUT="请输入自定义 Host 地址（输入 0 移除）"
+ADV_HOST_REMOVED="自定义 Host 地址已移除，请重新运行脚本以自动获取！"
+ADV_HOST_INVALID="输入错误，请仔细核对！"
+# Routing table
+ADV_TABLE_WARN="仅当 Tproxy / Tun / 混合模式下路由表发生冲突时才需要设置！"
+ADV_TABLE_INPUT="请输入路由表编号（不清楚请勿修改，建议 102-125）"
 
 # =================================================
 # IPv6

@@ -6,7 +6,7 @@ modify_yaml() {
     ##########需要变更的配置###########
     [ "$ipv6_dns" != "OFF" ] && dns_v6='true' || dns_v6='false'
     external="external-controller: 0.0.0.0:$db_port"
-    if [ "$redir_mod" = "混合模式" -o "$redir_mod" = "Tun模式" ]; then
+    if [ "$redir_mod" = "Mix" -o "$redir_mod" = "Tun" ]; then
         [ "$crashcore" = 'meta' ] && tun_meta=', device: utun, auto-route: false, auto-detect-interface: false'
         tun="tun: {enable: true, stack: system$tun_meta}"
     else
@@ -15,7 +15,7 @@ modify_yaml() {
     exper='experimental: {ignore-resolve-fail: true, interface-name: en0}'
     #Meta内核专属配置
     [ "$crashcore" = 'meta' ] && {
-        [ "$redir_mod" != "纯净模式" ] && [ -z "$(grep 'PROCESS' "$CRASHDIR"/yamls/*.yaml)" ] && find_process='find-process-mode: "off"'
+        [ -z "$(grep 'PROCESS' "$CRASHDIR"/yamls/*.yaml)" ] && find_process='find-process-mode: "off"'
 		#ecs优化
 		[ "$ecs_subnet" = ON ] && {
 			. "$CRASHDIR"/libs/get_ecsip.sh

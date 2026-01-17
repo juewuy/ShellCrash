@@ -11,7 +11,7 @@ startover() {
     echo -e "\033[32m$START_SERVICE_OK\033[0m"
     echo -e "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m $START_WEB_HINT2"
 
-    if [ "$redir_mod" = "纯净模式" ]; then
+    if [ "$firewall_area" = 4 ]; then
         echo "-----------------------------------------------"
         echo -e "$START_PAC_HINT \033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
         echo -e "$START_PROXY_HINT IP{\033[36m$host\033[0m} Port{\033[36m$mix_port\033[0m}"

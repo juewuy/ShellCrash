@@ -18,7 +18,7 @@
 . "$CRASHDIR"/starts/check_geo.sh
 . "$CRASHDIR"/starts/check_core.sh
 #缺省值
-[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
+[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir'
 [ -z "$dns_mod" ] && dns_mod='redir_host'
 [ -z "$redir_mod" ] && firewall_area='4'
 routing_mark=$((fwmark + 2))
@@ -135,7 +135,7 @@ fi
 	fi
 }
 #加载系统内核组件
-[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && ckcmd modprobe && modprobe tun 2>/dev/null
+[ "$redir_mod" = "Tun" -o "$redir_mod" = "Mix" ] && ckcmd modprobe && modprobe tun 2>/dev/null
 #清理debug日志
 rm -rf /tmp/ShellCrash/debug.log
 rm -rf "$CRASHDIR"/debug.log

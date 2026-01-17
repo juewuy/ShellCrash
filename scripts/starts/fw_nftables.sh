@@ -96,7 +96,7 @@ start_nft_route() { #nftables-route通用工具
     #添加通用路由
     nft add rule inet shellcrash "$1" "$JUMP"
     #处理特殊路由
-    [ "$redir_mod" = "混合模式" ] && {
+    [ "$redir_mod" = "Mix" ] && {
         nft add rule inet shellcrash $1 meta l4proto tcp mark set $((fwmark + 1))
         nft add chain inet shellcrash "$1"_mixtcp { type nat hook $2 priority -100 \; }
         nft add rule inet shellcrash "$1"_mixtcp mark $((fwmark + 1)) meta l4proto tcp redirect to $redir_port
@@ -168,12 +168,12 @@ start_nftables() { #nftables配置总入口
         [ "$local_proxy" = true ] && start_nft_dns output output       #本机dns转发
     }
     #分模式设置流量劫持
-    [ "$redir_mod" = "Redir模式" ] && {
+    [ "$redir_mod" = "Redir" ] && {
         JUMP="meta l4proto tcp redirect to $redir_port" #跳转劫持的具体命令
         [ "$lan_proxy" = true ] && start_nft_route prerouting prerouting nat -100
         [ "$local_proxy" = true ] && start_nft_route output output nat -100
     }
-    [ "$redir_mod" = "Tproxy模式" ] && (modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy) && {
+    [ "$redir_mod" = "Tproxy" ] && (modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy) && {
         JUMP="meta l4proto {tcp, udp} mark set $fwmark tproxy to :$tproxy_port" #跳转劫持的具体命令
         [ "$lan_proxy" = true ] && start_nft_route prerouting prerouting filter -150
         [ "$local_proxy" = true ] && {
@@ -184,8 +184,8 @@ start_nftables() { #nftables配置总入口
         }
     }
     [ "$tun_statu" = true ] && {
-        [ "$redir_mod" = "Tun模式" ] && JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
-        [ "$redir_mod" = "混合模式" ] && JUMP="meta l4proto udp mark set $fwmark"         #跳转劫持的具体命令
+        [ "$redir_mod" = "Tun" ] && JUMP="meta l4proto {tcp, udp} mark set $fwmark" #跳转劫持的具体命令
+        [ "$redir_mod" = "Mix" ] && JUMP="meta l4proto udp mark set $fwmark"         #跳转劫持的具体命令
         [ "$lan_proxy" = true ] && {
             start_nft_route prerouting prerouting filter -150
             #放行流量

@@ -2,4 +2,5 @@
 COMMON_INPUT="Please enter a number"
 COMMON_BACK="Back"
 COMMON_SUCCESS="Successfully set!"
+COMMON_FAILED="Setup failed!"
 COMMON_UNSET="Not set"

@@ -8,14 +8,14 @@
 [ -z "$common_ports" ] && common_ports='ON'
 [ -z "$multiport" ] && multiport='22,80,443,8080,8443'
 [ "$common_ports" = "ON" ] && ports="-m multiport --dports $multiport"
-[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir模式'
+[ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir'
 [ -z "$dns_mod" ] && dns_mod='redir_host'
 [ -z "$redir_mod" ] && firewall_area='4'
 
 #设置策略路由
 [ "$firewall_area" != 4 ] && {
-	[ "$redir_mod" = "Tproxy模式" ] && ip route add local default dev lo table $table 2>/dev/null
-	[ "$redir_mod" = "Tun模式" -o "$redir_mod" = "混合模式" ] && {
+	[ "$redir_mod" = "Tproxy" ] && ip route add local default dev lo table $table 2>/dev/null
+	[ "$redir_mod" = "Tun" -o "$redir_mod" = "Mix" ] && {
 		i=1
 		while [ -z "$(ip route list | grep utun)" -a "$i" -le 29 ]; do
 			sleep 1
@@ -28,13 +28,13 @@
 		fi
 	}
 	[ "$firewall_area" = 5 ] && ip route add default via $bypass_host table $table 2>/dev/null
-	[ "$redir_mod" != "Redir模式" ] && ip rule add fwmark $fwmark table $table 2>/dev/null
+	[ "$redir_mod" != "Redir" ] && ip rule add fwmark $fwmark table $table 2>/dev/null
 }
 #添加ipv6路由
 [ "$ipv6_redir" = "ON" -a "$firewall_area" -le 3 ] && {
-	[ "$redir_mod" = "Tproxy模式" ] && ip -6 route add local default dev lo table $((table + 1)) 2>/dev/null
+	[ "$redir_mod" = "Tproxy" ] && ip -6 route add local default dev lo table $((table + 1)) 2>/dev/null
 	[ -n "$(ip route list | grep utun)" ] && ip -6 route add default dev utun table $((table + 1)) 2>/dev/null
-	[ "$redir_mod" != "Redir模式" ] && ip -6 rule add fwmark $fwmark table $((table + 1)) 2>/dev/null
+	[ "$redir_mod" != "Redir" ] && ip -6 rule add fwmark $fwmark table $((table + 1)) 2>/dev/null
 }
 #判断代理用途
 [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && local_proxy=true
