@@ -16,7 +16,7 @@ forwhat() {
         echo -e " 2 \033[36mLinux设备仅配置本机代理\033[0m"
         [ -f "$CFG_PATH.bak" ] && echo -e " 3 \033[33m还原之前备份的设置\033[0m"
         echo "-----------------------------------------------"
-        read -pr "请输入对应数字 > " num
+        read -r -p "请输入对应数字 > " num
         case "$num" in
         "" | 1)
             # 设置运行模式
@@ -55,7 +55,7 @@ forwhat() {
             if [ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ]; then
                 echo "-----------------------------------------------"
                 echo -e "\033[33m检测到你的设备尚未开启ip转发，局域网设备将无法正常连接网络，是否立即开启？\033[0m"
-                read -pr "是否开启？(1/0) > " res
+                read -r -p "是否开启？(1/0) > " res
                 [ "$res" = 1 ] && {
                     echo 'net.ipv4.ip_forward = 1' >>/etc/sysctl.conf
                     sysctl -w net.ipv4.ip_forward=1
@@ -100,7 +100,7 @@ userguide() {
         echo -e "\033[0m开启后核心及数据库文件将被下载到内存中，这将占用一部分内存空间\033[0m"
         echo -e "\033[0m每次开机后首次运行服务时都会自动的重新下载相关文件\033[0m"
         echo "-----------------------------------------------"
-        read -pr "是否开启？(1/0) > " res
+        read -r -p "是否开启？(1/0) > " res
         [ "$res" = 1 ] && {
             BINDIR=/tmp/ShellCrash
             setconfig BINDIR /tmp/ShellCrash "$CRASHDIR"/configs/command.env
@@ -114,7 +114,7 @@ userguide() {
     if [ "$systype" = "mi_snapshot" ]; then
         echo "-----------------------------------------------"
         echo -e "\033[33m检测到为小米路由设备，启用软固化可防止路由升级后丢失SSH\033[0m"
-        read -pr "是否启用软固化功能？(1/0) > " res
+        read -r -p "是否启用软固化功能？(1/0) > " res
         [ "$res" = 1 ] && mi_autoSSH
     fi
 
@@ -124,7 +124,7 @@ userguide() {
         echo -e "\033[32m是否导入配置文件？\033[0m(这是运行前的最后一步)"
         echo -e "\033[0m你必须拥有一份配置文件才能运行服务！\033[0m"
         echo "-----------------------------------------------"
-        read -pr "现在开始导入？(1/0) > " res
+        read -r -p "现在开始导入？(1/0) > " res
         [ "$res" = 1 ] && inuserguide=1 && {
             . "$CRASHDIR"/menus/6_core_config.sh && set_core_config
             inuserguide=""
@@ -135,7 +135,7 @@ userguide() {
     echo "-----------------------------------------------"
     echo -e "\033[36m很好！现在只需要执行启动就可以愉快的使用了！\033[0m"
     echo "-----------------------------------------------"
-    read -pr "立即启动服务？(1/0) > " res
+    read -r -p "立即启动服务？(1/0) > " res
     [ "$res" = 1 ] && start_core && sleep 2
     return 0
 }

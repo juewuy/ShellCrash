@@ -204,7 +204,7 @@ set_bot_tg() {
         echo -e " 2 TG-BOT绑定设置	\033[32m$TG_CHATID_info\033[0m"
         echo -e " 0 返回上级菜单 \033[0m"
         echo "-----------------------------------------------"
-        read -pr "请输入对应数字 > " num
+        read -r -p "请输入对应数字 > " num
         case "$num" in
         "" | 0)
             break
@@ -220,7 +220,7 @@ set_bot_tg() {
             ;;
         2)
             if [ -n "$chat_ID" ] && [ -n "$push_TG" ] && [ "$push_TG" != 'publictoken' ]; then
-                read -pr "检测到已经绑定了TG推送BOT，是否直接使用？(1/0) > " res
+                read -r -p "检测到已经绑定了TG推送BOT，是否直接使用？(1/0) > " res
                 if [ "$res" = 1 ]; then
                     TOKEN="$push_TG"
                     set_bot_tg_config
@@ -485,7 +485,7 @@ set_shadowsocks(){
 		set_shadowsocks
 	;;
 	*) errornum ;;
-	esac		
+	esac
 }
 
 # 自定义端点
