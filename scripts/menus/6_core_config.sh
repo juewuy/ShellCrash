@@ -160,29 +160,31 @@ setrules() {
     done
 }
 
-setgroups(){ #自定义clash策略组
-	set_group_type(){
-		echo "-----------------------------------------------"
-		echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
-		echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m"
-		echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$YAMLSDIR/proxy-groups.yaml\033[0m"
-		read -p "请输入自定义策略组名称(不支持纯数字且不要包含特殊字符！) > " new_group_name
-		echo "-----------------------------------------------"
-		echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
-		echo $group_type_cn | awk '{for(i=1;i<=NF;i++){print i" "$i}}'
-		read -p "请输入对应数字 > " num
-		new_group_type=$(echo $group_type | awk '{print $'"$num"'}')
-		if [ "$num" = "1" ];then
-			unset new_group_url interval
-		else
-			read -p "请输入测速地址，回车则默认使用https://www.gstatic.com/generate_204 > " new_group_url
-			[ -z "$new_group_url" ] && new_group_url=https://www.gstatic.com/generate_204
-			new_group_url="url: '$new_group_url'"
-			interval="interval: 300"
-		fi
-		set_group_add
-		#添加自定义策略组
-		cat >> "$YAMLSDIR"/proxy-groups.yaml <<EOF
+# 自定义clash策略组
+setgroups() {
+    set_group_type() {
+        echo "-----------------------------------------------"
+        echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
+        echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m"
+        echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$YAMLSDIR/proxy-groups.yaml\033[0m"
+        read -pr "请输入自定义策略组名称(不支持纯数字且不要包含特殊字符！) > " new_group_name
+
+        echo "-----------------------------------------------"
+        echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
+        echo "$group_type_cn" | awk '{for(i=1;i<=NF;i++){print i" "$i}}'
+        read -pr "请输入对应数字 > " num
+        new_group_type=$(echo "$group_type" | awk '{print $'"$num"'}')
+        if [ "$num" = "1" ]; then
+            unset new_group_url interval
+        else
+            read -pr "请输入测速地址，回车则默认使用https://www.gstatic.com/generate_204 > " new_group_url
+            [ -z "$new_group_url" ] && new_group_url=https://www.gstatic.com/generate_204
+            new_group_url="url: '$new_group_url'"
+            interval="interval: 300"
+        fi
+        set_group_add
+        # 添加自定义策略组
+        cat >>"$YAMLSDIR"/proxy-groups.yaml <<EOF
   - name: $new_group_name
     type: $new_group_type
     $new_group_url
@@ -190,70 +192,75 @@ setgroups(){ #自定义clash策略组
     proxies:
      - DIRECT
 EOF
-		sed -i "/^ *$/d" "$YAMLSDIR"/proxy-groups.yaml
-		echo "-----------------------------------------------"
-		echo -e "\033[32m添加成功！\033[0m"
+        sed -i "/^ *$/d" "$YAMLSDIR"/proxy-groups.yaml
+        echo "-----------------------------------------------"
+        echo -e "\033[32m添加成功！\033[0m"
 
-	}
-	set_group_add(){
-		echo "-----------------------------------------------"
-		echo -e "\033[36m请选择想要将本策略添加到的策略组\033[0m"
-		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
-		echo "-----------------------------------------------"
-		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
-		echo "-----------------------------------------------"
-		echo -e " 0 跳过添加"
-		read -p "请输入对应数字(多个用空格隔开) > " char
-		case "$char" in
-		0) ;;
-		*)
-			for num in $char;do
-				rule_group_set=$(echo $proxy_group|cut -d'#' -f$num)
-				rule_group_add="${rule_group_add}#${rule_group_set}"
-			done
-			if [ -n "$rule_group_add" ];then
-				new_group_name="$new_group_name$rule_group_add"
-				unset rule_group_add
-			else
-				errornum
-			fi
-		;;
-		esac
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[33m你可以在这里快捷管理自定义策略组\033[0m"
-	echo -e "\033[36m如需修改或批量操作，请手动编辑：$YAMLSDIR/proxy-groups.yaml\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 添加自定义策略组"
-	echo -e " 2 查看自定义策略组"
-	echo -e " 3 清空自定义策略组"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		group_type="select url-test fallback load-balance"
-		group_type_cn="手动选择 自动选择 故障转移 负载均衡"
-		proxy_group="$(cat "$YAMLSDIR"/proxy-groups.yaml "$YAMLSDIR"/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
-		set_group_type
-		setgroups
-	;;
-	2)
-		echo "-----------------------------------------------"
-		cat "$YAMLSDIR"/proxy-groups.yaml
-		setgroups
-	;;
-	3)
-		read -p "确认清空全部自定义策略组？(1/0) > " res
-		[ "$res" = "1" ] && echo '#用于添加自定义策略组' > "$YAMLSDIR"/proxy-groups.yaml
-		setgroups
-	;;
-	*)
-		errornum
-	;;
-	esac
+    }
+
+    set_group_add() {
+        echo "-----------------------------------------------"
+        echo -e "\033[36m请选择想要将本策略添加到的策略组\033[0m"
+        echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
+        echo "-----------------------------------------------"
+        echo "$proxy_group" | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+        echo "-----------------------------------------------"
+        echo -e " 0 跳过添加"
+        read -pr "请输入对应数字(多个用空格隔开) > " char
+        case "$char" in
+        "" | 0) ;;
+        *)
+            for num in $char; do
+                rule_group_set=$(echo "$proxy_group" | cut -d'#' -f"$num")
+                rule_group_add="${rule_group_add}#${rule_group_set}"
+            done
+            if [ -n "$rule_group_add" ]; then
+                new_group_name="$new_group_name$rule_group_add"
+                unset rule_group_add
+            else
+                errornum
+                sleep 1
+            fi
+            ;;
+        esac
+    }
+
+    while true; do
+        echo "-----------------------------------------------"
+        echo -e "\033[33m你可以在这里快捷管理自定义策略组\033[0m"
+        echo -e "\033[36m如需修改或批量操作，请手动编辑：$YAMLSDIR/proxy-groups.yaml\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 添加自定义策略组"
+        echo -e " 2 查看自定义策略组"
+        echo -e " 3 清空自定义策略组"
+        echo -e " 0 返回上级菜单"
+        read -pr "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            group_type="select url-test fallback load-balance"
+            group_type_cn="手动选择 自动选择 故障转移 负载均衡"
+            proxy_group="$(cat "$YAMLSDIR"/proxy-groups.yaml "$YAMLSDIR"/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+            set_group_type
+            ;;
+        2)
+            echo "-----------------------------------------------"
+            cat "$YAMLSDIR"/proxy-groups.yaml
+            ;;
+        3)
+            read -p "确认清空全部自定义策略组？(1/0) > " res
+            [ "$res" = "1" ] && echo '#用于添加自定义策略组' >"$YAMLSDIR"/proxy-groups.yaml
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
+
 setproxies(){ #自定义clash节点
 	set_proxy_type(){
 		echo "-----------------------------------------------"
