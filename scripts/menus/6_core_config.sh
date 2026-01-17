@@ -167,17 +167,17 @@ setgroups() {
         echo -e "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m"
         echo -e "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m"
         echo -e "\033[33m如需在当前策略组下添加节点，请手动编辑$YAMLSDIR/proxy-groups.yaml\033[0m"
-        read -pr "请输入自定义策略组名称(不支持纯数字且不要包含特殊字符！) > " new_group_name
+        read -r -p "请输入自定义策略组名称(不支持纯数字且不要包含特殊字符！) > " new_group_name
 
         echo "-----------------------------------------------"
         echo -e "\033[32m请选择策略组【$new_group_name】的类型！\033[0m"
         echo "$group_type_cn" | awk '{for(i=1;i<=NF;i++){print i" "$i}}'
-        read -pr "请输入对应数字 > " num
+        read -r -p "请输入对应数字 > " num
         new_group_type=$(echo "$group_type" | awk '{print $'"$num"'}')
         if [ "$num" = "1" ]; then
             unset new_group_url interval
         else
-            read -pr "请输入测速地址，回车则默认使用https://www.gstatic.com/generate_204 > " new_group_url
+            read -r -p "请输入测速地址，回车则默认使用https://www.gstatic.com/generate_204 > " new_group_url
             [ -z "$new_group_url" ] && new_group_url=https://www.gstatic.com/generate_204
             new_group_url="url: '$new_group_url'"
             interval="interval: 300"
@@ -206,7 +206,7 @@ EOF
         echo "$proxy_group" | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
         echo "-----------------------------------------------"
         echo -e " 0 跳过添加"
-        read -pr "请输入对应数字(多个用空格隔开) > " char
+        read -r -p "请输入对应数字(多个用空格隔开) > " char
         case "$char" in
         "" | 0) ;;
         *)
@@ -234,7 +234,7 @@ EOF
         echo -e " 2 查看自定义策略组"
         echo -e " 3 清空自定义策略组"
         echo -e " 0 返回上级菜单"
-        read -pr "请输入对应数字 > " num
+        read -r -p "请输入对应数字 > " num
         case "$num" in
         "" | 0)
             break
@@ -268,7 +268,7 @@ setproxies() {
         echo -e "\033[33m注意节点格式必须是单行,不包括括号,name:必须写在最前,例如：\033[0m"
         echo -e "\033[36m【name: \"test\", server: 192.168.1.1, port: 12345, type: socks5, udp: true】\033[0m"
         echo -e "更多写法请参考：\033[32m https://juewuy.github.io/ \033[0m"
-        read -pr "请输入节点 > " proxy_state_set
+        read -r -p "请输入节点 > " proxy_state_set
         if echo "$proxy_state_set" | grep -q "#"; then
             echo -e "\033[33m绝对禁止包含【#】号！！！\033[0m"
         elif echo "$proxy_state_set" | grep -Eq "^name:"; then
@@ -288,7 +288,7 @@ setproxies() {
         echo "$proxy_group" | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
         echo "-----------------------------------------------"
         echo -e " 0 返回上级菜单"
-        read -pr "请输入对应数字(多个用空格隔开) > " char
+        read -r -p "请输入对应数字(多个用空格隔开) > " char
         case "$char" in
         "" | 0) ;;
         *)
@@ -319,7 +319,7 @@ setproxies() {
         echo -e " 3 清空自定义节点"
         echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
         echo -e " 0 返回上级菜单"
-        read -pr "请输入对应数字 > " num
+        read -r -p "请输入对应数字 > " num
         case "$num" in
         "" | 0)
             break
@@ -337,7 +337,7 @@ setproxies() {
                 cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
                 echo "-----------------------------------------------"
                 echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
-                read -pr "请输入对应数字 > " num
+                read -r -p "请输入对应数字 > " num
                 if [ "$num" -le $(cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | wc -l) ]; then
                     sed -i "$num{/^\s*[^#]/d}" "$YAMLSDIR"/proxies.yaml
                 else
@@ -349,7 +349,7 @@ setproxies() {
             fi
             ;;
         3)
-            read -pr "确认清空全部自定义节点？(1/0) > " res
+            read -r -p "确认清空全部自定义节点？(1/0) > " res
             [ "$res" = "1" ] && sed -i '/^\s*[^#]/d' "$YAMLSDIR"/proxies.yaml 2>/dev/null
             ;;
         4)
@@ -357,7 +357,7 @@ setproxies() {
             if [ "$proxies_bypass" = "OFF" ]; then
                 echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
                 echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
-                read -pr "启用节点绕过？(1/0) > " res
+                read -r -p "启用节点绕过？(1/0) > " res
                 [ "$res" = "1" ] && proxies_bypass=ON
             else
                 proxies_bypass=OFF
