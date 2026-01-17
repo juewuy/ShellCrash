@@ -261,112 +261,120 @@ EOF
     done
 }
 
-setproxies(){ #自定义clash节点
-	set_proxy_type(){
-		echo "-----------------------------------------------"
-		echo -e "\033[33m注意节点格式必须是单行,不包括括号,name:必须写在最前,例如：\033[0m"
-		echo -e "\033[36m【name: \"test\", server: 192.168.1.1, port: 12345, type: socks5, udp: true】\033[0m"
-		echo -e "更多写法请参考：\033[32m https://juewuy.github.io/ \033[0m"
-		read -p "请输入节点 > " proxy_state_set
-		if [ -n "$(echo $proxy_state_set | grep "#" )" ];then
-			echo -e "\033[33m绝对禁止包含【#】号！！！\033[0m"
-		elif [ -n "$(echo $proxy_state_set | grep -E "^name:" )" ];then
-			set_group_add
-		else
-			errornum
-		fi
-	}
-	set_group_add(){
-		echo "-----------------------------------------------"
-		echo -e "\033[36m请选择想要将节点添加到的策略组\033[0m"
-		echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
-		echo -e "\033[33m如需自定义策略组，请先使用【管理自定义策略组功能】添加\033[0m"
-		echo "-----------------------------------------------"
-		echo $proxy_group | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
-		echo "-----------------------------------------------"
-		echo -e " 0 返回上级菜单"
-		read -p "请输入对应数字(多个用空格隔开) > " char
-		case "$char" in
-		0) ;;
-		*)
-			for num in $char;do
-				rule_group_set=$(echo $proxy_group|cut -d'#' -f$num)
-				rule_group_add="${rule_group_add}#${rule_group_set}"
-			done
-			if [ -n "$rule_group_add" ];then
-				echo "- {$proxy_state_set}$rule_group_add" >> "$YAMLSDIR"/proxies.yaml
-				echo "-----------------------------------------------"
-				echo -e "\033[32m添加成功！\033[0m"
-				unset rule_group_add
-			else
-				errornum
-			fi
-		;;
-		esac
-	}
-	echo "-----------------------------------------------"
-	echo -e "\033[33m你可以在这里快捷管理自定义节点\033[0m"
-	echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/proxies.yaml\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 添加自定义节点"
-	echo -e " 2 管理自定义节点"
-	echo -e " 3 清空自定义节点"
-	echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0)
-	;;
-	1)
-		proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
-		proxy_group="$(cat "$YAMLSDIR"/proxy-groups.yaml "$YAMLSDIR"/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
-		set_proxy_type
-		setproxies
-	;;
-	2)
-		echo "-----------------------------------------------"
-		sed -i '/^ *$/d' "$YAMLSDIR"/proxies.yaml 2>/dev/null
-		if [ -s "$YAMLSDIR"/proxies.yaml ];then
-			echo -e "当前已添加的自定义节点为:"
-			cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
-			echo "-----------------------------------------------"
-			echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
-			read -p "请输入对应数字 > " num
-			if [ $num -le $(cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | wc -l) ];then
-				sed -i "$num{/^\s*[^#]/d}" "$YAMLSDIR"/proxies.yaml
-			else
-				errornum
-			fi
-		else
-			echo -e "请先添加自定义节点！"
-			sleep 1
-		fi
-		setproxies
-	;;
-	3)
-		read -p "确认清空全部自定义节点？(1/0) > " res
-		[ "$res" = "1" ] && sed -i '/^\s*[^#]/d' "$YAMLSDIR"/proxies.yaml 2>/dev/null
-		setproxies
-	;;
-	4)
-		echo "-----------------------------------------------"
-		if [ "$proxies_bypass" = "OFF" ];then
-			echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
-			echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
-			read -p "启用节点绕过？(1/0) > " res
-			[ "$res" = "1" ] && proxies_bypass=ON
-		else
-			proxies_bypass=OFF
-		fi
-		setconfig proxies_bypass $proxies_bypass
-		sleep 1
-		setrules
-	;;
-	*)
-		errornum
-	;;
-	esac
+# 自定义clash节点
+setproxies() {
+    set_proxy_type() {
+        echo "-----------------------------------------------"
+        echo -e "\033[33m注意节点格式必须是单行,不包括括号,name:必须写在最前,例如：\033[0m"
+        echo -e "\033[36m【name: \"test\", server: 192.168.1.1, port: 12345, type: socks5, udp: true】\033[0m"
+        echo -e "更多写法请参考：\033[32m https://juewuy.github.io/ \033[0m"
+        read -pr "请输入节点 > " proxy_state_set
+        if echo "$proxy_state_set" | grep -q "#"; then
+            echo -e "\033[33m绝对禁止包含【#】号！！！\033[0m"
+        elif echo "$proxy_state_set" | grep -Eq "^name:"; then
+            set_group_add
+        else
+            errornum
+            sleep 1
+        fi
+    }
+
+    set_group_add() {
+        echo "-----------------------------------------------"
+        echo -e "\033[36m请选择想要将节点添加到的策略组\033[0m"
+        echo -e "\033[32m如需添加到多个策略组，请一次性输入多个数字并用空格隔开\033[0m"
+        echo -e "\033[33m如需自定义策略组，请先使用【管理自定义策略组功能】添加\033[0m"
+        echo "-----------------------------------------------"
+        echo "$proxy_group" | awk -F '#' '{for(i=1;i<=NF;i++){print i" "$i}}'
+        echo "-----------------------------------------------"
+        echo -e " 0 返回上级菜单"
+        read -pr "请输入对应数字(多个用空格隔开) > " char
+        case "$char" in
+        "" | 0) ;;
+        *)
+            for num in $char; do
+                rule_group_set=$(echo "$proxy_group" | cut -d'#' -f"$num")
+                rule_group_add="${rule_group_add}#${rule_group_set}"
+            done
+            if [ -n "$rule_group_add" ]; then
+                echo "- {$proxy_state_set}$rule_group_add" >>"$YAMLSDIR"/proxies.yaml
+                echo "-----------------------------------------------"
+                echo -e "\033[32m添加成功！\033[0m"
+                unset rule_group_add
+            else
+                errornum
+                sleep 1
+            fi
+            ;;
+        esac
+    }
+
+    while true; do
+        echo "-----------------------------------------------"
+        echo -e "\033[33m你可以在这里快捷管理自定义节点\033[0m"
+        echo -e "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/proxies.yaml\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 添加自定义节点"
+        echo -e " 2 管理自定义节点"
+        echo -e " 3 清空自定义节点"
+        echo -e " 4 配置节点绕过:	\033[36m$proxies_bypass\033[0m"
+        echo -e " 0 返回上级菜单"
+        read -pr "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            proxy_type="DOMAIN-SUFFIX DOMAIN-KEYWORD IP-CIDR SRC-IP-CIDR DST-PORT SRC-PORT GEOIP GEOSITE IP-CIDR6 DOMAIN MATCH"
+            proxy_group="$(cat "$YAMLSDIR"/proxy-groups.yaml "$YAMLSDIR"/config.yaml 2>/dev/null | sed "/#自定义策略组开始/,/#自定义策略组结束/d" | grep -Ev '^#' | grep -o '\- name:.*' | sed 's/#.*//' | sed 's/- name: /#/g' | tr -d '\n' | sed 's/#//')"
+            set_proxy_type
+            ;;
+        2)
+            echo "-----------------------------------------------"
+            sed -i '/^ *$/d' "$YAMLSDIR"/proxies.yaml 2>/dev/null
+            if [ -s "$YAMLSDIR"/proxies.yaml ]; then
+                echo -e "当前已添加的自定义节点为:"
+                cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | awk -F '[,,}]' '{print NR, $1, $NF}' | sed 's/- {//g'
+                echo "-----------------------------------------------"
+                echo -e "\033[33m输入节点对应数字可以移除对应节点\033[0m"
+                read -pr "请输入对应数字 > " num
+                if [ "$num" -le $(cat "$YAMLSDIR"/proxies.yaml | grep -Ev '^#' | wc -l) ]; then
+                    sed -i "$num{/^\s*[^#]/d}" "$YAMLSDIR"/proxies.yaml
+                else
+                    errornum
+                fi
+            else
+                echo -e "请先添加自定义节点！"
+                sleep 1
+            fi
+            ;;
+        3)
+            read -pr "确认清空全部自定义节点？(1/0) > " res
+            [ "$res" = "1" ] && sed -i '/^\s*[^#]/d' "$YAMLSDIR"/proxies.yaml 2>/dev/null
+            ;;
+        4)
+            echo "-----------------------------------------------"
+            if [ "$proxies_bypass" = "OFF" ]; then
+                echo -e "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m"
+                echo -e "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
+                read -pr "启用节点绕过？(1/0) > " res
+                [ "$res" = "1" ] && proxies_bypass=ON
+            else
+                proxies_bypass=OFF
+            fi
+            setconfig proxies_bypass "$proxies_bypass"
+            sleep 1
+            setrules
+            break
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
+
 gen_clash_providers(){ #生成clash的providers配置文件
 	gen_clash_providers_txt(){
 		if [ -n "$(echo $2|grep -E '^./')" ];then
