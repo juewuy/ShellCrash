@@ -192,46 +192,49 @@ set_bot_tg_service(){
 	fi
 	setconfig bot_tg_service "$bot_tg_service"
 }
-set_bot_tg(){
-	[ -n "$ts_auth_key" ] && ts_auth_key_info='已设置'
-	[ -n "$TG_CHATID" ] && TG_CHATID_info='已绑定'
-	echo "-----------------------------------------------"
-	echo -e "\033[31m注意：\033[0m由于网络环境原因，此机器人仅限服务启动时运行！"
-	echo "-----------------------------------------------"
-	echo -e " 1 启用/关闭TG-BOT服务	\033[32m$bot_tg_service\033[0m"
-	echo -e " 2 TG-BOT绑定设置	\033[32m$TG_CHATID_info\033[0m"
-	echo -e " 0 返回上级菜单 \033[0m"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
-		. "$GT_CFG_PATH"
-		if [ -n "$TG_CHATID" ];then
-			set_bot_tg_service
-		else
-			echo -e "\033[31m请先绑定TG-BOT！\033[0m"
-		fi
-		sleep 1
-		set_bot_tg
-	;;
-	2)
-		if [ -n "$chat_ID" ] && [ -n "$push_TG" ] && [ "$push_TG" != 'publictoken' ]; then
-			read -p "检测到已经绑定了TG推送BOT，是否直接使用？(1/0) > " res
-			if [ "$res" = 1 ]; then
-				TOKEN="$push_TG"
-				set_bot_tg_config
-				set_bot_tg
-				return
-			fi
-		fi
-		set_bot_tg_init
-		set_bot_tg
-	;;
-	*)
-		errornum
-	;;
-	esac		
+
+set_bot_tg() {
+    while true; do
+        [ -n "$ts_auth_key" ] && ts_auth_key_info='已设置'
+        [ -n "$TG_CHATID" ] && TG_CHATID_info='已绑定'
+        echo "-----------------------------------------------"
+        echo -e "\033[31m注意：\033[0m由于网络环境原因，此机器人仅限服务启动时运行！"
+        echo "-----------------------------------------------"
+        echo -e " 1 启用/关闭TG-BOT服务	\033[32m$bot_tg_service\033[0m"
+        echo -e " 2 TG-BOT绑定设置	\033[32m$TG_CHATID_info\033[0m"
+        echo -e " 0 返回上级菜单 \033[0m"
+        echo "-----------------------------------------------"
+        read -pr "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            . "$GT_CFG_PATH"
+            if [ -n "$TG_CHATID" ]; then
+                set_bot_tg_service
+            else
+                echo -e "\033[31m请先绑定TG-BOT！\033[0m"
+            fi
+            sleep 1
+            ;;
+        2)
+            if [ -n "$chat_ID" ] && [ -n "$push_TG" ] && [ "$push_TG" != 'publictoken' ]; then
+                read -pr "检测到已经绑定了TG推送BOT，是否直接使用？(1/0) > " res
+                if [ "$res" = 1 ]; then
+                    TOKEN="$push_TG"
+                    set_bot_tg_config
+                    continue
+                fi
+            fi
+            set_bot_tg_init
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
 
 # 自定义入站
