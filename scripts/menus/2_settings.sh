@@ -27,7 +27,8 @@ settings() {
         }
         echo -e " 8 $SET_MENU_IPV6\t\033[36m$ipv6_redir\033[0m"
         echo "-----------------------------------------------"
-        echo -e " 9 \033[31m$SET_MENU_RESET\033[0m"
+        echo -e " a \033[31m$SET_MENU_RESET\033[0m"
+		echo -e " b \033[36m$SET_MENU_LANG\033[0m"
         echo -e " 0 $COMMON_BACK"
         echo "-----------------------------------------------"
         read -p "$COMMON_INPUT > " num
@@ -94,7 +95,7 @@ settings() {
         8)
             set_ipv6
             ;;
-        9)
+        a)
             echo "-----------------------------------------------"
             echo -e " 1 $SET_BACKUP"
             echo -e " 2 $SET_RESTORE"
@@ -122,6 +123,26 @@ settings() {
             esac
             echo -e "\033[33m$SET_NEED_RESTART\033[0m"
             exit 0
+            ;;
+        b)
+            echo "-----------------------------------------------"
+            echo -e " 1 简体中文"
+            echo -e " 2 English"
+            echo -e " 0 $COMMON_BACK"
+            echo "-----------------------------------------------"
+            read -p "$COMMON_INPUT > " num
+            case "$num" in
+                1) 
+					echo chs > "$CRASHDIR"/configs/i18n.cfg
+					echo -e "\033[32m切换成功！请重新运行脚本！\033[0m"
+					exit
+				;;
+                2)
+                    echo en > "$CRASHDIR"/configs/i18n.cfg
+					echo -e "\033[32mLanguage switched successfully! Please re-run the script!\033[0m"
+					exit
+				;;
+            esac
             ;;
         *) errornum ;;
         esac
