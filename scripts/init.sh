@@ -231,4 +231,4 @@ sed -i "s/redir_mod=纯净模式/firewall_area=4/g" "$CFG_PATH"
 sed -i 's/=\(已启用\|已开启\)$/=ON/'  "$CFG_PATH"
 sed -i 's/=\(未启用\|未开启\)$/=OFF/' "$CFG_PATH"
 
-echo -e "\033[32m脚本初始化完成,请输入\033[30;47m $my_alias \033[0;33m命令开始使用！\033[0m"
+printf '\033[32m脚本初始化完成,请输入\033[30;47m %s \033[0;33m命令开始使用！\033[0m\n' "$my_alias"
