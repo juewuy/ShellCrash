@@ -1,0 +1,54 @@
+#===== DNS Main Menu =====
+DNS_CURRENT_MODE="Current DNS running mode:"
+DNS_RESTART_NOTICE="Changes require a manual service restart to take effect."
+
+DNS_MODE_MIX_DESC="CN domains use real-ip, others use fake-ip routing"
+DNS_MODE_ROUTE_DESC="CN domains use real-ip, others use dns2proxy routing"
+DNS_MODE_REDIR_DESC="Insecure. Must be used with a third-party DNS service."
+
+DNS_MENU_PROTECT="DNS Leak Protect"
+DNS_MENU_HOSTS="Hosts Optimization"
+DNS_MENU_ECS="ECS Optimization"
+DNS_MENU_REDIR="DNS Redirect Port"
+
+DNS_PROTECT_DESC="May cause slow connections on some websites when enabled"
+DNS_HOSTS_DESC="Use local hosts file and hijack NTP service"
+DNS_ECS_DESC="Reduce wasted traffic caused by CDN misrouting"
+DNS_REDIR_PORT_DESC="Used for compatibility with third-party DNS services"
+
+DNS_FAKEIP_MENU="Manage Fake-IP Filter List"
+DNS_ADV_MENU="Configure DNS Servers"
+
+DNS_SET_OK="DNS mode has been set to"
+DNS_CORE_UNSUPPORTED="The current core does not support this feature."
+
+#===== DNS Redirect =====
+DNS_REDIR_WARN="For use with third-party DNS services only (AdGuard, SmartDNS, etc.)"
+DNS_REDIR_HINT="It is recommended to set the upstream DNS of the third-party service to"
+DNS_REDIR_INPUT="Enter the listening port of the third-party DNS service (0 to reset)>"
+DNS_REDIR_NO_SERVICE="No running DNS service detected on this port!"
+
+#===== Fake-IP =====
+DNS_FAKEIP_DESC="Used to resolve connectivity issues for certain addresses or applications in Fake-IP mode"
+DNS_FAKEIP_TIP="The script already includes many built-in entries. Only add problematic addresses."
+DNS_FAKEIP_EXAMPLE="Examples:\na.b.com\n*.b.com\n*.*.b.com"
+DNS_FAKEIP_EXIST="Existing Fake-IP filter entries:"
+DNS_FAKEIP_EMPTY="No Fake-IP filter entries have been added"
+DNS_FAKEIP_EDIT="Enter a number to remove an entry, or enter an address to add one"
+
+#===== Advanced DNS =====
+DNS_ADV_SPLIT="Use '|' or ',' to separate multiple DNS addresses"
+DNS_ADV_CERT="DoH/DoT requires a local root certificate file"
+DNS_ADV_SINGBOX_LIMIT="Note: SingBox core only loads the first DNS entry"
+
+DNS_ADV_EDIT_DIRECT="Edit DIRECT-DNS"
+DNS_ADV_EDIT_PROXY="Edit PROXY-DNS (queries go through the proxy)"
+DNS_ADV_EDIT_DEFAULT="Edit DEFAULT-DNS (must be an IP, used to resolve other DNS servers)"
+DNS_ADV_AUTO_ENCRYPT="Auto-configure Encrypted DNS"
+DNS_ADV_RESET="Reset to default DNS configuration"
+
+DNS_INPUT_NEW="Enter new DNS address>"
+DNS_IPV6_NOT_SUPPORT="This option does not support IPv6 encrypted DNS!"
+
+DNS_ENCRYPT_OK="Encrypted DNS has been configured. If DNS issues occur, please reset DNS settings."
+DNS_CORE_REQUIRE="Please use the Mihomo or SingBox core"

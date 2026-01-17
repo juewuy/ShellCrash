@@ -2,13 +2,13 @@
 # Settings main menu
 # =================================================
 SET_MENU_TITLE="Welcome to the Function Settings Menu:"
-SET_MENU_REDIR="Routing Mode"
-SET_MENU_DNS="DNS Settings"
+SET_MENU_REDIR="Routing Mode:"
+SET_MENU_DNS="DNS Settings:"
 SET_MENU_FW_FILTER="Transparent Routing Traffic Filter"
-SET_MENU_SKIP_CERT="Skip Certificate Verification"
-SET_MENU_SNIFFER="Enable Domain Sniffing"
+SET_MENU_SKIP_CERT="Skip Cert Verify:"
+SET_MENU_SNIFFER="Enable Sniff:"
 SET_MENU_ADV_PORT="Custom Ports and Secrets"
-SET_MENU_IPV6="IPv6 Settings"
+SET_MENU_IPV6="IPv6 Settings:"
 SET_MENU_RESET="Reset / Backup / Restore Script Settings"
 
 # =================================================

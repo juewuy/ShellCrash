@@ -4,3 +4,5 @@ COMMON_BACK="返回上级菜单"
 COMMON_SUCCESS="设置成功！"
 COMMON_FAILED="设置失败！"
 COMMON_UNSET="未设置"
+COMMON_MOD="模式"
+

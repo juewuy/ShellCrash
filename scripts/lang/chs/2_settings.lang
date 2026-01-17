@@ -2,13 +2,13 @@
 # Settings main menu
 # =================================================
 SET_MENU_TITLE="欢迎使用功能设置菜单："
-SET_MENU_REDIR="路由模式设置"
-SET_MENU_DNS="DNS设置"
+SET_MENU_REDIR="路由模式设置："
+SET_MENU_DNS="DNS设置：    "
 SET_MENU_FW_FILTER="透明路由流量过滤"
-SET_MENU_SKIP_CERT="跳过证书验证"
-SET_MENU_SNIFFER="启用域名嗅探"
+SET_MENU_SKIP_CERT="跳过证书验证："
+SET_MENU_SNIFFER="启用域名嗅探："
 SET_MENU_ADV_PORT="自定义端口及密钥"
-SET_MENU_IPV6="IPv6设置"
+SET_MENU_IPV6="IPv6设置：   "
 SET_MENU_RESET="重置/备份/还原脚本设置"
 
 # =================================================
