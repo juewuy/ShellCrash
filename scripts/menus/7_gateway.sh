@@ -545,75 +545,94 @@ set_tailscale() {
     done
 }
 
-set_wireguard(){
-	[ -n "$wg_public_key" ] && wgp_key_info='*********' || unset wgp_key_info
-	[ -n "$wg_private_key" ] && wgv_key_info='*********' || unset wgv_key_info
-	[ -n "$wg_pre_shared_key" ] && wgpsk_key_info='*********' || unset wgpsk_key_info
-	echo "-----------------------------------------------"
-	echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译WireGuard模块\n如需使用请先前往自定义内核更新完整版内核文件！"
-	echo "-----------------------------------------------"
-	echo -e " 1 \033[32m启用/关闭\033[0mWireguard服务	\033[32m$wg_service\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 2 设置\033[36mEndpoint地址\033[0m：		\033[36m$wg_server\033[0m"
-	echo -e " 3 设置\033[36mEndpoint端口\033[0m：		\033[36m$wg_port\033[0m"
-	echo -e " 4 设置\033[36m公钥-PublicKey\033[0m：		\033[36m$wgp_key_info\033[0m"
-	echo -e " 5 设置\033[36m密钥-PresharedKey\033[0m：	\033[36m$wgpsk_key_info\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 6 设置\033[33m私钥-PrivateKey\033[0m：	\033[33m$wgv_key_info\033[0m"
-	echo -e " 7 设置\033[33m组网IPV4地址\033[0m：		\033[33m$wg_ipv4\033[0m"
-	echo -e " 8 可选\033[33m组网IPV6地址\033[0m：	\033[33m$wg_ipv6\033[0m"
-	echo -e " 0 返回上级菜单 \033[0m"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
-		if [ -n "$wg_server" ] && [ -n "$wg_port" ] && [ -n "$wg_public_key" ] && [ -n "$wg_pre_shared_key" ] && [ -n "$wg_private_key" ] && [ -n "$wg_ipv4" ];then
-			[ "$wg_service" = ON ] && wg_service=OFF || wg_service=ON
-			setconfig wg_service "$wg_service"
-		else
-			echo -e "\033[31m请先完成必选设置！\033[0m"
-			sleep 1
-		fi
-		set_wireguard
-	;;
-	[1-8])
-		read -p "请输入相应内容(回车或0删除) > " text
-		[ "$text" = 0 ] && text=''
-		case "$num" in
-		2)
-			wg_server="$text"
-			setconfig wg_server "$text" "$GT_CFG_PATH"
-		;;
-		3)
-			wg_port="$text"
-			setconfig wg_port "$text" "$GT_CFG_PATH"
-		;;
-		4)
-			wg_public_key="$text"
-			setconfig wg_public_key "$text" "$GT_CFG_PATH"
-		;;
-		5)
-			wg_pre_shared_key="$text"
-			setconfig wg_pre_shared_key "$text" "$GT_CFG_PATH"
-		;;
-		6)
-			wg_private_key="$text"
-			setconfig wg_private_key "$text" "$GT_CFG_PATH"
-		;;
-		7)
-			wg_ipv4="$text"
-			setconfig wg_ipv4 "$text" "$GT_CFG_PATH"
-		;;
-		8)
-			wg_ipv6="$text"
-			setconfig wg_ipv6 "$text" "$GT_CFG_PATH"
-		;;
+set_wireguard() {
+    while true; do
 
-		esac
-		set_wireguard
-	;;
-	*) errornum ;;
-	esac		
+        if [ -n "$wg_public_key" ]; then
+            wgp_key_info='*********'
+        else
+            unset wgp_key_info
+        fi
+
+        if [ -n "$wg_private_key" ]; then
+            wgv_key_info='*********'
+        else
+            unset wgv_key_info
+        fi
+
+        if [ -n "$wg_pre_shared_key" ]; then
+            wgpsk_key_info='*********'
+        else
+            unset wgpsk_key_info
+        fi
+
+        echo "-----------------------------------------------"
+        echo -e "\033[31m注意：\033[0m脚本默认内核为了节约内存没有编译WireGuard模块\n如需使用请先前往自定义内核更新完整版内核文件！"
+        echo "-----------------------------------------------"
+        echo -e " 1 \033[32m启用/关闭\033[0mWireguard服务	\033[32m$wg_service\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 2 设置\033[36mEndpoint地址\033[0m：		\033[36m$wg_server\033[0m"
+        echo -e " 3 设置\033[36mEndpoint端口\033[0m：		\033[36m$wg_port\033[0m"
+        echo -e " 4 设置\033[36m公钥-PublicKey\033[0m：		\033[36m$wgp_key_info\033[0m"
+        echo -e " 5 设置\033[36m密钥-PresharedKey\033[0m：	\033[36m$wgpsk_key_info\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 6 设置\033[33m私钥-PrivateKey\033[0m：	\033[33m$wgv_key_info\033[0m"
+        echo -e " 7 设置\033[33m组网IPV4地址\033[0m：		\033[33m$wg_ipv4\033[0m"
+        echo -e " 8 可选\033[33m组网IPV6地址\033[0m：	\033[33m$wg_ipv6\033[0m"
+        echo -e " 0 返回上级菜单 \033[0m"
+        echo "-----------------------------------------------"
+        read -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ -n "$wg_server" ] && [ -n "$wg_port" ] && [ -n "$wg_public_key" ] && [ -n "$wg_pre_shared_key" ] && [ -n "$wg_private_key" ] && [ -n "$wg_ipv4" ]; then
+                [ "$wg_service" = ON ] && wg_service=OFF || wg_service=ON
+                setconfig wg_service "$wg_service"
+            else
+                echo -e "\033[31m请先完成必选设置！\033[0m"
+                sleep 1
+            fi
+            ;;
+        [1-8])
+            read -p "请输入相应内容(回车或0删除) > " text
+            [ "$text" = 0 ] && text=''
+            case "$num" in
+            2)
+                wg_server="$text"
+                setconfig wg_server "$text" "$GT_CFG_PATH"
+                ;;
+            3)
+                wg_port="$text"
+                setconfig wg_port "$text" "$GT_CFG_PATH"
+                ;;
+            4)
+                wg_public_key="$text"
+                setconfig wg_public_key "$text" "$GT_CFG_PATH"
+                ;;
+            5)
+                wg_pre_shared_key="$text"
+                setconfig wg_pre_shared_key "$text" "$GT_CFG_PATH"
+                ;;
+            6)
+                wg_private_key="$text"
+                setconfig wg_private_key "$text" "$GT_CFG_PATH"
+                ;;
+            7)
+                wg_ipv4="$text"
+                setconfig wg_ipv4 "$text" "$GT_CFG_PATH"
+                ;;
+            8)
+                wg_ipv6="$text"
+                setconfig wg_ipv6 "$text" "$GT_CFG_PATH"
+                ;;
+            esac
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
-
