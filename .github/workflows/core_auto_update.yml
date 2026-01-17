@@ -20,6 +20,7 @@ jobs:
     
   auto_update_meta_alpha:
     permissions: write-all
+    needs: auto_update_singboxr_dev
     uses: juewuy/ShellCrash/.github/workflows/update_meta_core.yaml@dev
     with:
       tag1: MetaCubeX/mihomo
