@@ -16,13 +16,15 @@ FULL_DASH="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # function to print content lines
 # (using cursor jump)
 content_line() {
-    echo -e " ${1}\033[${TABLE_WIDTH}G||"
+    local param="${1:-}"
+    echo -e " ${param}\033[${TABLE_WIDTH}G||"
 }
 
 # function to print sub content lines
 # for printing accompanying instructions
 sub_content_line() {
-    echo -e "    ${1}\033[${TABLE_WIDTH}G||"
+    local param="${1:-}"
+    echo -e "    ${param}\033[${TABLE_WIDTH}G||"
     content_line
 }
 
