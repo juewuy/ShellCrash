@@ -10,6 +10,7 @@ SET_MENU_SNIFFER="Enable Sniff:"
 SET_MENU_ADV_PORT="Custom Ports and Secrets"
 SET_MENU_IPV6="IPv6 Settings:"
 SET_MENU_RESET="Reset / Backup / Restore Script Settings"
+SET_MENU_LANG="Language"
 
 # =================================================
 # Main menu messages
