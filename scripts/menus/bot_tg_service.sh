@@ -14,6 +14,5 @@ bot_tg_stop(){
 	rm -f "$TMPDIR/bot_tg.pid"
 }
 bot_tg_cron(){
-	cronset 'TG_BOT守护进程'
 	cronset 'TG_BOT守护进程' "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh bot_tg #ShellCrash-TG_BOT守护进程"
 }
