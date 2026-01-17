@@ -5,7 +5,10 @@
 __IS_MODULE_4_SETBOOT_LOADED=1
 
 allow_autostart() {
-    [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ] && /etc/init.d/shellcrash enable
+    if [ -f /etc/rc.common ] && [ "$(cat /proc/1/comm)" = "procd" ]; then
+        /etc/init.d/shellcrash enable
+    fi
+
     ckcmd systemctl && systemctl enable shellcrash.service >/dev/null 2>&1
     grep -q 's6' /proc/1/comm && touch /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
     rc-status -r >/dev/null 2>&1 && rc-update add shellcrash default >/dev/null 2>&1
@@ -24,7 +27,13 @@ disable_autostart() {
 setboot() {
     while true; do
         [ -z "$start_old" ] && start_old=OFF
-        [ -z "$start_delay" -o "$start_delay" = 0 ] && delay=未设置 || delay="${start_delay}秒"
+
+        if [ -z "$start_delay" ] || [ "$start_delay" = 0 ]; then
+            delay=未设置
+        else
+            delay="${start_delay}秒"
+        fi
+
         check_autostart && auto_set="\033[33m禁止" || auto_set="\033[32m允许"
         [ "${BINDIR}" = "$CRASHDIR" ] && mini_clash=OFF || mini_clash=ON
         [ -z "$network_check" ] && network_check=ON
@@ -98,7 +107,7 @@ setboot() {
             if [ "$mini_clash" = "OFF" ]; then
                 if [ "$dir_size" -gt 20480 ]; then
                     echo -e "\033[33m您的设备空间充足(>20M)，无需开启！\033[0m"
-                elif [ "$start_old" != 'ON' -a "$(cat /proc/1/comm)" = "systemd" ]; then
+                elif [ "$start_old" != 'ON' ] && [ "$(cat /proc/1/comm)" = "systemd" ]; then
                     echo -e "\033[33m不支持systemd启动模式，请先启用保守模式！\033[0m"
                 else
                     [ "$BINDIR" = "$CRASHDIR" ] && BINDIR="$TMPDIR"
