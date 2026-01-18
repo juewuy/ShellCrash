@@ -551,7 +551,7 @@ EOF
 	sed -i '$s/},/}]}/' "$TMPDIR"/providers/outbounds_add.json
 	sed -i '$s/},/}]}/' "$TMPDIR"/providers/providers.json
 	#使用模版生成outbounds和rules模块
-	cat "$TMPDIR"/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" > "$TMPDIR"/providers/outbounds.json
+	cat "$TMPDIR"/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" | sed "s/\"providers_tags\"/$providers_tags/g" > "$TMPDIR"/providers/outbounds.json
 	rm -rf "$TMPDIR"/provider_temp_file
 	#调用内核测试
 	. "$CRASHDIR"/starts/check_core.sh && check_core && "$TMPDIR"/CrashCore merge "$TMPDIR"/config.json -C "$TMPDIR"/providers

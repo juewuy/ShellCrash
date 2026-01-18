@@ -16,7 +16,7 @@ set_fw_filter() {
         echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m	————用于过滤P2P流量"
         echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m	————使用黑/白名单进行过滤"
         echo -e " 3 过滤QUIC协议:	\033[36m$quic_rj\033[0m	————优化视频性能"
-        echo -e " 4 过滤CN_IP(6)列表:	\033[36m$cn_ip_route\033[0m	————优化性能，不兼容Fake-ip"
+        echo -e " 4 过滤CN_IP(4/6)列表:	\033[36m$cn_ip_route\033[0m	————优化性能"
         echo -e " 5 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"
         echo -e " 6 自定义保留地址ipv4网段:	需要以保留地址为访问目标的环境"
         echo "-----------------------------------------------"
@@ -105,80 +105,82 @@ set_fw_filter() {
 }
 
 set_common_ports() {
-	[ -z "$multiport" ] && multiport='22,80,443,8080,8443'
-	echo "-----------------------------------------------"
-	echo -e "\033[31m注意：\033[0mMIX模式下，所有fake-ip来源的非常用端口流量不会被过滤"
-	[ -n "$common_ports" ] && 
-	echo -e "当前放行端口：\033[36m$multiport\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 启用/关闭端口过滤:	\033[36m$common_ports\033[0m"
-	echo -e " 2 添加放行端口"
-	echo -e " 3 移除指定放行端口"
-	echo -e " 4 重置默认放行端口"
-	echo -e " 5 重置为旧版放行端口"
-	echo -e " 0 返回上级菜单"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case $num in
-	1)
-		if [ "$common_ports" = ON ];then
-			common_ports=OFF
-		else
-			common_ports=ON
-		fi
-		setconfig common_ports "$common_ports"
-		set_common_ports
-	;;
-	2)
-		port_count=$(echo "$multiport" | awk -F',' '{print NF}' )
-		if [ "$port_count" -ge 15 ];then
-			echo -e "\033[31m最多支持设置放行15个端口，请先减少一些！\033[0m"
-		else
-			read -p "请输入要放行的端口号 > " port
-			if echo ",$multiport," | grep -q ",$port,";then	
-				echo -e "\033[31m输入错误！请勿重复添加！\033[0m"
-			elif [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
-			else
-				multiport=$(echo "$multiport,$port" | sed "s/^,//")
-				setconfig multiport "$multiport"
-			fi
-		fi
-		sleep 1
-		set_common_ports
-	;;
-	3)
-		read -p "请输入要移除的端口号 > " port
-		if echo ",$multiport," | grep -q ",$port,";then	
-			if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-				echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
-			else
-				multiport=$(echo ",$multiport," | sed "s/,$port//; s/^,//; s/,$//")
-				setconfig multiport "$multiport"
-			fi
-		else
-			echo -e "\033[31m输入错误！请输入已添加过的端口！\033[0m"
-		fi
-		sleep 1
-		set_common_ports
-	;;
-	4)
-		multiport=''
-		setconfig multiport
-		sleep 1
-		set_common_ports
-	;;
-	5)
-		multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
-		setconfig multiport "$multiport"
-		sleep 1
-		set_common_ports
-	;;
-	*)
-		errornum
-	;;
-	esac
+    while true; do
+        [ -z "$multiport" ] && multiport='22,80,443,8080,8443'
+        echo "-----------------------------------------------"
+        echo -e "\033[31m注意：\033[0mMIX模式下，所有fake-ip来源的非常用端口流量不会被过滤"
+        [ -n "$common_ports" ] &&
+            echo -e "当前放行端口：\033[36m$multiport\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 启用/关闭端口过滤:	\033[36m$common_ports\033[0m"
+        echo -e " 2 添加放行端口"
+        echo -e " 3 移除指定放行端口"
+        echo -e " 4 重置默认放行端口"
+        echo -e " 5 重置为旧版放行端口"
+        echo -e " 0 返回上级菜单"
+        echo "-----------------------------------------------"
+        read -r -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$common_ports" = ON ]; then
+                common_ports=OFF
+            else
+                common_ports=ON
+            fi
+            setconfig common_ports "$common_ports"
+            ;;
+        2)
+            port_count=$(echo "$multiport" | awk -F',' '{print NF}')
+            if [ "$port_count" -ge 15 ]; then
+                echo -e "\033[31m最多支持设置放行15个端口，请先减少一些！\033[0m"
+            else
+                read -r -p "请输入要放行的端口号 > " port
+                if echo ",$multiport," | grep -q ",$port,"; then
+                    echo -e "\033[31m输入错误！请勿重复添加！\033[0m"
+                elif [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+                    echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
+                else
+                    multiport=$(echo "$multiport,$port" | sed "s/^,//")
+                    setconfig multiport "$multiport"
+                fi
+            fi
+            sleep 1
+            ;;
+        3)
+            read -r -p "请输入要移除的端口号 > " port
+            if echo ",$multiport," | grep -q ",$port,"; then
+                if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+                    echo -e "\033[31m输入错误！请输入正确的数值(1-65535)！\033[0m"
+                else
+                    multiport=$(echo ",$multiport," | sed "s/,$port//; s/^,//; s/,$//")
+                    setconfig multiport "$multiport"
+                fi
+            else
+                echo -e "\033[31m输入错误！请输入已添加过的端口！\033[0m"
+            fi
+            sleep 1
+            ;;
+        4)
+            multiport=''
+            setconfig multiport
+            sleep 1
+            ;;
+        5)
+            multiport='22,80,143,194,443,465,587,853,993,995,5222,8080,8443'
+            setconfig multiport "$multiport"
+            sleep 1
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
+
 set_cust_host_ipv4() { #自定义ipv4透明路由网段
 	[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="OFF"
 	. "$CRASHDIR"/starts/fw_getlanip.sh && getlanip
