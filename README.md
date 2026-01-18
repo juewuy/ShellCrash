@@ -58,7 +58,7 @@ ShellCrash is designed to be compatible with the vast majority of network device
 > Install via wget (jsDelivr CDN source)
 ```sh
 export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
-  && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
+  && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && bash /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
@@ -67,7 +67,7 @@ export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https:/
 
 ```sh
 export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
-  && bash -c "$(curl -kfsSl $url/install.sh)" \
+  && bash -c "$(curl -kfsSl $url/install_en.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
@@ -77,7 +77,7 @@ export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
 > GitHub Source (Recommended for overseas environments or environments with proxy access)
 ```sh
 export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https://raw.githubusercontent.com/juewuy/ShellCrash/master)' \
-  && sh -c "$(curl -kfsSl $url/install.sh)" \
+  && sh -c "$(curl -kfsSl $url/install_en.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
@@ -85,14 +85,14 @@ export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https:/
 
 ```sh
 export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
-  && sh -c "$(curl -kfsSl $url/install.sh)" \
+  && sh -c "$(curl -kfsSl $url/install_en.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
 > Or Author's private source
 ```sh
 export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
-  && sh -c "$(curl -kfsSl $url/install.sh)" \
+  && sh -c "$(curl -kfsSl $url/install_en.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
@@ -100,7 +100,7 @@ export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
 > GitHub Source (Recommended for overseas environments or environments with proxy access)
 ```sh
 export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https://raw.githubusercontent.com/juewuy/ShellCrash/master)' \
-  && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
+  && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
@@ -108,7 +108,7 @@ export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https:/
 > Or jsDelivr CDN source
 ```sh
 export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
-  && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
+  && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
@@ -118,7 +118,7 @@ export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https:/
 > Author's private HTTP beta source
 ```sh
 export url='[http://t.jwsc.eu.org](http://t.jwsc.eu.org)' \
-  && wget -q -O /tmp/install.sh $url/install.sh \
+  && wget -q -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
@@ -132,7 +132,7 @@ apk add --no-cache wget openrc ca-certificates tzdata nftables iproute2 dcron
 
 # Execute installation command
 export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
-  && wget -q --no-check-certificate -O /tmp/install.sh $url/install.sh \
+  && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
 ```
