@@ -7,6 +7,7 @@ echo "**                ShellCrash                 **"
 echo "**                             by  Juewuy    **"
 echo "***********************************************"
 
+language=chs
 [ -z "$url" ] && url="https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master"
 
 # 内置工具
