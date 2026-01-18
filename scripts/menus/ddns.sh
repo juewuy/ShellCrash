@@ -135,44 +135,45 @@ rev_ddns_service() {
 		sleep 1
 	fi
 }
+
 load_ddns() {
-	ddns_dir=/etc/config/ddns
-	tmp_dir="$TMPDIR"/ddns
-	[ ! -f "$ddns_dir" ] && {
-		echo -e "\033[31m本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！\033[0m"
-		sleep 1
-		return 1
-	}
-	nr=0
-	cat "$ddns_dir" | grep 'config service' | awk '{print $3}' | sed "s/'//g" | sed 's/"//g' >"$tmp_dir"
-	echo -----------------------------------------------
-	echo -e "列表      域名       启用     IP地址"
-	echo -----------------------------------------------
-	[ -s "$tmp_dir" ] && for service in $(cat "$tmp_dir"); do
-		#echo $service >>$tmp_dir
-		nr=$((nr + 1))
-		enabled=$(uci get ddns."$service".enabled 2>/dev/null)
-		domain=$(uci get ddns."$service".domain 2>/dev/null)
-		local_ip=$(sed '1!G;h;$!d' /var/log/ddns/$service.log 2>/dev/null | grep -E 'Registered IP' | tail -1 | awk -F "'" '{print $2}' | tr -d "'\"")
-		echo -e " $nr   $domain  $enabled   $local_ip"
-	done
-	echo -e " $((nr + 1))   添加DDNS服务"
-	echo -e " 0   退出"
-	echo -----------------------------------------------
-	read -p "请输入对应序号 > " num
-	if [ -z "$num" -o "$num" = 0 ]; then
-		i=
-	elif [ "$num" -gt $nr ]; then
-		set_ddns_type
-		load_ddns
-	elif [ "$num" -gt 0 -a "$num" -le $nr ]; then
-		service=$(cat $tmp_dir | sed -n "$num"p)
-		rev_ddns_service
-		load_ddns
-	else
-		echo "请输入正确数字！" && load_ddns
-	fi
-	rm -rf "$tmp_dir"
+    while true; do
+        ddns_dir=/etc/config/ddns
+        tmp_dir="$TMPDIR"/ddns
+        [ ! -f "$ddns_dir" ] && {
+            echo -e "\033[31m本脚本依赖OpenWrt内置的DDNS服务,当前设备无法运行,已退出！\033[0m"
+            sleep 1
+            return 1
+        }
+        nr=0
+        cat "$ddns_dir" | grep 'config service' | awk '{print $3}' | sed "s/'//g" | sed 's/"//g' >"$tmp_dir"
+        echo "-----------------------------------------------"
+        echo -e "列表      域名       启用     IP地址"
+        echo "-----------------------------------------------"
+        [ -s "$tmp_dir" ] && for service in $(cat "$tmp_dir"); do
+            # echo $service >>$tmp_dir
+            nr=$((nr + 1))
+            enabled=$(uci get ddns."$service".enabled 2>/dev/null)
+            domain=$(uci get ddns."$service".domain 2>/dev/null)
+            local_ip=$(sed '1!G;h;$!d' /var/log/ddns/"$service".log 2>/dev/null | grep -E 'Registered IP' | tail -1 | awk -F "'" '{print $2}' | tr -d "'\"")
+            echo -e " $nr   $domain  $enabled   $local_ip"
+        done
+        echo -e " $((nr + 1))   添加DDNS服务"
+        echo -e " 0   退出"
+        echo "-----------------------------------------------"
+        read -r -p "请输入对应序号 > " num
+        if [ -z "$num" ] || [ "$num" = 0 ]; then
+            i=
+            rm -rf "$tmp_dir"
+            break
+        elif [ "$num" -gt $nr ]; then
+            set_ddns_type
+        elif [ "$num" -gt 0 ] && [ "$num" -le $nr ]; then
+            service=$(cat "$tmp_dir" | sed -n "$num"p)
+            rev_ddns_service
+        else
+            echo "请输入正确数字！"
+            sleep 1
+        fi
+    done
 }
-
-
