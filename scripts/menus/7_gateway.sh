@@ -364,128 +364,129 @@ EOF
     done
 }
 
-set_shadowsocks(){
-	echo "-----------------------------------------------"
-	echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
-	echo -e "      \033[31m切勿用于搭建违法翻墙节点，违者后果自负！\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 \033[32m启用/关闭\033[0mShadowSocks入站	\033[32m$sss_service\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$sss_port\033[0m"
-	echo -e " 3 选择\033[33m加密协议\033[0m：	\033[33m$sss_cipher\033[0m"
-	echo -e " 4 设置\033[36mpassword\033[0m：	\033[36m$sss_pwd\033[0m"
-	gen_base64 1 >/dev/null 2>&1 &&
-	echo -e " 5 一键生成分享链接"
-	echo -e " 0 返回上级菜单 \033[0m"
-	echo "-----------------------------------------------"
-	read -p "请输入对应数字 > " num
-	case "$num" in
-	0) ;;
-	1)
-		if [ "$sss_service" = ON ];then
-			sss_service=OFF
-			setconfig sss_service "$sss_service"
-		else
-			if [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ];then
-				sss_service=ON
-				setconfig sss_service "$sss_service"
-			else
-				echo -e "\033[31m请先完成必选设置！\033[0m"
-				sleep 1
-			fi
-		fi
-		set_shadowsocks
-	;;
-	2)
-		read -p "请输入端口号(输入0删除) > " text
-		if [ "$text" = 0 ];then
-			sss_port=''
-			setconfig sss_port "" "$GT_CFG_PATH"
-		elif check_port "$text"; then
-			sss_port="$text"
-			setconfig sss_port "$text" "$GT_CFG_PATH"
-		else
-			sleep 1
-		fi
-		set_shadowsocks
-	;;
-	3)
-		echo "-----------------------------------------------"
-		echo -e " 1 \033[32mxchacha20-ietf-poly1305\033[0m"
-		echo -e " 2 \033[32mchacha20-ietf-poly1305\033[0m"
-		echo -e " 3 \033[32maes-128-gcm\033[0m"
-		echo -e " 4 \033[32maes-256-gcm\033[0m"
-		gen_random 1 >/dev/null && {
-			echo "-----------------------------------------------"
-			echo -e "\033[31m注意：\033[0m2022系列加密必须使用随机生成的password！"
-			echo -e " 5 \033[32m2022-blake3-chacha20-poly1305\033[0m"
-			echo -e " 6 \033[32m2022-blake3-aes-128-gcm\033[0m"
-			echo -e " 7 \033[32m2022-blake3-aes-256-gcm\033[0m"
-		}
-		echo "-----------------------------------------------"
-		echo -e " 0 返回上级菜单"
-		read -p "请选择要使用的加密协议 > " num
-		case "$num" in
-		1)
-			sss_cipher=xchacha20-ietf-poly1305
-			sss_pwd=$(gen_random 16)
-		;;
-		2)
-			sss_cipher=chacha20-ietf-poly1305
-			sss_pwd=$(gen_random 16)
-		;;
-		3)
-			sss_cipher=aes-128-gcm
-			sss_pwd=$(gen_random 16)
-		;;
-		4)
-			sss_cipher=aes-256-gcm
-			sss_pwd=$(gen_random 16)
-		;;
-		5)
-			sss_cipher=2022-blake3-chacha20-poly1305
-			sss_pwd=$(gen_random 32)
-		;;
-		6)
-			sss_cipher=2022-blake3-aes-128-gcm
-			sss_pwd=$(gen_random 16)
-		;;
-		7)
-			sss_cipher=2022-blake3-aes-256-gcm
-			sss_pwd=$(gen_random 32)
-		;;
-		*)
-		;;
-		esac
-		setconfig sss_cipher "$sss_cipher" "$GT_CFG_PATH"
-		setconfig sss_pwd "$sss_pwd" "$GT_CFG_PATH"
-		set_shadowsocks
-	;;
-	4)
-		if echo "$sss_cipher" |grep -q '2022-blake3';then
-			echo -e "\033[31m注意：\033[0m2022系列加密必须使用脚本随机生成的password！"
-			sleep 1
-		else
-			read -p "请输入秘钥(输入0删除) > " text
-			[ "$text" = 0 ] && sss_pwd='' || sss_pwd="$text"
-			setconfig sss_pwd "$text" "$GT_CFG_PATH"
-		fi
-		set_shadowsocks
-	;;
-	5)
-		read -p "请输入本机公网IP(4/6)或域名 > " text
-		if [ -n "$text" ] && [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ];then
-			ss_link="ss://$(gen_base64 "$sss_cipher":"$sss_pwd")@${text}:${sss_port}#ShellCrash_ss_in"
-			echo "-----------------------------------------------"
-			echo -e "你的分享链接是(请勿随意分享给他人):\n\033[32m$ss_link\033[0m"
-		else
-			echo -e "\033[31m请先完成必选设置！\033[0m"
-		fi
-		sleep 1
-		set_shadowsocks
-	;;
-	*) errornum ;;
-	esac
+set_shadowsocks() {
+    while true; do
+        echo "-----------------------------------------------"
+        echo -e "\033[31m注意：\033[0m设置的端口会添加到公网访问防火墙并自动放行！\n      脚本只提供基础功能，更多需求请用自定义配置文件功能！"
+        echo -e "      \033[31m切勿用于搭建违法翻墙节点，违者后果自负！\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 \033[32m启用/关闭\033[0mShadowSocks入站	\033[32m$sss_service\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 2 设置\033[36m监听端口\033[0m：	\033[36m$sss_port\033[0m"
+        echo -e " 3 选择\033[33m加密协议\033[0m：	\033[33m$sss_cipher\033[0m"
+        echo -e " 4 设置\033[36mpassword\033[0m：	\033[36m$sss_pwd\033[0m"
+        gen_base64 1 >/dev/null 2>&1 &&
+            echo -e " 5 一键生成分享链接"
+        echo -e " 0 返回上级菜单 \033[0m"
+        echo "-----------------------------------------------"
+        read -r -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            if [ "$sss_service" = ON ]; then
+                sss_service=OFF
+                setconfig sss_service "$sss_service"
+            else
+                if [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ]; then
+                    sss_service=ON
+                    setconfig sss_service "$sss_service"
+                else
+                    echo -e "\033[31m请先完成必选设置！\033[0m"
+                    sleep 1
+                fi
+            fi
+            ;;
+        2)
+            read -r -p "请输入端口号(输入0删除) > " text
+            if [ "$text" = 0 ]; then
+                sss_port=''
+                setconfig sss_port "" "$GT_CFG_PATH"
+            elif check_port "$text"; then
+                sss_port="$text"
+                setconfig sss_port "$text" "$GT_CFG_PATH"
+            else
+                sleep 1
+            fi
+            ;;
+        3)
+            echo "-----------------------------------------------"
+            echo -e " 1 \033[32mxchacha20-ietf-poly1305\033[0m"
+            echo -e " 2 \033[32mchacha20-ietf-poly1305\033[0m"
+            echo -e " 3 \033[32maes-128-gcm\033[0m"
+            echo -e " 4 \033[32maes-256-gcm\033[0m"
+            gen_random 1 >/dev/null && {
+                echo "-----------------------------------------------"
+                echo -e "\033[31m注意：\033[0m2022系列加密必须使用随机生成的password！"
+                echo -e " 5 \033[32m2022-blake3-chacha20-poly1305\033[0m"
+                echo -e " 6 \033[32m2022-blake3-aes-128-gcm\033[0m"
+                echo -e " 7 \033[32m2022-blake3-aes-256-gcm\033[0m"
+            }
+            echo "-----------------------------------------------"
+            echo -e " 0 返回上级菜单"
+            read -r -p "请选择要使用的加密协议 > " num
+            case "$num" in
+            "" | 1)
+                sss_cipher=xchacha20-ietf-poly1305
+                sss_pwd=$(gen_random 16)
+                ;;
+            2)
+                sss_cipher=chacha20-ietf-poly1305
+                sss_pwd=$(gen_random 16)
+                ;;
+            3)
+                sss_cipher=aes-128-gcm
+                sss_pwd=$(gen_random 16)
+                ;;
+            4)
+                sss_cipher=aes-256-gcm
+                sss_pwd=$(gen_random 16)
+                ;;
+            5)
+                sss_cipher=2022-blake3-chacha20-poly1305
+                sss_pwd=$(gen_random 32)
+                ;;
+            6)
+                sss_cipher=2022-blake3-aes-128-gcm
+                sss_pwd=$(gen_random 16)
+                ;;
+            7)
+                sss_cipher=2022-blake3-aes-256-gcm
+                sss_pwd=$(gen_random 32)
+                ;;
+            *) ;;
+            esac
+            setconfig sss_cipher "$sss_cipher" "$GT_CFG_PATH"
+            setconfig sss_pwd "$sss_pwd" "$GT_CFG_PATH"
+            ;;
+        4)
+            if echo "$sss_cipher" | grep -q '2022-blake3'; then
+                echo -e "\033[31m注意：\033[0m2022系列加密必须使用脚本随机生成的password！"
+                sleep 1
+            else
+                read -r -p "请输入秘钥(输入0删除) > " text
+                [ "$text" = 0 ] && sss_pwd='' || sss_pwd="$text"
+                setconfig sss_pwd "$text" "$GT_CFG_PATH"
+            fi
+            ;;
+        5)
+            read -r -p "请输入本机公网IP(4/6)或域名 > " text
+            if [ -n "$text" ] && [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ]; then
+                ss_link="ss://$(gen_base64 "$sss_cipher":"$sss_pwd")@${text}:${sss_port}#ShellCrash_ss_in"
+                echo "-----------------------------------------------"
+                echo -e "你的分享链接是(请勿随意分享给他人):\n\033[32m$ss_link\033[0m"
+            else
+                echo -e "\033[31m请先完成必选设置！\033[0m"
+            fi
+            sleep 1
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
 
 # 自定义端点
