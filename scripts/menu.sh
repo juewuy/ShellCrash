@@ -19,7 +19,7 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 . "$CRASHDIR"/libs/i18n.sh
 . "$CRASHDIR"/menus/1_start.sh
 . "$CRASHDIR"/menus/running_status.sh
-# . "$CRASHDIR"/menus/tui_layout.sh
+. "$CRASHDIR"/menus/tui_layout.sh
 
 # 加载语言
 load_lang common
