@@ -4,106 +4,106 @@
 [ -n "$__IS_MODULE_FW_FILTER_LOADED" ] && return
 __IS_MODULE_FW_FILTER_LOADED=1
 
-set_fw_filter(){ #流量过滤
-	[ -z "$common_ports" ] && common_ports=ON
-	[ -z "$quic_rj" ] && quic_rj=OFF
-    [ -z "$cn_ip_route" ] && cn_ip_route=OFF	
-	touch "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter
-	[ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ] && mac_return=OFF || mac_return=ON
-	echo "-----------------------------------------------"
-    echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m	————用于过滤P2P流量"
-    echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m	————使用黑/白名单进行过滤"
-    echo -e " 3 过滤QUIC协议:	\033[36m$quic_rj\033[0m	————优化视频性能"
-    echo -e " 4 过滤CN_IP(6)列表:	\033[36m$cn_ip_route\033[0m	————优化性能，不兼容Fake-ip"
-	echo -e " 5 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"
-	echo -e " 6 自定义保留地址ipv4网段:	需要以保留地址为访问目标的环境"
-    echo "-----------------------------------------------"
-    echo -e " 0 返回上级菜单 \033[0m"
-    echo "-----------------------------------------------"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0)
-	;;
-    1)
+# 流量过滤
+set_fw_filter() {
+    while true; do
+        [ -z "$common_ports" ] && common_ports=ON
+        [ -z "$quic_rj" ] && quic_rj=OFF
+        [ -z "$cn_ip_route" ] && cn_ip_route=OFF
+        touch "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter
+        [ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ] && mac_return=OFF || mac_return=ON
         echo "-----------------------------------------------"
-        if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
-            read -p "切换时将停止服务，是否继续？(1/0) > " res
-            [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_common_ports
-        else
-            set_common_ports
-        fi
-        set_fw_filter
-	;;
-    2)
-        checkcfg_mac=$(cat "$CRASHDIR"/configs/mac)
-        fw_filter_lan
-        if [ -n "$PID" ]; then
-            checkcfg_mac_new=$(cat "$CRASHDIR"/configs/mac)
-            [ "$checkcfg_mac" != "$checkcfg_mac_new" ] && checkrestart
-        fi
-        set_fw_filter
-	;;
-    3)
+        echo -e " 1 过滤非常用端口： 	\033[36m$common_ports\033[0m	————用于过滤P2P流量"
+        echo -e " 2 过滤局域网设备：	\033[36m$mac_return\033[0m	————使用黑/白名单进行过滤"
+        echo -e " 3 过滤QUIC协议:	\033[36m$quic_rj\033[0m	————优化视频性能"
+        echo -e " 4 过滤CN_IP(6)列表:	\033[36m$cn_ip_route\033[0m	————优化性能，不兼容Fake-ip"
+        echo -e " 5 自定义透明路由ipv4网段:	适合vlan等复杂网络环境"
+        echo -e " 6 自定义保留地址ipv4网段:	需要以保留地址为访问目标的环境"
         echo "-----------------------------------------------"
-        if [ -n "$(echo "$redir_mod" | grep -oE '混合|Tproxy|Tun')" ]; then
-            if [ "$quic_rj" = "OFF" ]; then
-                echo -e "\033[33m已禁止QUIC流量通过ShellCrash内核！！\033[0m"
-                quic_rj=ON
+        echo -e " 0 返回上级菜单 \033[0m"
+        echo "-----------------------------------------------"
+        read -r -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            echo "-----------------------------------------------"
+            if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
+                read -r -p "切换时将停止服务，是否继续？(1/0) > " res
+                [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_common_ports
             else
-                echo -e "\033[33m已取消禁止QUIC协议流量！！\033[0m"
-                quic_rj=OFF
+                set_common_ports
             fi
-            setconfig quic_rj $quic_rj
-        else
-            echo -e "\033[33m当前模式默认不会代理UDP流量，无需设置！！\033[0m"
-        fi
-        sleep 1
-        set_fw_filter
-	;;
-    4)
-        if [ -n "$(ipset -v 2>/dev/null)" ] || [ "$firewall_mod" = 'nftables' ]; then
-            if [ "$cn_ip_route" = "OFF" ]; then
-                echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
-                echo -e "\033[31m注意！！！此功能会导致全局模式及一切CN相关规则失效！！！\033[0m"
-                cn_ip_route=ON
-                sleep 2
+            ;;
+        2)
+            checkcfg_mac=$(cat "$CRASHDIR"/configs/mac)
+            fw_filter_lan
+            if [ -n "$PID" ]; then
+                checkcfg_mac_new=$(cat "$CRASHDIR"/configs/mac)
+                [ "$checkcfg_mac" != "$checkcfg_mac_new" ] && checkrestart
+            fi
+            ;;
+        3)
+            echo "-----------------------------------------------"
+            if echo "$redir_mod" | grep -oqE '混合|Tproxy|Tun'; then
+                if [ "$quic_rj" = "OFF" ]; then
+                    echo -e "\033[33m已禁止QUIC流量通过ShellCrash内核！！\033[0m"
+                    quic_rj=ON
+                else
+                    echo -e "\033[33m已取消禁止QUIC协议流量！！\033[0m"
+                    quic_rj=OFF
+                fi
+                setconfig quic_rj $quic_rj
             else
-                echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
-                cn_ip_route=OFF
+                echo -e "\033[33m当前模式默认不会代理UDP流量，无需设置！！\033[0m"
             fi
-            setconfig cn_ip_route $cn_ip_route
-        else
-            echo -e "\033[31m当前设备缺少ipset模块或未使用nftables模式，无法启用绕过功能！！\033[0m"
             sleep 1
-        fi
-        set_fw_filter
-	;;
-    5)
-        set_cust_host_ipv4
-        set_fw_filter
-	;;
-    6)
-        [ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
-        echo -e "当前网段：\033[36m$reserve_ipv4\033[0m"
-        echo -e "\033[33m地址必须是空格分隔，错误的设置可能导致网络回环或启动报错，请务必谨慎！\033[0m"
-        read -p "请输入 > " text
-        if [ -n "$(
-            echo $text | grep -E "(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/(3[0-2]|[1-2]?[0-9]))( +|$)+"
-        )" ]; then
-            reserve_ipv4="$text"
-            echo -e "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
-            setconfig reserve_ipv4 "'$reserve_ipv4'"
-        else
-            echo -e "\033[31m输入有误，操作已取消！\033[0m"
-        fi
-        sleep 1
-        set_fw_filter
-	;;
-    *)
-        errornum
-	;;
-    esac
+            ;;
+        4)
+            if [ -n "$(ipset -v 2>/dev/null)" ] || [ "$firewall_mod" = 'nftables' ]; then
+                if [ "$cn_ip_route" = "OFF" ]; then
+                    echo -e "\033[32m已开启CN_IP绕过内核功能！！\033[0m"
+                    echo -e "\033[31m注意！！！此功能会导致全局模式及一切CN相关规则失效！！！\033[0m"
+                    cn_ip_route=ON
+                    sleep 2
+                else
+                    echo -e "\033[33m已禁用CN_IP绕过内核功能！！\033[0m"
+                    cn_ip_route=OFF
+                fi
+                setconfig cn_ip_route $cn_ip_route
+            else
+                echo -e "\033[31m当前设备缺少ipset模块或未使用nftables模式，无法启用绕过功能！！\033[0m"
+                sleep 1
+            fi
+            ;;
+        5)
+            set_cust_host_ipv4
+            ;;
+        6)
+            [ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
+            echo -e "当前网段：\033[36m$reserve_ipv4\033[0m"
+            echo -e "\033[33m地址必须是空格分隔，错误的设置可能导致网络回环或启动报错，请务必谨慎！\033[0m"
+            read -p "请输入 > " text
+            if
+                echo "$text" | grep -Eq "(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/(3[0-2]|[1-2]?[0-9]))( +|$)+"
+            then
+                reserve_ipv4="$text"
+                echo -e "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
+                setconfig reserve_ipv4 "'$reserve_ipv4'"
+            else
+                echo -e "\033[31m输入有误，操作已取消！\033[0m"
+            fi
+            sleep 1
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
+
 set_common_ports() {
 	[ -z "$multiport" ] && multiport='22,80,443,8080,8443'
 	echo "-----------------------------------------------"
