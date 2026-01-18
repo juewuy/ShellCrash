@@ -179,6 +179,12 @@ crash -h     # 查看命令帮助列表
 
 ---
 
+## :scroll: 许可协议
+
+本项目采用[GNU通用公共许可证第3.0版](LICENSE.txt)授权。
+
+---
+
 ## :airplane: 机场推荐
 
 - [**Dler-墙洞**](https://dler.pro/auth/register?affid=89698)，多年稳定运行，功能齐全。

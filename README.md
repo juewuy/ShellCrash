@@ -171,3 +171,7 @@ crash -h     # View the list of command help
 - FAQ: [Juewuy's Blog](https://juewuy.github.io/chang-jian-wen-ti/)
 - Changelog: [Release History](https://github.com/juewuy/ShellCrash/releases)
 - Discussion: [Telegram Group](https://t.me/ShellClash)
+
+## :scroll: License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE.txt).
