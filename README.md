@@ -174,4 +174,4 @@ crash -h     # View the list of command help
 
 ## :scroll: License
 
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+This project is licensed under the [GNU General Public License v3.0](LICENSE.txt).
