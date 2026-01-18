@@ -57,7 +57,7 @@ ShellCrash is designed to be compatible with the vast majority of network device
 
 > Install via wget (jsDelivr CDN source)
 ```sh
-export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && bash /tmp/install.sh \
   && . /etc/profile &> /dev/null
@@ -66,9 +66,7 @@ export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https:/
 > Or install via curl (Author's private source)
 
 ```sh
-export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
-  && bash -c "$(curl -kfsSl $url/install_en.sh)" \
-  && . /etc/profile &> /dev/null
+export url='https://gh.jwsc.eu.org/dev' && bash -c "$(curl -kfsSl $url/install_en.sh)" && . /etc/profile &> /dev/null
 ```
 
 ### :satellite: Router Device Installation
@@ -76,7 +74,7 @@ export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
 **Installation via `curl`:**
 > GitHub Source (Recommended for overseas environments or environments with proxy access)
 ```sh
-export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https://raw.githubusercontent.com/juewuy/ShellCrash/master)' \
+export url='https://raw.githubusercontent.com/juewuy/ShellCrash/dev' \
   && sh -c "$(curl -kfsSl $url/install_en.sh)" \
   && . /etc/profile &> /dev/null
 ```
@@ -84,22 +82,20 @@ export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https:/
 > Or jsDelivr CDN source
 
 ```sh
-export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev' \
   && sh -c "$(curl -kfsSl $url/install_en.sh)" \
   && . /etc/profile &> /dev/null
 ```
 
 > Or Author's private source
 ```sh
-export url='[https://gh.jwsc.eu.org/master](https://gh.jwsc.eu.org/master)' \
-  && sh -c "$(curl -kfsSl $url/install_en.sh)" \
-  && . /etc/profile &> /dev/null
+export url='https://gh.jwsc.eu.org/dev' && sh -c "$(curl -kfsSl $url/install_en.sh)" && . /etc/profile &> /dev/null
 ```
 
 **Installation via `wget`:**
 > GitHub Source (Recommended for overseas environments or environments with proxy access)
 ```sh
-export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https://raw.githubusercontent.com/juewuy/ShellCrash/master)' \
+export url='https://raw.githubusercontent.com/juewuy/ShellCrash/dev' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
@@ -107,7 +103,7 @@ export url='[https://raw.githubusercontent.com/juewuy/ShellCrash/master](https:/
 
 > Or jsDelivr CDN source
 ```sh
-export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
@@ -117,7 +113,7 @@ export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https:/
 
 > Author's private HTTP beta source
 ```sh
-export url='[http://t.jwsc.eu.org](http://t.jwsc.eu.org)' \
+export url='http://t.jwsc.eu.org' \
   && wget -q -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
@@ -129,9 +125,8 @@ export url='[http://t.jwsc.eu.org](http://t.jwsc.eu.org)' \
 ```sh
 # Install necessary dependencies
 apk add --no-cache wget openrc ca-certificates tzdata nftables iproute2 dcron
-
 # Execute installation command
-export url='[https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master](https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master)' \
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@dev' \
   && wget -q --no-check-certificate -O /tmp/install.sh $url/install_en.sh \
   && sh /tmp/install.sh \
   && . /etc/profile &> /dev/null
