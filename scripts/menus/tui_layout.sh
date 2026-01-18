@@ -14,10 +14,35 @@ FULL_EQ="=======================================================================
 FULL_DASH="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
 
 # function to print content lines
-# (using cursor jump)
+# (using cursor jump with auto-wrapping and color handling)
 content_line() {
     local param="${1:-}"
-    echo -e " ${param}\033[${TABLE_WIDTH}G||"
+
+    # Calculate Available Text Width
+    local text_width=$((TABLE_WIDTH - 3))
+
+    # 1. Extract color codes (if present)
+    # Use sed to capture the leading ANSI Escape Code (\x1b is the hexadecimal representation of ESC)
+    # This line extracts \033[33m... from \033[33m and stores it in color_code
+    local color_code
+    color_code=$(echo -e "$param" | sed -n 's/^\(\x1b\[[0-9;]*m\).*/\1/p')
+
+    # 2. Generate Clean Text
+    # Use sed to remove all ANSI color codes, retaining only plain text content
+    # This allows fold to accurately count characters without premature line breaks
+    local clean_text
+    clean_text=$(echo -e "$param" | sed 's/\x1b\[[0-9;]*m//g')
+
+    if [ -z "$clean_text" ]; then
+        echo -e " \033[${TABLE_WIDTH}G||"
+    else
+        # 3. Insert line breaks in plain text
+        echo "$clean_text" | fold -s -w "$text_width" | while IFS= read -r line; do
+            # 4. Output Restructuring
+            # Force the addition of color_code to each line and append \033[0m to reset at the end
+            echo -e " ${color_code}${line}\033[0m\033[${TABLE_WIDTH}G||"
+        done
+    fi
 }
 
 # function to print sub content lines
