@@ -43,7 +43,7 @@ webget(){
 		wget -Y off $progress -O "$1" "$2"
 		return $?
 	else
-		echo "找不到可用下载工具！！！请安装Curl或Wget！！！"
+		echo "No Curl or Wget！！！"
 		return 1
 	fi
 }
