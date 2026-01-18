@@ -13,10 +13,7 @@ routing_mark=$((fwmark + 2))
 
 [ -z "$dns_nameserver" ] && {
 	dns_nameserver='223.5.5.5, 1.2.4.8'
-	cat /proc/net/udp | grep -q '0035' && dns_nameserver='localhost'
+	cat /proc/net/udp | grep -q '0035' && dns_nameserver='127.0.0.1'
 }
 [ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
-[ -z "$dns_resolver" ] && {
-	dns_resolver="223.5.5.5, 2400:3200::1"
-	cat /proc/net/udp | grep -q '0035' && dns_resolver='127.0.0.1'
-}
+[ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
