@@ -412,7 +412,7 @@ EOF
 		done < "$CRASHDIR"/configs/providers.cfg
 	fi
 	#修饰模版文件并合并
-	sed -i "s/{providers_tags}/$providers_tags/g" "$TMPDIR"/providers/proxy-groups.yaml
+	sed -i "s/\{providers_tags\}\|providers_tags/$providers_tags/g" "$TMPDIR"/providers/proxy-groups.yaml
 	cut -c 1- "$TMPDIR"/providers/providers.yaml "$TMPDIR"/providers/proxy-groups.yaml "$TMPDIR"/providers/rules.yaml > "$TMPDIR"/config.yaml
 	rm -rf "$TMPDIR"/providers
 	#调用内核测试
@@ -515,7 +515,7 @@ EOF
 	sed -i '$s/},/}]}/' "$TMPDIR"/providers/outbounds_add.json
 	sed -i '$s/},/}]}/' "$TMPDIR"/providers/providers.json
 	#使用模版生成outbounds和rules模块
-	cat "$TMPDIR"/provider_temp_file | sed "s/{providers_tags}/$providers_tags/g" > "$TMPDIR"/providers/outbounds.json
+	cat "$TMPDIR"/provider_temp_file | sed "s/\{providers_tags\}\|\"providers_tags\"/$providers_tags/g" > "$TMPDIR"/providers/outbounds.json
 	rm -rf "$TMPDIR"/provider_temp_file
 	#调用内核测试
 	. "$CRASHDIR"/starts/check_core.sh && check_core && "$TMPDIR"/CrashCore merge "$TMPDIR"/config.json -C "$TMPDIR"/providers
