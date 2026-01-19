@@ -33,34 +33,35 @@ EOF
 }
 
 set_ddns() {
-    echo "-----------------------------------------------"
-    read -r -p "请输入你的域名 > " str
-    [ -z "$str" ] && domain="$domain" || domain="$str"
-    echo "-----------------------------------------------"
-    read -r -p "请输入用户名或邮箱 > " str
-    [ -z "$str" ] && username="$username" || username="$str"
-    echo "-----------------------------------------------"
-    read -r -p "请输入密码或令牌秘钥 > " str
-    [ -z "$str" ] && password="$password" || password="$str"
-    echo "-----------------------------------------------"
-    read -r -p "请输入检测更新间隔(单位:分钟;默认为10) > " check_interval
-    [ -z "$check_interval" ] || [ "$check_interval" -lt 1 -o "$check_interval" -gt 1440 ] && check_interval=10
-    echo "-----------------------------------------------"
-    read -r -p "请输入强制更新间隔(单位:小时;默认为24) > " force_interval
-    [ -z "$force_interval" ] || [ "$force_interval" -lt 1 -o "$force_interval" -gt 240 ] && force_interval=24
-    echo "-----------------------------------------------"
-    echo -e "请核对如下信息："
-    echo -e "服务商：		\033[32m$service\033[0m"
-    echo -e "域名：			\033[32m$domain\033[0m"
-    echo -e "用户名：		\033[32m$username\033[0m"
-    echo -e "检测间隔：		\033[32m$check_interval\033[0m"
-    echo "-----------------------------------------------"
-    read -r -p "确认添加？(1/0) > " res
-    if [ "$res" = 1 ]; then
-        add_ddns
-    else
-        set_ddns
-    fi
+    while true; do
+        echo "-----------------------------------------------"
+        read -r -p "请输入你的域名 > " str
+        [ -z "$str" ] && domain="$domain" || domain="$str"
+        echo "-----------------------------------------------"
+        read -r -p "请输入用户名或邮箱 > " str
+        [ -z "$str" ] && username="$username" || username="$str"
+        echo "-----------------------------------------------"
+        read -r -p "请输入密码或令牌秘钥 > " str
+        [ -z "$str" ] && password="$password" || password="$str"
+        echo "-----------------------------------------------"
+        read -r -p "请输入检测更新间隔(单位:分钟;默认为10) > " check_interval
+        [ -z "$check_interval" ] || [ "$check_interval" -lt 1 -o "$check_interval" -gt 1440 ] && check_interval=10
+        echo "-----------------------------------------------"
+        read -r -p "请输入强制更新间隔(单位:小时;默认为24) > " force_interval
+        [ -z "$force_interval" ] || [ "$force_interval" -lt 1 -o "$force_interval" -gt 240 ] && force_interval=24
+        echo "-----------------------------------------------"
+        echo -e "请核对如下信息："
+        echo -e "服务商：		\033[32m$service\033[0m"
+        echo -e "域名：			\033[32m$domain\033[0m"
+        echo -e "用户名：		\033[32m$username\033[0m"
+        echo -e "检测间隔：		\033[32m$check_interval\033[0m"
+        echo "-----------------------------------------------"
+        read -r -p "确认添加？(1/0) > " res
+        if [ "$res" = 1 ]; then
+            add_ddns
+            break
+        fi
+    done
 }
 
 set_ddns_service() {
