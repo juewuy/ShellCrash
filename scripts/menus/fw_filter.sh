@@ -221,195 +221,211 @@ set_cust_host_ipv4() { #自定义ipv4透明路由网段
 		;;
 	esac
 }
-fw_filter_lan() { #局域网设备过滤
+
+# 局域网设备过滤
+fw_filter_lan() {
     get_devinfo() {
-        dev_ip=$(cat $dhcpdir | grep " $dev " | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip=$dev
-        dev_mac=$(cat $dhcpdir | grep " $dev " | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$dev
-        dev_name=$(cat $dhcpdir | grep " $dev " | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
+        dev_ip=$(cat "$dhcpdir" | grep " $dev " | awk '{print $3}') && [ -z "$dev_ip" ] && dev_ip=$dev
+        dev_mac=$(cat "$dhcpdir" | grep " $dev " | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$dev
+        dev_name=$(cat "$dhcpdir" | grep " $dev " | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
     }
+
     add_mac() {
-        echo "-----------------------------------------------"
-        echo 已添加的mac地址：
-        cat "$CRASHDIR"/configs/mac 2>/dev/null
-        echo "-----------------------------------------------"
-        echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
-        cat $dhcpdir | awk '{print " "NR" "$3,$2,$4}'
-        echo -e "\033[0m-----------------------------------------------"
-        echo -e "手动输入mac地址时仅支持\033[32mxx:xx:xx:xx:xx:xx\033[0m的形式"
-        echo -e " 0 或回车 结束添加"
-        echo "-----------------------------------------------"
-        read -p "请输入对应序号或直接输入mac地址 > " num
-        if [ -z "$num" -o "$num" = 0 ]; then
-            i=
-        elif [ -n "$(echo $num | grep -aE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')" ]; then
-            if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$num")" ]; then
-                echo $num | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >>"$CRASHDIR"/configs/mac
-            else
-                echo "-----------------------------------------------"
-                echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
-            fi
-            add_mac
-        elif [ $num -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
-            macadd=$(cat $dhcpdir | awk '{print $2}' | sed -n "$num"p)
-            if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$macadd")" ]; then
-                echo $macadd >>"$CRASHDIR"/configs/mac
-            else
-                echo "-----------------------------------------------"
-                echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
-            fi
-            add_mac
-        else
+        while true; do
             echo "-----------------------------------------------"
-            echo -e "\033[31m输入有误，请重新输入！\033[0m"
-            add_mac
-        fi
-    }
-    add_ip() {
-        echo "-----------------------------------------------"
-        echo "已添加的IP地址(段)："
-        cat "$CRASHDIR"/configs/ip_filter 2>/dev/null
-        echo "-----------------------------------------------"
-        echo -e "\033[33m序号   设备IP     设备名称\033[32m"
-        cat $dhcpdir | awk '{print " "NR" "$3,$4}'
-        echo -e "\033[0m-----------------------------------------------"
-        echo -e "手动输入时仅支持\033[32m 192.168.1.0/24\033[0m 或 \033[32m192.168.1.0\033[0m 的形式"
-        echo -e "不支持ipv6地址过滤，如有需求请使用mac地址过滤"
-        echo -e " 0 或回车 结束添加"
-        echo "-----------------------------------------------"
-        read -p "请输入对应序号或直接输入IP地址段 > " num
-        if [ -z "$num" -o "$num" = 0 ]; then
-            i=
-        elif [ -n "$(echo $num | grep -aE '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$')" ]; then
-            if [ -z "$(cat "$CRASHDIR"/configs/ip_filter | grep -E "$num")" ]; then
-                echo $num | grep -oE '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$' >>"$CRASHDIR"/configs/ip_filter
-            else
-                echo "-----------------------------------------------"
-                echo -e "\033[31m已添加的地址，请勿重复添加！\033[0m"
-            fi
-            add_ip
-        elif [ $num -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
-            ipadd=$(cat $dhcpdir | awk '{print $3}' | sed -n "$num"p)
-            if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$ipadd")" ]; then
-                echo $ipadd >>"$CRASHDIR"/configs/ip_filter
-            else
-                echo "-----------------------------------------------"
-                echo -e "\033[31m已添加的地址，请勿重复添加！\033[0m"
-            fi
-            add_ip
-        else
+            echo "已添加的mac地址："
+            cat "$CRASHDIR"/configs/mac 2>/dev/null
             echo "-----------------------------------------------"
-            echo -e "\033[31m输入有误，请重新输入！\033[0m"
-            add_ip
-        fi
-    }
-    del_all() {
-        echo "-----------------------------------------------"
-        if [ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ]; then
-            echo -e "\033[31m列表中没有需要移除的设备！\033[0m"
-            sleep 1
-        else
-            echo -e "请选择需要移除的设备：\033[36m"
-            echo -e "\033[33m      设备IP       设备mac地址       设备名称\033[0m"
-            i=1
-            for dev in $(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null); do
-                get_devinfo
-                echo -e " $i \033[32m$dev_ip \033[36m$dev_mac \033[32m$dev_name\033[0m"
-                i=$((i + 1))
-            done
+            echo -e "\033[33m序号   设备IP       设备mac地址       设备名称\033[32m"
+            cat "$dhcpdir" | awk '{print " "NR" "$3,$2,$4}'
+            echo -e "\033[0m-----------------------------------------------"
+            echo -e "手动输入mac地址时仅支持\033[32mxx:xx:xx:xx:xx:xx\033[0m的形式"
+            echo -e " 0 或回车 结束添加"
             echo "-----------------------------------------------"
-            echo -e "\033[0m 0 或回车 结束删除"
-            read -p "请输入需要移除的设备的对应序号 > " num
-            mac_filter_rows=$(cat "$CRASHDIR"/configs/mac 2>/dev/null | wc -l)
-            ip_filter_rows=$(cat "$CRASHDIR"/configs/ip_filter 2>/dev/null | wc -l)
-            if [ -z "$num" ] || [ "$num" -le 0 ]; then
-                n=
-            elif [ $num -le $mac_filter_rows ]; then
-                sed -i "${num}d" "$CRASHDIR"/configs/mac
-                echo "-----------------------------------------------"
-                echo -e "\033[32m对应设备已移除！\033[0m"
-                del_all
-            elif [ $num -le $((mac_filter_rows + ip_filter_rows)) ]; then
-                num=$((num - mac_filter_rows))
-                sed -i "${num}d" "$CRASHDIR"/configs/ip_filter
-                echo "-----------------------------------------------"
-                echo -e "\033[32m对应设备已移除！\033[0m"
-                del_all
+            read -r -p "请输入对应序号或直接输入mac地址 > " num
+            if [ -z "$num" ] || [ "$num" = 0 ]; then
+                i=
+                break
+            elif echo "$num" | grep -aEq '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$'; then
+                if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$num")" ]; then
+                    echo "$num" | grep -oE '^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$' >>"$CRASHDIR"/configs/mac
+                else
+                    echo "-----------------------------------------------"
+                    echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
+                    sleep 1
+                fi
+            elif [ "$num" -le $(cat $dhcpdir 2>/dev/null | awk 'END{print NR}') ]; then
+                macadd=$(cat "$dhcpdir" | awk '{print $2}' | sed -n "$num"p)
+                if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$macadd")" ]; then
+                    echo "$macadd" >>"$CRASHDIR"/configs/mac
+                else
+                    echo "-----------------------------------------------"
+                    echo -e "\033[31m已添加的设备，请勿重复添加！\033[0m"
+                    sleep 1
+                fi
             else
                 echo "-----------------------------------------------"
                 echo -e "\033[31m输入有误，请重新输入！\033[0m"
-                del_all
+                sleep 1
             fi
-        fi
+        done
     }
-    echo "-----------------------------------------------"
-    [ -z "$dhcpdir" ] && [ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
-    [ -z "$dhcpdir" ] && [ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
-    [ -z "$dhcpdir" ] && [ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
-    [ -z "$dhcpdir" ] && [ -f /tmp/dnsmasq.leases ] && dhcpdir='/tmp/dnsmasq.leases'
-    [ -z "$dhcpdir" ] && dhcpdir='/dev/null'
-    [ -z "$macfilter_type" ] && macfilter_type='黑名单'
-    if [ "$macfilter_type" = "黑名单" ]; then
-        fw_filter_lan_over='白名单'
-        fw_filter_lan_scrip='不'
-    else
-        fw_filter_lan_over='黑名单'
-        fw_filter_lan_scrip=''
-    fi
-    ######
-    echo -e "\033[30;47m请在此添加或移除设备\033[0m"
-    echo -e "当前过滤方式为：\033[33m$fw_filter_lan_type模式\033[0m"
-    echo -e "仅列表内设备流量\033[36m$fw_filter_lan_scrip经过\033[0m内核"
-    if [ -n "$(cat "$CRASHDIR"/configs/mac)" ]; then
-        echo "-----------------------------------------------"
-        echo -e "当前已过滤设备为：\033[36m"
-        echo -e "\033[33m 设备mac/ip地址       设备名称\033[0m"
-        for dev in $(cat "$CRASHDIR"/configs/mac 2>/dev/null); do
-            get_devinfo
-            echo -e "\033[36m$dev_mac \033[0m$dev_name"
+
+    add_ip() {
+        while true; do
+            echo "-----------------------------------------------"
+            echo "已添加的IP地址(段)："
+            cat "$CRASHDIR"/configs/ip_filter 2>/dev/null
+            echo "-----------------------------------------------"
+            echo -e "\033[33m序号   设备IP     设备名称\033[32m"
+            cat "$dhcpdir" | awk '{print " "NR" "$3,$4}'
+            echo -e "\033[0m-----------------------------------------------"
+            echo -e "手动输入时仅支持\033[32m 192.168.1.0/24\033[0m 或 \033[32m192.168.1.0\033[0m 的形式"
+            echo -e "不支持ipv6地址过滤，如有需求请使用mac地址过滤"
+            echo -e " 0 或回车 结束添加"
+            echo "-----------------------------------------------"
+            read -r -p "请输入对应序号或直接输入IP地址段 > " num
+            if [ -z "$num" ] || [ "$num" = 0 ]; then
+                i=
+                break
+            elif echo "$num" | grep -aEq '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$'; then
+                if [ -z "$(cat "$CRASHDIR"/configs/ip_filter | grep -E "$num")" ]; then
+                    echo "$num" | grep -oE '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$' >>"$CRASHDIR"/configs/ip_filter
+                else
+                    echo "-----------------------------------------------"
+                    echo -e "\033[31m已添加的地址，请勿重复添加！\033[0m"
+                    sleep 1
+                fi
+            elif [ "$num" -le "$(cat "$dhcpdir" 2>/dev/null | awk 'END{print NR}')" ]; then
+                ipadd=$(cat "$dhcpdir" | awk '{print $3}' | sed -n "$num"p)
+                if [ -z "$(cat "$CRASHDIR"/configs/mac | grep -E "$ipadd")" ]; then
+                    echo "$ipadd" >>"$CRASHDIR"/configs/ip_filter
+                else
+                    echo "-----------------------------------------------"
+                    echo -e "\033[31m已添加的地址，请勿重复添加！\033[0m"
+                    sleep 1
+                fi
+            else
+                echo "-----------------------------------------------"
+                echo -e "\033[31m输入有误，请重新输入！\033[0m"
+                sleep 1
+            fi
         done
-        for dev in $(cat "$CRASHDIR"/configs/ip_filter 2>/dev/null); do
-            get_devinfo
-            echo -e "\033[32m$dev_ip  \033[0m$dev_name"
+    }
+
+    del_all() {
+        while true; do
+            echo "-----------------------------------------------"
+            if [ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ]; then
+                echo -e "\033[31m列表中没有需要移除的设备！\033[0m"
+                sleep 1
+            else
+                echo -e "请选择需要移除的设备：\033[36m"
+                echo -e "\033[33m      设备IP       设备mac地址       设备名称\033[0m"
+                i=1
+                for dev in $(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null); do
+                    get_devinfo
+                    echo -e " $i \033[32m$dev_ip \033[36m$dev_mac \033[32m$dev_name\033[0m"
+                    i=$((i + 1))
+                done
+                echo "-----------------------------------------------"
+                echo -e "\033[0m 0 或回车 结束删除"
+                read -r -p "请输入需要移除的设备的对应序号 > " num
+                mac_filter_rows=$(cat "$CRASHDIR"/configs/mac 2>/dev/null | wc -l)
+                ip_filter_rows=$(cat "$CRASHDIR"/configs/ip_filter 2>/dev/null | wc -l)
+                if [ -z "$num" ] || [ "$num" -le 0 ]; then
+                    n=
+                    break
+                elif [ "$num" -le "$mac_filter_rows" ]; then
+                    sed -i "${num}d" "$CRASHDIR"/configs/mac
+                    echo "-----------------------------------------------"
+                    echo -e "\033[32m对应设备已移除！\033[0m"
+                    sleep 1
+                elif [ "$num" -le $((mac_filter_rows + ip_filter_rows)) ]; then
+                    num=$((num - mac_filter_rows))
+                    sed -i "${num}d" "$CRASHDIR"/configs/ip_filter
+                    echo "-----------------------------------------------"
+                    echo -e "\033[32m对应设备已移除！\033[0m"
+                    sleep 1
+                else
+                    echo "-----------------------------------------------"
+                    echo -e "\033[31m输入有误，请重新输入！\033[0m"
+                    sleep 1
+                fi
+            fi
         done
+    }
+
+    while true; do
         echo "-----------------------------------------------"
-    fi
-    echo -e " 1 切换为\033[33m$fw_filter_lan_over模式\033[0m"
-    echo -e " 2 \033[32m添加指定设备(mac地址)\033[0m"
-    echo -e " 3 \033[32m添加指定设备(IP地址/网段)\033[0m"
-    echo -e " 4 \033[36m移除指定设备\033[0m"
-    echo -e " 9 \033[31m清空整个列表\033[0m"
-    echo -e " 0 返回上级菜单"
-    read -p "请输入对应数字 > " num
-    case "$num" in
-    0) ;;
-    1)
-        macfilter_type=$fw_filter_lan_over
-        setconfig macfilter_type $macfilter_type
-        echo "-----------------------------------------------"
-        echo -e "\033[32m已切换为$fw_filter_lan_type模式！\033[0m"
-        fw_filter_lan
-	;;
-    2)
-        add_mac
-        fw_filter_lan
-	;;
-    3)
-        add_ip
-        fw_filter_lan
-	;;
-    4)
-        del_all
-        fw_filter_lan
-	;;
-    9)
-        : >"$CRASHDIR"/configs/mac
-        : >"$CRASHDIR"/configs/ip_filter
-        echo "-----------------------------------------------"
-        echo -e "\033[31m设备列表已清空！\033[0m"
-        fw_filter_lan
-	;;
-    *)
-        errornum
-	;;
-    esac
+        [ -z "$dhcpdir" ] && [ -f /var/lib/dhcp/dhcpd.leases ] && dhcpdir='/var/lib/dhcp/dhcpd.leases'
+        [ -z "$dhcpdir" ] && [ -f /var/lib/dhcpd/dhcpd.leases ] && dhcpdir='/var/lib/dhcpd/dhcpd.leases'
+        [ -z "$dhcpdir" ] && [ -f /tmp/dhcp.leases ] && dhcpdir='/tmp/dhcp.leases'
+        [ -z "$dhcpdir" ] && [ -f /tmp/dnsmasq.leases ] && dhcpdir='/tmp/dnsmasq.leases'
+        [ -z "$dhcpdir" ] && dhcpdir='/dev/null'
+        [ -z "$macfilter_type" ] && macfilter_type='黑名单'
+        if [ "$macfilter_type" = "黑名单" ]; then
+            fw_filter_lan_over='白名单'
+            fw_filter_lan_scrip='不'
+        else
+            fw_filter_lan_over='黑名单'
+            fw_filter_lan_scrip=''
+        fi
+
+        echo -e "\033[30;47m请在此添加或移除设备\033[0m"
+        echo -e "当前过滤方式为：\033[33m$fw_filter_lan_type模式\033[0m"
+        echo -e "仅列表内设备流量\033[36m$fw_filter_lan_scrip经过\033[0m内核"
+        if [ -n "$(cat "$CRASHDIR"/configs/mac)" ]; then
+            echo "-----------------------------------------------"
+            echo -e "当前已过滤设备为：\033[36m"
+            echo -e "\033[33m 设备mac/ip地址       设备名称\033[0m"
+            for dev in $(cat "$CRASHDIR"/configs/mac 2>/dev/null); do
+                get_devinfo
+                echo -e "\033[36m$dev_mac \033[0m$dev_name"
+            done
+            for dev in $(cat "$CRASHDIR"/configs/ip_filter 2>/dev/null); do
+                get_devinfo
+                echo -e "\033[32m$dev_ip  \033[0m$dev_name"
+            done
+            echo "-----------------------------------------------"
+        fi
+        echo -e " 1 切换为\033[33m$fw_filter_lan_over模式\033[0m"
+        echo -e " 2 \033[32m添加指定设备(mac地址)\033[0m"
+        echo -e " 3 \033[32m添加指定设备(IP地址/网段)\033[0m"
+        echo -e " 4 \033[36m移除指定设备\033[0m"
+        echo -e " 9 \033[31m清空整个列表\033[0m"
+        echo -e " 0 返回上级菜单"
+        read -r -p "请输入对应数字 > " num
+        case "$num" in
+        "" | 0)
+            break
+            ;;
+        1)
+            macfilter_type=$fw_filter_lan_over
+            setconfig macfilter_type $macfilter_type
+            echo "-----------------------------------------------"
+            echo -e "\033[32m已切换为$fw_filter_lan_type模式！\033[0m"
+            ;;
+        2)
+            add_mac
+            ;;
+        3)
+            add_ip
+            ;;
+        4)
+            del_all
+            ;;
+        9)
+            : >"$CRASHDIR"/configs/mac
+            : >"$CRASHDIR"/configs/ip_filter
+            echo "-----------------------------------------------"
+            echo -e "\033[31m设备列表已清空！\033[0m"
+            sleep 1
+            ;;
+        *)
+            errornum
+            sleep 1
+            ;;
+        esac
+    done
 }
