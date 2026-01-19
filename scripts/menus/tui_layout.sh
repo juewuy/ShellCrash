@@ -2,7 +2,6 @@
 # Terminal UI layout helpers
 # Provides menu/table formatting utilities
 
-
 # set the total width of the menu
 # (adjusting this number will automatically change the entire menu, including the separator lines)
 # note: The number represents the number of columns that appear when the "||" appears on the right
@@ -14,64 +13,132 @@ FULL_EQ="=======================================================================
 FULL_DASH="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
 
 # function to print content lines
-# (using cursor jump with auto-wrapping and color handling)
 content_line() {
-    local param="${1:-}"
+    raw_input="$1"
 
-    # Calculate Available Text Width
-    local text_width=$((TABLE_WIDTH - 3))
-
-    # 1. Extract color codes (if present)
-    # Use sed to capture the leading ANSI Escape Code (\x1b is the hexadecimal representation of ESC)
-    # This line extracts \033[33m... from \033[33m and stores it in color_code
-    local color_code
-    color_code=$(echo -e "$param" | sed -n 's/^\(\x1b\[[0-9;]*m\).*/\1/p')
-
-    # 2. Generate Clean Text
-    # Use sed to remove all ANSI color codes, retaining only plain text content
-    # This allows fold to accurately count characters without premature line breaks
-    local clean_text
-    clean_text=$(echo -e "$param" | sed 's/\x1b\[[0-9;]*m//g')
-
-    if [ -z "$clean_text" ]; then
-        echo -e " \033[${TABLE_WIDTH}G||"
-    else
-        # 3. Insert line breaks in plain text
-        echo "$clean_text" | fold -s -w "$text_width" | while IFS= read -r line; do
-            # 4. Output Restructuring
-            # Force the addition of color_code to each line and append \033[0m to reset at the end
-            echo -e " ${color_code}${line}\033[0m\033[${TABLE_WIDTH}G||"
-        done
+    if [ -z "$raw_input" ]; then
+        printf " \033[%dG||\n" "$TABLE_WIDTH"
+        return
     fi
+
+    printf '%b' "$raw_input" | awk -v table_width="$TABLE_WIDTH" '
+    BEGIN {
+        textWidth = table_width - 3
+
+        currentDisplayWidth = 0
+        wordWidth = 0
+        currentLine = ""
+        wordBuffer = ""
+
+        lastColor = ""
+
+        ESC = sprintf("%c", 27)
+    }
+
+    {
+        n = split($0, chars, "")
+
+        for (i = 1; i <= n; i++) {
+            r = chars[i]
+
+            if (r == ESC && i+1 <= n && chars[i+1] == "[") {
+                # Scan forward until "m"
+                ansiSeq = ""
+                for (j = i; j <= n; j++) {
+                    ansiSeq = ansiSeq chars[j]
+                    if (chars[j] == "m") {
+                        i = j # Advance main loop
+                        break
+                    }
+                }
+                wordBuffer = wordBuffer ansiSeq
+                lastColor = ansiSeq # Remember color for wrapping
+                continue
+            }
+
+            charWidth = 1
+            if (r ~ /[^\x00-\x7F]/) {
+                charWidth = 2
+            }
+
+            if (r == " " || charWidth == 2) {
+                if (currentDisplayWidth + wordWidth + charWidth > textWidth) {
+                    printf " %s\033[0m\033[%dG||\n", currentLine, table_width
+                    currentLine = lastColor wordBuffer
+                    currentDisplayWidth = wordWidth
+                    wordBuffer = r
+                    wordWidth = charWidth
+                } else {
+                    currentLine = currentLine wordBuffer r
+                    currentDisplayWidth += wordWidth + charWidth
+                    wordBuffer = ""
+                    wordWidth = 0
+                }
+            } else {
+                wordBuffer = wordBuffer r
+                wordWidth += charWidth
+
+                if (wordWidth > textWidth) {
+                    printf " %s%s\033[0m\033[%dG||\n", currentLine, wordBuffer, table_width
+                    currentLine = lastColor
+                    currentDisplayWidth = 0
+                    wordBuffer = ""
+                    wordWidth = 0
+                }
+            }
+        }
+    }
+
+    END {
+        if (wordWidth > 0) {
+            if (currentDisplayWidth + wordWidth > textWidth) {
+                printf " %s\033[0m\033[%dG||\n", currentLine, table_width
+                currentLine = lastColor wordBuffer
+            } else {
+                currentLine = currentLine wordBuffer
+            }
+        }
+
+        cleanText = currentLine
+        gsub(/\033\[[0-9;]*m/, "", cleanText)
+        gsub(/^[ \t]+|[ \t]+$/, "", cleanText)
+
+        if (cleanText != "") {
+            printf " %s\033[0m\033[%dG||\n", currentLine, table_width
+        }
+    }
+    '
 }
 
 # function to print sub content lines
 # for printing accompanying instructions
 sub_content_line() {
-    local param="${1:-}"
-    echo -e "    ${param}\033[${TABLE_WIDTH}G||"
-    content_line
-}
-
-# increase the spacing between the front
-# and back forms to improve readability
-double_line_break() {
-    printf "\n\n"
+    param="$1"
+    if [ -z "$param" ]; then
+        printf " \033[%dG||\n" "$TABLE_WIDTH"
+        return
+    fi
+    content_line "   $param"
+    printf " \033[%dG||\n" "$TABLE_WIDTH"
 }
 
 # function to print separators
 # (using string slicing)
 # parameter $1: pass in "=" or "-"
 separator_line() {
-    local separator_type="$1"
-    local output_line=""
-    local len=$((TABLE_WIDTH - 1))
-
-    if [ "$separator_type" == "=" ]; then
-        output_line="${FULL_EQ:0:$len}"
+    separatorType="$1"
+    lenLimit=$((TABLE_WIDTH - 1))
+    outputLine=""
+    if [ "$separatorType" = "=" ]; then
+        outputLine=$(printf "%.${lenLimit}s" "$FULL_EQ")
     else
-        output_line="${FULL_DASH:0:$len}"
+        outputLine=$(printf "%.${lenLimit}s" "$FULL_DASH")
     fi
+    printf "%s||\n" "$outputLine"
+}
 
-    echo "${output_line}||"
+# increase the spacing between the front
+# and back forms to improve readability
+double_line_break() {
+    printf "\n\n"
 }
