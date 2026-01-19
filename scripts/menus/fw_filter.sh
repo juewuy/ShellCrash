@@ -181,45 +181,47 @@ set_common_ports() {
     done
 }
 
-set_cust_host_ipv4() { #自定义ipv4透明路由网段
-	[ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="OFF"
-	. "$CRASHDIR"/starts/fw_getlanip.sh && getlanip
-	echo "-----------------------------------------------"
-	echo -e "当前默认透明路由的网段为: \033[32m$host_ipv4 \033[0m"
-	echo -e "当前已添加的自定义网段为:\033[36m$cust_host_ipv4\033[0m"
-	echo "-----------------------------------------------"
-	echo -e " 1 移除所有自定义网段"
-	echo -e " 2 使用自定义网段覆盖默认网段	\033[36m$replace_default_host_ipv4\033[0m"
-	echo -e " 0 返回上级菜单"
-	read -p "请输入对应的序号或需要额外添加的网段 > " text
-	case "$text" in
-	2)
-		if [ "$replace_default_host_ipv4" == "OFF" ]; then
-			replace_default_host_ipv4="ON"
-		else
-			replace_default_host_ipv4="OFF"
-		fi
-		setconfig replace_default_host_ipv4 "$replace_default_host_ipv4"
-		set_cust_host_ipv4
-		;;
-	1)
-		unset cust_host_ipv4
-		setconfig cust_host_ipv4
-		set_cust_host_ipv4
-		;;
-	0) ;;
-	*)
-		if [ -n "$(echo $text | grep -Eo '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}'$)" -a -z "$(echo $cust_host_ipv4 | grep "$text")" ]; then
-			cust_host_ipv4="$cust_host_ipv4 $text"
-			setconfig cust_host_ipv4 "'$cust_host_ipv4'"
-		else
-			echo "-----------------------------------------------"
-			echo -e "\033[31m请输入正确的网段地址！\033[0m"
-		fi
-		sleep 1
-		set_cust_host_ipv4
-		;;
-	esac
+# 自定义ipv4透明路由网段
+set_cust_host_ipv4() {
+    while true; do
+        [ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="OFF"
+        . "$CRASHDIR"/starts/fw_getlanip.sh && getlanip
+        echo "-----------------------------------------------"
+        echo -e "当前默认透明路由的网段为: \033[32m$host_ipv4 \033[0m"
+        echo -e "当前已添加的自定义网段为:\033[36m$cust_host_ipv4\033[0m"
+        echo "-----------------------------------------------"
+        echo -e " 1 移除所有自定义网段"
+        echo -e " 2 使用自定义网段覆盖默认网段	\033[36m$replace_default_host_ipv4\033[0m"
+        echo -e " 0 返回上级菜单"
+        read -r -p "请输入对应的序号或需要额外添加的网段 > " text
+        case "$text" in
+        "" | 0)
+            break
+            ;;
+        1)
+            unset cust_host_ipv4
+            setconfig cust_host_ipv4
+            ;;
+        2)
+            if [ "$replace_default_host_ipv4" == "OFF" ]; then
+                replace_default_host_ipv4="ON"
+            else
+                replace_default_host_ipv4="OFF"
+            fi
+            setconfig replace_default_host_ipv4 "$replace_default_host_ipv4"
+            ;;
+        *)
+            if [ -n "$(echo "$text" | grep -Eo '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}'$)" ] && [ -z "$(echo "$cust_host_ipv4" | grep "$text")" ]; then
+                cust_host_ipv4="$cust_host_ipv4 $text"
+                setconfig cust_host_ipv4 "'$cust_host_ipv4'"
+            else
+                echo "-----------------------------------------------"
+                echo -e "\033[31m请输入正确的网段地址！\033[0m"
+            fi
+            sleep 1
+            ;;
+        esac
+    done
 }
 
 # 局域网设备过滤
