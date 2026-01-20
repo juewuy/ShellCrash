@@ -9,25 +9,27 @@ on:
         type: string
 
 jobs:
-  get_meta_version:
+  get_version:
     runs-on: ubuntu-latest
     outputs:
-      meta_version: ${{ steps.meta.outputs.version }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
-      - id: meta
+      - id: get_version
         run: |
-          # 访问 GitHub API 获取最新 Release 的 Tag 名
-          latest_tag=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r .tag_name)
+          [ "${{ inputs.tag1 }}" = meta ] && repo="MetaCubeX/mihomo"
+          [ "${{ inputs.tag1 }}" = singbox ] && repo="SagerNet/sing-box"
+          [ "${{ inputs.tag1 }}" = singboxr ] && repo="SagerNet/sing-box"
+          latest_tag=$(curl -s "https://api.github.com/repos/$repo/releases/latest" | jq -r .tag_name)
           echo "version=$latest_tag" >> $GITHUB_OUTPUT
           
   update_meta_upx:
     if: github.event.inputs.tag1 == 'meta'
-    needs: get_meta_version
+    needs: get_version
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_meta_core.yaml@dev
     with:
       tag1: MetaCubeX/mihomo
-      tag2: ${{ needs.get_meta_version.outputs.meta_version }}
+      tag2: ${{ needs.get_version.outputs.version }}
       tag4: meta
       tag5: ""
       tag6: upx
@@ -35,12 +37,12 @@ jobs:
 
   update_meta_tar:
     if: github.event.inputs.tag1 == 'meta'
-    needs: [get_meta_version, update_meta_upx]
+    needs: [get_version, update_meta_upx]
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_meta_core.yaml@dev
     with:
       tag1: MetaCubeX/mihomo
-      tag2: ${{ needs.get_meta_version.outputs.meta_version }}
+      tag2: ${{ needs.get_version.outputs.version }}
       tag4: meta
       tag5: ""
       tag6: tar.gz
@@ -48,11 +50,12 @@ jobs:
     
   update_singboxr_upx:
     if: github.event.inputs.tag1 == 'singboxr'
+    needs: get_version
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
       tag1: reF1nd/sing-box
-      tag2: reF1nd-main
+      tag2: ${{ needs.get_version.outputs.version }}
       tag4: singboxr
       tag5: with_quic,with_utls,with_clash_api
       tag6: upx
@@ -60,12 +63,12 @@ jobs:
 
   update_singboxr_tar:
     if: github.event.inputs.tag1 == 'singboxr'
-    needs: update_singboxr_upx
+    needs: [get_version, update_singboxr_upx]
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
       tag1: reF1nd/sing-box
-      tag2: reF1nd-main
+      tag2: ${{ needs.get_version.outputs.version }}
       tag4: singboxr
       tag5: with_gvisor,with_quic,with_wireguard,with_utls,with_clash_api,with_tailscale
       tag6: tar.gz
@@ -73,11 +76,12 @@ jobs:
 
   update_singbox_upx:
     if: github.event.inputs.tag1 == 'singbox'
+    needs: get_version
     permissions: write-all
     uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
     with:
       tag1: SagerNet/sing-box
-      tag2: main
+      tag2: ${{ needs.get_version.outputs.version }}
       tag4: singbox
       tag5: with_quic,with_utls,with_clash_api
       tag6: upx
