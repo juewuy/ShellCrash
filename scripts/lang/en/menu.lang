@@ -18,23 +18,24 @@ MENU_OVERRIDE_ASK="Cancel the disable setting?"
 
 # ===== Welcome & Status =====
 MENU_WELCOME="Welcome to ShellCrash!"
-MENU_VERSION_LABEL="Version:"
+MENU_VERSION_LABEL="Ver:"
 
-MENU_RUN_ON="Running"
+MENU_RUN_ON=" Running"
 MENU_RUN_SET="Configured"
-MENU_RUN_OFF="Not running"
+MENU_RUN_OFF="Stopped"
 
+MENU_PURE_MOD="Pure"
+MENU_MOD=" Mod"
 MENU_IP_DF="Device IP Address"
 
-MENU_AUTOSTART_ON="Autostart is enabled!"
-MENU_AUTOSTART_OFF="Autostart is disabled!"
-MENU_AUTOSTART_DEBUG="Running in debug mode!"
+MENU_AUTOSTART_ON="Autostart enable!"
+MENU_AUTOSTART_OFF="Autostart disable!"
+MENU_AUTOSTART_DEBUG="Debug mode!"
 
-MENU_MEM_USED="Memory usage:"
-MENU_RUNNING_TIME="Running time:"
+MENU_MEM_USED="Memory usage: "
+MENU_RUNNING_TIME="Running time: "
 
-MENU_TG_CHANNEL="Telegram Channel:"
-MENU_TG_URL="https://t.me/ShellClash"
+MENU_TG_CHANNEL="Telegram Channel: "
 
 # ===== /tmp File Detection =====
 MENU_TMP_CORE_FOUND="Available core file found:"
@@ -69,7 +70,6 @@ MENU_TEST_LOG_HINT="Full execution log can be found at:"
 MENU_ERROR_FOUND="Error found:"
 
 # ===== Command Line Help =====
-MENU_CLI_WELCOME="Welcome to ShellCrash"
 
 MENU_CLI_TEST="Test Mode"
 MENU_CLI_HELP="Help List"

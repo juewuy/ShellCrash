@@ -679,7 +679,7 @@ getgeo() {
             [ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
         }
         if echo "$geoname" | grep -Eq '.tar.gz'; then
-            tar -zxf "$TMPDIR"/"${geoname}" "${tar_para}" -C "$BINDIR"/"${geofile}" >/dev/null
+            tar -zxf "$TMPDIR"/"${geoname}" ${tar_para} -C "$BINDIR"/"${geofile}" >/dev/null
             if [ $? -ne 0 ]; then
                 content_line "文件解压失败！"
                 separator_line "="
@@ -975,7 +975,7 @@ getdb() {
     else
         content_line "\033[33m下载成功，正在解压文件......\033[0m"
         mkdir -p "$dbdir" >/dev/null
-        tar -zxf "$TMPDIR/clashdb.tar.gz" "${tar_para}" -C "$dbdir" >/dev/null
+        tar -zxf "$TMPDIR/clashdb.tar.gz" ${tar_para} -C "$dbdir" >/dev/null
         if [ $? -ne 0 ]; then
             content_line "文件解压失败！"
             separator_line "="
@@ -1079,14 +1079,11 @@ setdb() {
         content_line "1) 安装\033[32mzashboard面板\033[0m（约2.2mb）"
         content_line "2) 安装\033[32mMetaXD面板\033[0m（约1.5mb）"
         content_line "3) 安装\033[32mYacd-Meta魔改面板\033[0m（约1.7mb）"
-        content_line ""
         content_line "   - - - - - -已停止维护- - - - - -"
         content_line "4) 安装\033[32m基础面板\033[0m（约500kb）"
         content_line "5) 安装\033[32mMeta基础面板\033[0m（约800kb）"
         content_line "6) 安装\033[32mYacd面板\033[0m（约1.1mb）"
-        content_line ""
         content_line "9) \033[31m卸载本地面板\033[0m"
-        content_line ""
         content_line "0) 返回上级菜单"
         separator_line "="
 

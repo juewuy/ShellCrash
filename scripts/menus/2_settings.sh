@@ -17,7 +17,7 @@ settings() {
         echo "-----------------------------------------------"
         echo -e "\033[30;47m$SET_MENU_TITLE\033[0m"
         echo "-----------------------------------------------"
-        echo -e " 1 $SET_MENU_REDIR\t\033[36m$redir_mod\033[0m"
+        echo -e " 1 $SET_MENU_REDIR\t\033[36m$redir_mod$MENU_MOD\033[0m"
         echo -e " 2 $SET_MENU_DNS\t\033[36m$dns_mod\033[0m"
         echo -e " 3 $SET_MENU_FW_FILTER"
         [ "$disoverride" != "1" ] && {
@@ -181,10 +181,11 @@ set_redir_mod() {
     while true; do
         [ -n "$(ls /dev/net/tun 2>/dev/null)" ] || ip tuntap >/dev/null 2>&1 || modprobe tun 2>/dev/null && sup_tun=1
         [ -z "$firewall_area" ] && firewall_area=1
+		[ "$firewall_area" = 4 ] && redir_mod="$MENU_PURE_MOD"
         [ -z "$redir_mod" ] && redir_mod='Redir'
         firewall_area_dsc=$(echo "$SET_FW_AREA_DESC($bypass_host)" | cut -d'|' -f$firewall_area)
         echo "-----------------------------------------------"
-        echo -e "$SET_REDIR_CURRENT \033[47;30m$redir_mod\033[0m ; $SET_CORE_CURRENT \033[47;30m$crashcore\033[0m"
+        echo -e "$SET_REDIR_CURRENT \033[47;30m$redir_mod$MENU_MOD\033[0m; $SET_CORE_CURRENT \033[47;30m$crashcore\033[0m"
         echo -e "\033[33m$SET_REDIR_RESTART_HINT\033[0m"
         echo "-----------------------------------------------"
         [ $firewall_area -le 3 ] && {
@@ -460,12 +461,14 @@ set_firewall_area() {
 
     case "$num" in
     [1-4])
-        [ $firewall_area -ge 4 ] && {
-            redir_mod=Redir
-            setconfig redir_mod $redir_mod
-        }
-        firewall_area=$num
-        setconfig firewall_area $firewall_area
+        if [ $firewall_area -ge 4 ];then
+            redir_mod=''
+        else
+			redir_mod=Redir
+		fi
+        firewall_area="$num"
+        setconfig firewall_area "$firewall_area"
+		setconfig redir_mod "$redir_mod"
 	;;
     5)
         echo "-----------------------------------------------"

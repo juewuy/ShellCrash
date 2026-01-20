@@ -24,6 +24,8 @@ MENU_RUN_ON="正在运行"
 MENU_RUN_SET="已设置"
 MENU_RUN_OFF="没有运行"
 
+MENU_PURE_MOD="纯净"
+MENU_MOD="模式"
 MENU_IP_DF="设备IP地址"
 
 MENU_AUTOSTART_ON="已设置开机启动！"
@@ -34,7 +36,6 @@ MENU_MEM_USED="当前内存占用："
 MENU_RUNNING_TIME="已运行："
 
 MENU_TG_CHANNEL="TG频道："
-MENU_TG_URL="https://t.me/ShellClash"
 
 # ===== /tmp 文件检测 =====
 MENU_TMP_CORE_FOUND="发现可用的内核文件："
@@ -68,7 +69,6 @@ MENU_TEST_LOG_HINT="完整执行记录请查看："
 MENU_ERROR_FOUND="发现错误："
 
 # ===== 命令行帮助 =====
-MENU_CLI_WELCOME="欢迎使用ShellCrash"
 
 MENU_CLI_TEST="测试模式"
 MENU_CLI_HELP="帮助列表"

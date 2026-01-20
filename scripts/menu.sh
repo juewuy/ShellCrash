@@ -67,7 +67,7 @@ ckstatus() { #脚本启动前检查
 
     versionsh=$(cat "$CRASHDIR"/version)
     [ -n "$versionsh" ] && versionsh_l=$versionsh
-    [ -z "$redir_mod" ] && redir_mod="纯净模式"
+    [ -z "$redir_mod" ] && redir_mod="$MENU_PURE_MOD"
     #获取本机host地址
     [ -z "$host" ] && host=$(ubus call network.interface.lan status 2>&1 | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
     [ -z "$host" ] && host=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'lan' | grep -E ' 1(92|0|72)\.' | sed 's/.*inet.//g' | sed 's/\/[0-9][0-9].*$//g' | head -n 1)
@@ -90,12 +90,12 @@ ckstatus() { #脚本启动前检查
 
     PID=$(pidof CrashCore | awk '{print $NF}')
     if [ -n "$PID" ]; then
-        run="\033[32m$MENU_RUN_ON（$redir_mod）\033[0m"
+        run="\033[32m$MENU_RUN_ON($redir_mod$MENU_MOD)\033[0m"
         running_status
     elif [ "$firewall_area" = 5 ] && [ -n "$(ip route list table 100)" ]; then
-        run="\033[32m$MENU_RUN_SET（$redir_mod）\033[0m"
+        run="\033[32m$MENU_RUN_SET($redir_mod$MENU_MOD)\033[0m"
     else
-        run="\033[31m$MENU_RUN_OFF（$redir_mod）\033[0m"
+        run="\033[31m$MENU_RUN_OFF($redir_mod$MENU_MOD)\033[0m"
         #检测系统端口占用
         checkport
     fi
@@ -104,14 +104,14 @@ ckstatus() { #脚本启动前检查
     [ -f "$TMPDIR"/debug.log -o -f "$CRASHDIR"/debug.log -a -n "$PID" ] && auto="\033[33m$MENU_AUTOSTART_DEBUG\033[0m"
     #输出状态
     echo "-----------------------------------------------"
-    echo -e "\033[30;46m$MENU_WELCOME\033[0m		$MENU_VERSION_LABEL$versionsh_l"
-    echo -e "$corename $run，$auto"
+    echo -e "\033[30;46m$MENU_WELCOME\033[0m\t\t$MENU_VERSION_LABEL$versionsh_l"
+    echo -e "$corename$run\t$auto"
 
     if [ -n "$PID" ]; then
-        echo -e "$MENU_MEM_USED \033[44m$VmRSS\033[0m，$MENU_RUNNING_TIME \033[46;30m$day\033[44;37m$time\033[0m"
+        echo -e "$MENU_MEM_USED\033[44m$VmRSS\033[0m\t\t$MENU_RUNNING_TIME\033[46;30m$day\033[44;37m$time\033[0m"
     fi
 
-    echo -e "$MENU_TG_CHANNEL \033[36;4m$MENU_TG_URL\033[0m"
+    echo -e "$MENU_TG_CHANNEL\033[36;4mhttps://t.me/ShellClash\033[0m"
     echo "-----------------------------------------------"
     #检查新手引导
     if [ -z "$userguide" ]; then
@@ -287,7 +287,7 @@ case "$1" in
     ;;
 *)
     echo -----------------------------------------
-    echo "$MENU_CLI_WELCOME"
+    echo "$MENU_WELCOME"
     echo -----------------------------------------
     echo " -t $MENU_CLI_TEST"
     echo " -h $MENU_CLI_HELP"
