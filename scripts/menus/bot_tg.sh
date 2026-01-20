@@ -155,8 +155,6 @@ download_file(){
 	else
 		send_msg "文件格式不匹配，上传失败！"
 	fi
-	OFFSET=$((OFFSET + 1))
-	continue
 }
 ### --- 具体操作函数 --- ###
 do_start_fw(){
@@ -231,11 +229,18 @@ polling(){
 		OFFSET=$(echo "$UPDATES" | grep -o '"update_id":[0-9]*' | tail -n1 | cut -d: -f2)
 		OFFSET=$((OFFSET + 1))
 		
+		### --- 校验ChatID --- ###
+		CHATID=$(echo "$UPDATES" | grep -o '"id":[0-9]*' | tail -n1 | cut -d: -f2)
+		[ "$CHATID" != "$TG_CHATID" ] && continue
+		
 		### --- 处理按钮事件 --- ###
 		CALLBACK=$(echo "$UPDATES" | grep -o '"data":"[^"]*"' | head -n1 | sed 's/.*:"//;s/"$//')
 		FILE_ID=$(echo "$UPDATES" | sed 's/"callback_query".*//g' | grep -o '"file_id":"[^"]*"' | head -n1 | sed 's/.*:"//;s/"$//')
 		
-		[ -n "$FILE_ID" ] && download_file
+		[ -n "$FILE_ID" ] && {
+			download_file
+			continue
+		}
 		[ -n "$CALLBACK" ] && case "$CALLBACK" in
 			"start_redir")
 				if [ "$redir_mod" = '纯净模式' ];then
