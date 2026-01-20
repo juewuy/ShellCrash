@@ -21,9 +21,9 @@ upgrade() {
 
         if [ -z "$version_new" ]; then
             checkupdate
-            double_line_break
+            line_break
         else
-            double_line_break
+            line_break
         fi
         [ -z "$core_v" ] && core_v=$crashcore
         core_v_new=$(eval echo \$"$crashcore"_v)
@@ -71,7 +71,7 @@ upgrade() {
             setcrt
             ;;
         6)
-            double_line_break
+            line_break
             separator_line "="
             content_line "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
             content_line "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
@@ -88,7 +88,7 @@ upgrade() {
             . "$CRASHDIR"/menus/uninstall.sh && uninstall
             ;;
         a)
-            double_line_break
+            line_break
             separator_line "="
             content_line "感谢以下项目和作者！"
             separator_line "-"
@@ -143,7 +143,7 @@ upgrade() {
 
 # 检查更新
 checkupdate() {
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[32m正在检查更新......\033[0m"
     get_bin "$TMPDIR"/version_new version echooff
@@ -168,7 +168,7 @@ checkupdate() {
 
 # 更新脚本
 getscripts() {
-    double_line_break
+    line_break
     separator_line "="
     get_bin "$TMPDIR"/ShellCrash.tar.gz ShellCrash.tar.gz
 
@@ -196,7 +196,7 @@ getscripts() {
 
 setscripts() {
     while true; do
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[33m注意：更新时会停止服务！\033[0m"
         content_line "当前脚本版本为：\033[36m$versionsh_l\033[0m"
@@ -214,7 +214,7 @@ setscripts() {
             # 下载更新
             getscripts
             # 提示
-            double_line_break
+            line_break
             separator_line "="
             content_line "\033[32m管理脚本更新成功!\033[0m"
             separator_line "="
@@ -232,7 +232,7 @@ setscripts() {
 # 手动设置内核架构
 setcpucore() {
     cpucore_list="armv5 armv7 arm64 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
     content_line "不知道如何获取核心版本？\033[0m"
@@ -251,7 +251,7 @@ setcpucore() {
     read -r -p "请输入对应标号> " num
     [ -n "$num" ] && setcpucore=$(echo "$cpucore_list" | awk '{print $"'"$num"'"}')
     if [ -z "$setcpucore" ]; then
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[31m请输入正确的处理器架构！\033[0m"
         separator_line "="
@@ -266,7 +266,7 @@ setcpucore() {
 # 手动指定内核类型
 setcoretype() {
     while true; do
-        double_line_break
+        line_break
         separator_line "="
         echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
         content_line "\033[33m请确认该自定义内核的类型：\033[0m"
@@ -313,7 +313,7 @@ switch_core() {
     [ "$core_new" != "$core_old" ] && {
         [ "$dns_mod" = "redir_host" ] && [ "$core_old" = "clash" ] && setconfig dns_mod mix                               #singbox自动切换dns
         [ "$dns_mod" = "mix" ] && [ "$crashcore" = 'clash' -o "$crashcore" = 'clashpre' ] && setconfig dns_mod redir_host #singbox自动切换dns
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[33m已从$core_old内核切换至$core_new内核\033[0m"
         content_line "\033[33m二者Geo数据库及yaml/json配置文件不通用\033[0m"
@@ -356,7 +356,7 @@ getcore() {
         core_new=clash
     fi
     # 获取在线内核文件
-    double_line_break
+    line_break
     separator_line "="
     content_line "正在在线获取$crashcore核心文件......"
     core_webget
@@ -387,7 +387,7 @@ getcore() {
 checkcustcore() {
     [ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
     # 通过githubapi获取内核信息
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[32m正在获取内核文件链接......\033[0m"
     webget "$TMPDIR"/github_api https://api.github.com/repos/"${project}"/releases/"${api_url}"
@@ -402,7 +402,7 @@ checkcustcore() {
         if [ -s "$TMPDIR"/core.list ]; then
             separator_line "="
 
-            double_line_break
+            line_break
             separator_line "="
             content_line "内核版本：\033[36m$release_tag\033[0m"
             content_line "发布时间：\033[33m$release_date\033[0m"
@@ -456,7 +456,7 @@ checkcustcore() {
 setcustcore() {
     while true; do
         [ -z "$cpucore" ] && check_cpucore
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[36m此处内核通常源自互联网采集，此处致谢各位开发者！\033[0m"
         content_line "\033[33m自定义内核未经过完整适配，使用出现问题请自行解决！\033[0m"
@@ -506,7 +506,7 @@ setcustcore() {
             checkcustcore
             ;;
         9)
-            double_line_break
+            line_break
             separator_line "="
             content_line "请输入自定义内核的链接地址"
             content_line "（必须是以.tar.gz或.gz结尾的压缩文件）"
@@ -531,7 +531,7 @@ setcustcore() {
 }
 
 setziptype() {
-    double_line_break
+    line_break
     separator_line "="
     content_line "请选择内核内核分支及压缩方式：\033[0m"
     separator_line "-"
@@ -572,7 +572,7 @@ setcore() {
         echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
         [ -n "$custcorelink" ] && custcore="$(echo "$custcorelink" | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 
-        double_line_break
+        line_break
         separator_line "="
         [ -z "$cpucore" ] && check_cpucore
 
@@ -611,7 +611,7 @@ setcore() {
             ;;
         1)
             [ -d "/jffs" ] && {
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
                 separator_line "="
@@ -666,7 +666,7 @@ setcore() {
 # 下载Geo文件
 getgeo() {
     # 生成链接
-    double_line_break
+    line_break
     separator_line "="
     content_line "正在从服务器获取数据库文件......"
     get_bin "$TMPDIR"/"${geoname}" bin/geodata/"$geotype"
@@ -684,7 +684,7 @@ getgeo() {
                 content_line "文件解压失败！"
                 separator_line "="
                 sleep 1
-                double_line_break
+                line_break
                 rm -rf "$TMPDIR"/${geoname}
                 exit 1
             fi
@@ -700,7 +700,7 @@ getgeo() {
 }
 
 getcustgeo() {
-    double_line_break
+    line_break
     separator_line "="
     content_line "正在获取数据库文件......"
     webget "$TMPDIR"/"$geoname" "$custgeolink"
@@ -723,7 +723,7 @@ checkcustgeo() {
     while true; do
         [ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
         [ ! -s "$TMPDIR"/geo.list ] && {
-            double_line_break
+            line_break
             separator_line "="
             content_line "\033[32m正在查找可更新的数据库文件......\033[0m"
             separator_line "="
@@ -734,7 +734,7 @@ checkcustgeo() {
         }
         if [ -s "$TMPDIR"/geo.list ]; then
 
-            double_line_break
+            line_break
             separator_line "="
             content_line "请选择需要更新的数据库文件："
             separator_line "-"
@@ -769,7 +769,7 @@ checkcustgeo() {
                 ;;
             esac
         else
-            double_line_break
+            line_break
             separator_line "="
             content_line "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
             separator_line "="
@@ -782,7 +782,7 @@ checkcustgeo() {
 setcustgeo() {
     while true; do
         rm -rf "$TMPDIR"/geo.list
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
         content_line "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
@@ -840,7 +840,7 @@ setcustgeo() {
             checkcustgeo
             ;;
         9)
-            double_line_break
+            line_break
             read -r -p "请输入自定义数据库的链接地址 > " link
             [ -n "$link" ] && custgeolink="$link"
             getgeo
@@ -855,7 +855,7 @@ setcustgeo() {
 
 setgeo() {
     while true; do
-        double_line_break
+        line_break
         . $CFG_PATH >/dev/null
         [ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
         separator_line "="
@@ -918,7 +918,7 @@ setgeo() {
             ;;
         9)
             while true; do
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
                 content_line "清理后启动服务即可自动下载所需文件"
@@ -939,7 +939,7 @@ setgeo() {
                         setconfig $var
                     done
                     rm -rf "$CRASHDIR"/ruleset/*
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[33m所有数据库文件均已清理！\033[0m"
                     separator_line "="
@@ -964,7 +964,7 @@ setgeo() {
 # Dashboard
 getdb() {
     dblink="${update_url}/"
-    double_line_break
+    line_break
     separator_line "="
     content_line "正在连接服务器获取安装文件......"
     get_bin "$TMPDIR"/clashdb.tar.gz bin/dashboard/${db_type}.tar.gz
@@ -979,7 +979,7 @@ getdb() {
         if [ $? -ne 0 ]; then
             content_line "文件解压失败！"
             separator_line "="
-            double_line_break
+            line_break
             sleep 1
             rm -rf "$TMPDIR"/clashfm.tar.gz
             exit 1
@@ -1006,7 +1006,7 @@ getdb() {
 }
 
 dbdir() {
-    double_line_break
+    line_break
     separator_line "="
     if [ -f /www/clash/CNAME ] || [ -f "$CRASHDIR"/ui/CNAME ]; then
         content_line "\033[33m检测到已经安装过本地面板\033[0m"
@@ -1023,7 +1023,7 @@ dbdir() {
             [ -f "$CRASHDIR"/ui/CNAME ] && rm -rf "$CRASHDIR"/ui && dbdir="$CRASHDIR"/ui
             getdb
         else
-            double_line_break
+            line_break
             separator_line "="
             separator_line "\033[33m安装已取消\033[0m"
             separator_line "="
@@ -1068,7 +1068,7 @@ dbdir() {
 
 setdb() {
     while true; do
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[36m安装 dashboard 管理面板到本地\033[0m"
         content_line "\033[32m打开管理面板的速度更快且更稳定\033[0m"
@@ -1123,7 +1123,7 @@ setdb() {
             ;;
         9)
             while true; do
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "是否卸载本地面板："
                 separator_line "-"
@@ -1140,7 +1140,7 @@ setdb() {
                     rm -rf "$CRASHDIR"/ui
                     rm -rf "$BINDIR"/ui
 
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m面板已经卸载！\033[0m"
                     separator_line "="
@@ -1164,7 +1164,7 @@ setdb() {
 
 # 根证书
 getcrt() {
-    double_line_break
+    line_break
     separator_line "="
     content_line "正在连接服务器获取安装文件......"
     get_bin "$TMPDIR"/ca-certificates.crt bin/fix/ca-certificates.crt echooff
@@ -1197,7 +1197,7 @@ setcrt() {
         fi
 
         if [ -n "$openssldir" ]; then
-            double_line_break
+            line_break
             separator_line "="
             content_line "安装/更新本地根证书文件（ca-certificates.crt）"
             content_line "\033[33m用于解决证书校验错误，x509报错等问题\033[0m"
@@ -1233,7 +1233,7 @@ setcrt() {
             esac
 
         else
-            double_line_break
+            line_break
             separator_line "="
             content_line "\033[33m设备可能尚未安装openssl，无法安装证书文件！\033[0m"
             separator_line "="
@@ -1250,7 +1250,7 @@ saveserver() {
     setconfig url_id "$url_id"
     setconfig release_type "$release_type"
     version_new=''
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[32m源地址切换成功！\033[0m"
     separator_line "="
@@ -1259,7 +1259,7 @@ saveserver() {
 # 安装源
 setserver() {
     while true; do
-        double_line_break
+        line_break
         [ -z "$release_type" ] && release_name=未指定
         [ -n "$release_type" ] && release_name="$release_type(回退)"
         [ "$release_type" = stable ] && release_name=稳定版
@@ -1327,7 +1327,7 @@ setserver() {
             ;;
         c)
             while true; do
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
                 content_line "\033[33m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
@@ -1357,7 +1357,7 @@ setserver() {
             done
             ;;
         d)
-            double_line_break
+            line_break
             separator_line "="
             content_line "请直接输入个人源路径"
             content_line ""
@@ -1373,7 +1373,7 @@ setserver() {
             fi
             ;;
         e)
-            double_line_break
+            line_break
             separator_line "="
             if [ -n "$url_id" ] && [ "$url_id" -lt 200 ]; then
                 content_line "\033[32m正在获取版本信息......\033[0m"
@@ -1382,7 +1382,7 @@ setserver() {
                     content_line "\033[32m获取版本信息成功\033[0m"
                     separator_line "="
 
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m请选择想要回退至的稳定版版本：\033[0m"
 

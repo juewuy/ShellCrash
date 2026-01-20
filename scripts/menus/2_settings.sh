@@ -29,6 +29,7 @@ settings() {
         echo "-----------------------------------------------"
         echo -e " a \033[31m$SET_MENU_RESET\033[0m"
 		echo -e " b \033[36m$SET_MENU_LANG\033[0m"
+		echo -e " c \033[33m$SET_MENU_UI\033[0m"
         echo -e " 0 $COMMON_BACK"
         echo "-----------------------------------------------"
         read -p "$COMMON_INPUT > " num
@@ -141,6 +142,24 @@ settings() {
                     echo en > "$CRASHDIR"/configs/i18n.cfg
 					echo -e "\033[32mLanguage switched successfully! Please re-run the script!\033[0m"
 					exit
+				;;
+            esac
+            ;;
+        c)
+            echo "-----------------------------------------------"
+            echo -e " 1 TUI-layout by Sofia-Riese"
+            echo -e " 2 TUI-lite"
+            echo -e " 0 $COMMON_BACK"
+            echo "-----------------------------------------------"
+            read -p "$COMMON_INPUT > " num
+            case "$num" in
+                1) 
+					setconfig tui_type 'tui_layout'
+					. "$CRASHDIR"/menus/tui_layout.sh
+				;;
+                2)
+					setconfig tui_type 'tui_lite'
+					. "$CRASHDIR"/menus/tui_lite.sh
 				;;
             esac
             ;;

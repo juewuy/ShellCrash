@@ -139,6 +139,6 @@ separator_line() {
 
 # increase the spacing between the front
 # and back forms to improve readability
-double_line_break() {
+line_break() {
     printf "\n\n"
 }

@@ -16,7 +16,7 @@ ssh_tools() {
     while true; do
         [ -n "$(cat /etc/firewall.user 2>&1 | grep '启用外网访问SSH服务')" ] && ssh_ol=禁止 || ssh_ol=开启
         [ -z "$ssh_port" ] && ssh_port=10022
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[33m此功能仅针对使用Openwrt系统的设备生效，且不依赖服务\033[0m"
         content_line "\033[31m本功能不支持红米AX6S等镜像化系统设备，请勿尝试！\033[0m"
@@ -33,17 +33,17 @@ ssh_tools() {
             break
             ;;
         1)
-            double_line_break
+            line_break
             read -r -p "请输入端口号(1000-65535)> " num
             if [ -z "$num" ]; then
                 errornum
             elif [ "$num" -gt 65535 ] || [ "$num" -le 999 ]; then
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "\033[31m输入错误！请输入正确的数值(1000-65535)！\033[0m"
                 separator_line "="
             elif [ -n "$(netstat -ntul | grep :$num)" ]; then
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
                 separator_line "="
@@ -53,7 +53,7 @@ ssh_tools() {
                 sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
                 stop_iptables
 
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "\033[32m设置成功，请重新开启外网访问SSH功能！"
                 separator_line "="
@@ -65,7 +65,7 @@ ssh_tools() {
             sleep 1
             ;;
         3)
-            double_line_break
+            line_break
             if [ "$ssh_ol" = "开启" ]; then
                 iptables -w -t nat -A PREROUTING -p tcp -m multiport --dports "$ssh_port" -j REDIRECT --to-ports 22
                 [ -n "$(ckcmd ip6tables)" ] && ip6tables -w -t nat -A PREROUTING -p tcp -m multiport --dports "$ssh_port" -j REDIRECT --to-ports 22
@@ -101,7 +101,7 @@ tools() {
         [ "$mi_mi_autoSSH" = "已配置" ] && mi_mi_autoSSH_type=32m已配置 || mi_mi_autoSSH_type=31m未配置
         [ -f "$CRASHDIR"/tools/tun.ko ] && mi_tunfix=32mON || mi_tunfix=31mOFF
 
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[30;47m工具与优化\033[0m"
         separator_line "-"
@@ -149,7 +149,7 @@ tools() {
                         sed -i "/^\s*#.*otapredownload/ s/^\s*#//" /etc/crontabs/root ||
                         echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >>/etc/crontabs/root
                 fi
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "已\033[33m$mi_update\033[0m小米路由器的自动更新，如未生效，请在官方APP中同步设置！"
                 separator_line "="
@@ -160,14 +160,14 @@ tools() {
             if [ "$systype" = "mi_snapshot" ]; then
                 mi_autoSSH
             else
-                double_line_break
+                line_break
                 separator_line "="
                 content_line "不支持的设备！"
                 separator_line "="
             fi
             ;;
         7)
-            double_line_break
+            line_break
             separator_line "="
             if [ ! -f "$CRASHDIR"/tools/ShellDDNS.sh ]; then
                 content_line "正在获取在线脚本......"
@@ -185,7 +185,7 @@ tools() {
             sleep 1
             ;;
         8)
-            double_line_break
+            line_break
             separator_line "="
             if [ -f "$CRASHDIR"/tools/tun.ko ]; then
                 content_line "是否禁用此功能并移除相关补丁："
@@ -196,7 +196,7 @@ tools() {
                 read -r -p "请输入对应标号> " res
                 [ "$res" = 1 ] && {
                     rm -rf "$CRASHDIR"/tools/tun.ko
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
                     separator_line "="
@@ -210,7 +210,7 @@ tools() {
                 eparator_line "="
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
-                    double_line_break
+                    line_break
                     eparator_line "="
                     content_line "正在连接服务器获取Tun模块补丁文件......"
                     get_bin "$TMPDIR"/tun.ko bin/fix/tun.ko
@@ -240,7 +240,7 @@ tools() {
 }
 
 mi_autoSSH() {
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
     content_line "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
@@ -259,7 +259,7 @@ mi_autoSSH() {
         nvram set boot_wait=on
         nvram commit
     }
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[32m设置成功！\033[0m"
     separator_line "="
@@ -280,7 +280,7 @@ log_pusher() {
         [ -n "$push_Gotify" ] && stat_Gotify=32mON || stat_Gotify=33mOFF
         [ "$task_push" = 1 ] && stat_task=32mON || stat_task=33mOFF
         [ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
-        double_line_break
+        line_break
         separator_line "="
         content_line "1) Telegram推送	——\033[$stat_TG\033[0m"
         content_line "2) PushDeer推送	——\033[$stat_Deer\033[0m"
@@ -303,7 +303,7 @@ log_pusher() {
             break
             ;;
         1)
-            double_line_break
+            line_break
             separator_line "="
             if [ -n "$push_TG" ]; then
                 content_line "是否确认关闭TG日志推送："
@@ -350,7 +350,7 @@ log_pusher() {
             fi
             ;;
         2)
-            double_line_break
+            line_break
             separator_line "="
             if [ -n "$push_Deer" ]; then
                 content_line "是否确认关闭PushDeer日志推送："
@@ -383,7 +383,7 @@ log_pusher() {
                     setconfig push_Deer "$url"
                     logger "已完成PushDeer日志推送设置！" 32
                 else
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m输入错误，请重新输入！\033[0m"
                     separator_line "="
@@ -392,7 +392,7 @@ log_pusher() {
             fi
             ;;
         3)
-            double_line_break
+            line_break
             separator_line "="
             if [ -n "$push_bark" ]; then
                 content_line "是否确认关闭Bark日志推送："
@@ -426,7 +426,7 @@ log_pusher() {
                     setconfig push_bark "$url"
                     logger "已完成Bark日志推送设置！" 32
                 else
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m输入错误，请重新输入！\033[0m"
                     separator_line "="
@@ -435,7 +435,7 @@ log_pusher() {
             fi
             ;;
         4)
-            double_line_break
+            line_break
             separator_line "="
             if [ -n "$push_Po" ]; then
                 content_line "是否确认关闭Pushover日志推送："
@@ -464,13 +464,13 @@ log_pusher() {
                 if [ "$key" = 0 ]; then
                     continue
                 elif [ -n "$key" ]; then
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[33m请检查注册邮箱，完成账户验证\033[0m"
                     read -r -p "我已经验证完成(1/0)> "
                     separator_line "="
 
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
                     separator_line "="
@@ -482,13 +482,13 @@ log_pusher() {
                         setconfig push_Po_key "$key"
                         logger "已完成Passover日志推送设置！" 32
                     else
-                        double_line_break
+                        line_break
                         separator_line "="
                         content_line "\033[31m输入错误，请重新输入！\033[0m"
                         separator_line "="
                     fi
                 else
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m输入错误，请重新输入！\033[0m"
                     separator_line "="
@@ -497,7 +497,7 @@ log_pusher() {
             fi
             ;;
         5)
-            double_line_break
+            line_break
             separator_line "="
             if [ -n "$push_PP" ]; then
                 content_line "是否确认关闭PushPlus日志推送："
@@ -527,7 +527,7 @@ log_pusher() {
                     setconfig push_PP "$Token"
                     logger "已完成PushPlus日志推送设置！" 32
                 else
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m输入错误，请重新输入！\033[0m"
                     separator_line "="
@@ -536,7 +536,7 @@ log_pusher() {
             fi
             ;;
         6)
-            double_line_break
+            line_break
             if [ -n "$push_SynoChat" ]; then
                 separator_line "="
                 content_line "是否确认关闭SynoChat日志推送："
@@ -553,11 +553,11 @@ log_pusher() {
                 fi
             else
                 read -r -p "请输入你的Synology DSM主页地址> " URL
-                double_line_break
+                line_break
 
                 read -r -p "请输入你的Synology Chat Token> " TOKEN
 
-                double_line_break
+                line_break
                 separator_line "="
                 content_line '请通过"你的群晖地址/webapi/entry.cgi?api=SYNO.Chat.External&method=user_list&version=2&token=你的TOKEN"获取user_id'
                 separator_line "="
@@ -576,7 +576,7 @@ log_pusher() {
                     push_SynoChat=
                     setconfig push_SynoChat
 
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m输入错误，请重新输入！\033[0m"
                     separator_line "="
@@ -586,7 +586,7 @@ log_pusher() {
             ;;
         # 在menu.sh的case $num in代码块中添加
         7)
-            double_line_break
+            line_break
             separator_line "="
             if [ -n "$push_Gotify" ]; then
                 content_line "是否确认关闭Gotify日志推送："
@@ -616,7 +616,7 @@ log_pusher() {
                     setconfig push_Gotify "$url"
                     logger "已完成Gotify日志推送设置！" 32
                 else
-                    double_line_break
+                    line_break
                     separator_line "="
                     content_line "\033[31m输入错误，请重新输入！\033[0m"
                     separator_line "="
@@ -625,7 +625,7 @@ log_pusher() {
             fi
             ;;
         a)
-            double_line_break
+            line_break
             if [ -s "$TMPDIR"/ShellCrash.log ]; then
                 cat "$TMPDIR"/ShellCrash.log
             else
@@ -641,7 +641,7 @@ log_pusher() {
             sleep 1
             ;;
         c)
-            double_line_break
+            line_break
             separator_line "="
             content_line "请直接输入本设备自定义推送名称"
             content_line "或直接回车确认返回上级菜单"
@@ -653,7 +653,7 @@ log_pusher() {
             ;;
         d)
             rm -rf "$TMPDIR"/ShellCrash.log
-            double_line_break
+            line_break
             separator_line "="
             content_line "\033[33m运行日志及任务日志均已清空！\033[0m"
             separator_line "="
@@ -670,7 +670,7 @@ log_pusher() {
 # 测试菜单
 testcommand() {
     while true; do
-        double_line_break
+        line_break
         separator_line "="
         content_line "\033[30;47m这里是测试命令菜单\033[0m"
         content_line "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
@@ -694,20 +694,20 @@ testcommand() {
             testcommand
             ;;
         2)
-            double_line_break
+            line_break
             netstat -ntulp | grep 53
             separator_line "="
             content_line "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
             separator_line "="
-            double_line_break
+            line_break
             ;;
         3)
-            double_line_break
+            line_break
             openssl speed -multi 4 -evp aes-128-gcm
-            double_line_break
+            line_break
             ;;
         4)
-            double_line_break
+            line_break
             if [ "$firewall_mod" = "nftables" ]; then
                 nft list table inet shellcrash | sed '/set cn_ip {/,/}/d;/set cn_ip6 {/,/}/d;/^[[:space:]]*}/d'
             else
@@ -756,16 +756,16 @@ testcommand() {
                 echo "----------------本机防火墙---------------------"
                 iptables -L INPUT --line-numbers
             fi
-            double_line_break
+            line_break
             ;;
         5)
             echo "$crashcore" | grep -q 'singbox' && config_path="$CRASHDIR"/jsons/config.json || config_path="$CRASHDIR"/yamls/config.yaml
-            double_line_break
+            line_break
             sed -n '1,40p' "$config_path"
-            double_line_break
+            line_break
             ;;
         6)
-            double_line_break
+            line_break
             separator_line "="
             content_line "\033[33m注意：依赖curl（不支持wget），且测试结果不保证一定准确！\033[0m"
             separator_line "="
@@ -777,7 +777,7 @@ testcommand() {
                 }
             ) >/dev/null 2>&1
             delay=$(echo | awk "{print $delay*1000}") >/dev/null 2>&1
-            double_line_break
+            line_break
             separator_line "="
             if [ $(echo ${#delay}) -gt 1 ]; then
                 content_line "\033[32m连接成功！响应时间为："$delay" ms\033[0m"
@@ -795,7 +795,7 @@ testcommand() {
 
 debug() {
     echo "$crashcore" | grep -q 'singbox' && config_tmp="$TMPDIR"/jsons || config_tmp="$TMPDIR"/config.yaml
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m"
     content_line "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m"
@@ -831,7 +831,7 @@ debug() {
             "$TMPDIR"/CrashCore -t -d "$BINDIR" -f "$TMPDIR"/config.yaml
         fi
         rm -rf "$TMPDIR"/CrashCore
-        double_line_break
+        line_break
         exit
         ;;
     2)
@@ -839,7 +839,7 @@ debug() {
         "$CRASHDIR"/start.sh bfstart
         $COMMAND
         rm -rf "$TMPDIR"/CrashCore
-        double_line_break
+        line_break
         exit
         ;;
     3)
@@ -855,7 +855,7 @@ debug() {
         main_menu
         ;;
     6)
-        double_line_break
+        line_break
         separator_line "="
         content_line "频繁写入闪存会导致闪存寿命降低，如非遇到会导致设备死机或重启的bug，请勿使用此功能！"
         separator_line "-"
@@ -875,7 +875,7 @@ debug() {
         main_menu
         ;;
     9)
-        . "$CRASHDIR"/libs/core_webget.sh && core_find && "$TMPDIR"/CrashCore merge "$TMPDIR"/debug.json -C "$TMPDIR"/jsons && double_line_break
+        . "$CRASHDIR"/libs/core_webget.sh && core_find && "$TMPDIR"/CrashCore merge "$TMPDIR"/debug.json -C "$TMPDIR"/jsons && line_break
         separator_line "="
         content_line"\033[32m合并成功！\033[0m"
         separator_line "="

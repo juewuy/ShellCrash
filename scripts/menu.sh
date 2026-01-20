@@ -19,14 +19,17 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 . "$CRASHDIR"/libs/i18n.sh
 . "$CRASHDIR"/menus/1_start.sh
 . "$CRASHDIR"/menus/running_status.sh
-. "$CRASHDIR"/menus/tui_layout.sh
+
+# 加载Tui界面
+[ -z "$tui_type" ] && tui_type='tui_layout'
+. "$CRASHDIR"/menus/"$tui_type".sh
 
 # 加载语言
 load_lang common
 load_lang menu
 
 errornum() {
-    double_line_break
+    line_break
     separator_line "="
     content_line "\033[31m$MENU_ERR_INPUT\033[0m"
     separator_line "="
