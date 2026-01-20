@@ -57,7 +57,7 @@ content_line() {
             }
 
             charWidth = 1
-            if (r ~ /[^\x00-\x7F]/) {
+            if (r ~ /[^\001-\177]/) {
                 charWidth = 2
             }
 
