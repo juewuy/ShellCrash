@@ -26,8 +26,10 @@ load_lang common
 load_lang menu
 
 errornum() {
-    echo "-----------------------------------------------"
-    echo -e "\033[31m$MENU_ERR_INPUT\033[0m"
+    double_line_break
+    separator_line "="
+    content_line "\033[31m$MENU_ERR_INPUT\033[0m"
+    separator_line "="
 }
 
 checkrestart() {
@@ -110,7 +112,7 @@ ckstatus() { #脚本启动前检查
     echo "-----------------------------------------------"
     #检查新手引导
     if [ -z "$userguide" ]; then
-		. "$CRASHDIR"/menus/userguide.sh && userguide
+        . "$CRASHDIR"/menus/userguide.sh && userguide
         setconfig userguide 1
     fi
     #检查执行权限
@@ -120,18 +122,18 @@ ckstatus() { #脚本启动前检查
         echo -e "$MENU_TMP_CORE_FOUND \033[36m/tmp/$file\033[0m "
         read -p "$MENU_TMP_CORE_ASK(1/0) > " res
         [ "$res" = 1 ] && {
-			zip_type=$(echo "$file" | grep -oE 'tar.gz$|upx$|gz$')
-			. "$CRASHDIR"/menus/9_upgrade.sh && setcoretype
-			. "$CRASHDIR"/libs/core_tools.sh && core_check "/tmp/$file"
+            zip_type=$(echo "$file" | grep -oE 'tar.gz$|upx$|gz$')
+            . "$CRASHDIR"/menus/9_upgrade.sh && setcoretype
+            . "$CRASHDIR"/libs/core_tools.sh && core_check "/tmp/$file"
             if [ "$?" = 0 ]; then
-				echo -e "\033[32m$MENU_CORE_LOADED_OK\033[0m "
-				switch_core
+                echo -e "\033[32m$MENU_CORE_LOADED_OK\033[0m "
+                switch_core
             else
                 echo -e "\033[33m$MENU_CORE_LOADED_BAD033[0m"
                 rm -rf /tmp/"$file"
-                echo -e "\033[33m$MENU_CORE_REMOVED\033[0m"       
+                echo -e "\033[33m$MENU_CORE_REMOVED\033[0m"
             fi
-			sleep 1
+            sleep 1
         }
         echo "-----------------------------------------------"
     done
@@ -239,64 +241,64 @@ main_menu() {
 }
 
 case "$1" in
-	"")
-		main_menu
+"")
+    main_menu
     ;;
-	-t)
-		shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
-		$shtype -x "$CRASHDIR"/menu.sh
+-t)
+    shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
+    $shtype -x "$CRASHDIR"/menu.sh
     ;;
-	-s)
-		"$CRASHDIR"/start.sh $2 $3 $4 $5 $6
+-s)
+    "$CRASHDIR"/start.sh $2 $3 $4 $5 $6
     ;;
-	-i)
-		. "$CRASHDIR"/init.sh 2>/dev/null
+-i)
+    . "$CRASHDIR"/init.sh 2>/dev/null
     ;;
-	-st)
-		shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
-		$shtype -x "$CRASHDIR"/start.sh $2 $3 $4 $5 $6
+-st)
+    shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
+    $shtype -x "$CRASHDIR"/start.sh $2 $3 $4 $5 $6
     ;;
-	-d)
-		shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
-		echo -e "$MENU_TEST_RUNNING\033[32;4mt.me/ShellClash\033[0m"
-		$shtype "$CRASHDIR"/start.sh debug >/dev/null 2>"$TMPDIR"/debug_sh_bug.log
-		$shtype -x "$CRASHDIR"/start.sh debug >/dev/null 2>"$TMPDIR"/debug_sh.log
-		echo -----------------------------------------
-		cat "$TMPDIR"/debug_sh_bug.log | grep 'start\.sh' >"$TMPDIR"/sh_bug
-		if [ -s "$TMPDIR"/sh_bug ]; then
-			while read line; do
-				echo -e "$MENU_ERROR_FOUND\033[33;4m$line\033[0m"
-				grep -A 1 -B 3 "$line" "$TMPDIR"/debug_sh.log
-				echo -----------------------------------------
-			done <"$TMPDIR"/sh_bug
-			rm -rf "$TMPDIR"/sh_bug
-			echo -e "\033[32m$MENU_TEST_DONE_FAIL\033[0m$MENU_TEST_LOG_HINT\033[36m$TMPDIR/debug_sh.log\033[0m"
-		else
-			echo -e "\033[32m$MENU_TEST_DONE_OK\033[0m"
-			rm -rf "$TMPDIR"/debug_sh.log
-		fi
-		"$CRASHDIR"/start.sh stop
+-d)
+    shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
+    echo -e "$MENU_TEST_RUNNING\033[32;4mt.me/ShellClash\033[0m"
+    $shtype "$CRASHDIR"/start.sh debug >/dev/null 2>"$TMPDIR"/debug_sh_bug.log
+    $shtype -x "$CRASHDIR"/start.sh debug >/dev/null 2>"$TMPDIR"/debug_sh.log
+    echo -----------------------------------------
+    cat "$TMPDIR"/debug_sh_bug.log | grep 'start\.sh' >"$TMPDIR"/sh_bug
+    if [ -s "$TMPDIR"/sh_bug ]; then
+        while read line; do
+            echo -e "$MENU_ERROR_FOUND\033[33;4m$line\033[0m"
+            grep -A 1 -B 3 "$line" "$TMPDIR"/debug_sh.log
+            echo -----------------------------------------
+        done <"$TMPDIR"/sh_bug
+        rm -rf "$TMPDIR"/sh_bug
+        echo -e "\033[32m$MENU_TEST_DONE_FAIL\033[0m$MENU_TEST_LOG_HINT\033[36m$TMPDIR/debug_sh.log\033[0m"
+    else
+        echo -e "\033[32m$MENU_TEST_DONE_OK\033[0m"
+        rm -rf "$TMPDIR"/debug_sh.log
+    fi
+    "$CRASHDIR"/start.sh stop
     ;;
-	-u)
-		. "$CRASHDIR"/menus/uninstall.sh && uninstall
+-u)
+    . "$CRASHDIR"/menus/uninstall.sh && uninstall
     ;;
-	*)
-		echo -----------------------------------------
-		echo "$MENU_CLI_WELCOME"
-		echo -----------------------------------------
-		echo " -t $MENU_CLI_TEST"
-		echo " -h $MENU_CLI_HELP"
-		echo " -u $MENU_CLI_UNINSTALL"
-		echo " -i $MENU_CLI_INIT"
-		echo " -d $MENU_CLI_DEBUG"
-		echo -----------------------------------------
-		echo " crash -s start	$MENU_CLI_START"
-		echo " crash -s stop	$MENU_CLI_STOP"
-		echo " $CRASHDIR/start.sh init	$MENU_CLI_BOOT_INIT"
-		echo -----------------------------------------
-		echo "$MENU_HELP_ONLINE t.me/ShellClash"
-		echo "$MENU_HELP_BLOG juewuy.github.io"
-		echo "$MENU_HELP_GITHUB github.com/juewuy/ShellCrash"
-		echo -----------------------------------------
+*)
+    echo -----------------------------------------
+    echo "$MENU_CLI_WELCOME"
+    echo -----------------------------------------
+    echo " -t $MENU_CLI_TEST"
+    echo " -h $MENU_CLI_HELP"
+    echo " -u $MENU_CLI_UNINSTALL"
+    echo " -i $MENU_CLI_INIT"
+    echo " -d $MENU_CLI_DEBUG"
+    echo -----------------------------------------
+    echo " crash -s start	$MENU_CLI_START"
+    echo " crash -s stop	$MENU_CLI_STOP"
+    echo " $CRASHDIR/start.sh init	$MENU_CLI_BOOT_INIT"
+    echo -----------------------------------------
+    echo "$MENU_HELP_ONLINE t.me/ShellClash"
+    echo "$MENU_HELP_BLOG juewuy.github.io"
+    echo "$MENU_HELP_GITHUB github.com/juewuy/ShellCrash"
+    echo -----------------------------------------
     ;;
 esac
