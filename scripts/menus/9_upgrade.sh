@@ -713,7 +713,6 @@ getcustgeo() {
             [ ! -d "$BINDIR"/ruleset ] && mkdir -p "$BINDIR"/ruleset
         }
         mv -f "$TMPDIR"/"${geoname}" "$BINDIR"/"${geofile}""${geoname}"
-        echo "-----------------------------------------------"
         content_line "\033[32m$geotype数据库文件下载成功！\033[0m"
         separator_line "="
     fi
