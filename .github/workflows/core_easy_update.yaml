@@ -1,0 +1,85 @@
+name: core_easy_update
+
+on: 
+  workflow_dispatch:
+    inputs:
+      tag1:
+        description: 'meta or singbox or singboxr'
+        required: true
+        type: string
+
+jobs:
+  get_meta_version:
+    runs-on: ubuntu-latest
+    outputs:
+      meta_version: ${{ steps.meta.outputs.version }}
+    steps:
+      - id: meta
+        run: |
+          # 访问 GitHub API 获取最新 Release 的 Tag 名
+          latest_tag=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r .tag_name)
+          echo "version=$latest_tag" >> $GITHUB_OUTPUT
+          
+  update_meta_upx:
+    if: github.event.inputs.tag1 == 'meta'
+    needs: get_meta_version
+    permissions: write-all
+    uses: juewuy/ShellCrash/.github/workflows/update_meta_core.yaml@dev
+    with:
+      tag1: MetaCubeX/mihomo
+      tag2: ${{ needs.get_meta_version.outputs.meta_version }}
+      tag4: meta
+      tag5: ""
+      tag6: upx
+    secrets: inherit
+
+  update_meta_tar:
+    if: github.event.inputs.tag1 == 'meta'
+    needs: [get_meta_version, update_meta_upx]
+    permissions: write-all
+    uses: juewuy/ShellCrash/.github/workflows/update_meta_core.yaml@dev
+    with:
+      tag1: MetaCubeX/mihomo
+      tag2: ${{ needs.get_meta_version.outputs.meta_version }}
+      tag4: meta
+      tag5: ""
+      tag6: tar.gz
+    secrets: inherit
+    
+  update_singboxr_upx:
+    if: github.event.inputs.tag1 == 'singboxr'
+    permissions: write-all
+    uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
+    with:
+      tag1: reF1nd/sing-box
+      tag2: reF1nd-main
+      tag4: singboxr
+      tag5: with_quic,with_utls,with_clash_api
+      tag6: upx
+    secrets: inherit
+
+  update_singboxr_tar:
+    if: github.event.inputs.tag1 == 'singboxr'
+    needs: update_singboxr_upx
+    permissions: write-all
+    uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
+    with:
+      tag1: reF1nd/sing-box
+      tag2: reF1nd-main
+      tag4: singboxr
+      tag5: with_gvisor,with_quic,with_wireguard,with_utls,with_clash_api,with_tailscale
+      tag6: tar.gz
+    secrets: inherit
+
+  update_singbox_upx:
+    if: github.event.inputs.tag1 == 'singbox'
+    permissions: write-all
+    uses: juewuy/ShellCrash/.github/workflows/update_singbox_core.yaml@dev
+    with:
+      tag1: SagerNet/sing-box
+      tag2: main
+      tag4: singbox
+      tag5: with_quic,with_utls,with_clash_api
+      tag6: upx
+    secrets: inherit
+    
