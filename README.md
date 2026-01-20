@@ -32,10 +32,11 @@
 
 ShellCrash is designed to be compatible with the vast majority of network devices based on the Linux kernel:
 
-* **Router Devices**: Supports various firmwares based on OpenWrt or its derivatives.
-* **Linux Servers**: Supports devices running standard Linux distributions (e.g., Debian, CentOS, Armbian, Ubuntu, etc.).
+* **Router Devices**: Supports various firmwares based on OpenWrt or its derivatives (e.g., Xiaomi, Netgear etc.).
+* **Linux Servers**: Supports devices running standard Linux/GNU distributions (e.g., Debian, CentOS, Armbian, Ubuntu, etc.).
 * **Third-Party Firmware**: Compatible with Padavan (Conservative Mode), Pandora, and ASUS/Merlin firmware.
-* **Customized Devices**: Compatible with other specialized network devices developed using the Linux kernel.
+* **Other Devices**: Compatible with other devices based on Linux/GNU or Linux/busybox.
+* **Docker**：Compatible with Docker environments (e.g., Synology, PVE, etc.).
 
 > For additional device support, please submit an [Issue](https://github.com/juewuy/ShellCrash/issues) or provide feedback in the [Telegram Group](https://t.me/ShellClash) (please include the device model and the output of the `uname -a` command).
 

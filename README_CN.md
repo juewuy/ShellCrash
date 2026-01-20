@@ -32,10 +32,11 @@
 
 ShellCrash 旨在兼容绝大多数基于 Linux 内核的网络设备：
 
-* **路由器设备**：支持各种基于 OpenWrt 或其二次开发的固件。
-* **Linux 服务器**：支持运行标准 Linux 发行版（如 Debian、CentOS、Armbian、Ubuntu 等）的设备。
+* **路由器设备**：支持各种基于 OpenWrt 或其二次开发固件（如 小米路由、网件路由等设备）。
+* **Linux 服务器**：支持运行标准 Linux/GNU发行版（如 Debian、CentOS、Armbian、Ubuntu 等）的设备。
 * **第三方固件**：兼容 Padavan（保守模式）、潘多拉固件以及华硕/梅林固件。
-* **各类定制设备**：兼容其他使用 Linux 内核开发的专用网络设备。
+* **其他设备**：兼容各种基于Linux/GNU或者Linux/busybox开发的设备。
+* **Docker**：部分可能不兼容的设备（如群辉、PVE），支持docker环境运行。
 
 > 更多设备支持，请提交 [Issue](https://github.com/juewuy/ShellCrash/issues) 或前往 [Telegram 群组](https://t.me/ShellClash) 反馈（请附上设备型号及 `uname -a` 命令的输出信息）。
 
