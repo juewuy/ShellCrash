@@ -45,7 +45,7 @@ jobs:
         # 确认子目录名称
         subdir=$(find "$TEMP/yacd" -maxdepth 1 -type d ! -path "$TEMP/yacd" | head -n1)
         # 打包
-        tar -zcvf "$DASH/meta_yacd.tar.gz" -C "$subdir" . > /dev/null
+        tar -zcvf "$DASH/meta_yacd.tar.gz" -C "$subdir" * > /dev/null
         ########################################
         # metacubexd
         ########################################
@@ -55,7 +55,7 @@ jobs:
         # 确认子目录名称
         subdir=$(find "$TEMP/xd" -maxdepth 1 -type d ! -path "$TEMP/xd" | head -n1)
         # 打包
-        tar -zcvf "$DASH/meta_xd.tar.gz" -C "$subdir" . > /dev/null
+        tar -zcvf "$DASH/meta_xd.tar.gz" -C "$subdir" * > /dev/null
         ########################################
         # zashboard
         ########################################
@@ -71,7 +71,7 @@ jobs:
         # 删除字体文件
         find "$ZDIR" \( -name "*.ttf" -o -name "*.woff" -o -name "*.woff2" \) -delete
         echo 'board.zash.run.place' > "$ZDIR/CNAME"
-        tar -zcvf "$DASH/zashboard.tar.gz" -C "$ZDIR" . > /dev/null
+        tar -zcvf "$DASH/zashboard.tar.gz" -C "$ZDIR" * > /dev/null
         ########################################
         # 一步清理所有临时文件（核心）
         ########################################
