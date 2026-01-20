@@ -132,5 +132,5 @@ ckcmd nft && nft delete table inet shellcrash >/dev/null 2>&1
 #还原防火墙文件
 [ -s /etc/init.d/firewall.bak ] && mv -f /etc/init.d/firewall.bak /etc/init.d/firewall
 #others
-[ "$systype" != 'container' ] && sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf >/dev/null 2>&1
+sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf 2>/dev/null
 

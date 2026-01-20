@@ -40,17 +40,12 @@ core_check(){
 		COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 	fi
 	if [ -z "$v" ]; then
-		rm -rf "$TMPDIR"/core_new
-		rm -rf "$1"
+		rm -rf "$1" "$TMPDIR"/core_new
 		return 2
 	else
 		rm -f "$BINDIR"/CrashCore.tar.gz "$BINDIR"/CrashCore.gz "$BINDIR"/CrashCore.upx
-		mv -f "$TMPDIR"/core_new "$TMPDIR"/CrashCore
-		if [ -f "$1" ];then
-			mv -f  "$1"  "$BINDIR/CrashCore.${zip_type}"
-		else
-			gzip -c "$TMPDIR"/CrashCore > "$BINDIR"/CrashCore.gz
-		fi
+		mv -f "$TMPDIR/Coretmp.$zip_type" "$BINDIR/CrashCore.$zip_type"
+		mv -f "$TMPDIR/core_new" "$TMPDIR/CrashCore"
 		core_v="$v"
 		setconfig COMMAND "$COMMAND" "$CRASHDIR"/configs/command.env && . "$CRASHDIR"/configs/command.env
 		setconfig crashcore "$crashcore"
@@ -64,17 +59,17 @@ core_webget(){
 	. "$CRASHDIR"/libs/check_target.sh
 	if [ -z "$custcorelink" ];then
 		[ -z "$zip_type" ] && zip_type='tar.gz'
-		get_bin "$TMPDIR/CrashCore.${zip_type}" "bin/$crashcore/${target}-linux-${cpucore}.${zip_type}"
+		get_bin "$TMPDIR/Coretmp.$zip_type" "bin/$crashcore/${target}-linux-${cpucore}.$zip_type"
 	else
 		zip_type=$(echo "$custcorelink" | grep -oE 'tar.gz$')
 		[ -z "$zip_type" ] && zip_type=$(echo "$custcorelink" | grep -oE 'gz$')
-		[ -n "$zip_type" ] && webget "$TMPDIR/CrashCore.${zip_type}" "$custcorelink"
+		[ -n "$zip_type" ] && webget "$TMPDIR/Coretmp.$zip_type" "$custcorelink"
 	fi
 	#校验内核
 	if [ "$?" = 0 ];then
-		core_check "$TMPDIR/CrashCore.${zip_type}"
+		core_check "$TMPDIR/Coretmp.$zip_type"
 	else
-		rm -rf "$TMPDIR/CrashCore.${zip_type}"
+		rm -rf "$TMPDIR/Coretmp.$zip_type"
 		return 1
 	fi
 }
