@@ -449,9 +449,7 @@ EOF
                 )
                 vms_link="vmess://$(gen_base64 "$vms_json")"
                 line_break
-                separator_line "="
-                content_line "你的分享链接是（请勿随意分享给他人）：\n\033[32m$vms_link\033[0m"
-                separator_line "="
+                echo -e "你的分享链接是（请勿随意分享给他人）：\n\033[32m$vms_link\033[0m"
             else
                 line_break
                 separator_line "="
@@ -598,9 +596,7 @@ set_shadowsocks() {
             if [ -n "$text" ] && [ -n "$sss_port" ] && [ -n "$sss_cipher" ] && [ -n "$sss_pwd" ]; then
                 ss_link="ss://$(gen_base64 "$sss_cipher":"$sss_pwd")@${text}:${sss_port}#ShellCrash_ss_in"
                 line_break
-                separator_line "="
-                content_line "你的分享链接是（请勿随意分享给他人）：\n\033[32m$ss_link\033[0m"
-                separator_line "="
+                echo -e "你的分享链接是（请勿随意分享给他人）：\n\033[32m$ss_link\033[0m"
             else
                 line_break
                 separator_line "="
