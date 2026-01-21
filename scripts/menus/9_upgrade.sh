@@ -1066,7 +1066,7 @@ setserver() {
 					sleep 1
 					continue
 				fi
-				rm -rf "$TMPDIR"/release_version
+				rm -rf "$TMPDIR"/tags
 			else
 				echo -e "\033[31m当前源不支持版本回退，请尝试更换其他安装源！\033[0m"
 				sleep 1
