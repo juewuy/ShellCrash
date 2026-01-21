@@ -37,20 +37,19 @@ upgrade() {
             content_line "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
         }
         separator_line "-"
-        content_line "1) 更新\033[36m管理脚本      \033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
-        content_line "2) 切换\033[33m内核文件    \033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
-        content_line "3) 更新\033[32m数据库文件\033[0m                 > \033[32m$GeoIP_v\033[0m"
-        content_line "4) 安装本地\033[35mDashboard\033[0m面板"
+        content_line "1) 更新\033[36m管理脚本\t\033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
+        content_line "2) 切换/更新\033[33m内核文件\t\033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
+        content_line "3) 安装/更新本地\033[32m数据库文件\033[0m"
+        content_line "4) 安装/更新本地\033[35mDashboard面板\033[0m"
         content_line "5) 安装/更新本地\033[33m根证书文件\033[0m"
-        content_line "6) 查看\033[32mPAC\033[0m自动代理配置"
-        content_line "7) 切换\033[36m安装源\033[0m及\033[36m安装版本\033[0m"
-        content_line "8) \033[32m配置自动更新\033[0m"
-        content_line "9) \033[31m卸载ShellCrash\033[0m"
-        content_line "a) \033[36m鸣谢！\033[0m"
+        content_line "6) \033[32mPAC\033[0m自动代理查看"
+        content_line "7) 切换\033[36m安装源及版本分支\033[0m"
+        content_line "8) \033[31m卸载ShellCrash\033[0m"
+        content_line "9) \033[36m感谢列表！\033[0m"
         content_line "0) 返回上级菜单"
         separator_line "="
 
-        read -r -p "请输入对应标号> " num
+        read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
             break
@@ -82,50 +81,43 @@ upgrade() {
             setserver
             ;;
         8)
-            . "$CRASHDIR"/menus/5_task.sh && task_add
-            ;;
-        9)
             . "$CRASHDIR"/menus/uninstall.sh && uninstall
             ;;
-        a)
+        9)
             line_break
             separator_line "="
-            content_line "感谢以下项目和作者！"
+            content_line "感谢以下项目及其开发者们的无私奉献！"
             separator_line "-"
 
-            content_line "\033[32mClash项目           \033[0m作者：\033[36mDreamacro\033[0m"
+            content_line "\033[32mClash           \033[0m开发：\033[36mDreamacro\033[0m"
             content_line ""
 
-            content_line "\033[32msing-box项目        \033[0m作者：\033[36mSagerNet\033[0m"
+            content_line "\033[32msing-box        \033[0m开发：\033[36mSagerNet\033[0m"
             content_line "项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
             content_line ""
 
-            content_line "\033[32mMetaCubeX项目       \033[0m作者：\033[36mMetaCubeX\033[0m"
+            content_line "\033[32mMetaCubeX       \033[0m开发：\033[36mMetaCubeX\033[0m"
             content_line "项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
             content_line ""
 
-            content_line "\033[32mYACD面板项目        \033[0m作者：\033[36mhaishanh\033[0m"
+            content_line "\033[32mYACD面板        \033[0m开发：\033[36mhaishanh\033[0m"
             content_line "项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
             content_line ""
 
-            content_line "\033[32mzashboard项目       \033[0m作者：\033[36mZephyruso\033[0m"
+            content_line "\033[32mZashboard       \033[0m开发：\033[36mZephyruso\033[0m"
             content_line "项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
             content_line ""
 
-            content_line "\033[32mSubconverter        \033[0m作者：\033[36mtindy2013\033[0m"
+            content_line "\033[32mSubconverter        \033[0m开发：\033[36mtindy2013\033[0m"
             content_line "项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
             content_line ""
 
-            content_line "\033[32msing-box分支项目    \033[0m作者：\033[36mPuerNya\033[0m"
-            content_line "项目地址：\033[32mhttps://github.com/PuerNya/sing-box\033[0m"
-            content_line ""
-
-            content_line "\033[32msing-box分支项目    \033[0m作者：\033[36mreF1nd\033[0m"
+            content_line "\033[32msing-box-reF1nd    \033[0m开发：\033[36mreF1nd\033[0m"
             content_line "项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
             content_line ""
 
-            content_line "\033[32mDustinWin相关项目   \033[0m作者：\033[36mDustinWin\033[0m"
-            content_line "作者地址：\033[32mhttps://github.com/DustinWin\033[0m"
+            content_line "\033[32mDustinWin        \033[0m开发：\033[36mDustinWin\033[0m"
+            content_line "开发者地址：\033[32mhttps://github.com/DustinWin\033[0m"
             content_line ""
 
             separator_line "-"
@@ -440,7 +432,7 @@ checkcustcore() {
                 ;;
             esac
         else
-            content_line "\033[31m找不到可用内核，可能是作者没有编译相关CPU架构版本的内核文件！\033[0m"
+            content_line "\033[31m找不到可用内核，可能是开发者没有编译相关CPU架构版本的内核文件！\033[0m"
             separator_line "="
             sleep 1
         fi

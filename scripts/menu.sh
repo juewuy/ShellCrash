@@ -22,6 +22,7 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 
 # 加载Tui界面
 [ -z "$tui_type" ] && tui_type='tui_layout'
+[ "$1" = '-l' ] && tui_type='tui_lite'
 . "$CRASHDIR"/menus/"$tui_type".sh
 
 # 加载语言
@@ -247,10 +248,13 @@ case "$1" in
 "")
     main_menu
     ;;
+-l)
+    main_menu
+    ;;
 -t)
     shtype=sh
 	[ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
-    "$shtype" -x "$CRASHDIR"/menu.sh
+    "$shtype" -x "$CRASHDIR"/menu.sh -l
     ;;
 -s)
     "$CRASHDIR"/start.sh "$2" "$3" "$4" "$5" "$6"
