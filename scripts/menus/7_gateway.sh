@@ -236,7 +236,11 @@ EOF
     bot_api="https://api.telegram.org/bot$TOKEN"
     web_json_post "$bot_api/setMyCommands" "$JSON"
     web_json_post "$bot_api/sendMessage" '{"chat_id":"'"$chat_ID"'","text":"'"$TEXT"'","parse_mode":"Markdown"}'
-    echo -e "\033[32m$TEXT\033[0m"
+
+    line_break
+    separator_line "="
+    content_line "\033[32m$TEXT\033[0m"
+    separator_line "="
 }
 
 set_bot_tg_init() {
