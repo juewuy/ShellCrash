@@ -21,93 +21,103 @@ content_line() {
         return
     fi
 
-    printf '%b' "$raw_input" | awk -v table_width="$TABLE_WIDTH" '
-    BEGIN {
-        textWidth = table_width - 3
+    printf '%b' "$raw_input" | LC_ALL=C awk -v table_width="$TABLE_WIDTH" '
+       BEGIN {
+           textWidth = table_width - 3
+           currentDisplayWidth = 0
+           wordWidth = 0
+           currentLine = ""
+           wordBuffer = ""
+           lastColor = ""
+           ESC = sprintf("%c", 27)
+       }
 
-        currentDisplayWidth = 0
-        wordWidth = 0
-        currentLine = ""
-        wordBuffer = ""
+       {
+           n = split($0, chars, "")
 
-        lastColor = ""
+           for (i = 1; i <= n; i++) {
+               r = chars[i]
 
-        ESC = sprintf("%c", 27)
-    }
+               if (r == ESC && i+1 <= n && chars[i+1] == "[") {
+                   ansiSeq = ""
+                   for (j = i; j <= n; j++) {
+                       ansiSeq = ansiSeq chars[j]
+                       if (chars[j] == "m") {
+                           i = j
+                           break
+                       }
+                   }
+                   wordBuffer = wordBuffer ansiSeq
+                   lastColor = ansiSeq
+                   continue
+               }
 
-    {
-        n = split($0, chars, "")
+               charWidth = 1
 
-        for (i = 1; i <= n; i++) {
-            r = chars[i]
+               if (r <= "\177") {
+                   charWidth = 1
+               }
+               else if (r >= "\340" && r <= "\357" && i+2 <= n) {
+                   r = chars[i] chars[i+1] chars[i+2]
+                   i += 2
+                   charWidth = 2
+               }
+               else if (r >= "\300" && r <= "\337" && i+1 <= n) {
+                   r = chars[i] chars[i+1]
+                   i += 1
+                   charWidth = 1
+               }
+               else {
+                   charWidth = 1
+               }
 
-            if (r == ESC && i+1 <= n && chars[i+1] == "[") {
-                # Scan forward until "m"
-                ansiSeq = ""
-                for (j = i; j <= n; j++) {
-                    ansiSeq = ansiSeq chars[j]
-                    if (chars[j] == "m") {
-                        i = j # Advance main loop
-                        break
-                    }
-                }
-                wordBuffer = wordBuffer ansiSeq
-                lastColor = ansiSeq # Remember color for wrapping
-                continue
-            }
+               if (r == " " || charWidth == 2) {
+                   if (currentDisplayWidth + wordWidth + charWidth > textWidth) {
+                       printf " %s\033[0m\033[%dG||\n", currentLine, table_width
+                       currentLine = lastColor wordBuffer
+                       currentDisplayWidth = wordWidth
+                       wordBuffer = r
+                       wordWidth = charWidth
+                   } else {
+                       currentLine = currentLine wordBuffer r
+                       currentDisplayWidth += wordWidth + charWidth
+                       wordBuffer = ""
+                       wordWidth = 0
+                   }
+               } else {
+                   wordBuffer = wordBuffer r
+                   wordWidth += charWidth
 
-            charWidth = 1
-            if (r ~ /[^\001-\177]/) {
-                charWidth = 2
-            }
+                   if (wordWidth > textWidth) {
+                       printf " %s%s\033[0m\033[%dG||\n", currentLine, wordBuffer, table_width
+                       currentLine = lastColor
+                       currentDisplayWidth = 0
+                       wordBuffer = ""
+                       wordWidth = 0
+                   }
+               }
+           }
+       }
 
-            if (r == " " || charWidth == 2) {
-                if (currentDisplayWidth + wordWidth + charWidth > textWidth) {
-                    printf " %s\033[0m\033[%dG||\n", currentLine, table_width
-                    currentLine = lastColor wordBuffer
-                    currentDisplayWidth = wordWidth
-                    wordBuffer = r
-                    wordWidth = charWidth
-                } else {
-                    currentLine = currentLine wordBuffer r
-                    currentDisplayWidth += wordWidth + charWidth
-                    wordBuffer = ""
-                    wordWidth = 0
-                }
-            } else {
-                wordBuffer = wordBuffer r
-                wordWidth += charWidth
+       END {
+           if (wordWidth > 0) {
+               if (currentDisplayWidth + wordWidth > textWidth) {
+                   printf " %s\033[0m\033[%dG||\n", currentLine, table_width
+                   currentLine = lastColor wordBuffer
+               } else {
+                   currentLine = currentLine wordBuffer
+               }
+           }
 
-                if (wordWidth > textWidth) {
-                    printf " %s%s\033[0m\033[%dG||\n", currentLine, wordBuffer, table_width
-                    currentLine = lastColor
-                    currentDisplayWidth = 0
-                    wordBuffer = ""
-                    wordWidth = 0
-                }
-            }
-        }
-    }
+           cleanText = currentLine
+           gsub(/\033\[[0-9;]*m/, "", cleanText)
+           gsub(/^[ \t]+|[ \t]+$/, "", cleanText)
 
-    END {
-        if (wordWidth > 0) {
-            if (currentDisplayWidth + wordWidth > textWidth) {
-                printf " %s\033[0m\033[%dG||\n", currentLine, table_width
-                currentLine = lastColor wordBuffer
-            } else {
-                currentLine = currentLine wordBuffer
-            }
-        }
-
-        cleanText = currentLine
-        gsub(/\033\[[0-9;]*m/, "", cleanText)
-        gsub(/^[ \t]+|[ \t]+$/, "", cleanText)
-
-        if (cleanText != "") {
-            printf " %s\033[0m\033[%dG||\n", currentLine, table_width
-        }
-    }
-    '
+           if (cleanText != "") {
+               printf " %s\033[0m\033[%dG||\n", currentLine, table_width
+           }
+       }
+       '
 }
 
 # function to print sub content lines
