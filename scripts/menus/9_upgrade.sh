@@ -1041,16 +1041,17 @@ setserver() {
 			echo "-----------------------------------------------"
 			if [ -n "$url_id" ] && [ "$url_id" -lt 200 ];then
 				echo -ne "\033[32m正在获取版本信息！\033[0m\r"
-				get_bin "$TMPDIR"/release_version bin/release_version
+				. "$CRASHDIR"/libs/web_get_lite.sh
+				web_get_lite https://github.com/juewuy/ShellCrash/tags | grep -o 'releases/tag/.*data'|awk -F '/' '{print $3}'|sed 's/".*//g' > "$TMPDIR"/tags
 				if [ "$?" = "0" ];then
-					echo -e "\033[31m请选择想要回退至的稳定版版本：\033[0m"
-					cat "$TMPDIR"/release_version | awk '{print " "NR" "$1}'
+					echo -e "\033[31m请选择想要回退至的具体版本：\033[0m"
+					cat "$TMPDIR"/tags | awk '{print " "NR" "$1}'
 					echo -e " 0 返回上级菜单"
 					read -p "请输入对应数字 > " num
 					if [ -z "$num" -o "$num" = 0 ]; then
 						continue
-					elif [ $num -le $(cat "$TMPDIR"/release_version 2>/dev/null | awk 'END{print NR}') ]; then
-						release_type=$(cat "$TMPDIR"/release_version | awk '{print $1}' | sed -n "$num"p)
+					elif [ $num -le $(cat "$TMPDIR"/tags 2>/dev/null | awk 'END{print NR}') ]; then
+						release_type=$(cat "$TMPDIR"/tags | awk '{print $1}' | sed -n "$num"p)
 						update_url=''
 						saveserver
 					else

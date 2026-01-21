@@ -1,9 +1,14 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-CRASHDIR="$(uci get firewall.ShellCrash.path | sed 's/\/starts\/snapshot_init.sh//')"
-
-[ -f "$CRASHDIR"/configs/ShellCrash.cfg ] && . "$CRASHDIR"/configs/ShellCrash.cfg
+CRASHDIR="$(uci get firewall.ShellCrash.path | sed 's/\/starts.*//')"
+i=0
+while [ ! -f "$CRASHDIR/configs/ShellCrash.cfg" ]; do
+	[ $i -gt 20 ] && exit 1
+	i=$((i + 1))
+	sleep 3
+done
+. "$CRASHDIR"/configs/ShellCrash.cfg
 
 autoSSH(){
 	#自动开启SSH
@@ -78,7 +83,6 @@ init(){
 	while ! ip a| grep -q lan; do
 		sleep 10
 	done
-	sleep 20
 	autoSSH #软固化功能
 	auto_clean #自动清理
 	[ -s "$CRASHDIR"/start.sh ] && auto_start

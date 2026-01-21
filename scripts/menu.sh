@@ -240,18 +240,24 @@ case "$1" in
 		main_menu
     ;;
 	-t)
-		shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
+		shtype=sh
+		ckcmd bash && shtype=bash
 		$shtype -x "$CRASHDIR"/menu.sh
     ;;
 	-s)
-		"$CRASHDIR"/start.sh $2 $3 $4 $5 $6
+		"$CRASHDIR"/start.sh "$2" "$3" "$4" "$5" "$6"
     ;;
 	-i)
 		. "$CRASHDIR"/init.sh 2>/dev/null
     ;;
 	-st)
-		shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
-		$shtype -x "$CRASHDIR"/start.sh $2 $3 $4 $5 $6
+		shtype=sh
+		ckcmd bash && shtype=bash
+		"$shtype" -x "$CRASHDIR"/starts/bfstart.sh
+		. "$CRASHDIR"/starts/start_legacy.sh
+		start_legacy "$COMMAND" 'shellcrash'
+		"$shtype" -x "$CRASHDIR"/starts/afstart.sh
+		"$CRASHDIR"/start.sh stop
     ;;
 	-d)
 		shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
