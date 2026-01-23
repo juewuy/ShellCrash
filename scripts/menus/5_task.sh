@@ -16,9 +16,9 @@ set_cron() {
     line_break
     separator_line "="
     content_line "\033[33m$cron_time\033[0m执行任务：\033[36m$task_name\033[0m"
-    separator_line "-"
+    content_line ""
     content_line "是否确认添加定时任务："
-    separator_line "-"
+    separator_line "="
     content_line "1) 是"
     content_line "0) 否"
     separator_line "="
@@ -107,7 +107,7 @@ task_user_del() {
         if grep -Evq '^#' "$CRASHDIR/task/task.user" 2>/dev/null; then
             content_line "请输入对应ID移除对应自定义任务（不会影响内置任务）"
             content_line "也可以手动编辑\033[32m${CRASHDIR}/task/task.user\033[0m"
-            separator_line "-"
+            separator_line "="
 
             grep -Ev '^#' "$CRASHDIR/task/task.user" 2>/dev/null |
                 awk -F '#' '{print $1") "$3}' |
@@ -151,7 +151,7 @@ task_add() {
         line_break
         separator_line "="
         content_line "\033[36m请选择需要添加的任务：\033[0m"
-        separator_line "-"
+        separator_line "="
         # 输出任务列表
         # cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | awk -F '#' '{print NR") "$3}'
         grep -Ev '^(#|$)' "$CRASHDIR/task/task.list" "$CRASHDIR/task/task.user" 2>/dev/null |
@@ -205,7 +205,7 @@ task_type() {
     line_break
     separator_line "="
     content_line "请选择任务\033[36m【$task_name】\033[0m执行条件："
-    separator_line "-"
+    separator_line "="
     content_line "1) 定时任务\033[32m每周执行\033[0m"
     content_line "2) 定时任务\033[32m每日执行\033[0m"
     content_line "3) 定时任务\033[32m每小时执行\033[0m"
@@ -293,7 +293,8 @@ task_type() {
         line_break
         separator_line "="
         content_line "该功能会将相关启动代码注入到/etc/init.d/firewall中"
-        separator_line "-"
+        content_line "是否确认继续："
+        separator_line "="
         content_line "1) 是"
         content_line "0) 否"
         separator_line "="
@@ -327,7 +328,7 @@ task_manager() {
             break
         else
             content_line "\033[33m已添加的任务：\033[0m"
-            separator_line "-"
+            separator_line "="
             # cat "$TMPDIR"/task_list | awk '{print NR ") " $2}'
             awk '{print NR ") " $2}' "$TMPDIR/task_list" |
                 while IFS= read -r line; do
@@ -367,7 +368,7 @@ task_manager() {
                 separator_line "="
                 if [ "$task_id" = 0 ]; then
                     content_line "旧版任务不支持管理，是否移除："
-                    separator_line "-"
+                    separator_line "="
                     content_line "1) 是"
                     content_line "0) 否，返回上级菜单"
                     separator_line "="
@@ -385,7 +386,7 @@ task_manager() {
                     task_name=$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $3}')
 
                     content_line "当前任务为：\033[36m$task_des\033[0m"
-                    separator_line "-"
+                    separator_line "="
                     content_line "1) \033[33m修改\033[0m当前任务"
                     content_line "2) \033[31m删除\033[0m当前任务"
                     content_line "3) \033[32m立即执行\033[0m一次"
@@ -451,7 +452,7 @@ task_recom() {
     content_line "每隔10分钟自动保存面板配置"
     content_line "服务启动后自动同步ntp时间"
     content_line "在每日的3点0分重启服务"
-    separator_line "-"
+    separator_line "="
     content_line "1) 是"
     content_line "0) 否，返回上级菜单"
     separator_line "="
@@ -475,7 +476,7 @@ task_menu() {
         line_break
         separator_line "="
         content_line "\033[30;47m自动任务菜单\033[0m"
-        separator_line "-"
+        separator_line "="
         content_line "1) 添加\033[32m自动任务\033[0m"
         content_line "2) 管理\033[33m任务列表\033[0m"
         content_line "3) 查看\033[36m任务日志\033[0m"
