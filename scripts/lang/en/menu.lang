@@ -1,5 +1,4 @@
 # ===== Common Prompts =====
-MENU_ERR_INPUT="Please enter a valid letter or number!"
 
 MENU_RESTART_NOTICE="Changes have been detected. Please restart the service!"
 

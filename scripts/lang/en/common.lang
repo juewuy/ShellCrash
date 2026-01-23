@@ -1,7 +1,12 @@
 
 COMMON_INPUT="Please enter a number"
+COMMON_INPUT_L="Enter a letter or a number"
 COMMON_BACK="Back"
-COMMON_SUCCESS="Successfully set!"
+COMMON_SUCCESS="Setup Success!"
 COMMON_FAILED="Setup failed!"
 COMMON_UNSET="Not set"
 COMMON_MOD="Mod"
+COMMON_ERR_NUM="Please enter a valid number!"
+COMMON_ERR_LETTER="Please enter a valid letter or number!"
+COMMON_ERR_INPUT="Invalid input, please try again!"
+COMMON_ERR_INPUT="Operation cancelled!"

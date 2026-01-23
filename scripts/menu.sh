@@ -18,6 +18,7 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/check_autostart.sh
 . "$CRASHDIR"/libs/i18n.sh
+. "$CRASHDIR"/menus/common.sh
 . "$CRASHDIR"/menus/1_start.sh
 . "$CRASHDIR"/menus/running_status.sh
 
