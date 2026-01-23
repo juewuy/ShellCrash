@@ -7,15 +7,18 @@ load_lang 1_start
 
 # ===== 启动完成提示 =====
 startover() {
-    echo -ne "                                   \r"
-    echo -e "\033[32m$START_SERVICE_OK\033[0m"
-    echo -e "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m $START_WEB_HINT2"
+    line_break
+    separator_line "="
+    content_line "\033[32m$START_SERVICE_OK\033[0m"
+    content_line "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m $START_WEB_HINT2"
 
     if [ "$firewall_area" = 4 ]; then
-        echo "-----------------------------------------------"
-        echo -e "$START_PAC_HINT \033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
-        echo -e "$START_PROXY_HINT IP{\033[36m$host\033[0m} Port{\033[36m$mix_port\033[0m}"
+        content_line ""
+        content_line "$START_PAC_HINT \033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
+        content_line "$START_PROXY_HINT IP{\033[36m$host\033[0m} Port{\033[36m$mix_port\033[0m}"
     fi
+    separator_line "="
+    line_break
     return 0
 }
 
@@ -27,16 +30,16 @@ start_core() {
         core_config="$CRASHDIR/yamls/config.yaml"
     fi
 
-    echo "-----------------------------------------------"
-
     if [ ! -s "$core_config" ] && [ -s "$CRASHDIR/configs/providers.cfg" ]; then
-        echo -e "\033[33m$START_NO_CORE_CFG_TRY_GEN\033[0m"
-
         [ "$crashcore" = singboxr ] && coretype=singbox
         [ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
 
         . "$CRASHDIR/menus/6_core_config.sh" && gen_"${coretype}"_providers
 
+        line_break
+        separator_line "="
+        content_line "\033[33m$START_NO_CORE_CFG_TRY_GEN\033[0m"
+        separator_line "="
     elif [ -s "$core_config" ] || [ -n "$Url" ] || [ -n "$Https" ]; then
         "$CRASHDIR/start.sh" start
 
@@ -50,9 +53,11 @@ start_core() {
             fi
             startover
         }
-
     else
-        echo -e "\033[31m$START_NO_CORE_CFG_IMPORT_FIRST\033[0m"
+        line_break
+        separator_line "="
+        content_line "\033[31m$START_NO_CORE_CFG_IMPORT_FIRST\033[0m"
+        separator_line "="
         . "$CRASHDIR/menus/6_core_config.sh" && set_core_config
     fi
 }
@@ -61,7 +66,11 @@ start_core() {
 start_service() {
     if [ "$firewall_area" = 5 ]; then
         "$CRASHDIR/start.sh" start
-        echo -e "\033[32m$START_FIREWALL_DONE\033[0m"
+        line_break
+        separator_line "="
+        content_line "\033[32m$START_FIREWALL_DONE\033[0m"
+        separator_line "="
+        line_break
     else
         start_core
     fi
