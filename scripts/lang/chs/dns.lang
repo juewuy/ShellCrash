@@ -23,17 +23,16 @@ DNS_SET_OK="DNS模式已设置为"
 DNS_CORE_UNSUPPORTED="当前内核不支持该功能！"
 
 #=====DNS重定向=====
-DNS_REDIR_WARN="仅限搭配第三方DNS服务(AdGuard、SmartDNS等)使用！"
+DNS_REDIR_WARN="仅限搭配第三方DNS服务（AdGuard、SmartDNS等）使用！"
 DNS_REDIR_HINT="建议第三方DNS上游指向"
-DNS_REDIR_INPUT="请输入第三方DNS服务监听端口(0重置)>"
 DNS_REDIR_NO_SERVICE="该端口未检测到正在运行的DNS服务！"
 
 #=====Fake-IP=====
 DNS_FAKEIP_DESC="用于解决Fake-IP模式下部分地址或应用无法连接的问题"
 DNS_FAKEIP_TIP="脚本已内置大量地址，只需添加出现问题的地址"
-DNS_FAKEIP_EXAMPLE="示例：a.b.com\n*.b.com\n*.*.b.com"
+DNS_FAKEIP_EXAMPLE="示例格式如下：\na.b.com\n*.b.com\n*.*.b.com"
 DNS_FAKEIP_EXIST="已添加的Fake-IP过滤地址："
-DNS_FAKEIP_EMPTY="尚未添加Fake-IP过滤地址"
+DNS_FAKEIP_EMPTY="当前尚未添加任何自定义Fake-IP过滤地址"
 DNS_FAKEIP_EDIT="输入序号移除，输入地址添加"
 
 #=====DNS高级=====
@@ -42,12 +41,11 @@ DNS_ADV_CERT="使用DoH/DoT需具备本地根证书文件"
 DNS_ADV_SINGBOX_LIMIT="注意：SingBox内核仅加载第一个DNS"
 
 DNS_ADV_EDIT_DIRECT="修改DIRECT-DNS"
-DNS_ADV_EDIT_PROXY="修改PROXY-DNS(该DNS查询会经过节点)"
-DNS_ADV_EDIT_DEFAULT="修改DEFAULT-DNS(必须是IP,用于解析其他DNS)"
+DNS_ADV_EDIT_PROXY="修改PROXY-DNS（该DNS查询会经过节点）"
+DNS_ADV_EDIT_DEFAULT="修改DEFAULT-DNS（必须是IP，用于解析其他DNS）"
 DNS_ADV_AUTO_ENCRYPT="一键配置加密DNS"
 DNS_ADV_RESET="重置默认DNS配置"
 
-DNS_INPUT_NEW="请输入新的DNS地址>"
 DNS_IPV6_NOT_SUPPORT="该选项暂不支持IPv6加密DNS！"
 
 DNS_ENCRYPT_OK="已设置加密DNS，如遇DNS解析问题，请重置DNS配置！"
