@@ -40,7 +40,7 @@ setboot() {
         line_break
         separator_line "="
         content_line "\033[30;47m启动设置菜单\033[0m"
-        separator_line "-"
+        separator_line "="
         content_line "1) 开机自启动：     \033[36m$(printf '%-4s' "$auto_set")\033[0m"
         content_line "2) 使用保守模式：   \033[36m$(printf '%-4s' "$start_old")\033[0m   ———基于定时任务(每分钟检测)"
         content_line "3) 设置自启延时：   \033[36m$(printf '%-7s' "$delay")\033[0m ———用于解决自启后服务受限"
@@ -132,9 +132,8 @@ setboot() {
             else
                 if [ "$dir_size" -lt 8192 ]; then
                     content_line "\033[31m您的设备剩余空间不足8M，停用后可能无法正常运行！\033[0m"
-                    separator_line "-"
                     content_line "是否确认停用此功能："
-                    separator_line "-"
+                    separator_line "="
                     content_line "1) 是"
                     content_line "0) 否，返回上级菜单"
                     separator_line "="
@@ -164,6 +163,7 @@ setboot() {
                 separator_line "="
                 content_line "\033[33m如设置到内存，则每次开机后都自动重新下载相关文件\033[0m"
                 content_line "\033[33m请确保安装源可用裸连，否则会导致启动失败\033[0m"
+                separator_line "="
                 content_line "1) 使用内存（/tmp）"
                 content_line "2) 选择U盘目录"
                 content_line "3) 自定义目录"
@@ -183,7 +183,7 @@ setboot() {
                             line_break
                             separator_line "="
                             content_line "请选择安装目录："
-                            separator_line "-"
+                            separator_line "="
                             du -hL /mnt |
                                 awk '{print NR") "$2"  （已占用的储存空间："$1"）"}' |
                                 while IFS= read -r line; do
@@ -253,7 +253,7 @@ setboot() {
             content_line "\033[33m如果你的设备启动后可以正常使用，则无需变更设置！\033[0m"
             content_line "\033[36m禁用时，如果使用了小闪存模式或者rule-set等在线规则，则可能会因无法联网而导致启动失败！\033[0m"
             content_line "\033[32m启用时，会导致部分性能较差或者拨号较慢的设备可能会因查询超时导致启动失败！\033[0m"
-            separator_line "-"
+            separator_line "="
 
             if [ "$network_check" = "OFF" ]; then
                 content_line "当前\033[33m已禁用\033[0m自启网络检查，是否确认启用："

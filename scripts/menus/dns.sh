@@ -16,7 +16,7 @@ set_dns_mod() {
         separator_line "="
         content_line "$DNS_CURRENT_MODE\033[47;30m $dns_mod \033[0m"
         content_line "\033[33m$DNS_RESTART_NOTICE\033[0m"
-        separator_line "-"
+        separator_line "="
         content_line "1) MIX$COMMON_MOD：\t\033[32m$DNS_MODE_MIX_DESC\033[0m"
         content_line "2) Route$COMMON_MOD：\t\033[32m$DNS_MODE_ROUTE_DESC\033[0m"
         content_line "3) Redir$COMMON_MOD：\t\033[33m$DNS_MODE_REDIR_DESC\033[0m"
@@ -65,7 +65,7 @@ set_dns_mod() {
                 else
                     content_line "当前\033[33m已禁用\033[0mDNS防泄漏，是否确认启用："
                 fi
-                separator_line "-"
+                separator_line "="
                 content_line "1) 是"
                 content_line "2) 重置为默认值"
                 content_line "0) 否，返回上级菜单"
@@ -109,7 +109,7 @@ set_dns_mod() {
                 else
                     content_line "当前\033[33m已禁用\033[0mHosts优化，是否确认启用："
                 fi
-                separator_line "-"
+                separator_line "="
                 content_line "1) 是"
                 content_line "2) 重置为默认值"
                 content_line "0) 否，返回上级菜单"
@@ -154,7 +154,7 @@ set_dns_mod() {
                 else
                     content_line "当前\033[33m已禁用\033[0mHosts优化，是否确认启用："
                 fi
-                separator_line "-"
+                separator_line "="
                 content_line "1) 是"
                 content_line "2) 重置为默认值"
                 content_line "0) 否，返回上级菜单"
@@ -262,7 +262,7 @@ fake_ip_filter() {
         content_line "\033[31m$DNS_FAKEIP_TIP\033[0m"
         content_line "\033[36m$DNS_FAKEIP_EXAMPLE\033[0m"
 
-        separator_line "-"
+        separator_line "="
         if [ -s "$CRASHDIR/configs/fake_ip_filter" ]; then
             content_line "\033[33m$DNS_FAKEIP_EXIST\033[0m"
             content_line ""
@@ -292,7 +292,7 @@ fake_ip_filter() {
                 fi
             else
                 content_line "请确认需要添加的地址：\033[32m$input\033[0m"
-                separator_line "-"
+                separator_line "="
                 content_line "1) 确认无误"
                 content_line "0) 返回上级菜单"
                 separator_line "="
@@ -337,7 +337,7 @@ set_dns_adv() {
         content_line "\033[33m$dns_resolver\033[0m"
         content_line ""
 
-        separator_line "-"
+        separator_line "="
         content_line "1) $DNS_ADV_EDIT_DIRECT"
         content_line "2) $DNS_ADV_EDIT_PROXY"
         content_line "3) $DNS_ADV_EDIT_DEFAULT"
@@ -354,7 +354,7 @@ set_dns_adv() {
             line_break
             separator_line "="
             content_line "当前DIRECT-DNS：\033[32m$dns_nameserver\033[0m"
-            separator_line "-"
+            separator_line "="
             content_line "请直接输入新的DIRECT-DNS地址"
             content_line "或输入 r 重置DIRECT-DNS地址"
             content_line "或输入 0 返回上级菜单"
@@ -390,7 +390,7 @@ set_dns_adv() {
             line_break
             separator_line "="
             content_line "当前PROXY-DNS：\033[32m$dns_fallback\033[0m"
-            separator_line "-"
+            separator_line "="
             content_line "请直接输入新的PROXY-DNS地址"
             content_line "或输入 r 重置PROXY-DNS地址"
             content_line "或输入 0 返回上级菜单"
@@ -425,7 +425,7 @@ set_dns_adv() {
             line_break
             separator_line "="
             content_line "当前DEFAULT-DNS：\033[32m$dns_resolver\033[0m"
-            separator_line "-"
+            separator_line "="
             content_line "请直接输入新的DEFAULT-DNS地址"
             content_line "或输入 r 重置DEFAULT-DNS地址"
             content_line "或输入 0 返回上级菜单"

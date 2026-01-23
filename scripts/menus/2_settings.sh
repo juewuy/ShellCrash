@@ -17,7 +17,7 @@ settings() {
         line_break
         separator_line "="
         content_line "\033[30;47m$SET_MENU_TITLE\033[0m"
-        separator_line "-"
+        separator_line "="
         content_line "1) $SET_MENU_REDIR\t\033[36m$redir_mod$MENU_MOD\033[0m"
         content_line "2) $SET_MENU_DNS\t\033[36m$dns_mod\033[0m"
         content_line "3) $SET_MENU_FW_FILTER"
@@ -44,7 +44,7 @@ settings() {
                 line_break
                 separator_line "="
                 content_line "$SET_WARN_NONROOT"
-                separator_line "-"
+                separator_line "="
                 content_line "1) 是"
                 content_line "0) 否，返回上级菜单"
                 separator_line "="
@@ -72,7 +72,7 @@ settings() {
             else
                 content_line "当前\033[33m已启用\033[0m跳过本地证书验证，是否确认禁用："
             fi
-            separator_line "-"
+            separator_line "="
             content_line "1) 是"
             content_line "0) 否，返回上级菜单"
             separator_line "="
@@ -100,7 +100,7 @@ settings() {
             separator_line "="
             if [ "$sniffer" = "OFF" ]; then
                 content_line "当前\033[33m已禁用\033[0m域名嗅探，是否确认启用："
-                separator_line "-"
+                separator_line "="
                 content_line "1) 是"
                 content_line "0) 否，返回上级菜单"
                 separator_line "="
@@ -128,7 +128,7 @@ settings() {
                 continue
             else
                 content_line "当前\033[33m已启用\033[0m域名嗅探，是否确认禁用："
-                separator_line "-"
+                separator_line "="
                 content_line "1) 是"
                 content_line "0) 否，返回上级菜单"
                 separator_line "="
@@ -152,7 +152,7 @@ settings() {
                 separator_line "="
                 content_line "\033[33m$SET_CORE_RUNNING\033[0m"
                 content_line "$SET_CORE_STOP_CONFIRM"
-                separator_line "-"
+                separator_line "="
                 content_line "1) 是"
                 content_line "0) 否，返回上级菜单"
                 separator_line "="
@@ -355,7 +355,7 @@ set_redir_mod() {
         3)
             if [ "$firewall_mod" = "iptables" ]; then
                 if [ -f /etc/init.d/qca-nss-ecm ] && [ "$systype" = "mi_snapshot" ]; then
-                    read -r -p "$XIAOMI_QOS(1/0) > " res
+                    read -r -p "$XIAOMI_QOS(1/0)> " res
                     [ "$res" = '1' ] && {
                         /data/shellcrash_init.sh tproxyfix
                         redir_mod=Tproxy
@@ -645,7 +645,7 @@ set_firewall_area() {
         content_line "\033[33m$FW_AREA_NOTE_2\033[0m"
         content_line ""
         content_line "当前路由劫持范围：$firewall_area_dsc"
-        separator_line "-"
+        separator_line "="
         content_line "1) \033[32m$FW_AREA_LAN\033[0m"
         content_line "2) \033[36m$FW_AREA_LOCAL\033[0m"
         content_line "3) \033[32m$FW_AREA_BOTH\033[0m"
@@ -714,7 +714,7 @@ set_firewall_vm() {
     line_break
     separator_line "="
     content_line "$VM_DETECT_DESC\033[32m$vm_ipv4\033[0m"
-    separator_line "-"
+    separator_line "="
     content_line "1) \033[32m$VM_ENABLE_AUTO\033[0m"
     content_line "2) \033[36m$VM_ENABLE_MANUAL\033[0m"
     content_line "3) \033[31m$VM_DISABLE\033[0m"
