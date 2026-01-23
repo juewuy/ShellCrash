@@ -52,10 +52,7 @@ content_line() {
                }
 
                charWidth = 1
-
-               if (r <= "\177") {
-                   charWidth = 1
-               }
+               if (r <= "\177") { charWidth = 1 }
                else if (r >= "\340" && r <= "\357" && i+2 <= n) {
                    r = chars[i] chars[i+1] chars[i+2]
                    i += 2
@@ -64,9 +61,6 @@ content_line() {
                else if (r >= "\300" && r <= "\337" && i+1 <= n) {
                    r = chars[i] chars[i+1]
                    i += 1
-                   charWidth = 1
-               }
-               else {
                    charWidth = 1
                }
 
@@ -98,9 +92,7 @@ content_line() {
                    }
                }
            }
-       }
 
-       END {
            if (wordWidth > 0) {
                if (currentDisplayWidth + wordWidth > textWidth) {
                    printf " %s\033[0m\033[%dG||\n", currentLine, table_width
@@ -110,14 +102,15 @@ content_line() {
                }
            }
 
-           cleanText = currentLine
-           gsub(/\033\[[0-9;]*m/, "", cleanText)
-           gsub(/^[ \t]+|[ \t]+$/, "", cleanText)
+           printf " %s\033[0m\033[%dG||\n", currentLine, table_width
 
-           if (cleanText != "") {
-               printf " %s\033[0m\033[%dG||\n", currentLine, table_width
-           }
+           currentLine = lastColor
+           currentDisplayWidth = 0
+           wordBuffer = ""
+           wordWidth = 0
+           savedColor = lastColor
        }
+       END {}
        '
 }
 
