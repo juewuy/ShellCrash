@@ -29,15 +29,14 @@ content_line() {
            currentLine = ""
            wordBuffer = ""
            lastColor = ""
+           savedColor = ""
            ESC = sprintf("%c", 27)
        }
 
        {
            n = split($0, chars, "")
-
            for (i = 1; i <= n; i++) {
                r = chars[i]
-
                if (r == ESC && i+1 <= n && chars[i+1] == "[") {
                    ansiSeq = ""
                    for (j = i; j <= n; j++) {
@@ -74,26 +73,28 @@ content_line() {
                if (r == " " || charWidth == 2) {
                    if (currentDisplayWidth + wordWidth + charWidth > textWidth) {
                        printf " %s\033[0m\033[%dG||\n", currentLine, table_width
-                       currentLine = lastColor wordBuffer
+                       currentLine = savedColor wordBuffer
                        currentDisplayWidth = wordWidth
                        wordBuffer = r
                        wordWidth = charWidth
+                       savedColor = lastColor
                    } else {
                        currentLine = currentLine wordBuffer r
                        currentDisplayWidth += wordWidth + charWidth
                        wordBuffer = ""
                        wordWidth = 0
+                       savedColor = lastColor
                    }
                } else {
                    wordBuffer = wordBuffer r
                    wordWidth += charWidth
-
                    if (wordWidth > textWidth) {
                        printf " %s%s\033[0m\033[%dG||\n", currentLine, wordBuffer, table_width
-                       currentLine = lastColor
+                       currentLine = savedColor
                        currentDisplayWidth = 0
                        wordBuffer = ""
                        wordWidth = 0
+                       savedColor = lastColor
                    }
                }
            }
@@ -103,7 +104,7 @@ content_line() {
            if (wordWidth > 0) {
                if (currentDisplayWidth + wordWidth > textWidth) {
                    printf " %s\033[0m\033[%dG||\n", currentLine, table_width
-                   currentLine = lastColor wordBuffer
+                   currentLine = savedColor wordBuffer
                } else {
                    currentLine = currentLine wordBuffer
                }
