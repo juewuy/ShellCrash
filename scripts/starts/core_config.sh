@@ -6,6 +6,7 @@
 . "$CRASHDIR"/libs/web_get_bin.sh
 . "$CRASHDIR"/libs/compare.sh
 . "$CRASHDIR"/libs/set_config.sh
+. "$CRASHDIR"/libs/logger.sh
 
 update_servers() { #更新servers.list
     get_bin "$TMPDIR"/servers.list public/servers.list
@@ -44,7 +45,7 @@ get_core_config() { #下载内核配置文件
     fi
     #输出
     echo "-----------------------------------------------"
-    logger "正在连接服务器获取【$target】配置文件…………"
+    logger "正在连接服务器获取【$target】配置文件…………" 36
     echo -e "链接地址为：\033[4;32m$Https\033[0m"
     echo 可以手动复制该链接到浏览器打开并查看数据是否正常！
     #获取在线config文件

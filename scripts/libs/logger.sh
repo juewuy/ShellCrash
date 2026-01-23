@@ -1,3 +1,7 @@
+
+[ -n "$__IS_LIB_LOGGER" ] && return
+__IS_LIB_LOGGER=1
+
 #日志工具
 . "$CRASHDIR"/libs/web_json.sh
 #$1日志内容$2显示颜色$3是否推送

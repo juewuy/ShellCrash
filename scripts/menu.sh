@@ -17,6 +17,7 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/check_autostart.sh
 . "$CRASHDIR"/libs/i18n.sh
+. "$CRASHDIR"/menus/common.sh
 . "$CRASHDIR"/menus/1_start.sh
 . "$CRASHDIR"/menus/running_status.sh
 
@@ -28,13 +29,6 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 # 加载语言
 load_lang common
 load_lang menu
-
-errornum() {
-    line_break
-    separator_line "="
-    content_line "\033[31m$MENU_ERR_INPUT\033[0m"
-    separator_line "="
-}
 
 checkrestart() {
     echo "-----------------------------------------------"
