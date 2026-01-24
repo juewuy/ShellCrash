@@ -32,6 +32,10 @@ error_input() {
     error_report "\033[31m$COMMON_ERR_INPUT\033[0m"
 }
 
+error_cancel() {
+    error_report "\033[31m$COMMON_ERR_CANCEL\033[0m"
+}
+
 cancel_back() {
     separator_line "-"
     content_line "$COMMON_CANCEL"

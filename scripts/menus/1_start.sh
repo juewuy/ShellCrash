@@ -32,10 +32,12 @@ start_core() {
     fi
 
     if [ ! -s "$core_config" ] && [ -s "$CRASHDIR/configs/providers.cfg" ]; then
-        [ "$crashcore" = singboxr ] && coretype=singbox
-        [ "$crashcore" = meta -o "$crashcore" = clashpre ] && coretype=clash
-
-        . "$CRASHDIR/menus/6_core_config.sh" && gen_"${coretype}"_providers
+        if [ "$crashcore" = singboxr ];then
+			CORE_TYPE=singbox
+        else
+			CORE_TYPE=clash
+		fi
+        . "$CRASHDIR/menus/providers_$CORE_TYPE.sh" && gen_providers
 
         line_break
         separator_line "="
