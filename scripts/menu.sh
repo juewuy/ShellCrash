@@ -31,13 +31,6 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 load_lang common
 load_lang menu
 
-errornum() {
-	line_break
-	separator_line "="
-	content_line "\033[31m$MENU_ERR_INPUT\033[0m"
-	separator_line "="
-}
-
 checkrestart() {
 	line_break
 	separator_line "="
