@@ -1,22 +1,23 @@
-
 error_report() {
     line_break
     separator_line "="
     content_line "\033[31m$1\033[0m"
     separator_line "="
-	sleep 1
+    sleep 1
 }
 
-common_tittle() {
-	line_break
-	separator_line "="
-	content_line "$1"
-	separator_line "-"
+format_box() {
+    line_break
+    separator_line "="
+    for line in "$@"; do
+        content_line "$line"
+    done
+    separator_line "="
 }
 
 common_back() {
-	content_line "0) $COMMON_BACK"
-	separator_line "="
+    content_line "0) $COMMON_BACK"
+    separator_line "="
 }
 
 errornum() {
@@ -24,21 +25,21 @@ errornum() {
 }
 
 error_letter() {
-	error_report "\033[31m$COMMON_ERR_LETTER\033[0m"
+    error_report "\033[31m$COMMON_ERR_LETTER\033[0m"
 }
 
 error_input() {
-	error_report "\033[31m$COMMON_ERR_INPUT\033[0m"
+    error_report "\033[31m$COMMON_ERR_INPUT\033[0m"
 }
 
 cancel_back() {
-	separator_line "-"	
-	content_line "$COMMON_CANCEL"
-	sleep 1
+    separator_line "-"
+    content_line "$COMMON_CANCEL"
+    sleep 1
 }
 
 common_success() {
-	separator_line "-"
-	content_line "\033[32m$COMMON_SUCCESS\033[0m"
-	sleep 1
+    separator_line "-"
+    content_line "\033[32m$COMMON_SUCCESS\033[0m"
+    sleep 1
 }
