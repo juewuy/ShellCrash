@@ -19,6 +19,7 @@ startover() {
     fi
     separator_line "="
     line_break
+    sleep 1
     return 0
 }
 

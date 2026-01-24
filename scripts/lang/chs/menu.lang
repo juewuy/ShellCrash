@@ -1,7 +1,6 @@
 # ===== 通用提示 =====
 
-MENU_RESTART_NOTICE="检测到已变更的内容，请重启服务！"
-MENU_RESTART_ASK="是否现在重启服务？(1/0) > "
+MENU_RESTART_NOTICE="检测到配置变更，是否立即重启服务以应用新配置："
 
 MENU_PORT_CONFLICT_TITLE="检测到端口被以下进程占用！内核可能无法正常启动！"
 MENU_PORT_CONFLICT_HINT="请修改默认端口配置！"
@@ -13,10 +12,10 @@ MENU_CORE_REMOVED="内核文件已移除，请认真检查后重新上传！"
 MENU_CFG_LOADED_OK="配置文件加载完成！"
 
 MENU_OVERRIDE_WARN="你已经禁用了配置文件覆写功能，这会导致大量脚本功能无法使用！"
-MENU_OVERRIDE_ASK="是否取消禁用？"
+MENU_OVERRIDE_ASK="是否取消禁用："
 
 # ===== 欢迎与状态 =====
-MENU_WELCOME="欢迎使用ShellCrash！"
+MENU_WELCOME="欢迎使用ShellCrash"
 MENU_VERSION_LABEL="版本："
 
 MENU_RUN_ON="正在运行"
@@ -38,10 +37,10 @@ MENU_TG_CHANNEL="TG频道："
 
 # ===== /tmp 文件检测 =====
 MENU_TMP_CORE_FOUND="发现可用的内核文件："
-MENU_TMP_CORE_ASK="是否加载(会停止当前服务)？"
+MENU_TMP_CORE_ASK="是否立即加载该内核（会停止当前服务）："
 
 MENU_TMP_CFG_FOUND="发现内核配置文件："
-MENU_TMP_CFG_ASK="是否加载为配置文件？(1/0) > "
+MENU_TMP_CFG_ASK="是否立即加载为配置文件："
 
 MENU_MAIN_1="启动/重启服务"
 MENU_MAIN_2="功能设置"
@@ -54,14 +53,15 @@ MENU_MAIN_8="工具与优化"
 MENU_MAIN_9="更新与支持"
 MENU_MAIN_0="退出脚本"
 
-MENU_MAIN_PROMPT="请输入对应数字 > "
+MENU_MAIN_PROMPT="请输入对应数字> "
 
 # ===== 服务操作 =====
 MENU_SERVICE_STOPPED="服务已停止！"
 
 # ===== 测试 / 调试 =====
-MENU_TEST_RUNNING="正在测试运行！如发现错误请截图后前往咨询"
-MENU_TEST_DONE_OK="测试完成！没有发现问题，请重新启动服务~"
+MENU_TEST_RUNNING_1="正在测试运行！"
+MENU_TEST_RUNNING_2="如发现错误请截图后前往咨询："
+MENU_TEST_DONE_OK="测试完成！没有发现问题，请重新启动服务～"
 MENU_TEST_DONE_FAIL="测试完成！"
 MENU_TEST_LOG_HINT="完整执行记录请查看："
 

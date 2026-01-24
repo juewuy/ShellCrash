@@ -28,7 +28,7 @@ stop_firewall(){
 start_l(){
 	bfstart && {
 		. "$CRASHDIR"/starts/start_legacy.sh
-		start_legacy "$COMMAND" 'shellcrash'	
+		start_legacy "$COMMAND" 'shellcrash'
 	} && afstart &
 }
 
@@ -65,7 +65,7 @@ start)
     fi
     ;;
 stop)
-    logger ShellCrash服务即将关闭……
+    logger ShellCrash服务即将关闭......
     [ -n "$(pidof CrashCore)" ] && web_save #保存面板配置
     #删除守护进程&面板配置自动保存
     cronset '保守模式守护进程'
