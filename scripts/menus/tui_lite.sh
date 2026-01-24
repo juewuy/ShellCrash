@@ -1,6 +1,6 @@
 
 content_line() {
-    printf '%b' "$1\n"
+    printf '%b' " $1\n"
 }
 
 sub_content_line() {

@@ -97,6 +97,10 @@ fi
 [ ! -s "$BINDIR"/ui/index.html ] && makehtml #如没有面板则创建跳转界面
 catpac                                       #生成pac文件
 #内核及内核配置文件检查
+[ "$CRASHDIR" != "$BINDIR" ] && {
+	mkdir -p "$BINDIR"/providers
+	ln -sf "$CRASHDIR"/providers/* "$BINDIR"/providers/
+}
 if echo "$crashcore" | grep -q 'singbox'; then
 	. "$CRASHDIR"/starts/singbox_check.sh && singbox_check
 	[ -d "$TMPDIR"/jsons ] && rm -rf "$TMPDIR"/jsons/* || mkdir -p "$TMPDIR"/jsons #准备目录

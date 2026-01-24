@@ -11,12 +11,12 @@ __IS_MODULE_SUBCONVERTER=1
 subconverter() { 
 	while true; do
 		separator_line "-"
-		content_line " 1 \033[36m开始生成配置文件\033[0m"
-		content_line " 2 设置\033[31m排除节点正则\033[0m \033[47;30m$exclude\033[0m"
-		content_line " 3 设置\033[32m包含节点正则\033[0m \033[47;30m$include\033[0m"
-		content_line " 4 选择\033[33m在线规则模版\033[0m"
-		content_line " 5 选择\033[0mSubconverter服务器\033[0m"
-		content_line " 6 自定义浏览器UA  \033[32m$user_agent\033[0m"
+		content_line "1) \033[36m开始生成配置文件\033[0m"
+		content_line "2) 设置\033[31m排除节点正则\033[0m \033[47;30m$exclude\033[0m"
+		content_line "3) 设置\033[32m包含节点正则\033[0m \033[47;30m$include\033[0m"
+		content_line "4) 选择\033[33m在线规则模版\033[0m"
+		content_line "5) 选择\033[0mSubconverter服务器\033[0m"
+		content_line "6) 自定义浏览器UA  \033[32m$user_agent\033[0m"
 		common_back
 		read -r -p "请输入对应数字 > " num
 		case "$num" in
@@ -124,8 +124,7 @@ gen_link_server() { #选择Subconverter服务器
 	content_line "\033[32m感谢以下作者的无私奉献！！！\033[0m"
 	echo 当前使用后端为：$(grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
 	grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | awk '{print " "NR"	"$3"	"$2}'
-	separator_line "-"
-	echo 0 返回上级菜单
+	common_back
 	read -r -p "请输入对应数字 > " num
 	totalnum=$(grep -acE '^3|^4' "$CRASHDIR"/configs/servers.list )
 	if [ -z "$num" ] || [ "$num" -gt "$totalnum" ];then
