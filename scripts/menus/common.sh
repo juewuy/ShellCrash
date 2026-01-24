@@ -1,9 +1,19 @@
-error_report() {
+msg_alert() {
+    # Default sleep time
+    _sleep_time=1
+
+    if [ "$1" = "-t" ] && [ -n "$2" ]; then
+        _sleep_time="$2"
+        shift 2
+    fi
+
     line_break
     separator_line "="
-    content_line "\033[31m$1\033[0m"
+    for line in "$@"; do
+        content_line "$line"
+    done
     separator_line "="
-    sleep 1
+    sleep "$_sleep_time"
 }
 
 format_box() {
@@ -21,15 +31,15 @@ common_back() {
 }
 
 errornum() {
-    error_report "\033[31m$COMMON_ERR_NUM\033[0m"
+    msg_alert "\033[31m$COMMON_ERR_NUM\033[0m"
 }
 
 error_letter() {
-    error_report "\033[31m$COMMON_ERR_LETTER\033[0m"
+    msg_alert "\033[31m$COMMON_ERR_LETTER\033[0m"
 }
 
 error_input() {
-    error_report "\033[31m$COMMON_ERR_INPUT\033[0m"
+    msg_alert "\033[31m$COMMON_ERR_INPUT\033[0m"
 }
 
 cancel_back() {

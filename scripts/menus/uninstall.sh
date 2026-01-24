@@ -37,7 +37,7 @@ uninstall() {
                 rm -rf "$CRASHDIR"
             fi
         else
-            error_report "\033[31m环境变量配置有误，请尝试手动移除安装目录！\033[0m"
+            msg_alert "\033[31m环境变量配置有误，请尝试手动移除安装目录！\033[0m"
         fi
 
         # 移除其他内容
@@ -71,7 +71,6 @@ uninstall() {
         sleep 1
         exit 0
     else
-        format_box "\033[31m操作已取消！\033[0m"
-        sleep 1
+        msg_alert "\033[31m操作已取消！\033[0m"
     fi
 }

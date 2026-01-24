@@ -47,10 +47,10 @@ set_core_config() {
                     . "$CRASHDIR"/menus/providers.sh
                     providers
                 else
-                    error_report "\033[33m仅限Mihomo/singboxr内核使用,请更换内核！\033[0m"
+                    msg_alert "\033[33m仅限Mihomo/singboxr内核使用,请更换内核！\033[0m"
                 fi
             else
-                error_report "请先添加提供者！"
+                msg_alert "请先添加提供者！"
             fi
             ;;
         c)
@@ -58,7 +58,7 @@ set_core_config() {
                 . "$CRASHDIR"/menus/subconverter.sh
                 subconverter
             else
-                error_report "请先添加提供者！"
+                msg_alert "请先添加提供者！"
             fi
             ;;
         d)
@@ -312,7 +312,7 @@ addproviders() {
         echo "$name $link_uri" >>"$CRASHDIR"/configs/providers_uri.cfg
         return 0
     else
-        error_report "\033[31m请先完成必填选项！\033[0m"
+        msg_alert "\033[31m请先完成必填选项！\033[0m"
         return 1
     fi
 }
