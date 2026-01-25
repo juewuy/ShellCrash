@@ -9,18 +9,23 @@ getlanip() { #获取局域网host地址
         [ -n "$host_ipv4" -a -n "$host_ipv6" ] && break
         sleep 1 && i=$((i + 1))
     done
+	#tailscale
+	[ "$ts_service" = ON ] && {
+		ts_host_ipv4=' 100.64.0.0/10'
+		ts_host_ipv6=' fd7a:115c:a1e0::/48'
+	}
     #添加自定义ipv4局域网网段
     if [ "$replace_default_host_ipv4" == "ON" ]; then
         host_ipv4="$cust_host_ipv4"
     else
-        host_ipv4=$(echo $host_ipv4 $cust_host_ipv4 | tr '\n' ' ' | sed 's/ $//')
+        host_ipv4=$(echo $host_ipv4 $cust_host_ipv4$ts_host_ipv4| tr '\n' ' ' | sed 's/ $//')
     fi
     #缺省配置
     [ -z "$host_ipv4" ] && {
 		host_ipv4='192.168.0.0/16 10.0.0.0/12 172.16.0.0/12'
 		logger "无法获取本地LAN-IPV4网段，请前往流量过滤设置界面设置自定义网段！" 31
 	}
-    host_ipv6="fe80::/10 fd00::/8 $host_ipv6"
+    host_ipv6="fe80::/10 fd00::/8 $host_ipv6$ts_host_ipv6"
     #获取本机出口IP地址
     local_ipv4=$(ip route 2>&1 | grep -Ev 'utun|iot|docker|linkdown' | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
     [ -z "$local_ipv4" ] && local_ipv4=$(ip route 2>&1 | grep -Eo 'src.*' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | sort -u)
