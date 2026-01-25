@@ -264,30 +264,26 @@ setcoretype() {
         echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
         content_line "\033[33m请确认该自定义内核的类型：\033[0m"
         separator_line "-"
-        content_line "1) Clash基础内核"
-        content_line "2) Clash-Premium内核"
-        content_line "3) Mihomo(Meta)内核"
-        content_line "4) Sing-Box内核"
-        content_line "5) Sing-Box-reF1nd内核"
+        content_line "1) Mihomo(Meta)"
+        content_line "2) Singbox-reF1nd"
+        content_line "3) Singbox"		
+        content_line "4) Clash"
         content_line "0) 返回上级菜单"
         separator_line "="
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0) ;;
         1)
-            crashcore=clash
-            ;;
-        2)
-            crashcore=clashpre
-            ;;
-        3)
             crashcore=meta
             ;;
-        4)
+        2)
+            crashcore=singboxr
+            ;;
+        3)
             crashcore=singbox
             ;;
-        5)
-            crashcore=singboxr
+        4)
+            crashcore=clash
             ;;
         *)
             errornum
