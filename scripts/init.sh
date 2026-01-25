@@ -216,7 +216,7 @@ sed -i '/shellclash/d' /etc/group
 rm -rf /etc/init.d/clash
 rm -rf "$CRASHDIR"/rules
 [ "$systype" = "mi_snapshot" -a "$CRASHDIR" != '/data/clash' ] && rm -rf /data/clash
-for file in webget.sh misnap_init.sh core.new; do
+for file in webget.sh misnap_init.sh core.new configs/ShellCrash.cfg.bak; do
     rm -f "$CRASHDIR/$file"
 done
 #旧版变量改名

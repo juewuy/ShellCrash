@@ -170,6 +170,7 @@ settings() {
             set_ipv6
             ;;
         a)
+			BACK_TAR="$CRASHDIR/configs.tar.gz"
             line_break
             separator_line "="
             content_line "1) $SET_BACKUP"
@@ -185,20 +186,23 @@ settings() {
             1)
                 line_break
                 separator_line "="
-                if cp -f "$CFG_PATH" "$CFG_PATH.bak"; then
-                    content_line "\033[32m$SET_BACKUP_OK\033[0m"
+                if tar -zcf "$BACK_TAR" -C "$CRASHDIR/configs/" .; then
+                    content_line "\033[32m$SET_BACKUP_OK $BACK_TAR\033[0m"
                 else
                     content_line "\033[31m$SET_BACKUP_FAIL\033[0m"
                 fi
+				sleep 1
+				continue
                 ;;
             2)
                 line_break
                 separator_line "="
-                if [ -f "$CFG_PATH.bak" ]; then
-                    mv -f "$CFG_PATH" "$CFG_PATH.bak2"
-                    mv -f "$CFG_PATH.bak" "$CFG_PATH"
-                    mv -f "$CFG_PATH.bak2" "$CFG_PATH.bak"
-                    content_line "\033[32m$SET_RESTORE_OK\033[0m"
+                if [ -f "$BACK_TAR" ]; then
+					tar -zcf "$TMPDIR/configs.tar.gz" -C "$CRASHDIR/configs/" .
+					rm -rf "$CRASHDIR/configs/*"
+                    tar -zxf "$BACK_TAR" -C "$CRASHDIR"/configs
+					mv -f "$TMPDIR/configs.tar.gz" "$BACK_TAR"
+                    content_line "\033[32m$SET_RESTORE_OK $BACK_TAR\033[0m"
                 else
                     content_line "\033[31m$SET_BACKUP_MISS\033[0m"
                 fi
@@ -206,7 +210,8 @@ settings() {
             3)
                 line_break
                 separator_line "="
-                if mv -f "$CFG_PATH" "$CFG_PATH.bak"; then
+                if tar -zcf "$BACK_TAR" -C "$CRASHDIR/configs/" .; then
+					rm -rf "$CRASHDIR/configs"
                     . "$CRASHDIR/init.sh" >/dev/null
                     content_lin e"\033[32m$SET_RESET_OK\033[0m"
                 else
@@ -219,7 +224,6 @@ settings() {
                 continue
                 ;;
             esac
-            content_line ""
             content_line "\033[33m$SET_NEED_RESTART\033[0m"
             sleep 1
             exit 0
