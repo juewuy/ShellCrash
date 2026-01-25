@@ -3,10 +3,10 @@
 #$1日志内容$2显示颜色$3是否推送
 logger() { 
 	TMPDIR=/tmp/ShellCrash
-    [ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
+    [ -n "$2" -a "$2" != 0 ] && printf "\033[%sm%s\033[0m\n" "$2" "$1"
     log_text="$(date "+%G-%m-%d_%H:%M:%S")~$1"
     echo "$log_text" >>"$TMPDIR"/ShellCrash.log
-    [ "$(wc -l "$TMPDIR"/ShellCrash.log | awk '{print $1}')" -gt 99 ] && sed -i '1,50d' "$TMPDIR"/ShellCrash.log
+    [ "$(wc -l "$TMPDIR"/ShellCrash.log | awk '{print $1}')" -gt 199 ] && sed -i '1,20d' "$TMPDIR"/ShellCrash.log
 	#推送远程日志
     [ -z "$3" ] && {
         [ -n "$device_name" ] && log_text="$log_text($device_name)"
@@ -18,7 +18,7 @@ logger() {
         }
         [ -n "$push_bark" ] && {
             url="${push_bark}"
-            content="{\"body\":\"${log_text}\",\"title\":\"ShellCrash日志推送\",\"level\":\"passive\",\"badge\":\"1\"}"
+            content="{\"body\":\"${log_text}\",\"title\":\"ShellCrash_log\",\"level\":\"passive\",\"badge\":\"1\"}"
             web_json_post "$url" "$content" &
         }
         [ -n "$push_Deer" ] && {
@@ -28,17 +28,17 @@ logger() {
         }
         [ -n "$push_Po" ] && {
             url="https://api.pushover.net/1/messages.json"
-            content="{\"token\":\"${push_Po}\",\"user\":\"${push_Po_key}\",\"title\":\"ShellCrash日志推送\",\"message\":\"$log_text\"}"
+            content="{\"token\":\"${push_Po}\",\"user\":\"${push_Po_key}\",\"title\":\"ShellCrash_log\",\"message\":\"$log_text\"}"
             web_json_post "$url" "$content" &
         }
         [ -n "$push_PP" ] && {
             url="http://www.pushplus.plus/send"
-            content="{\"token\":\"${push_PP}\",\"title\":\"ShellCrash日志推送\",\"content\":\"$log_text\"}"
+            content="{\"token\":\"${push_PP}\",\"title\":\"ShellCrash_log\",\"content\":\"$log_text\"}"
             web_json_post "$url" "$content" &
         }
         [ -n "$push_Gotify" ] && {
             url="${push_Gotify}"
-            content="{\"title\":\"ShellCrash日志推送\",\"message\":\"$log_text\",\"priority\":5}"
+            content="{\"title\":\"ShellCrash_log\",\"message\":\"$log_text\",\"priority\":5}"
             web_json_post "$url" "$content" &
         }
         [ -n "$push_SynoChat" ] && {
