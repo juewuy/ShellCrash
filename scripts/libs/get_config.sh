@@ -1,10 +1,6 @@
 
 # 检查配置文件
-if [ -f "$CFG_PATH" ]; then
-	[ -n "$(awk 'a[$0]++' "$CFG_PATH")" ] && awk '!a[$0]++' "$CFG_PATH" >"$CFG_PATH"
-else
-	. "$CRASHDIR"/init.sh >/dev/null 2>&1
-fi
+[ -f "$CRASHDIR"/configs/ShellCrash.cfg ] || . "$CRASHDIR"/init.sh >/dev/null 2>&1
 . "$CRASHDIR"/configs/command.env >/dev/null 2>&1
 . "$CRASHDIR"/configs/ShellCrash.cfg
 
