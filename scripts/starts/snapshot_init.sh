@@ -85,7 +85,7 @@ init(){
 	done
 	autoSSH #软固化功能
 	auto_clean #自动清理
-	[ -s "$CRASHDIR"/start.sh ] && auto_start
+	[ -s "$CRASHDIR"/start.sh ] && [ ! -x /etc/init.d/shellcrash ] && auto_start
 }
 
 case "$1" in
