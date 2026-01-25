@@ -52,7 +52,7 @@ SET_REDIR_RESTART_HINT="注意：切换模式后需要手动重启服务以生�
 SET_REDIR_APPLIED="已设为"
 
 SET_REDIR_REDIR="Redir模式"
-SET_REDIR_MIX="混合模式"
+SET_REDIR_MIX="Mix模式"
 SET_REDIR_TPROXY="Tproxy模式"
 SET_REDIR_TUN="Tun模式"
 

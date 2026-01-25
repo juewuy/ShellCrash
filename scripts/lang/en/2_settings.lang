@@ -50,7 +50,7 @@ SET_REDIR_RESTART_HINT="You must manually restart the service for the change to 
 SET_REDIR_APPLIED="Routing mode set to"
 
 SET_REDIR_REDIR="Redir Mode"
-SET_REDIR_MIX="Mixed Mode"
+SET_REDIR_MIX="Mix Mode"
 SET_REDIR_TPROXY="Tproxy Mode"
 SET_REDIR_TUN="Tun Mode"
 
