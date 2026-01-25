@@ -100,7 +100,8 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
     setconfig firewall_mod $firewall_mod
 }
 #设置更新地址
-[ -n "$url" ] && setconfig update_url $url
+[ -n "$url" ] && setconfig update_url "$url"
+[ -n "$release_type" ] && setconfig release_type "$release_type"
 #设置语言
 [ -n "$language" ] && echo "$language" > "$CRASHDIR/configs/i18n.cfg"
 #设置环境变量

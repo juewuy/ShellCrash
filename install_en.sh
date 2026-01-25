@@ -286,14 +286,12 @@ setversion() {
     echo "-----------------------------------------------"
     read -p "Enter number > " num
     case "$num" in
-    2)
-		url=$(echo "$url" | sed 's/master/stable/')
-	;;
-    3)
-		url=$(echo "$url" | sed 's/master/dev/')
-	;;
+	1) release_type=master ;;
+    2) release_type=stable ;;
+    3) release_type=dev ;;
     *) ;;
     esac
+	url=$(echo "$url" | sed "s/master/$release_type/")
 }
 
 # Pre-Install Checks
