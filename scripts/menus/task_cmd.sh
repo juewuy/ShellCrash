@@ -14,8 +14,7 @@ task_logger(){
 	[ "$task_push" = 1 ] && push= || push=off
 	[ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
 	[ "$3" = 'off' ] && push=off
-	echo "$1" |grep -qE '(每隔|时每)([1-9]|[1-9][0-9])分钟' && push=off
-	logger "$1" 0 "$push"
+	echo "$1" |grep -qE '(每隔|时每)([1-9]|[1-9][0-9])分钟' || logger "$1" 0 "$push"
 }
 
 #任务命令
