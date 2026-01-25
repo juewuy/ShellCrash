@@ -94,6 +94,7 @@ ckstatus() { #脚本启动前检查
     echo "-----------------------------------------------"
     #检查新手引导
     if [ -z "$userguide" ]; then
+        userguide=1
         setconfig userguide 1
         . "$CRASHDIR"/menus/8_tools.sh && userguide
     fi
