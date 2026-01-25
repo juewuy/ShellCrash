@@ -16,7 +16,7 @@ URI_EXP='ss|vmess|vless|trojan|tuic|anytls|shadowtls|hysteria(2)?'
 # 配置文件主界面
 set_core_config() {
     while true; do
-        format_box "\033[30;47m配置文件管理\033[0m"
+        comp_box "\033[30;47m配置文件管理\033[0m"
         [ -s "$CRASHDIR"/configs/providers.cfg ] || [ -s "$CRASHDIR"/configs/providers_uri.cfg ] && {
             echo -e "\033[36m输入数字可管理对应提供者\033[0m"
             cat "$CRASHDIR"/configs/providers.cfg "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |
@@ -48,10 +48,10 @@ set_core_config() {
                     . "$CRASHDIR"/menus/providers.sh
                     providers
                 else
-                    error_report "\033[33m仅限Mihomo/singboxr内核使用,请更换内核！\033[0m"
+                    msg_alert "\033[33m仅限Mihomo/singboxr内核使用,请更换内核！\033[0m"
                 fi
             else
-                error_report "请先添加提供者！"
+                msg_alert "请先添加提供者！"
             fi
             ;;
         c)
@@ -59,7 +59,7 @@ set_core_config() {
                 . "$CRASHDIR"/menus/subconverter.sh
                 subconverter
             else
-                error_report "请先添加提供者！"
+                msg_alert "请先添加提供者！"
             fi
             ;;
         d)
@@ -114,7 +114,7 @@ setproviders() {
     [ -z "$ua" ] && ua='clash.meta'
     while true; do
         link_info=$(echo "$link$link_uri" | cut -c 1-30)
-        format_box "\033[36m支持添加订阅链接/分享链接/本地文件作为提供者\033[0m"
+        comp_box "\033[36m支持添加订阅链接/分享链接/本地文件作为提供者\033[0m"
         content_line "1) 设置\033[36m名称或代号\033[0m	\033[32m$name\033[0m"
         content_line "2) 设置\033[32m链接或路径\033[0m：	\033[36m$link_info...\033[0m"
         [ -n "$link" ] && {
@@ -338,7 +338,7 @@ addproviders() {
         echo "$name $link_uri" >>"$CRASHDIR"/configs/providers_uri.cfg
         return 0
     else
-        error_report "\033[31m请先完成必填选项！\033[0m"
+        msg_alert "\033[31m请先完成必填选项！\033[0m"
         return 1
     fi
 }
