@@ -129,6 +129,7 @@ ckstatus() {
 
 	# 检查新手引导
 	if [ -z "$userguide" ]; then
+		userguide=1
 		. "$CRASHDIR"/menus/userguide.sh && userguide
 		setconfig userguide 1
 	fi
