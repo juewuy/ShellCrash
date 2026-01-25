@@ -44,12 +44,6 @@ checkport() { #检查端口冲突
     done
 }
 ckstatus() { #脚本启动前检查
-    #检查脚本配置文件
-    if [ -f "$CFG_PATH" ]; then
-        [ -n "$(awk 'a[$0]++' $CFG_PATH)" ] && awk '!a[$0]++' "$CFG_PATH" >"$CFG_PATH" #检查重复行并去除
-    else
-        . "$CRASHDIR"/init.sh >/dev/null 2>&1
-    fi
     versionsh=$(cat "$CRASHDIR"/version)
     [ -n "$versionsh" ] && versionsh_l=$versionsh
     [ -z "$redir_mod" ] && redir_mod=纯净模式
