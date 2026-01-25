@@ -155,13 +155,13 @@ set_bot_tg_config(){
 	JSON=$(cat <<EOF
 {
   "commands": [
-    {"command": "crash", "description": "呼出ShellCrash菜单"},
+    {"command": "$my_alias", "description": "呼出ShellCrash菜单"},
     {"command": "help",  "description": "查看帮助"}
   ]
 }
 EOF
 )
-	TEXT='已完成Telegram机器人设置！'
+    TEXT="已完成Telegram机器人设置！请使用 /$my_alias 呼出功能菜单！"
 	. "$CRASHDIR"/libs/web_json.sh
 	bot_api="https://api.telegram.org/bot$TOKEN"
 	web_json_post "$bot_api/setMyCommands" "$JSON"

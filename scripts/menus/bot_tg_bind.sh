@@ -20,7 +20,7 @@ tg_push_token(){
 	push_TG="$TOKEN"
 	setconfig push_TG "$TOKEN"
 	setconfig chat_ID "$chat_ID"
-	"$CRASHDIR"/start.sh logger "已完成Telegram日志推送设置！" 32
+	. "$CRASHDIR"/libs/logger.sh && logger "已完成Telegram日志推送设置！" 32
 }
 get_chatid(){
 	i=1
