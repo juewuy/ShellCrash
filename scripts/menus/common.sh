@@ -16,7 +16,8 @@ msg_alert() {
     sleep "$_sleep_time"
 }
 
-format_box() {
+# complete box
+comp_box() {
     line_break
     separator_line "="
     for line in "$@"; do
@@ -24,6 +25,16 @@ format_box() {
     done
     separator_line "="
 }
+
+# bottom box
+btm_box() {
+    for line in "$@"; do
+        content_line "$line"
+    done
+    separator_line "="
+}
+
+# =================================================
 
 common_back() {
     content_line "0) $COMMON_BACK"
