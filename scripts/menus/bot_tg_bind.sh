@@ -7,9 +7,7 @@ private_bot() {
     read -r -p "请输入你获取到的API TOKEN> " TOKEN
     url_tg=https://api.telegram.org/bot${TOKEN}/getUpdates
 
-    line_break
-    separator_line "="
-    content_line "请向\033[32m你申请的机器人\033[33m而不是BotFather！\033[0m"
+    top_box "请向\033[32m你申请的机器人\033[33m而不是BotFather！\033[0m"
 }
 
 public_bot() {
@@ -41,8 +39,7 @@ get_chatid() {
 
 set_bot() {
     public_key=$(cat /proc/sys/kernel/random/boot_id | sed 's/.*-//')
-    content_line "发送此秘钥:        \033[30;46m$public_key\033[0m"
-    separator_line "="
+    btm_box "发送此秘钥：        \033[30;46m$public_key\033[0m"
     read -r -p "我已经发送完成(1/0)> " res
     if [ "$res" = 1 ]; then
         get_chatid
