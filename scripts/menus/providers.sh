@@ -20,38 +20,37 @@ providers() {
             provider_temp_des=$(grep "$provider_temp_file" "$CRASHDIR"/configs/${CORE_TYPE}_providers.list | awk '{print $1}')
             [ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
         fi
-		echo "-----------------------------------------------"
-		echo -e "\033[33msingboxr与mihomo内核的providers配置文件不互通！\033[0m"
-        echo "-----------------------------------------------"
-		echo -e " 1 \033[32m生成\033[0m包含全部节点/订阅的配置文件"
-        echo -e " 2 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
-        echo -e " 3 \033[33m清理\033[0mproviders目录文件"
-        echo "-----------------------------------------------"
-        echo -e " 0 返回上级菜单"
+        separator_line "-"
+		content_line "1) \033[32m生成\033[0m包含全部提供者的配置文件"
+        content_line "2) 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
+        content_line "3) \033[33m清理\033[0mproviders目录文件"
+        separator_line "-"
+        common_back
         read -p "请输入对应字母或数字 > " num
         case "$num" in
         "" | 0)
             break
             ;;
         1)
-            echo "-----------------------------------------------"
+            separator_line "-"
             if [ -s "$CRASHDIR"/configs/providers.cfg ] || [ -s "$CRASHDIR"/configs/providers_uri.cfg ]; then
 				. "$CRASHDIR/menus/providers_$CORE_TYPE.sh"
 				gen_providers
             else
-                echo -e "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
+                content_line "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
                 sleep 1
             fi
             ;;
         2)
-            echo "-----------------------------------------------"
-            echo -e "当前规则模版为：\033[32m$provider_temp_des\033[0m"
-            echo -e "\033[33m请选择在线模版：\033[0m"
-            echo "-----------------------------------------------"
-            cat "$CRASHDIR/configs/$CORE_TYPE_providers.list" | awk '{print " "NR" "$1}'
-            echo "-----------------------------------------------"
-            echo -e " a 使用\033[36m本地模版\033[0m"
-            echo "-----------------------------------------------"
+			list=$(cat "$CRASHDIR/configs/${CORE_TYPE}_providers.list" | awk '{print $1}')
+            separator_line "-"
+            content_line "当前规则模版为：\033[32m$provider_temp_des\033[0m"
+            content_line "\033[33m请选择在线模版：\033[0m"
+            separator_line "-"
+            content_list "$list"
+            separator_line "-"
+            content_line "a) 使用\033[36m本地模版\033[0m"
+            common_back
             read -p "请输入对应字母或数字 > " num
             case "$num" in
             "" | 0) ;;
@@ -60,9 +59,9 @@ providers() {
                 if [ -s $dir ]; then
                     provider_temp_file=$dir
                     setconfig provider_temp_"$CORE_TYPE" "$provider_temp_file"
-                    echo -e "\033[32m设置成功！\033[0m"
+                    content_line "\033[32m设置成功！\033[0m"
                 else
-                    echo -e "\033[31m输入错误，找不到对应模版文件！\033[0m"
+                    content_line "\033[31m输入错误，找不到对应模版文件！\033[0m"
                 fi
                 sleep 1
                 ;;
@@ -78,7 +77,7 @@ providers() {
             esac
             ;;
         3)
-            echo -e "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
+            content_line "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
             read -p "是否继续？(1/0) > " res
             [ "$res" = "1" ] && rm -rf "$CRASHDIR"/providers && common_success
             ;;

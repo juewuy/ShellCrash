@@ -11,7 +11,7 @@ __IS_MODULE_SUBCONVERTER=1
 subconverter() { 
 	while true; do
 		separator_line "-"
-		content_line "1) \033[36m开始生成配置文件\033[0m"
+		content_line "1) \033[32m生成\033[0m包含全部节点/订阅的配置文件"
 		content_line "2) 设置\033[31m排除节点正则\033[0m \033[47;30m$exclude\033[0m"
 		content_line "3) 设置\033[32m包含节点正则\033[0m \033[47;30m$include\033[0m"
 		content_line "4) 选择\033[33m在线规则模版\033[0m"
@@ -24,10 +24,11 @@ subconverter() {
 			break
 			;;
 		1)
-			providers_link=$(grep -v '^#' "$CRASHDIR"/configs/providers.cfg 2>/dev/null |awk '{print $2}' |paste -sd '|')
+			providers_link=$(grep -v '\./providers/' "$CRASHDIR"/configs/providers.cfg 2>/dev/null |awk '{print $2}' |paste -sd '|')
 			uri_link=$(grep -v '^#' "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |awk -F '#' '{print $1}' |paste -sd '|')
 			Url=$(echo "$providers_link|$uri_link" |sed 's/^|// ; s/|$//')
 			setconfig Url "'$Url'"
+			Https=''
 			setconfig Https
 			# 获取在线文件
 			jump_core_config
@@ -98,11 +99,14 @@ gen_link_ele() { # 包含节点正则
 }
 
 gen_link_config() { #选择在线规则模版
+	list=$(grep -aE '^5' "$CRASHDIR"/configs/servers.list | awk '{print $2$4}')
+	now=$(grep -aE '^5' "$CRASHDIR"/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $2}')
 	separator_line "-"
-	echo 当前使用规则为：$(grep -aE '^5' "$CRASHDIR"/configs/servers.list | sed -n ""$rule_link"p" | awk '{print $2}')
-	grep -aE '^5' "$CRASHDIR"/configs/servers.list | awk '{print " "NR"	"$2$4}'
+	content_line "当前使用规则为：\033[33m$now\033[0m"
 	separator_line "-"
-	echo 0 返回上级菜单
+	content_list "$list"
+	separator_line "-"
+	common_back
 	read -r -p "请输入对应数字 > " num
 	totalnum=$(grep -acE '^5' "$CRASHDIR"/configs/servers.list )
 	if [ -z "$num" ] || [ "$num" -gt "$totalnum" ];then
@@ -119,11 +123,14 @@ gen_link_config() { #选择在线规则模版
 }
 
 gen_link_server() { #选择Subconverter服务器
+	list=$(grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | awk '{print $3"	"$2}')
+	now=$(grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
 	separator_line "-"
 	content_line "\033[36m以下为互联网采集的第三方服务器，具体安全性请自行斟酌！\033[0m"
 	content_line "\033[32m感谢以下作者的无私奉献！！！\033[0m"
-	echo 当前使用后端为：$(grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | sed -n ""$server_link"p" | awk '{print $3}')
-	grep -aE '^3|^4' "$CRASHDIR"/configs/servers.list | awk '{print " "NR"	"$3"	"$2}'
+	content_line "当前使用后端为：\033[33m$now\033[0m"
+	separator_line "-"
+	content_list "$list"
 	common_back
 	read -r -p "请输入对应数字 > " num
 	totalnum=$(grep -acE '^3|^4' "$CRASHDIR"/configs/servers.list )

@@ -16,11 +16,12 @@ URI_EXP='ss|vmess|vless|trojan|tuic|anytls|shadowtls|hysteria(2)?'
 # 配置文件主界面
 set_core_config() {
     while true; do
+		list=$(cat "$CRASHDIR"/configs/providers.cfg "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |
+                awk '{print $1 "  \t" substr($2,1,30)}')
         comp_box "\033[30;47m配置文件管理\033[0m"
-        [ -s "$CRASHDIR"/configs/providers.cfg ] || [ -s "$CRASHDIR"/configs/providers_uri.cfg ] && {
-            echo -e "\033[36m输入数字可管理对应提供者\033[0m"
-            cat "$CRASHDIR"/configs/providers.cfg "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |
-                awk '{print " " NR ") " $1 "  \t\t" substr($2,1,30) "..."}'
+        [ -n "$list" ] && {
+            content_line "\033[36m输入数字可管理对应提供者\033[0m"
+			content_list "$list" '...'
             separator_line "-"
         }
         content_line "a) \033[32m添加提供者\033[0m(支持订阅/分享链接及本地文件)"
@@ -75,7 +76,7 @@ set_core_config() {
             ;;
         e)
             checkcfg=$(cat $CFG_PATH)
-            override
+			. "$CRASHDIR"/menus/override.sh && override
             if [ -n "$PID" ]; then
                 checkcfg_new=$(cat $CFG_PATH)
                 [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
@@ -117,23 +118,18 @@ setproviders() {
         comp_box "\033[36m支持添加订阅链接/分享链接/本地文件作为提供者\033[0m"
         content_line "1) 设置\033[36m名称或代号\033[0m	\033[32m$name\033[0m"
         content_line "2) 设置\033[32m链接或路径\033[0m：	\033[36m$link_info...\033[0m"
-        [ -n "$link" ] && {
-            separator_line '-'
-            content_line "3) 设置\033[33m健康检查间隔\033[0m：\t\033[47;30m$interval\033[0m"
-            content_line "4) 设置\033[36m自动更新间隔\033[0m：\t\033[47;30m$interval2\033[0m"
-            content_line "5) 设置\033[31m排除节点正则\033[0m：\t\033[47;30m$exclude_w\033[0m"
-            content_line "6) 设置\033[32m包含节点正则\033[0m：\t\033[47;30m$include_w\033[0m"
-            echo "$link" | grep -q '^http' &&
-                content_line "7) 设置\033[33m虚拟浏览器UA\033[0m：\t\033[47;30m$ua\033[0m"
-        }
+		[ -n "$link" ] && 
+			content_line "4) 设置\033[33m本地生成覆写\033[0m"
         separator_line "-"
         content_line "a) \033[36m保存此提供者\033[0m"
         [ -n "$link" ] &&
             content_line "b) \033[32m本地生成\033[0m仅包含此提供者的配置文件"
         echo "$link$link_uri" | grep -q '://' &&
             content_line "c) \033[33m在线生成\033[0m仅包含此提供者的配置文件"
-        [ -n "$link" ] &&
-            content_line "e) 直接使用此配置文件(不经过转换)"
+        echo "$link" | grep -q '^http' &&
+            content_line "e) 从此订阅链接直接拉取配置文件(不经过订阅转换)"
+        echo "$link" | grep -q '^./providers' &&
+            content_line "e) 直接使用此文件作为配置文件(不经过本地生成)"
         content_line "d) \033[31m删除此提供者\033[0m"
         common_back
         read -r -p "请输入对应数字> " num
@@ -165,14 +161,10 @@ setproviders() {
 					[ "$f" = "$CRASHDIR"/providers/uri_group ] && continue
 					[ -f "$f" ] || continue
 					printf '%s\n' "${f##*/}"
-				done | sort -V
+				done | sort
 			)
 			if [ -n "$list" ];then
-				i=1
-				printf '%s\n' "$list" | while IFS= read -r f; do
-					content_line "$i) $f"
-					i=$((i+1))
-				done
+				content_list "$list"
 				separator_line "-"
 				read -r -p "请选择对应文件或输入具体链接 > " text
 			else
@@ -184,6 +176,7 @@ setproviders() {
 				#处理订阅链接
                 text=$(echo "$text" | sed 's/ *(.*)//g; s/#.*//g') #处理注释及超链接
                 link="$text"
+				link_uri=''
 				common_success
 				;;
 			[1-9] | [1-9][0-9])
@@ -191,6 +184,7 @@ setproviders() {
 				file=$(printf '%s\n' "$list" | sed -n "${text}p")
 				if [ -s "$CRASHDIR/providers/$file" ]; then
 					link="$file"
+					link_uri=''
 					common_success
 				else
 					errornum
@@ -200,6 +194,7 @@ setproviders() {
 				#处理分享链接
 				if [ -n "$(echo $text | grep -E "^$URI_EXP")" ]; then
 					link_uri=$(echo "$text" | sed 's/#.*//g') # 删除注释
+					link=''
 					[ -z "$name" ] && name=$(echo "$text" | grep -o '#.*$' | cut -c2-)
 					common_success
 				else
@@ -209,55 +204,7 @@ setproviders() {
 			esac
             ;;
         3)
-            read -p "请输入健康检查间隔(单位:分钟) > " num
-            if [ -n "$num" ]; then
-                interval="$num"
-            else
-                errornum
-            fi
-            ;;
-        4)
-            read -p "请输入自动更新间隔(单位:小时) > " num
-            if [ -n "$num" ]; then
-                interval2="$num"
-            else
-                errornum
-            fi
-            ;;
-        5)
-            read -p "请输入需要排除的节点关键字(支持正则,不支持空格,输入0删除) > " text
-			text=$(echo "$text" | sed 's/ //g') #去空格
-            case "$text" in
-			0)
-                exclude_w=''
-				;;
-			*)
-                exclude_w="$text"
-				;;
-            esac
-            ;;
-        6)
-            read -p "请输入需要筛选使用的节点关键字(支持正则,不支持空格,输入0删除) > " text
-			text=$(echo "$text" | sed 's/ //g') #去空格
-            case "$text" in
-			0)
-                include_w=''
-				;;
-			*)
-                include_w="$text"
-				;;
-            esac
-            ;;
-        7)
-            read -p "请输入浏览器UA(输入0重置) > " text
-            case "$text" in
-			0)
-                include_w='clash.meta'
-				;;
-			*)
-                include_w="$text"
-				;;
-            esac
+            custproviders
             ;;
         a)
             addproviders && common_success
@@ -301,10 +248,13 @@ setproviders() {
                 content_line "\033[31m请确认你完全理解自己在做什么\033[0m"
                 read -p "我确认遇到问题可以自行解决(1/0) > " res
                 [ "$res" = "1" ] && {
-                    if [ -s "$CRASHDIR/$link" ]; then
+					file=$(echo "$CRASHDIR/$link" | sed 's|\./||')
+                    if [ -f "$file" ]; then
                         [ -n "$name" ] && addproviders
-                        ln -sf "$CRASHDIR/$link" "$CONFIG_PATH"
-                    elif [ -n "$link" ]; then
+                        ln -sf "$file" "$CONFIG_PATH"
+						common_success
+						break
+                    elif echo "$link" | grep -q '^http'; then
                         [ -n "$name" ] && addproviders
                         Https="$link"
                         Url=''
@@ -312,10 +262,14 @@ setproviders() {
                         setconfig Url
                         # 获取在线文件
                         jump_core_config
+						break
+					else
+						content_line "\033[31m请先完成必填选项！\033[0m"
                     fi
                 }
             else
-                content_line "\033[31m$请先完成必填选项！\033[0m"
+                content_line "\033[31m请先完成必填选项！\033[0m"
+				sleep 1
             fi
             ;;
         *)
@@ -341,6 +295,80 @@ addproviders() {
         msg_alert "\033[31m请先完成必填选项！\033[0m"
         return 1
     fi
+}
+
+custproviders() {
+	while true; do
+		separator_line '-'
+		content_line "1) 设置\033[33m健康检查间隔\033[0m：\t\033[47;30m$interval\033[0m"
+		content_line "2) 设置\033[36m自动更新间隔\033[0m：\t\033[47;30m$interval2\033[0m"
+		echo "$link" | grep -q '^http' &&
+			content_line "3) 设置\033[33m虚拟浏览器UA\033[0m：\t\033[47;30m$ua\033[0m"
+		content_line "4) 设置\033[31m排除节点正则\033[0m：\t\033[47;30m$exclude_w\033[0m"
+		content_line "5) 设置\033[32m包含节点正则\033[0m：\t\033[47;30m$include_w\033[0m"
+		common_back
+		read -r -p "请输入对应数字> " num
+		case "$num" in
+		"" | 0)
+			break
+			;;
+		1)	
+			read -p "请输入健康检查间隔(单位:分钟) > " num
+			if [ -n "$num" ]; then
+				interval="$num"
+			else
+				errornum
+			fi
+			;;
+		2)
+			read -p "请输入自动更新间隔(单位:小时) > " num
+			if [ -n "$num" ]; then
+				interval2="$num"
+			else
+				errornum
+			fi
+			;;
+        3)
+            read -p "请输入浏览器UA(输入0重置) > " text
+            case "$text" in
+			0)
+                include_w='clash.meta'
+				;;
+			*)
+                include_w="$text"
+				;;
+            esac
+            ;;
+		4)
+			read -p "请输入需要排除的节点关键字(支持正则,不支持空格,输入0删除) > " text
+			text=$(echo "$text" | sed 's/ //g') #去空格
+			case "$text" in
+			0)
+				exclude_w=''
+				;;
+			*)
+				exclude_w="$text"
+				;;
+			esac
+			;;
+		5)
+			read -p "请输入需要筛选使用的节点关键字(支持正则,不支持空格,输入0删除) > " text
+			text=$(echo "$text" | sed 's/ //g') #去空格
+			case "$text" in
+			0)
+				include_w=''
+				;;
+			*)
+				include_w="$text"
+				;;
+			esac
+			;;
+        *)
+            error_letter
+            break
+            ;;
+        esac
+    done	
 }
 # 调用工具在线获取配置文件
 jump_core_config() {

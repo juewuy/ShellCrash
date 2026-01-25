@@ -146,3 +146,12 @@ separator_line() {
 line_break() {
     printf "\n\n"
 }
+
+content_list() {
+	i=1
+	printf '%s\n' "$1" | while IFS= read -r f; do
+		content_line "$i) $f$2"
+		i=$(( i + 1 ))
+	done
+}
+
