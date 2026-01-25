@@ -44,7 +44,11 @@ core_check(){
 		return 2
 	else
 		rm -f "$BINDIR"/CrashCore.tar.gz "$BINDIR"/CrashCore.gz "$BINDIR"/CrashCore.upx
-		mv -f "$TMPDIR/Coretmp.$zip_type" "$BINDIR/CrashCore.$zip_type"
+		if [ -z "$zip_type" ];then
+			gzip -c "$TMPDIR/core_new" > "$BINDIR/CrashCore.gz"
+		else
+			mv -f "$1" "$BINDIR/CrashCore.$zip_type"
+		fi
 		mv -f "$TMPDIR/core_new" "$TMPDIR/CrashCore"
 		core_v="$v"
 		setconfig COMMAND "$COMMAND" "$CRASHDIR"/configs/command.env && . "$CRASHDIR"/configs/command.env
