@@ -179,6 +179,7 @@ getscripts() {
             error_down
         else
             . "$CRASHDIR"/init.sh >/dev/null
+			echo "$release_type" | grep -qE '^[0-9]' && setconfig userguide  #回退时重新新手引导
             content_line "\033[32m脚本更新成功！\033[0m"
             separator_line "="
         fi
