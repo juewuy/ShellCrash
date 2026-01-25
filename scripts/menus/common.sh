@@ -26,6 +26,14 @@ comp_box() {
     separator_line "="
 }
 
+top_box() {
+    line_break
+    separator_line "="
+    for line in "$@"; do
+        content_line "$line"
+    done
+}
+
 # bottom box
 btm_box() {
     for line in "$@"; do
