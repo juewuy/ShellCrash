@@ -47,7 +47,7 @@ providers() {
             content_line "当前规则模版为：\033[32m$provider_temp_des\033[0m"
             content_line "\033[33m请选择在线模版：\033[0m"
             separator_line "-"
-            content_list "$list"
+            list_box "$list"
             separator_line "-"
             content_line "a) 使用\033[36m本地模版\033[0m"
             common_back

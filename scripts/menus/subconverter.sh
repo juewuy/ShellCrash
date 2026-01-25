@@ -104,7 +104,7 @@ gen_link_config() { #选择在线规则模版
 	separator_line "-"
 	content_line "当前使用规则为：\033[33m$now\033[0m"
 	separator_line "-"
-	content_list "$list"
+	list_box "$list"
 	separator_line "-"
 	common_back
 	read -r -p "请输入对应数字 > " num
@@ -130,7 +130,7 @@ gen_link_server() { #选择Subconverter服务器
 	content_line "\033[32m感谢以下作者的无私奉献！！！\033[0m"
 	content_line "当前使用后端为：\033[33m$now\033[0m"
 	separator_line "-"
-	content_list "$list"
+	list_box "$list"
 	common_back
 	read -r -p "请输入对应数字 > " num
 	totalnum=$(grep -acE '^3|^4' "$CRASHDIR"/configs/servers.list )

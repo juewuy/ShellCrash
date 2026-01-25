@@ -42,6 +42,14 @@ btm_box() {
     separator_line "="
 }
 
+list_box () {
+	i=1
+	printf '%s\n' "$1" | while IFS= read -r f; do
+		content_line "$i) $f$2"
+		i=$(( i + 1 ))
+	done
+}
+
 # =================================================
 
 common_back() {

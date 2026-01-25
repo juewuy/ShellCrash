@@ -21,7 +21,7 @@ set_core_config() {
         comp_box "\033[30;47m配置文件管理\033[0m"
         [ -n "$list" ] && {
             content_line "\033[36m输入数字可管理对应提供者\033[0m"
-			content_list "$list" '...'
+			list_box "$list" '...'
             separator_line "-"
         }
         content_line "a) \033[32m添加提供者\033[0m(支持订阅/分享链接及本地文件)"
@@ -164,7 +164,7 @@ setproviders() {
 				done | sort
 			)
 			if [ -n "$list" ];then
-				content_list "$list"
+				list_box "$list"
 				separator_line "-"
 				read -r -p "请选择对应文件或输入具体链接 > " text
 			else
