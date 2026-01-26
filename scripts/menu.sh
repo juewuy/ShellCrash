@@ -151,7 +151,7 @@ ckstatus() {
 	separator_line "="
 
 	# 检查/tmp内核文件
-	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -Ev ".*(zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box|meta.*'); do
+	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -Ev ".*(zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box'); do
 		line_break
 		separator_line "="
 		content_line "$MENU_TMP_CORE_FOUND \033[36m/tmp/$file\033[0m"
