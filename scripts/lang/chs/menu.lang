@@ -15,8 +15,7 @@ MENU_OVERRIDE_WARN="你已经禁用了配置文件覆写功能，这会导致大
 MENU_OVERRIDE_ASK="是否取消禁用："
 
 # ===== 欢迎与状态 =====
-MENU_WELCOME="欢迎使用ShellCrash"
-MENU_VERSION_LABEL="版本："
+MENU_WELCOME="欢迎使用ShellCrash！"
 
 MENU_RUN_ON="正在运行"
 MENU_RUN_SET="已设置"

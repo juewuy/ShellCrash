@@ -139,14 +139,13 @@ ckstatus() {
 
 	line_break
 	separator_line "="
-	content_line "                   $MENU_WELCOME"
-	content_line ""
-	content_line "$(printf "%$((${TABLE_WIDTH:-60} - 1))s" "$MENU_VERSION_LABEL$versionsh_l")"
-	content_line "                         $MENU_TG_CHANNEL\033[36;4mhttps://t.me/ShellClash\033[0m"
-	separator_line "="
+	content_line "\033[30;43m$MENU_WELCOME\033[0m"
+	content_right "Ver: $versionsh_l"
+	content_line "$MENU_TG_CHANNEL\033[36;4mhttps://t.me/ShellClash\033[0m"
+	separator_line "-"
 	content_line "$corename$run\t  $auto"
 	if [ -n "$PID" ]; then
-		content_line "$MENU_MEM_USED\033[44m$VmRSS\033[0m\t\t  $MENU_RUNNING_TIME\033[46;30m$day\033[44;37m$time\033[0m"
+		content_line "$MENU_MEM_USED\033[44m$VmRSS\033[0m\t  $MENU_RUNNING_TIME\033[46;30m$day\033[44;37m$time\033[0m"
 	fi
 	separator_line "="
 

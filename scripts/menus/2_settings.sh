@@ -27,11 +27,10 @@ settings() {
             content_line "6) $SET_MENU_ADV_PORT"
         }
         content_line "8) $SET_MENU_IPV6\t\033[36m$ipv6_redir\033[0m"
-        content_line ""
+        separator_line "-"
         content_line "a) \033[31m$SET_MENU_RESET\033[0m"
         content_line "b) \033[36m$SET_MENU_LANG\033[0m"
         content_line "c) \033[33m$SET_MENU_UI\033[0m"
-        content_line ""
         content_line "0) $COMMON_BACK"
         separator_line "="
         read -r -p "$COMMON_INPUT> " num

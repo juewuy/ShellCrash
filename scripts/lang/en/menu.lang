@@ -16,7 +16,6 @@ MENU_OVERRIDE_ASK="Cancel the disable setting?"
 
 # ===== Welcome & Status =====
 MENU_WELCOME="Welcome to ShellCrash!"
-MENU_VERSION_LABEL="Ver:"
 
 MENU_RUN_ON=" Running"
 MENU_RUN_SET="Configured"
