@@ -48,18 +48,14 @@ set_fw_filter() {
             fi
             ;;
         3)
-            if echo "$redir_mod" | grep -oqE '混合|Tproxy|Tun'; then
-                if [ "$quic_rj" = "OFF" ]; then
-                    quic_rj=ON
-                    msg_alert "\033[33m已禁止QUIC流量通过ShellCrash内核！\033[0m"
-                else
-                    quic_rj=OFF
-                    msg_alert "\033[33m已取消禁止QUIC协议流量！\033[0m"
-                fi
-                setconfig quic_rj $quic_rj
-            else
-                msg_alert "\033[33m当前模式默认不会代理UDP流量，无需设置！\033[0m"
-            fi
+			if [ "$quic_rj" = "OFF" ]; then
+				quic_rj=ON
+				msg_alert "\033[33m已禁止QUIC流量通过ShellCrash内核！\033[0m"
+			else
+				quic_rj=OFF
+				msg_alert "\033[33m已取消禁止QUIC协议流量！\033[0m"
+			fi
+			setconfig quic_rj $quic_rj
             ;;
         4)
             if [ -n "$(ipset -v 2>/dev/null)" ] || [ "$firewall_mod" = 'nftables' ]; then
