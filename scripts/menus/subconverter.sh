@@ -25,7 +25,7 @@ subconverter() {
 			;;
 		1)
 			providers_link=$(grep -v '\./providers/' "$CRASHDIR"/configs/providers.cfg 2>/dev/null |awk '{print $2}' |paste -sd '|')
-			uri_link=$(grep -v '^#' "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |awk -F '#' '{print $1}' |paste -sd '|')
+			uri_link=$(grep -v '^#' "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |awk '{ print ($1=="vmess" ? $2 : $2 "#" $1) }' |paste -sd '|')
 			Url=$(echo "$providers_link|$uri_link" |sed 's/^|// ; s/|$//')
 			setconfig Url "'$Url'"
 			Https=''

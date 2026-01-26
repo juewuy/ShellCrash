@@ -17,11 +17,19 @@ URI_EXP='ss|vmess|vless|trojan|tuic|anytls|shadowtls|hysteria(2)?'
 set_core_config() {
     while true; do
 		list=$(cat "$CRASHDIR"/configs/providers.cfg "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |
-                awk '{print $1 "  \t" substr($2,1,30)}')
+                awk '{
+    f1 = $1
+    f2 = $2
+    if (length(f1) > 12)
+        f1 = substr(f1, 1, 9) ".."
+    if (length(f2) > 39)
+        f2 = substr(f2, 1, 36) "..."
+    printf "%-10s\t%-30s\n", f1, f2
+}')
         comp_box "\033[30;47m配置文件管理\033[0m"
         [ -n "$list" ] && {
             content_line "\033[36m输入数字可管理对应提供者\033[0m"
-			list_box "$list" '...'
+			list_box "$list"
             separator_line "-"
         }
         content_line "a) \033[32m添加提供者\033[0m(支持订阅/分享链接及本地文件)"
@@ -90,7 +98,7 @@ set_core_config() {
         esac
     done
 }
-
+# 添加/管理提供者
 setproviders() {
     case "$(echo "$@" | cut -d ' ' -f 2)" in
     http* | ./providers*)
@@ -108,6 +116,9 @@ setproviders() {
         name=$1
         link_uri=$2
         ;;
+	*)
+		unset name link link_uri interval interval2 ua exclude_w include_w
+		;;
     esac
 	last_name="$name"
     [ -z "$interval" ] && interval=3
@@ -119,7 +130,7 @@ setproviders() {
         content_line "1) 设置\033[36m名称或代号\033[0m	\033[32m$name\033[0m"
         content_line "2) 设置\033[32m链接或路径\033[0m：	\033[36m$link_info...\033[0m"
 		[ -n "$link" ] && 
-			content_line "4) 设置\033[33m本地生成覆写\033[0m"
+			content_line "3) 设置\033[33m本地生成覆写\033[0m"
         separator_line "-"
         content_line "a) \033[36m保存此提供者\033[0m"
         [ -n "$link" ] &&
@@ -132,8 +143,8 @@ setproviders() {
             content_line "e) 直接使用此文件作为配置文件(不经过本地生成)"
         content_line "d) \033[31m删除此提供者\033[0m"
         common_back
-        read -r -p "请输入对应数字> " num
-        case "$num" in
+        read -r -p "请输入对应字母或数字> " input
+        case "$input" in
         "" | 0)
             break
             ;;
@@ -195,7 +206,7 @@ setproviders() {
 				if [ -n "$(echo $text | grep -E "^$URI_EXP")" ]; then
 					link_uri=$(echo "$text" | sed 's/#.*//g') # 删除注释
 					link=''
-					[ -z "$name" ] && name=$(echo "$text" | grep -o '#.*$' | cut -c2-)
+					[ -z "$name" ] && name=$(printf '%b\n' "$(printf '%s' "$text" | sed 's/+/ /g; s/%/\\x/g')" | sed 's/.*#//')
 					common_success
 				else
 					error_input
@@ -207,12 +218,12 @@ setproviders() {
             custproviders
             ;;
         a)
-            addproviders && common_success
+            saveproviders && common_success
             break
             ;;
         b)
             if [ -n "$name" ] && [ -n "$link" ]; then
-                addproviders
+                saveproviders
                 . "$CRASHDIR/menus/providers_$CORE_TYPE.sh"
                 gen_providers "$name" "$link" "$interval" "$interval2" "$ua" "#$exclude_w" "#$include_w"
             else
@@ -221,8 +232,9 @@ setproviders() {
             ;;
         c)
             if [ -n "$name" ] && [ -n "$link$link_uri" ]; then
-                addproviders
-                Url="$link$link_uri"
+                saveproviders
+                [ -n "$link" ] && Url="$link"
+				[ -n "$link_uri" ] && Url=$(echo "$name $link_uri" |awk '{ print ($1=="vmess" ? $2 : $2 "#" $1) }')
                 Https=''
                 setconfig Url "'$Url'"
                 setconfig Https
@@ -250,12 +262,12 @@ setproviders() {
                 [ "$res" = "1" ] && {
 					file=$(echo "$CRASHDIR/$link" | sed 's|\./||')
                     if [ -f "$file" ]; then
-                        [ -n "$name" ] && addproviders
+                        [ -n "$name" ] && saveproviders
                         ln -sf "$file" "$CONFIG_PATH"
 						common_success
 						break
                     elif echo "$link" | grep -q '^http'; then
-                        [ -n "$name" ] && addproviders
+                        [ -n "$name" ] && saveproviders
                         Https="$link"
                         Url=''
                         setconfig Https "'$Https'"
@@ -279,8 +291,8 @@ setproviders() {
         esac
     done
 }
-
-addproviders() {
+#保存
+saveproviders() {
     [ -n "$name" ] && {
         [ -s "$CRASHDIR"/configs/providers.cfg ] && sed -i "/^$last_name /d" "$CRASHDIR"/configs/providers.cfg
         [ -s "$CRASHDIR"/configs/providers_uri.cfg ] && sed -i "/^$last_name /d" "$CRASHDIR"/configs/providers_uri.cfg
@@ -296,7 +308,7 @@ addproviders() {
         return 1
     fi
 }
-
+#本地生成覆写
 custproviders() {
 	while true; do
 		separator_line '-'
