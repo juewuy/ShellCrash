@@ -51,7 +51,12 @@ core_check(){
 		else
 			mv -f "$1" "$BINDIR/CrashCore.$zip_type"
 		fi
-		mv -f "$TMPDIR/core_new" "$TMPDIR/CrashCore"
+		if [ "$zip_type" = 'upx' ];then
+			rm -f "$1" "$TMPDIR"/core_new
+			ln -sf "$TMPDIR/CrashCore.upx" "$TMPDIR/CrashCore"
+		else
+			mv -f "$TMPDIR/core_new" "$TMPDIR/CrashCore"
+		fi
 		core_v="$v"
 		setconfig COMMAND "$COMMAND" "$CRASHDIR"/configs/command.env && . "$CRASHDIR"/configs/command.env
 		setconfig crashcore "$crashcore"
@@ -75,7 +80,7 @@ core_webget(){
 	if [ "$?" = 0 ];then
 		core_check "$TMPDIR/Coretmp.$zip_type"
 	else
-		rm -rf "$TMPDIR/Coretmp.$zip_type"
+		rm -f "$TMPDIR/Coretmp.$zip_type"
 		return 1
 	fi
 }

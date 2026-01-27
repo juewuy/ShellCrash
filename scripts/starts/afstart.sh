@@ -55,5 +55,4 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 	exit 0
 else
 	. "$CRASHDIR"/starts/start_error.sh
-	"$CRASHDIR"/start.sh stop
 fi
