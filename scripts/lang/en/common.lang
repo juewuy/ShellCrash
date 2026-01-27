@@ -1,6 +1,7 @@
 
 COMMON_INPUT="Please enter a number"
 COMMON_INPUT_L="Enter a letter or a number"
+COMMON_INPUT_R="Enable? (1/0) > "
 COMMON_BACK="Back"
 COMMON_SUCCESS="Setup Success!"
 COMMON_FAILED="Setup failed!"
