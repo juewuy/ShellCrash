@@ -17,9 +17,10 @@ URI_EXP='ss|vmess|vless|trojan|tuic|anytls|shadowtls|hysteria(2)?'
 set_core_config() {
     while true; do
 		list=$(cat "$CRASHDIR"/configs/providers.cfg "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null |
-                awk '{
+            LC_ALL=C awk '{
     f1 = $1
     f2 = $2
+	gsub(/\360[\200-\277][\200-\277][\200-\277]/,"",f1)
     if (length(f1) > 12)
         f1 = substr(f1, 1, 8) ".."
     if (length(f2) > 30)
@@ -153,7 +154,7 @@ setproviders() {
             content_line "注意：不可重复,不支持纯数字,且不要超过4个汉字！"
             separator_line "-"
             read -r -p  "请输入具体名称或代号 > " text
-            text=$(printf "%.12s" "$text" | sed 's/ //g' ) #去空格
+            text=$(printf "%.12s" "$text" | sed 's/ //g') #截断12字符+去空格
             if [ -n "$text" ] && [ -z "$(echo "$text" | grep -E '^[0-9]+$')" ] && ! grep -q "^$text " "$CRASHDIR"/configs/providers.cfg; then
                 name="$text"
             else
@@ -194,7 +195,8 @@ setproviders() {
 				#处理本地文件
 				file=$(printf '%s\n' "$list" | sed -n "${text}p")
 				if [ -s "$CRASHDIR/providers/$file" ]; then
-					link="$file"
+					link="./providers/$file"
+					[ -z "$name" ] && name="_$(printf "%.12s" "$file" | sed 's/ //g')"
 					link_uri=''
 					common_success
 				else
@@ -206,7 +208,7 @@ setproviders() {
 				if [ -n "$(echo $text | grep -E "^$URI_EXP")" ]; then
 					link_uri=$(echo "$text" | sed 's/#.*//g') # 删除注释
 					link=''
-					[ -z "$name" ] && name=$(printf '%b\n' "$(printf '%s' "$text" | sed 's/+/ /g; s/%/\\x/g')" | sed 's/.*#//')
+					[ -z "$name" ] && name=$(printf '%b' "$(printf '%s' "$text" | sed 's/+/ /g; s/%/\\x/g')" | sed 's/.*#//')
 					common_success
 				else
 					error_input
