@@ -62,7 +62,10 @@ auto_start(){
 		chmod 755 /etc/init.d/shellcrash
 	}
 	#初始化环境变量
-	grep -q '^export CRASHDIR=' '/etc/profile' && . "$CRASHDIR"/libs/set_profile.sh && set_profile '/etc/profile' 
+	grep -q '^export CRASHDIR=' '/etc/profile' || {
+		. "$CRASHDIR"/libs/set_profile.sh
+		set_profile '/etc/profile' 
+	}
 	#启动服务
 	if [ ! -f "$CRASHDIR"/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
