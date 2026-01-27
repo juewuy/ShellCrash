@@ -8,6 +8,8 @@ __IS_MODULE_5_TASK_LOADED=1
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/set_cron.sh
 
+load_lang 5_task
+
 # 任务工具
 set_cron() {
     [ -z "$week" ] && week=*
@@ -48,7 +50,7 @@ set_service() {
     else
         echo "$CRASHDIR/task/task.sh $2 $3" >>"$task_file"
     fi
-    content_line "任务【$3】\033[32m添加成功！\033[0m"
+    content_line "【$3】\033[32m$COMMON_SUCCESS\033[0m"
     sleep 1
 }
 
@@ -153,12 +155,8 @@ task_add() {
         content_line "\033[36m请选择需要添加的任务：\033[0m"
         separator_line "="
         # 输出任务列表
-        # cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | awk -F '#' '{print NR") "$3}'
-        grep -Ev '^(#|$)' "$CRASHDIR/task/task.list" "$CRASHDIR/task/task.user" 2>/dev/null |
-            awk -F '#' '{print NR") "$3}' |
-            while IFS= read -r line; do
-                content_line "$line"
-            done
+        list=$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | awk -F '#' '{print $3}')
+        list_box "$list"
         content_line ""
         content_line "0) 返回上级菜单"
         separator_line "="
@@ -168,7 +166,7 @@ task_add() {
             break
             ;;
         [1-9] | [1-9][0-9])
-            if [ "$num" -le "$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | wc -l)" ]; then
+            if [ "$num" -le "$(echo "$list" | wc -l)" ]; then
                 task_id=$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | sed -n "$num p" | awk -F '#' '{print $1}')
                 task_name=$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | sed -n "$num p" | awk -F '#' '{print $3}')
                 task_type
@@ -329,12 +327,7 @@ task_manager() {
         else
             content_line "\033[33m已添加的任务：\033[0m"
             separator_line "="
-            # cat "$TMPDIR"/task_list | awk '{print NR ") " $2}'
-            awk '{print NR ") " $2}' "$TMPDIR/task_list" |
-                while IFS= read -r line; do
-                    content_line "$line"
-                done
-
+            list_box "$(cat "$TMPDIR"/task_list)"
             separator_line "-"
             content_line "a) 清空旧版任务"
             content_line "d) 清空任务列表"
@@ -448,22 +441,21 @@ task_manager() {
 task_recom() {
     line_break
     separator_line "="
-    content_line "\033[36m是否启用以下推荐的自动任务配置：\033[0m"
-    content_line "每隔10分钟自动保存面板配置"
-    content_line "服务启动后自动同步ntp时间"
-    content_line "在每日的3点0分重启服务"
+    content_line "\033[36m$TASK_RECOM_TITLE\033[0m"
+	separator_line "-"
+    content_line "$TASK_RECOM_ITEM_1"
+    content_line "$TASK_RECOM_ITEM_2"
+    content_line "$TASK_RECOM_ITEM_3"
     separator_line "="
-    content_line "1) 是"
-    content_line "0) 否，返回上级菜单"
-    separator_line "="
-    read -r -p "请输入对应标号> " res
+    read -r -p "$COMMON_INPUT_R" res
+
     [ "$res" = 1 ] && {
         line_break
         separator_line "="
-        set_service running "106" "运行时每10分钟自动保存面板配置" "*/10 * * * *"
-        set_service afstart "107" "服务启动后自动同步ntp时间"
-        cronset "在每日的3点0分重启服务" "0 3 * * * ${CRASHDIR}/task/task.sh 103 在每日的3点0分重启服务" &&
-            content_line "任务【在每日的3点0分重启服务】\033[32m添加成功！\033[0m"
+        set_service running "106" "$TASK_RECOM_ITEM_1" "*/10 * * * *"
+        set_service afstart "107" "$TASK_RECOM_ITEM_2"
+        cronset "$TASK_RECOM_ITEM_3" "0 3 * * * ${CRASHDIR}/task/task.sh 103 $TASK_RECOM_ITEM_3" &&
+            content_line "【$TASK_RECOM_ITEM_3】\033[32m$COMMON_SUCCESS\033[0m"
         separator_line "="
     }
 }

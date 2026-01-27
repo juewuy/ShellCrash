@@ -1,0 +1,6 @@
+# Recommended task configuration
+TASK_RECOM_TITLE="Enable the following recommended automatic tasks?"
+
+TASK_RECOM_ITEM_1="Save Dashboard select every 10 minutes"
+TASK_RECOM_ITEM_2="Synchronize NTP after service startup"
+TASK_RECOM_ITEM_3="Daily service restart at 03:00"

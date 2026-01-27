@@ -1,0 +1,6 @@
+# 推荐任务配置
+TASK_RECOM_TITLE="是否启用以下推荐的自动任务配置："
+
+TASK_RECOM_ITEM_1="运行时每10分钟自动保存面板配置"
+TASK_RECOM_ITEM_2="服务启动后自动同步 NTP 时间"
+TASK_RECOM_ITEM_3="在每日的3点0分重启服务"
