@@ -2,6 +2,10 @@
 # Copyright (C) Juewuy
 
 CRASHDIR="$(uci get firewall.ShellCrash.path | sed 's/\/starts.*//')"
+#防止提前自启
+/etc/init.d/shellcrash disable
+crontab -l | grep -v 'start_legacy_wd.sh shellcrash' | crontab -
+#防止usb未加载
 i=0
 while [ ! -f "$CRASHDIR/configs/ShellCrash.cfg" ]; do
 	[ $i -gt 20 ] && exit 1
