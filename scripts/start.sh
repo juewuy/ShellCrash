@@ -47,8 +47,8 @@ start)
         /etc/init.d/shellcrash start
     elif [ "$USER" = "root" ] && grep -q 'systemd' /proc/1/comm; then
 		FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
-		[ -f $FragmentPath ] && {
-			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
+		[ -f "$FragmentPath" ] && {
+			sed -i "s#^ExecStart=.*#ExecStart=$COMMAND >/dev/null#" "$FragmentPath"
 			systemctl daemon-reload
 		}
 		systemctl start shellcrash.service || . "$CRASHDIR"/starts/start_error.sh
