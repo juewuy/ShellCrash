@@ -26,7 +26,7 @@ web_save() { #最小化保存面板节点选择
             . "$CRASHDIR"/libs/compare.sh && compare "$TMPDIR/$file" "$CRASHDIR/configs/$file"
             [ "$?" = 0 ] && rm -f "$TMPDIR/$file" || mv -f "$TMPDIR/$file" "$CRASHDIR/configs/$file"
 		else
-			rm -f "$CRASHDIR/configs/$file" #空文件时移除旧文件
+			> "$CRASHDIR/configs/$file" #空文件时移除旧文件
         fi
     done
 }
