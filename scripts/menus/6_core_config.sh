@@ -21,10 +21,10 @@ set_core_config() {
     f1 = $1
     f2 = $2
     if (length(f1) > 12)
-        f1 = substr(f1, 1, 9) ".."
-    if (length(f2) > 39)
-        f2 = substr(f2, 1, 36) "..."
-    printf "%-10s\t%-30s\n", f1, f2
+        f1 = substr(f1, 1, 8) ".."
+    if (length(f2) > 30)
+        f2 = substr(f2, 1, 30) "..."
+    printf "%-7s \t%-28s\n", f1, f2
 }')
         comp_box "\033[30;47m配置文件管理\033[0m"
         [ -n "$list" ] && {
@@ -150,11 +150,11 @@ setproviders() {
             ;;
         1)
             separator_line "="
-            content_line "注意：名称或代号不可重复,且不支持纯数字！"
+            content_line "注意：不可重复,不支持纯数字,且不要超过4个汉字！"
             separator_line "-"
-            read -p "请输入具体名称或代号 > " text
-            text=$(echo $text | sed 's/ //g') #去空格
-            if [ -n "$text" ] && [ -z "$(echo "$text" | grep -E '^[0-9]+$')" ] && ! grep -q "$text" "$CRASHDIR"/configs/providers.cfg; then
+            read -r -p  "请输入具体名称或代号 > " text
+            text=$(printf "%.12s" "$text" | sed 's/ //g' ) #去空格
+            if [ -n "$text" ] && [ -z "$(echo "$text" | grep -E '^[0-9]+$')" ] && ! grep -q "^$text " "$CRASHDIR"/configs/providers.cfg; then
                 name="$text"
             else
                 error_input

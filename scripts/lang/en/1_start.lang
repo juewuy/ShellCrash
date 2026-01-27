@@ -1,7 +1,6 @@
 # ===== Startup =====
 START_SERVICE_OK="Service started successfully!"
-START_WEB_HINT="Please use"
-START_WEB_HINT2="manage built-in rules"
+START_WEB_HINT="Dashboard:"
 START_PAC_HINT="Other devices can connect using PAC configuration:"
 START_PROXY_HINT="Or connect using HTTP / SOCKS5:"
 

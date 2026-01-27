@@ -10,7 +10,7 @@ startover() {
     line_break
     separator_line "="
     content_line "\033[32m$START_SERVICE_OK\033[0m"
-    content_line "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m $START_WEB_HINT2"
+    content_line "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m"
 
     if [ "$firewall_area" = 4 ]; then
         content_line ""

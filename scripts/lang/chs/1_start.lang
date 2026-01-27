@@ -1,7 +1,6 @@
 # ===== 启动完成 =====
 START_SERVICE_OK="服务已启动！"
-START_WEB_HINT="请前往"
-START_WEB_HINT2="管理内置规则"
+START_WEB_HINT="管理面板："
 START_PAC_HINT="其他设备可使用 PAC 配置："
 START_PROXY_HINT="或使用 HTTP / SOCKS5 方式连接："
 

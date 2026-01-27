@@ -89,6 +89,8 @@ gen_providers_txt(){
 	ua=${5:-clash.meta}
 	exclude=${6#\#}
 	include=${7#\#}
+	[ -n "$exclude" ] && exclude_ele="\"exclude\": \"$exclude\","
+	[ -n "$include" ] && include_ele="\"include\": \"$include\","
 	if [ -n "$(echo $2|grep -E '^./')" ];then
 		cat >> "$TMPDIR"/providers/providers.json <<EOF
 	{
@@ -105,8 +107,8 @@ EOF
       "path": "./providers/$tag.yaml",
       "user_agent": "$ua",
       "update_interval": "${interval2}h",
-	  "exclude": "$exclude",
-      "include": "$include",
+	  $exclude_ele
+      $include_ele
 EOF
 	fi
 	#通用部分生成
