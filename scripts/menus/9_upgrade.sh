@@ -9,9 +9,8 @@ __IS_MODULE_9_UPGRADE_LOADED=1
 . "$CRASHDIR"/libs/web_get_bin.sh
 
 error_down() {
-    content_line "\033[33m请尝试切换至其他安装源后重新下载！\033[0m"
-    content_line "或者参考 \033[32;4mhttps://juewuy.github.io/bdaz\033[0m 进行本地安装！"
-    separator_line "="
+    btm_box "\033[33m请尝试切换至其他安装源后重新下载！\033[0m" \
+        "或者参考 \033[32;4mhttps://juewuy.github.io/bdaz\033[0m 进行本地安装！"
     sleep 1
 }
 
@@ -28,11 +27,9 @@ upgrade() {
         [ -z "$core_v" ] && core_v=$crashcore
         core_v_new=$(eval echo \$"$crashcore"_v)
 
-        separator_line "="
-        content_line "\033[30;47m更新与支持\033[0m"
-        separator_line "="
-
-        content_line "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
+        comp_box "\033[30;47m更新与支持\033[0m" \
+            "" \
+            "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
         [ "$(dir_avail "$CRASHDIR")" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
             content_line "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
         }
@@ -179,7 +176,7 @@ getscripts() {
             error_down
         else
             . "$CRASHDIR"/init.sh >/dev/null
-			echo "$release_type" | grep -qE '^[0-9]' && setconfig userguide  #回退时重新新手引导
+            echo "$release_type" | grep -qE '^[0-9]' && setconfig userguide #回退时重新新手引导
             content_line "\033[32m脚本更新成功！\033[0m"
             separator_line "="
         fi
@@ -190,15 +187,15 @@ getscripts() {
 
 setscripts() {
     while true; do
-        line_break
-        separator_line "="
-        content_line "\033[33m注意：更新时会停止服务！\033[0m"
-        content_line "当前脚本版本为：\033[36m$versionsh_l\033[0m"
-        content_line "最新脚本版本为：\033[32m$version_new\033[0m"
-        separator_line "-"
-        content_line "1) 立即更新"
-        content_line "0) 返回上级菜单"
-        separator_line "="
+
+        comp_box "\033[33m注意：更新时会停止服务！\033[0m" \
+            "" \
+            "当前脚本版本为：\033[36m$versionsh_l\033[0m" \
+            "最新脚本版本为：\033[32m$version_new\033[0m"
+
+        btm_box "1) 立即更新" \
+            "0) 返回上级菜单"
+
         read -r -p "请输入对应标号> " res
         case "$res" in
         "" | 0)
@@ -208,10 +205,7 @@ setscripts() {
             # 下载更新
             getscripts
             # 提示
-            line_break
-            separator_line "="
-            content_line "\033[32m管理脚本更新成功!\033[0m"
-            separator_line "="
+            msg_alert "\033[32m管理脚本更新成功!\033[0m"
             exit 0
             ;;
         *)
@@ -226,12 +220,11 @@ setscripts() {
 # 手动设置内核架构
 setcpucore() {
     cpucore_list="armv5 armv7 arm64 386 amd64 mipsle-softfloat mipsle-hardfloat mips-softfloat"
-    line_break
-    separator_line "="
-    content_line "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m"
-    content_line "不知道如何获取核心版本？\033[0m"
-    content_line "请参考：\033[36;4mhttps://juewuy.github.io/bdaz\033[0m"
-    separator_line "-"
+
+    comp_box "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m" \
+        "不知道如何获取核心版本？\033[0m" \
+        "请参考：\033[36;4mhttps://juewuy.github.io/bdaz\033[0m"
+
     content_line "当前可供在线下载的处理器架构为："
     separator_line "-"
 
@@ -245,12 +238,8 @@ setcpucore() {
     read -r -p "请输入对应标号> " num
     [ -n "$num" ] && setcpucore=$(echo "$cpucore_list" | awk '{print $"'"$num"'"}')
     if [ -z "$setcpucore" ]; then
-        line_break
-        separator_line "="
-        content_line "\033[31m请输入正确的处理器架构！\033[0m"
-        separator_line "="
-        sleep 1
         cpucore=""
+        msg_alert "\033[31m请输入正确的处理器架构！\033[0m"
     else
         cpucore=$setcpucore
         setconfig cpucore "$cpucore"
@@ -267,7 +256,7 @@ setcoretype() {
         separator_line "-"
         content_line "1) Mihomo(Meta)"
         content_line "2) Singbox-reF1nd"
-        content_line "3) Singbox"		
+        content_line "3) Singbox"
         content_line "4) Clash"
         content_line "0) 返回上级菜单"
         separator_line "="
@@ -455,7 +444,7 @@ setcustcore() {
         [ -n "$custcore" ] && {
             content_line "当前内核为：\033[36m$custcore\033[0m"
         }
-        separator_line "-"
+        separator_line "="
         content_line "请选择需要使用的核心："
         separator_line "-"
         content_line "1) \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核"
@@ -521,10 +510,7 @@ setcustcore() {
 }
 
 setziptype() {
-    line_break
-    separator_line "="
-    content_line "请选择内核内核分支及压缩方式：\033[0m"
-    separator_line "-"
+    comp_box "请选择内核内核分支及压缩方式：\033[0m"
     content_line "1) \033[36m最简编译release版本，upx压缩\033[0m"
     sub_content_line "不支持Gvisor、Tailscale、Wireguard、NaiveProxy"
     content_line "2) \033[32m标准编译release版本，tar.gz压缩\033[0m"
@@ -562,14 +548,12 @@ setcore() {
         echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
         [ -n "$custcorelink" ] && custcore="$(echo "$custcorelink" | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
 
-        line_break
-        separator_line "="
         [ -z "$cpucore" ] && check_cpucore
 
-        content_line "当前内核：\033[42;30m$crashcore\033[47;30m $core_v\033[0m"
-        content_line "当前系统处理器架构：\033[32m$cpucore\033[0m"
-        content_line "\033[36m如需本地上传，请将.upx .gz .tar.gz文件上传至 /tmp 目录后重新运行crash命令\033[0m"
-        separator_line "-"
+        comp_box "当前内核：\033[42;30m$crashcore\033[47;30m $core_v\033[0m" \
+            "当前系统处理器架构：\033[32m$cpucore\033[0m" \
+            "\033[36m如需本地上传，请将.upx .gz .tar.gz文件上传至 /tmp 目录后重新运行crash命令\033[0m"
+
         content_line "\033[33m请选择需要使用的核心版本：\033[0m"
         separator_line "-"
         content_line "1) \033[43;30mMihomo\033[0m：\033[32m$meta_v \033[32m（原meta内核）支持全面\033[0m \033[33m占用略高\033[0m"
@@ -586,7 +570,7 @@ setcore() {
             content_line "4) \033[43;30mClash\033[0m：\033[32m$clash_v \033[32m占用低\033[0m \033[33m不安全,已停止维护\033[0m"
             sub_content_line "说明文档：\033[36;4mhttps://lancellc.gitbook.io\033[0m"
         }
-        content_line "5) 切换版本分支及压缩方式:\033[32m$zip_type\033[0m"
+        content_line "5) 切换版本分支及压缩方式：\033[32m$zip_type\033[0m"
         content_line "6) \033[36m使用自定义内核\033[0m $custcore"
         content_line "7) \033[32m更新当前内核\033[0m"
         content_line "9) 手动指定处理器架构"
@@ -851,9 +835,9 @@ setgeo() {
         separator_line "="
         content_line "\033[33m注意：Mihomo内核和SingBox内核的数据库文件不通用\033[0m"
         content_line "在线数据库最新版本（每日同步上游）：\033[32m$GeoIP_v\033[0m"
-        separator_line "-"
+        content_line ""
         content_line "请选择需要更新的Geo数据库文件："
-        separator_line "-"
+        separator_line "="
         content_line "1) CN-IP绕过文件（约0.1mb）	\033[33m$china_ip_list_v\033[0m"
         content_line "2) CN-IPV6绕过文件（约30kb）	\033[33m$china_ipv6_list_v\033[0m"
         content_line ""
@@ -908,11 +892,9 @@ setgeo() {
             ;;
         9)
             while true; do
-                line_break
-                separator_line "="
-                content_line "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
-                content_line "清理后启动服务即可自动下载所需文件"
-                separator_line "-"
+                comp_box "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
+                "清理后启动服务即可自动下载所需文件"
+
                 content_line "1) 确认清理"
                 content_line "0) 返回上级菜单"
                 separator_line "="
@@ -929,11 +911,7 @@ setgeo() {
                         setconfig $var
                     done
                     rm -rf "$CRASHDIR"/ruleset/*
-                    line_break
-                    separator_line "="
-                    content_line "\033[33m所有数据库文件均已清理！\033[0m"
-                    separator_line "="
-                    sleep 1
+                    msg_alert "\033[33m所有数据库文件均已清理！\033[0m"
                     break
                     ;;
                 *)
@@ -1000,7 +978,7 @@ dbdir() {
     separator_line "="
     if [ -f /www/clash/CNAME ] || [ -f "$CRASHDIR"/ui/CNAME ]; then
         content_line "\033[33m检测到已经安装过本地面板\033[0m"
-        separator_line "-"
+        separator_line "="
         content_line "请选择操作："
         separator_line "-"
         content_line "1) 升级/覆盖安装"
@@ -1013,18 +991,15 @@ dbdir() {
             [ -f "$CRASHDIR"/ui/CNAME ] && rm -rf "$CRASHDIR"/ui && dbdir="$CRASHDIR"/ui
             getdb
         else
-            line_break
-            separator_line "="
-            separator_line "\033[33m安装已取消\033[0m"
-            separator_line "="
+            msg_alert "\033[33m安装已取消\033[0m"
             return 1
         fi
 
     elif [ -w /www ] && [ -n "$(pidof nginx)" ]; then
         separator_line "请选择面板\033[33m安装目录：\033[0m"
-        separator_line "-"
-        content_line " 1) 在${CRASHDIR}/ui目录安装"
-        content_line " 2) 在/www/clash目录安装"
+        separator_line "="
+        content_line "1) 在${CRASHDIR}/ui目录安装"
+        content_line "2) 在/www/clash目录安装"
         content_line ""
         separator_line "0) 返回上级菜单"
         separator_line "="
@@ -1062,7 +1037,7 @@ setdb() {
         separator_line "="
         content_line "\033[36m安装 dashboard 管理面板到本地\033[0m"
         content_line "\033[32m打开管理面板的速度更快且更稳定\033[0m"
-        separator_line "-"
+        separator_line "="
         content_line "请选择面板安装类型："
         separator_line "-"
         content_line "   - - - - - - -维护中- - - - - - -"
@@ -1113,7 +1088,7 @@ setdb() {
                 line_break
                 separator_line "="
                 content_line "是否卸载本地面板："
-                separator_line "-"
+                separator_line "="
                 content_line "1) 确认卸载"
                 content_line "0) 返回上级菜单"
                 separator_line "="
@@ -1126,12 +1101,7 @@ setdb() {
                     rm -rf /www/clash
                     rm -rf "$CRASHDIR"/ui
                     rm -rf "$BINDIR"/ui
-
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m面板已经卸载！\033[0m"
-                    separator_line "="
-                    sleep 1
+                    msg_alert "\033[31m面板已经卸载！\033[0m"
                     break
                     ;;
                 *)
@@ -1194,7 +1164,7 @@ setcrt() {
                 content_line "\033[33m检测到系统已经存在根证书文件：\033[0m"
                 content_line "\033[33m（$crtdir）\033[0m"
             fi
-            separator_line "-"
+            separator_line "="
 
             if [ -f "$crtdir" ]; then
                 content_line "1) 覆盖更新"
@@ -1220,11 +1190,7 @@ setcrt() {
             esac
 
         else
-            line_break
-            separator_line "="
-            content_line "\033[33m设备可能尚未安装openssl，无法安装证书文件！\033[0m"
-            separator_line "="
-            sleep 1
+            msg_alert "\033[33m设备可能尚未安装openssl，无法安装证书文件！\033[0m"
             break
         fi
 
@@ -1237,10 +1203,7 @@ saveserver() {
     setconfig url_id "$url_id"
     setconfig release_type "$release_type"
     version_new=''
-    line_break
-    separator_line "="
-    content_line "\033[32m源地址切换成功！\033[0m"
-    separator_line "="
+    msg_alert -t 0 "\033[32m源地址切换成功！\033[0m"
 }
 
 # 安装源
@@ -1254,12 +1217,10 @@ setserver() {
         [ "$release_type" = dev ] && release_name=开发版
         [ -n "$url_id" ] && url_name=$(grep "$url_id" "$CRASHDIR"/configs/servers.list 2>/dev/null | awk '{print $2}') || url_name="$update_url"
 
-        separator_line "="
-        content_line "\033[30;47m切换ShellCrash版本及更新源地址\033[0m"
-        separator_line "-"
-        content_line "当前版本：\033[4;33m$release_name\033[0m"
-        content_line "当前源：\033[4;32m$url_name\033[0m"
-        separator_line "-"
+        comp_box "\033[30;47m切换ShellCrash版本及更新源地址\033[0m" \
+            "" \
+            "当前版本：\033[4;33m$release_name\033[0m" \
+            "当前源：\n\033[4;32m$url_name\033[0m"
 
         grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list |
             awk '{print NR") "$2}' |
@@ -1319,7 +1280,7 @@ setserver() {
                 content_line "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
                 content_line "\033[33m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
                 content_line "请务必加入我们的讨论组：\033[36;4mhttps://t.me/ShellClash\033[0m"
-                separator_line "-"
+                separator_line "="
                 content_line "是否依然切换到开发版："
                 separator_line "-"
                 content_line "1) 确认切换"
@@ -1365,8 +1326,8 @@ setserver() {
             if [ -n "$url_id" ] && [ "$url_id" -lt 200 ]; then
                 content_line "\033[32m正在获取版本信息......\033[0m"
                 . "$CRASHDIR"/libs/web_get_lite.sh
-				web_get_lite https://github.com/juewuy/ShellCrash/tags | grep -o 'releases/tag/.*data'|awk -F '/' '{print $3}'|sed 's/".*//g' > "$TMPDIR"/tags
-				if [ "$?" = "0" ]; then
+                web_get_lite https://github.com/juewuy/ShellCrash/tags | grep -o 'releases/tag/.*data' | awk -F '/' '{print $3}' | sed 's/".*//g' >"$TMPDIR"/tags
+                if [ "$?" = "0" ]; then
                     content_line "\033[32m获取版本信息成功\033[0m"
                     separator_line "="
 
