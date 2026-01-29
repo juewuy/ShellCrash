@@ -8,17 +8,15 @@ load_lang userguide
 
 forwhat() {
     while true; do
-        separator_line "="
-        content_line "\033[30;46m $UG_WELCOME \033[0m"
-        separator_line "-"
-        content_line "\033[33m$UG_CHOOSE_ENV \033[0m"
-        content_line "\033[0m$UG_TIP_CONFIG\033[0m"
-        separator_line "-"
-        content_line " 1 \033[32m$UG_OPTION_1\033[0m"
-        content_line " 2 \033[36m$UG_OPTION_2\033[0m"
+        comp_box "\033[30;46m$UG_WELCOME\033[0m" \
+            "" \
+            "\033[33m$UG_CHOOSE_ENV\033[0m" \
+            "\033[0m$UG_TIP_CONFIG\033[0m"
+
+        btm_box "1) \033[32m$UG_OPTION_1\033[0m" \
+            "2) \033[36m$UG_OPTION_2\033[0m"
         [ -s "$CRASHDIR"/configs.tar.gz ] && content_line " 3 \033[33m$UG_OPTION_3\033[0m"
-        separator_line "="
-        read -r -p "$COMMON_INPUT > " num
+        read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 1)
             # 设置运行模式
@@ -96,9 +94,7 @@ userguide() {
     # 检测小内存模式
     dir_size=$(dir_avail "$CRASHDIR")
     if [ "$dir_size" -lt 10240 ]; then
-        separator_line "-"
-        content_line "\033[33m$UG_ENABLE_LOW_MEM\033[0m"
-        separator_line "-"
+        comp_box "\033[33m$UG_ENABLE_LOW_MEM\033[0m"
         read -r -p "$COMMON_INPUT_R" res
         [ "$res" = 1 ] && {
             BINDIR=/tmp/ShellCrash
@@ -111,11 +107,9 @@ userguide() {
 
     # 提示导入订阅或者配置文件
     if [ ! -s "$CRASHDIR"/yamls/config.yaml ] && [ ! -s "$CRASHDIR"/jsons/config.json ]; then
-        separator_line "-"
-        content_line "\033[32m$UG_IMPORT_CONFIG\033[0m"
-        content_line "\033[0m$UG_CONFIG_TIP\033[0m"
-        separator_line "-"
-        read -r -p "$UG_CONFIG_RES(1/0) > " res
+        comp_box "\033[32m$UG_IMPORT_CONFIG\033[0m" \
+            "\033[0m$UG_CONFIG_TIP\033[0m"
+        read -r -p "$UG_CONFIG_RES(1/0)> " res
         [ "$res" = 1 ] && inuserguide=1 && {
             . "$CRASHDIR"/menus/6_core_config.sh && set_core_config
             inuserguide=""
@@ -123,9 +117,6 @@ userguide() {
     fi
 
     # 回到主界面
-    separator_line "="
-    content_line "\033[36m$UG_FINAL_TIP\033[0m"
-    separator_line "="
-	sleep 1
+    msg_alert "\033[36m$UG_FINAL_TIP\033[0m"
     return 0
 }

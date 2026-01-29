@@ -439,15 +439,15 @@ task_manager() {
 
 # 任务推荐
 task_recom() {
-    line_break
-    separator_line "="
-    content_line "\033[36m$TASK_RECOM_TITLE\033[0m"
-	separator_line "-"
-    content_line "$TASK_RECOM_ITEM_1"
-    content_line "$TASK_RECOM_ITEM_2"
-    content_line "$TASK_RECOM_ITEM_3"
-    separator_line "="
-    read -r -p "$COMMON_INPUT_R" res
+    comp_box "\033[36m$TASK_RECOM_TITLE\033[0m" \
+        "" \
+        "$TASK_RECOM_ITEM_1" \
+        "$TASK_RECOM_ITEM_2" \
+        "$TASK_RECOM_ITEM_3"
+
+    btm_box "1) 是" \
+        "0) 否"
+    read -r -p "$COMMON_INPUT>" res
 
     [ "$res" = 1 ] && {
         line_break
