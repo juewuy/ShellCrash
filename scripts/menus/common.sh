@@ -50,8 +50,15 @@ list_box() {
     done
 }
 
-# =================================================
+common_success() {
+    msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
+}
 
+common_failed() {
+    msg_alert "\033[32m$COMMON_FAILED\033[0m"
+}
+
+# =================================================
 common_back() {
     content_line "0) $COMMON_BACK"
     separator_line "="
@@ -77,8 +84,4 @@ cancel_back() {
     separator_line "-"
     content_line "$COMMON_CANCEL"
     sleep 1
-}
-
-common_success() {
-    msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
 }
