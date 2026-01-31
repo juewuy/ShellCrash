@@ -7,7 +7,10 @@ __IS_MODULE_2_SETTINGS_LOADED=1
 settings() { #功能设置
     #获取设置默认显示
     [ -z "$skip_cert" ] && skip_cert=ON
-	[ -z "$sniffer" ] && sniffer=OFF
+	[ -z "$sniffer" ] && {
+		sniffer=OFF
+		echo "$crashcore" | grep -q 'singbox' && sniffer=ON
+	}
 	[ -z "$dns_mod" ] && dns_mod='redir_host'
     #
     echo "-----------------------------------------------"
