@@ -218,7 +218,7 @@ setrules() {
             fi
             ;;
         3)
-            comp_box "是否确认清空全部自定义规则："
+            comp_box "是否确认清空全部自定义规则？"
             btm_box "1) 是" \
                 "0) 否，返回上级菜单"
             read -r -p "$COMMON_INPUT> " res
@@ -233,10 +233,11 @@ setrules() {
         4)
             if [ "$proxies_bypass" = "OFF" ]; then
                 comp_box "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m" \
-                    "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
-                btm_box "是否启用节点绕过？" \
+                    "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m" \
                     "" \
-                    "1) 是" \
+                    "是否启用节点绕过？"
+                btm_box
+                "1) 是" \
                     "0) 否，返回上级菜单"
                 read -r -p "$COMMON_INPUT> " res
                 if [ "$res" = "1" ]; then
@@ -503,10 +504,10 @@ setproxies() {
         4)
             if [ "$proxies_bypass" = "OFF" ]; then
                 comp_box "\033[33m本功能会自动将当前配置文件中的节点域名或IP设置为直连规则以防止出现双重流量！\033[0m" \
-                    "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m"
-                btm_box "是否确定启用节点绕过：" \
+                    "\033[33m请确保下游设备使用的节点与ShellCrash中使用的节点相同，否则无法生效！\033[0m" \
                     "" \
-                    "1) 是" \
+                    "是否确定启用节点绕过："
+                btm_box "1) 是" \
                     "0) 否，返回上级菜单"
                 read -r -p "$COMMON_INPUT> " res
                 if [ "$res" = "1" ]; then
