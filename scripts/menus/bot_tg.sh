@@ -309,6 +309,9 @@ polling(){
 		/crash)
 			send_menu
 		;;
+		/"$my_alias")
+			send_menu
+		;;
 		/help)
 			send_help
 		;;
