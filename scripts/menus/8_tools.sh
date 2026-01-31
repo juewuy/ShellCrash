@@ -207,11 +207,11 @@ tools() {
                 separator_line "="
                 content_line "1) 我已知晓，出现问题会自行承担！"
                 content_line "0) 返回上级菜单"
-                eparator_line "="
+                separator_line "="
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
                     line_break
-                    eparator_line "="
+                    separator_line "="
                     content_line "正在连接服务器获取Tun模块补丁文件......"
                     get_bin "$TMPDIR"/tun.ko bin/fix/tun.ko
                     if [ "$?" = "0" ]; then
@@ -221,7 +221,7 @@ tools() {
                     else
                         content_line "\033[31m文件下载失败，请重试！\033[0m"
                     fi
-                    eparator_line "="
+                    separator_line "="
                 else
                     continue
                 fi

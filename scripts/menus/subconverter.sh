@@ -28,9 +28,9 @@ subconverter() {
             break
             ;;
         1)
-            providers_link=$(grep -v '\./providers/' "$CRASHDIR"/configs/providers.cfg 2>/dev/null | awk '{print $2}' | paste -sd '|')
-            uri_link=$(grep -v '^#' "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null | awk '{ print ($1=="vmess" ? $2 : $2 "#" $1) }' | paste -sd '|')
-            Url=$(echo "$providers_link|$uri_link" | sed 's/^|// ; s/|$//')
+            providers_link=$(grep -v '\./providers/' "$CRASHDIR"/configs/providers.cfg 2>/dev/null | awk '{print $2}' | tr '\n' '|')
+            uri_link=$(grep -v '^#' "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null | awk '{ print ($1=="vmess" ? $2 : $2 "#" $1) }' | tr '\n' '|')
+            Url=$(echo "$providers_link|$uri_link" | sed 's/||*/|/g; s/^|//; s/|$//')
             setconfig Url "'$Url'"
             Https=''
             setconfig Https

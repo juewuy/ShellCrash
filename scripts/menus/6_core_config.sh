@@ -164,7 +164,7 @@ setproviders() {
                 text=$(printf "%.12s" "$text" | sed 's/ //g') # 截断12字符+去空格
                 if [ "$text" = 0 ]; then
                     break
-                elif [ -n "$text" ] && [ -z "$(echo "$text" | grep -E '^[0-9]+$')" ] && ! grep -q "^$text " "$CRASHDIR"/configs/providers.cfg; then
+                elif [ -n "$text" ] && [ -z "$(echo "$text" | grep -E '^[0-9]+$')" ] && ! grep -q "^$text " "$CRASHDIR"/configs/providers.cfg 2>/dev/null; then
                     name="$text"
                     common_success
                     break
@@ -272,10 +272,10 @@ setproviders() {
             ;;
         d)
             if [ -n "$name" ] && [ -n "$link" ]; then
-                sed -i "/^$name /d" "$CRASHDIR"/configs/providers.cfg
+                sed -i "/^$name /d" "$CRASHDIR"/configs/providers.cfg 2>/dev/null 
                 msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
             elif [ -n "$name" ] && [ -n "$link_uri" ]; then
-                sed -i "/^$name /d" "$CRASHDIR"/configs/providers_uri.cfg
+                sed -i "/^$name /d" "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null
                 msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
             fi
             break
