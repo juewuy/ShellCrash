@@ -23,7 +23,7 @@ core_unzip() { #$1:需要解压的文件 $2:目标文件名
 }
 core_find(){
 	if [ ! -f "$TMPDIR"/CrashCore ];then
-		[ -n "$(find "$CRASHDIR"/CrashCore.* $find_para 2>/dev/null)" ] &&
+		[ -n "$(find "$CRASHDIR"/CrashCore.* $find_para 2>/dev/null)" ] && [ "$CRASHDIR" != "$BINDIR" ] &&
 			mv -f "$CRASHDIR"/CrashCore.* "$BINDIR"/
 		core_dir=$(find "$BINDIR"/CrashCore.* $find_para 2>/dev/null | head -n 1)
 		[ -n "$core_dir" ] && core_unzip "$core_dir" CrashCore

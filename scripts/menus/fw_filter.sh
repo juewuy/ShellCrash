@@ -432,7 +432,7 @@ fw_filter_lan() {
 
         comp_box "\033[30;47m请在此添加或移除设备\033[0m" \
             "" \
-            "当前过滤方式为：\033[33m$fw_filter_lan_type模式\033[0m" \
+            "当前过滤方式为：\033[33m$macfilter_type模式\033[0m" \
             "仅列表内设备流量\033[36m$fw_filter_lan_scrip经过\033[0m内核"
         if [ -n "$(cat "$CRASHDIR"/configs/mac)" ]; then
             content_line "当前已过滤设备为："
@@ -465,7 +465,7 @@ fw_filter_lan() {
         1)
             macfilter_type=$fw_filter_lan_over
             if setconfig macfilter_type $macfilter_type; then
-                msg_alert "\033[32m已切换为$fw_filter_lan_type模式！\033[0m"
+                msg_alert "\033[32m已切换为$macfilter_type模式！\033[0m"
             else
                 msg_alert "\033[31m$COMMON_FAILED\033[0m"
             fi
