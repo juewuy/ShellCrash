@@ -76,30 +76,7 @@ set_fw_filter() {
             set_cust_host_ipv4
             ;;
         6)
-            while true; do
-                [ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
-                comp_box "\033[33m注意：地址必须是空格分隔，错误的设置可能导致网络回环或启动报错，请务必谨慎！\033[0m" \
-                    "" \
-                    "当前网段：" \
-                    "\033[36m$reserve_ipv4\033[0m"
-                btm_box "请直接输入自定义保留地址ipv4网段" \
-                    "或输入 0 返回上级菜单"
-                read -r -p "请输入> " text
-                if [ "$text" = 0 ]; then
-                    break
-                elif
-                    echo "$text" | grep -Eq "(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/(3[0-2]|[1-2]?[0-9]))( +|$)+"
-                then
-                    reserve_ipv4="$text"
-                    if setconfig reserve_ipv4 "'$reserve_ipv4'"; then
-                        msg_alert "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
-                    else
-                        msg_alert "\033[31m$COMMON_FAILED\033[0m"
-                    fi
-                else
-                    msg_alert "\033[31m输入有误，请重新输入！\033[0m"
-                fi
-            done
+            set_reserve_ipv4
             ;;
         *)
             errornum
@@ -219,7 +196,7 @@ set_common_ports() {
     done
 }
 
-# 自定义ipv4透明路由网段
+# 自定义ipv4透明路由、保留地址网段
 set_cust_host_ipv4() {
     while true; do
         [ -z "$replace_default_host_ipv4" ] && replace_default_host_ipv4="OFF"
@@ -256,7 +233,7 @@ set_cust_host_ipv4() {
             fi
             ;;
         *)
-            if [ -n "$(echo "$text" | grep -Eo '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}'$)" ] && echo "$cust_host_ipv4" | grep -q "$text"; then
+            if echo "$text" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}' && [ -z "$(echo $cust_host_ipv4 | grep "$text")" ]; then
                 cust_host_ipv4="$cust_host_ipv4 $text"
                 if setconfig cust_host_ipv4 "'$cust_host_ipv4'"; then
                     msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
@@ -270,7 +247,44 @@ set_cust_host_ipv4() {
         esac
     done
 }
-
+set_reserve_ipv4() {
+    while true; do
+        [ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
+        comp_box "\033[33m注意：地址必须是空格分隔，错误的设置可能导致网络回环或启动报错，请务必谨慎！\033[0m" \
+            "" \
+            "当前网段：" \
+            "\033[36m$reserve_ipv4\033[0m"
+		btm_box "请直接输入自定义保留地址ipv4网段" \
+            "或输入 1 重置默认网段" \
+            "或输入 0 返回上级菜单"
+		read -r -p "请输入> " text
+        case "$text" in
+        "" | 0)
+            break
+            ;;
+        1)
+            unset reserve_ipv4
+            if setconfig reserve_ipv4; then
+                msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
+            else
+                msg_alert "\033[31m$COMMON_FAILED\033[0m"
+            fi
+            ;;
+        *)
+            if echo "$text" | grep -Eq "(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/(3[0-2]|[1-2]?[0-9]))( +|$)+"; then
+                reserve_ipv4="$text"
+				if setconfig reserve_ipv4 "'$reserve_ipv4'"; then
+					msg_alert "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
+				else
+					msg_alert "\033[31m$COMMON_FAILED\033[0m"
+				fi
+            else
+                msg_alert "\033[31m输入有误，请重新输入！\033[0m"
+            fi
+            ;;
+        esac 
+	done
+}
 # 局域网设备过滤
 fw_filter_lan() {
     get_devinfo() {
