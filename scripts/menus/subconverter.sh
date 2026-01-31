@@ -10,8 +10,6 @@ __IS_MODULE_SUBCONVERTER=1
 # Subconverter在线订阅转换
 subconverter() {
     while true; do
-        [ -z "$exclude" ] && exclude="未设置"
-        [ -z "$include" ] && include="未设置"
         line_break
         separator_line "="
         content_line "1) \033[32m生成\033[0m包含全部节点／订阅的配置文件"
@@ -61,9 +59,7 @@ subconverter() {
 
 # 排除节点正则
 gen_link_flt() {
-    comp_box "\033[33m当前过滤关键字：\033[47;30m$exclude\033[0m" \
-        "" \
-        "\033[33m匹配关键字的节点会在导入时被【屏蔽】！\033[0m" \
+    comp_box "\033[33m匹配关键字的节点会在导入时被【屏蔽】！\033[0m" \
         "多个关键字可以用\033[30;47m | \033[0m号分隔" \
         "\033[32m支持正则表达式\033[0m，空格请使用\033[30;47m + \033[0m号替代"
     btm_box "\033[36m请直接输入节点过滤关键字\033[0m" \
@@ -91,9 +87,7 @@ gen_link_flt() {
 
 # 包含节点正则
 gen_link_ele() {
-    comp_box "\033[33m当前筛选关键字：\033[47;30m$include\033[0m" \
-        "" \
-        "\033[33m仅有匹配关键字的节点才会被【导入】！！！\033[0m" \
+    comp_box "\033[33m仅有匹配关键字的节点才会被【导入】！！！\033[0m" \
         "多个关键字可以用\033[30;47m | \033[0m号分隔" \
         "\033[32m支持正则表达式\033[0m，空格请使用\033[30;47m + \033[0m号替代"
     btm_box "\033[36m请直接输入节点匹配关键字\033[0m" \
@@ -112,7 +106,7 @@ gen_link_ele() {
         ;;
     esac
 
-    if setconfig exclude "'$include'"; then
+    if setconfig include "'$include'"; then
         common_success
     else
         common_failed
