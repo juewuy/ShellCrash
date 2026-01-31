@@ -5,86 +5,98 @@
 __IS_MODULE_PROVIDERS=1
 
 if [ "$crashcore" = singboxr ]; then
-	CORE_TYPE=singbox
+    CORE_TYPE=singbox
 else
-	CORE_TYPE=clash
+    CORE_TYPE=clash
 fi
 
 providers() {
     while true; do
         # 获取模版名称
         if [ -z "$(grep "provider_temp_${CORE_TYPE}" "$CRASHDIR"/configs/ShellCrash.cfg)" ]; then
-            provider_temp_des=$(sed -n "1 p" "$CRASHDIR"/configs/${CORE_TYPE}_providers.list | awk '{print $1}')
+            provider_temp_des=$(sed -n "1 p" "$CRASHDIR"/configs/"${CORE_TYPE}"_providers.list | awk '{print $1}')
         else
             provider_temp_file=$(grep "provider_temp_${CORE_TYPE}" "$CRASHDIR"/configs/ShellCrash.cfg | awk -F '=' '{print $2}')
-            provider_temp_des=$(grep "$provider_temp_file" "$CRASHDIR"/configs/${CORE_TYPE}_providers.list | awk '{print $1}')
+            provider_temp_des=$(grep "$provider_temp_file" "$CRASHDIR"/configs/"${CORE_TYPE}"_providers.list | awk '{print $1}')
             [ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
         fi
-        separator_line "-"
-		content_line "1) \033[32m生成\033[0m包含全部提供者的配置文件"
-        content_line "2) 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m"
-        content_line "3) \033[33m清理\033[0mproviders目录文件"
-        separator_line "-"
+
+        top_box "1) \033[32m生成\033[0m包含全部提供者的配置文件" \
+            "2) 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m" \
+            "3) \033[33m清理\033[0mproviders目录文件" \
+            ""
         common_back
-        read -p "请输入对应字母或数字 > " num
+        read -r -p "请输入对应字母或数字> " num
         case "$num" in
         "" | 0)
             break
             ;;
         1)
-            separator_line "-"
             if [ -s "$CRASHDIR"/configs/providers.cfg ] || [ -s "$CRASHDIR"/configs/providers_uri.cfg ]; then
-				. "$CRASHDIR/menus/providers_$CORE_TYPE.sh"
-				gen_providers
+                . "$CRASHDIR/menus/providers_$CORE_TYPE.sh"
+                gen_providers
             else
-                content_line "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
-                sleep 1
+                msg_alert "\033[31m你还未添加链接或本地配置文件，请先添加！\033[0m"
             fi
             ;;
         2)
-			list=$(cat "$CRASHDIR/configs/${CORE_TYPE}_providers.list" | awk '{print $1}')
-            separator_line "-"
-            content_line "当前规则模版为：\033[32m$provider_temp_des\033[0m"
-            content_line "\033[33m请选择在线模版：\033[0m"
-            separator_line "-"
+            list=$(cat "$CRASHDIR/configs/${CORE_TYPE}_providers.list" | awk '{print $1}')
+
+            comp_box "当前规则模版为：\033[32m$provider_temp_des\033[0m" \
+                "\033[33m请选择在线模版：\033[0m"
             list_box "$list"
-            separator_line "-"
+            content_line ""
             content_line "a) 使用\033[36m本地模版\033[0m"
+            content_line ""
             common_back
-            read -p "请输入对应字母或数字 > " num
+            read -r -p "请输入对应字母或数字> " num
             case "$num" in
             "" | 0) ;;
             a)
-                read -p "请输入模版的路径(绝对路径) > " dir
-                if [ -s $dir ]; then
+                echo ""
+                read -r -p "请输入模版的路径（绝对路径）> " dir
+                if [ -s "$dir" ]; then
                     provider_temp_file=$dir
-                    setconfig provider_temp_"$CORE_TYPE" "$provider_temp_file"
-                    content_line "\033[32m设置成功！\033[0m"
+                    if setconfig provider_temp_"$CORE_TYPE" "$provider_temp_file"; then
+                        common_success
+                    else
+                        common_failed
+                    fi
                 else
-                    content_line "\033[31m输入错误，找不到对应模版文件！\033[0m"
+                    msg_alert "\033[31m输入错误，找不到对应模版文件！\033[0m"
                 fi
-                sleep 1
                 ;;
             *)
-                provider_temp_file=$(sed -n "$num p" "$CRASHDIR"/configs/${CORE_TYPE}_providers.list 2>/dev/null | awk '{print $2}')
+                provider_temp_file=$(sed -n "$num p" "$CRASHDIR"/configs/"${CORE_TYPE}"_providers.list 2>/dev/null | awk '{print $2}')
                 if [ -z "$provider_temp_file" ]; then
                     errornum
-                    sleep 1
                 else
-                    setconfig provider_temp_"$CORE_TYPE" "$provider_temp_file"
+                    if setconfig provider_temp_"$CORE_TYPE" "$provider_temp_file"; then
+                        common_success
+                    else
+                        common_failed
+                    fi
                 fi
                 ;;
             esac
             ;;
         3)
-            content_line "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m"
-            read -p "是否继续？(1/0) > " res
-            [ "$res" = "1" ] && rm -rf "$CRASHDIR"/providers && common_success
+            comp_box "\033[33m将清空 $CRASHDIR/providers 目录下所有内容\033[0m" \
+                "" \
+                "是否继续？"
+            btm_box "1) 是" \
+                "0) 否"
+            read -r -p "$COMMON_INPUT> " res
+            if [ "$res" = "1" ]; then
+                if rm -rf "$CRASHDIR"/providers; then
+                    common_success
+                else
+                    common_failed
+                fi
+            fi
             ;;
         *)
             errornum
-            sleep 1
-            break
             ;;
         esac
     done
