@@ -4,13 +4,15 @@
 [ -n "$__IS_MODULE_OVERRIDE" ] && return
 __IS_MODULE_OVERRIDE=1
 
+YAMLSDIR="$CRASHDIR"/yamls
+JSONSDIR="$CRASHDIR"/jsons
+
 # 配置文件覆写
 override() {
     while true; do
         [ -z "$rule_link" ] && rule_link=1
         [ -z "$server_link" ] && server_link=1
         comp_box "\033[30;47m 欢迎使用配置文件覆写功能！\033[0m"
-        content_line "1) 自定义\033[32m端口及秘钥\033[0m"
         content_line "2) 管理\033[36m自定义规则\033[0m"
         echo "$crashcore" | grep -q 'singbox' || {
             content_line "3) 管理\033[33m自定义节点\033[0m"
@@ -19,30 +21,12 @@ override() {
         content_line "5) \033[32m自定义\033[0m高级功能"
         [ "$disoverride" != 1 ] && content_line "9) \033[33m禁用\033[0m配置文件覆写"
         content_line ""
-        [ "$inuserguide" = 1 ] || content_line "0) 返回上级菜单"
+        content_line "0) 返回上级菜单"
         separator_line "="
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
             break
-            ;;
-        1)
-            if [ -n "$(pidof CrashCore)" ]; then
-                comp_box "\033[33m检测到服务正在运行，需要先停止服务！\033[0m" \
-                    "" \
-                    "是否停止服务？"
-                btm_box "1) 是" \
-                    "0) 否，返回上级菜单"
-                read -r -p "$COMMON_INPUT> " res
-                if [ "$res" = "1" ]; then
-                    "$CRASHDIR"/start.sh stop
-                    setport
-                else
-                    continue
-                fi
-            else
-                setport
-            fi
             ;;
         2)
             setrules
