@@ -665,7 +665,7 @@ fw_filter_lan() { #局域网设备过滤
         macfilter_type=$fw_filter_lan_over
         setconfig macfilter_type $macfilter_type
         echo "-----------------------------------------------"
-        echo -e "\033[32m已切换为$fw_filter_lan_type模式！\033[0m"
+        echo -e "\033[32m已切换为$macfilter_type模式！\033[0m"
         fw_filter_lan
 	;;
     2)
