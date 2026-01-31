@@ -12,7 +12,7 @@ subconverter() {
     while true; do
         line_break
         separator_line "="
-        content_line "1) \033[32m生成\033[0m包含全部节点／订阅的配置文件"
+        content_line "1) \033[32m生成\033[0m包含全部节点、订阅的配置文件"
         content_line "2) 设置\033[31m排除节点正则\033[0m \033[47;30m$exclude\033[0m"
         content_line "3) 设置\033[32m包含节点正则\033[0m \033[47;30m$include\033[0m"
         content_line "4) 选择\033[33m在线规则模版\033[0m"

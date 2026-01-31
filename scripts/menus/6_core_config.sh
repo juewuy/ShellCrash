@@ -34,9 +34,9 @@ set_core_config() {
             list_box "$list"
             separator_line "-"
         }
-        content_line "a) \033[32m添加提供者\033[0m（支持订阅／分享链接及本地文件）"
-        content_line "b) \033[36m本地生成配置文件\033[0m（By Providers，推荐！）"
-        content_line "c) \033[33m在线生成配置文件\033[0m（By Subconverter）"
+        content_line "a) \033[32m添加提供者\033[0m（支持订阅/分享链接及本地文件）"
+        content_line "b) \033[36m本地生成配置文件\033[0m"
+        content_line "c) \033[33m在线生成配置文件\033[0m"
         content_line "d) \033[31m清空提供者列表\033[0m"
         content_line "e) \033[36m自定义配置文件\033[0m"
         content_line ""
@@ -139,15 +139,17 @@ setproviders() {
             content_line "3) 设置\033[33m本地生成覆写\033[0m"
         content_line ""
         content_line "a) \033[36m保存此提供者\033[0m"
+        content_line "d) \033[31m删除此提供者\033[0m"
+		content_line ""
+		content_line "\033[36m以下方式的详细配置请前往对应功能页面进行设置！\033[0m"
         [ -n "$link" ] &&
             content_line "b) \033[32m本地生成\033[0m仅包含此提供者的配置文件"
         echo "$link$link_uri" | grep -q '://' &&
             content_line "c) \033[33m在线生成\033[0m仅包含此提供者的配置文件"
         echo "$link" | grep -q '^http' &&
-            content_line "e) 从此订阅链接直接拉取配置文件（不经过订阅转换）"
+            content_line "e) 在线获取此配置文件（不使用订阅转换）"
         echo "$link" | grep -q '^./providers' &&
-            content_line "e) 直接使用此文件作为配置文件（不经过本地生成）"
-        content_line "d) \033[31m删除此提供者\033[0m"
+            content_line "e) 直接使用此文件作为配置文件（不使用本地生成）"
         content_line ""
         common_back
         read -r -p "请输入对应字母或数字> " input
