@@ -633,7 +633,7 @@ fw_filter_lan() { #局域网设备过滤
     fi
     ######
     echo -e "\033[30;47m请在此添加或移除设备\033[0m"
-    echo -e "当前过滤方式为：\033[33m$fw_filter_lan_type模式\033[0m"
+    echo -e "当前过滤方式为：\033[33m$macfilter_type模式\033[0m"
     echo -e "仅列表内设备流量\033[36m$fw_filter_lan_scrip经过\033[0m内核"
     if [ -n "$(cat "$CRASHDIR"/configs/mac)" ]; then
         echo "-----------------------------------------------"
