@@ -106,7 +106,7 @@ set_core_config() {
 setproviders() {
     case "$(echo "$@" | cut -d ' ' -f 2)" in
     http* | ./providers*)
-        set -- "$@"
+        set -- $@
         name=$1
         link=$2
         interval=$3
@@ -116,7 +116,7 @@ setproviders() {
         include_w=${7#\#}
         ;;
     *://*)
-        set -- "$line"
+        set -- $@
         name=$1
         link_uri=$2
         ;;
