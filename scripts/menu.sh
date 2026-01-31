@@ -32,13 +32,9 @@ load_lang common
 load_lang menu
 
 checkrestart() {
-	line_break
-	separator_line "="
-	content_line "\033[32m$MENU_RESTART_NOTICE\033[0m"
-	separator_line "="
-	content_line "1) 立即重启"
-	content_line "0) 暂不重启"
-	separator_line "="
+	comp_box "\033[32m$MENU_RESTART_NOTICE\033[0m"
+	btm_box "1) 立即重启" \
+		"0) 暂不重启"
 	read -r -p "$COMMON_INPUT> " res
 	if [ "$res" = 1 ]; then
 		start_service
@@ -59,12 +55,10 @@ checkport() {
 			conflict_line=$(echo "$current_listening" | grep ":$portx ")
 
 			if [ -n "$conflict_line" ]; then
-				line_break
-				separator_line "="
-				content_line "【$portx】：$MENU_PORT_CONFLICT_TITLE"
-				content_line "\033[0m$(echo "$conflict_line" | head -n 1)\033[0m"
-				content_line "\033[36m$MENU_PORT_CONFLICT_HINT\033[0m"
-				separator_line "="
+
+				comp_box "【$portx】：$MENU_PORT_CONFLICT_TITLE" \
+					"\033[0m$(echo "$conflict_line" | head -n 1)\033[0m" \
+					"\033[36m$MENU_PORT_CONFLICT_HINT\033[0m"
 
 				. "$CRASHDIR"/menus/2_settings.sh && set_adv_config
 				. "$CRASHDIR"/libs/get_config.sh
@@ -86,7 +80,6 @@ checkport() {
 
 # 脚本启动前检查
 ckstatus() {
-
 	versionsh=$(cat "$CRASHDIR"/version)
 	[ -n "$versionsh" ] && versionsh_l=$versionsh
 	[ -z "$redir_mod" ] && redir_mod="$MENU_PURE_MOD"
@@ -140,7 +133,7 @@ ckstatus() {
 	line_break
 	separator_line "="
 	content_line "\033[30;43m$MENU_WELCOME\033[0m"
-	content_right "Ver: $versionsh_l"
+	content_line "Ver: $versionsh_l"
 	content_line "$MENU_TG_CHANNEL\033[36;4mhttps://t.me/ShellClash\033[0m"
 	separator_line "-"
 	content_line "$corename$run\t  $auto"
@@ -151,46 +144,33 @@ ckstatus() {
 
 	# 检查/tmp内核文件
 	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -Ev ".*(zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box'); do
-		line_break
-		separator_line "="
-		content_line "$MENU_TMP_CORE_FOUND \033[36m/tmp/$file\033[0m"
-		content_line "$MENU_TMP_CORE_ASK"
-		separator_line "="
-		content_line "1) 立即加载"
-		content_line "0) 暂不加载"
-		separator_line "="
+		comp_box "$MENU_TMP_CORE_FOUND \033[36m/tmp/$file\033[0m" \
+			"$MENU_TMP_CORE_ASK"
+		btm_box "1) 立即加载" \
+			"0) 暂不加载"
 		read -r -p "$COMMON_INPUT> " res
 		[ "$res" = 1 ] && {
-			line_break
-			separator_line "="
 			zip_type=$(echo "$file" | grep -oE 'tar.gz$|upx$|gz$')
 			. "$CRASHDIR"/menus/9_upgrade.sh && setcoretype
 			. "$CRASHDIR"/libs/core_tools.sh && core_check "/tmp/$file"
 			if [ "$?" = 0 ]; then
-				content_line "\033[32m$MENU_CORE_LOADED_OK\033[0m"
-				separator_line "="
+				msg_alert "\033[32m$MENU_CORE_LOADED_OK\033[0m"
 				switch_core
 			else
-				content_line "\033[33m$MENU_CORE_LOADED_BAD\033[0m"
 				rm -rf /tmp/"$file"
-				content_line "\033[33m$MENU_CORE_REMOVED\033[0m"
+				msg_alert "\033[33m$MENU_CORE_LOADED_BAD\033[0m" \
+					"\033[33m$MENU_CORE_REMOVED\033[0m"
 			fi
-			separator_line "="
-			sleep 1
 		}
 	done
 
 	# 检查/tmp配置文件
 	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -iE 'config.yaml$|config.yml$|config.json$'); do
 		tmp_file=/tmp/$file
-		line_break
-		separator_line "="
-		content_line "$MENU_TMP_CFG_FOUND \033[36m/tmp/$file\033[0m"
-		content_line "$MENU_TMP_CFG_ASK"
-		separator_line "="
-		content_line "1) 立即加载"
-		content_line "0) 暂不加载"
-		separator_line "="
+		comp_box "$MENU_TMP_CFG_FOUND \033[36m/tmp/$file\033[0m" \
+			"$MENU_TMP_CFG_ASK"
+		btm_box "1) 立即加载" \
+			"0) 暂不加载"
 		read -p "$COMMON_INPUT> " res
 		[ "$res" = 1 ] && {
 			if [ -n "$(echo /tmp/$file | grep -iE '.json$')" ]; then
@@ -198,24 +178,16 @@ ckstatus() {
 			else
 				mv -f /tmp/$file "$CRASHDIR"/yamls/config.yaml
 			fi
-			line_break
-			separator_line "="
-			content_line "\033[32m$MENU_CFG_LOADED_OK\033[0m "
-			separator_line "="
-			sleep 1
+			msg_alert "\033[32m$MENU_CFG_LOADED_OK\033[0m "
 		}
 	done
 
 	# 检查禁用配置覆写
 	[ "$disoverride" = "1" ] && {
-		line_break
-		separator_line "="
-		content_line "\033[33m$MENU_OVERRIDE_WARN\033[0m"
-		content_line "$MENU_OVERRIDE_ASK"
-		separator_line "="
-		content_line "1) 是"
-		content_line "0) 否"
-		separator_line "="
+		comp_box "\033[33m$MENU_OVERRIDE_WARN\033[0m" \
+			"$MENU_OVERRIDE_ASK"
+		btm_box "1) 是" \
+			"0) 否"
 		read -p "$COMMON_INPUT> " res
 		[ "$res" = 1 ] && unset disoverride && setconfig disoverride
 	}
@@ -245,8 +217,8 @@ main_menu() {
 			;;
 		1)
 			start_service
-			exit
 			line_break
+			exit
 			;;
 		2)
 			checkcfg=$(cat "$CFG_PATH")
@@ -260,11 +232,7 @@ main_menu() {
 			[ "$bot_tg_service" = ON ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
 			"$CRASHDIR"/start.sh stop
 			sleep 1
-			line_break
-			separator_line "="
-			content_line "\033[31m$corename$MENU_SERVICE_STOPPED\033[0m"
-			separator_line "="
-			sleep 1
+			msg_alert "\033[31m$corename$MENU_SERVICE_STOPPED\033[0m"
 			;;
 		4)
 			. "$CRASHDIR"/menus/4_setboot.sh && setboot
@@ -298,7 +266,6 @@ main_menu() {
 			;;
 		*)
 			errornum
-			sleep 1
 			;;
 		esac
 	done
@@ -333,16 +300,13 @@ case "$1" in
 	;;
 -d)
 	shtype=sh && [ -n "$(ls -l /bin/sh | grep -o dash)" ] && shtype=bash
-	line_break
-	separator_line "="
-	content_line "$MENU_TEST_RUNNING_1"
-	content_line "$MENU_TEST_RUNNING_2\033[36;4mhttps://t.me/ShellClash\033[0m"
-	separator_line "="
+	comp_box "$MENU_TEST_RUNNING_1" \
+		"$MENU_TEST_RUNNING_2\033[36;4mhttps://t.me/ShellClash\033[0m"
 	"$shtype" "$CRASHDIR"/start.sh debug >/dev/null 2>"$TMPDIR"/debug_sh_bug.log
 	"$shtype" -x "$CRASHDIR"/start.sh debug >/dev/null 2>"$TMPDIR"/debug_sh.log
-	line_break
 	cat "$TMPDIR"/debug_sh_bug.log | grep 'start\.sh' >"$TMPDIR"/sh_bug
 	if [ -s "$TMPDIR"/sh_bug ]; then
+		line_break
 		echo "==========================================================="
 		while read line; do
 			echo -e "$MENU_ERROR_FOUND\033[33;4m$line\033[0m"
@@ -350,16 +314,11 @@ case "$1" in
 			echo "==========================================================="
 		done <"$TMPDIR"/sh_bug
 		rm -rf "$TMPDIR"/sh_bug
-		line_break
-		separator_line "="
-		content_line "\033[32m$MENU_TEST_DONE_FAIL\033[0m"
-		content_line "$MENU_TEST_LOG_HINT\033[36m$TMPDIR/debug_sh.log\033[0m"
-		separator_line "="
+		comp_box "\033[32m$MENU_TEST_DONE_FAIL\033[0m" \
+			"$MENU_TEST_LOG_HINT\033[36m$TMPDIR/debug_sh.log\033[0m"
 	else
 		rm -rf "$TMPDIR"/debug_sh.log
-		separator_line "="
-		content_line "\033[32m$MENU_TEST_DONE_OK\033[0m"
-		separator_line "="
+		comp_box "\033[32m$MENU_TEST_DONE_OK\033[0m"
 		line_break
 	fi
 	"$CRASHDIR"/start.sh stop
@@ -368,10 +327,7 @@ case "$1" in
 	. "$CRASHDIR"/menus/uninstall.sh && uninstall
 	;;
 *)
-	line_break
-	separator_line "="
-	content_line "$MENU_WELCOME"
-	separator_line "="
+	comp_box "$MENU_WELCOME"
 	content_line "-t $MENU_CLI_TEST"
 	content_line "-h $MENU_CLI_HELP"
 	content_line "-u $MENU_CLI_UNINSTALL"
