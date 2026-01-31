@@ -113,11 +113,7 @@ content_line() {
        END {}
        '
 }
-# function for right side text
-# color sould be disabled
-content_right() {
-	content_line "$(printf "%$((${TABLE_WIDTH:-60} - 3))s" "$1")"
-}
+
 # function to print sub content lines
 # for printing accompanying instructions
 sub_content_line() {
@@ -150,5 +146,3 @@ separator_line() {
 line_break() {
     printf "\n\n"
 }
-
-
