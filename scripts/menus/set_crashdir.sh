@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
-#. /tmp/SC_tmp/libs/check_dir_avail.sh
+[ -f /tmp/SC_tmp/libs/check_dir_avail.sh ] && . /tmp/SC_tmp/libs/check_dir_avail.sh
 
 cecho() {
     printf '%b\n' "$*"
