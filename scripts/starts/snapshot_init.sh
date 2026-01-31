@@ -2,6 +2,10 @@
 # Copyright (C) Juewuy
 
 CRASHDIR="$(uci get firewall.ShellCrash.path | sed 's/\/starts.*//')"
+#防止提前自启
+/etc/init.d/shellcrash disable
+crontab -l | grep -v 'start_legacy_wd.sh shellcrash' | crontab -
+#防止usb未加载
 i=0
 while [ ! -f "$CRASHDIR/configs/ShellCrash.cfg" ]; do
 	[ $i -gt 20 ] && exit 1
@@ -57,10 +61,15 @@ auto_clean(){
 }
 auto_start(){
 	#设置init.d服务
-	cp -f "$CRASHDIR"/starts/shellcrash.procd /etc/init.d/shellcrash
-	chmod 755 /etc/init.d/shellcrash
+	[ ! -x /etc/init.d/shellcrash ] && {
+		cp -f "$CRASHDIR"/starts/shellcrash.procd /etc/init.d/shellcrash
+		chmod 755 /etc/init.d/shellcrash
+	}
 	#初始化环境变量
-	. "$CRASHDIR"/libs/set_profile.sh && set_profile '/etc/profile' 
+	grep -q '^export CRASHDIR=' '/etc/profile' || {
+		. "$CRASHDIR"/libs/set_profile.sh
+		set_profile '/etc/profile' 
+	}
 	#启动服务
 	if [ ! -f "$CRASHDIR"/.dis_startup ]; then
 		#AX6S/AX6000修复tun功能
@@ -70,13 +79,9 @@ auto_start(){
 		#自动覆盖根证书文件
 		[ -s "$CRASHDIR"/tools/ca-certificates.crt ] && cp -f "$CRASHDIR"/tools/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 		#启动服务
-		"$CRASHDIR"/start.sh start
-		/etc/init.d/shellcrash enable
+		"$CRASHDIR"/start.sh stop
+		/etc/init.d/shellcrash start && /etc/init.d/shellcrash enable
 	fi
-	#启动自定义服务
-	[ -s /data/auto_start.sh ] && /bin/sh /data/auto_start.sh &
-	#兼容auto_ssh脚本
-	[ -s /data/auto_ssh/auto_ssh.sh ] && /bin/sh /data/auto_ssh/auto_ssh.sh &
 }
 init(){
 	#等待启动完成
@@ -85,7 +90,11 @@ init(){
 	done
 	autoSSH #软固化功能
 	auto_clean #自动清理
-	[ -s "$CRASHDIR"/start.sh ] && [ ! -x /etc/init.d/shellcrash ] && auto_start
+	auto_start
+	#启动自定义服务
+	[ -s /data/auto_start.sh ] && /bin/sh /data/auto_start.sh &
+	#兼容auto_ssh脚本
+	[ -s /data/auto_ssh/auto_ssh.sh ] && /bin/sh /data/auto_ssh/auto_ssh.sh &
 }
 
 case "$1" in

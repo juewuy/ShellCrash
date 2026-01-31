@@ -47,8 +47,8 @@ start)
         /etc/init.d/shellcrash start
     elif [ "$USER" = "root" ] && grep -q 'systemd' /proc/1/comm; then
 		FragmentPath=$(systemctl show -p FragmentPath shellcrash | sed 's/FragmentPath=//')
-		[ -f $FragmentPath ] && {
-			setconfig ExecStart "$COMMAND >/dev/null" "$FragmentPath"
+		[ -f "$FragmentPath" ] && {
+			sed -i "s#^ExecStart=.*#ExecStart=$COMMAND >/dev/null#" "$FragmentPath"
 			systemctl daemon-reload
 		}
 		systemctl start shellcrash.service || . "$CRASHDIR"/starts/start_error.sh
@@ -71,9 +71,11 @@ stop)
     cronset '保守模式守护进程'
     cronset '运行时每'
     cronset '流媒体预解析'
+    #停止tg_bot
+    . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
     #多种方式结束进程
     if [ -f "$TMPDIR/shellcrash.pid" ];then
-        kill -TERM "$(cat "$TMPDIR/shellcrash.pid")"
+        kill -TERM "$(cat "$TMPDIR/shellcrash.pid")" 2>/dev/null
         rm -f "$TMPDIR/shellcrash.pid"
         stop_firewall
     elif [ "$USER" = "root" ] && grep -q 'systemd' /proc/1/comm; then
