@@ -17,12 +17,8 @@ error_down() {
 # 更新/卸载功能菜单
 upgrade() {
     while true; do
-
         if [ -z "$version_new" ]; then
             checkupdate
-            line_break
-        else
-            line_break
         fi
         [ -z "$core_v" ] && core_v=$crashcore
         core_v_new=$(eval echo \$"$crashcore"_v)
@@ -33,7 +29,6 @@ upgrade() {
         [ "$(dir_avail "$CRASHDIR")" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
             content_line "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
         }
-        separator_line "="
         content_line "1) 更新\033[36m管理脚本\t\033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
         content_line "2) 切换/更新\033[33m内核文件\t\033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
         content_line "3) 安装/更新本地\033[32m数据库文件\033[0m"
@@ -68,12 +63,8 @@ upgrade() {
             setcrt
             ;;
         6)
-            line_break
-            separator_line "="
-            content_line "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m"
-            content_line "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
-            separator_line "="
-            sleep 2
+            msg_alert -t 2 "PAC配置链接为：\033[30;47m http://$host:$db_port/ui/pac \033[0m" \
+                "PAC的使用教程请参考：\033[4;32mhttps://juewuy.github.io/ehRUeewcv\033[0m"
             ;;
         7)
             setserver
@@ -82,10 +73,7 @@ upgrade() {
             . "$CRASHDIR"/menus/uninstall.sh && uninstall
             ;;
         9)
-            line_break
-            separator_line "="
-            content_line "感谢以下项目及其开发者们的无私奉献！"
-            separator_line "="
+            comp_box "感谢以下项目及其开发者们的无私奉献！"
 
             content_line "\033[32mClash              \033[0m开发：\033[36mDreamacro\033[0m"
             content_line ""
@@ -118,14 +106,11 @@ upgrade() {
             content_line "开发者地址：\033[32mhttps://github.com/DustinWin\033[0m"
             content_line ""
 
-            separator_line "="
-            content_line "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
-            separator_line "="
+            comp_box "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
             sleep 2
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -187,15 +172,12 @@ getscripts() {
 
 setscripts() {
     while true; do
-
         comp_box "\033[33m注意：更新时会停止服务！\033[0m" \
             "" \
             "当前脚本版本为：\033[36m$versionsh_l\033[0m" \
             "最新脚本版本为：\033[32m$version_new\033[0m"
-
         btm_box "1) 立即更新" \
             "0) 返回上级菜单"
-
         read -r -p "请输入对应标号> " res
         case "$res" in
         "" | 0)
@@ -210,7 +192,6 @@ setscripts() {
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -224,7 +205,6 @@ setcpucore() {
     comp_box "\033[31m仅适合脚本无法正确识别核心或核心无法正常运行时使用！\033[0m" \
         "不知道如何获取核心版本？\033[0m" \
         "请参考：\033[36;4mhttps://juewuy.github.io/bdaz\033[0m"
-
     content_line "当前可供在线下载的处理器架构为："
     separator_line "-"
 
@@ -249,15 +229,13 @@ setcpucore() {
 # 手动指定内核类型
 setcoretype() {
     while true; do
-        line_break
-        separator_line "="
         echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
-        content_line "\033[33m请确认该自定义内核的类型：\033[0m"
-        separator_line "-"
+        comp_box "\033[33m请确认该自定义内核的类型：\033[0m"
         content_line "1) Mihomo(Meta)"
         content_line "2) Singbox-reF1nd"
         content_line "3) Singbox"
         content_line "4) Clash"
+        content_line ""
         content_line "0) 返回上级菜单"
         separator_line "="
         read -r -p "请输入对应标号> " num
@@ -277,7 +255,6 @@ setcoretype() {
             ;;
         *)
             errornum
-            sleep 1
             continue
             ;;
         esac
@@ -292,15 +269,11 @@ switch_core() {
     [ "$core_new" != "$core_old" ] && {
         [ "$dns_mod" = "redir_host" ] && [ "$core_old" = "clash" ] && setconfig dns_mod mix                               #singbox自动切换dns
         [ "$dns_mod" = "mix" ] && [ "$crashcore" = 'clash' -o "$crashcore" = 'clashpre' ] && setconfig dns_mod redir_host #singbox自动切换dns
-        line_break
-        separator_line "="
-        content_line "\033[33m已从$core_old内核切换至$core_new内核\033[0m"
-        content_line "\033[33m二者Geo数据库及yaml/json配置文件不通用\033[0m"
-        content_line "是否保留相关数据库文件？"
-        separator_line "-"
-        content_line "1) 保留"
-        content_line "0) 不保留"
-        separator_line "="
+        comp_box "\033[33m已从$core_old内核切换至$core_new内核\033[0m" \
+            "\033[33m二者Geo数据库及yaml/json配置文件不通用\033[0m" \
+            "是否保留相关数据库文件？"
+        btm_box "1) 保留" \
+            "0) 不保留"
         read -r -p "请输入对应标号> " res
         [ "$res" = '0' ] && {
             [ "$core_old" = "clash" ] && {
@@ -381,12 +354,9 @@ checkcustcore() {
         if [ -s "$TMPDIR"/core.list ]; then
             separator_line "="
 
-            line_break
-            separator_line "="
-            content_line "内核版本：\033[36m$release_tag\033[0m"
-            content_line "发布时间：\033[33m$release_date\033[0m"
-            content_line "更新时间：\033[32m$update_date\033[0m"
-            separator_line "-"
+            comp_box "内核版本：\033[36m$release_tag\033[0m" \
+                "发布时间：\033[33m$release_date\033[0m" \
+                "更新时间：\033[32m$update_date\033[0m"
             content_line "\033[33m请确认内核信息并选择：\033[0m"
             separator_line "-"
             grep -oE "$release_tag.*" "$TMPDIR/core.list" |
@@ -410,12 +380,10 @@ checkcustcore() {
                     getcore
                 else
                     errornum
-                    sleep 1
                 fi
                 ;;
             *)
                 errornum
-                sleep 1
                 ;;
             esac
         else
@@ -485,13 +453,10 @@ setcustcore() {
             checkcustcore
             ;;
         9)
-            line_break
-            separator_line "="
-            content_line "请输入自定义内核的链接地址"
-            content_line "（必须是以.tar.gz或.gz结尾的压缩文件）"
-            content_line ""
-            content_line "或者输入 0 返回上级菜单"
-            separator_line "="
+            comp_box "请输入自定义内核的链接地址" \
+                "（必须是以.tar.gz或.gz结尾的压缩文件）" \
+                "" \
+                "或者输入 0 返回上级菜单"
             read -r -p "请输入> " link
             if [ "$link" = 0 ]; then
                 continue
@@ -503,7 +468,6 @@ setcustcore() {
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -533,7 +497,6 @@ setziptype() {
         ;;
     *)
         errornum
-        sleep 1
         ;;
     esac
     setconfig zip_type "$zip_type"
@@ -576,7 +539,6 @@ setcore() {
         content_line "9) 手动指定处理器架构"
         content_line ""
         content_line "0 返回上级菜单"
-
         separator_line "="
         read -r -p "请输入对应标号> " num
         case "$num" in
@@ -585,11 +547,7 @@ setcore() {
             ;;
         1)
             [ -d "/jffs" ] && {
-                line_break
-                separator_line "="
-                content_line "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
-                separator_line "="
-                sleep 2
+                msg_alert -t 2 "\033[31mMeta内核使用的GeoSite.dat数据库在华硕设备存在被系统误删的问题，可能无法使用!\033[0m"
             }
             crashcore=meta
             custcorelink=''
@@ -630,7 +588,6 @@ setcore() {
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -697,25 +654,19 @@ checkcustgeo() {
     while true; do
         [ "$api_tag" = "latest" ] && api_url=latest || api_url="tags/$api_tag"
         [ ! -s "$TMPDIR"/geo.list ] && {
-            line_break
-            separator_line "="
-            content_line "\033[32m正在查找可更新的数据库文件......\033[0m"
-            separator_line "="
+            comp_box "\033[32m正在查找可更新的数据库文件......\033[0m"
             webget "$TMPDIR"/github_api https://api.github.com/repos/${project}/releases/${api_url}
             release_tag=$(cat "$TMPDIR"/github_api | grep '"tag_name":' | awk -F '"' '{print $4}')
             cat "$TMPDIR"/github_api | grep "browser_download_url" | grep -oE 'releases/download.*' | grep -oiE 'geosite.*\.dat"$|country.*\.mmdb"$|.*.mrs|.*.srs' | sed 's|.*/||' | sed 's/"//' >"$TMPDIR"/geo.list
             rm -rf "$TMPDIR"/github_api
         }
         if [ -s "$TMPDIR"/geo.list ]; then
-
-            line_break
-            separator_line "="
-            content_line "请选择需要更新的数据库文件："
-            separator_line "-"
+            comp_box "请选择需要更新的数据库文件："
             awk '{print NR") "$1}' "$TMPDIR/geo.list" |
                 while IFS= read -r line; do
                     content_line "$line"
                 done
+            content_line ""
             content_line "0) 返回上级菜单"
             separator_line "="
             read -r -p "请输入对应标号> " num
@@ -733,21 +684,15 @@ checkcustgeo() {
                     getcustgeo
                 else
                     errornum
-                    sleep 1
                     break
                 fi
                 ;;
             *)
                 errornum
-                sleep 1
                 ;;
             esac
         else
-            line_break
-            separator_line "="
-            content_line "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
-            separator_line "="
-            sleep 1
+            msg_alert "\033[31m查找失败，请尽量在服务启动后再使用本功能！\033[0m"
         fi
     done
 }
@@ -756,13 +701,11 @@ checkcustgeo() {
 setcustgeo() {
     while true; do
         rm -rf "$TMPDIR"/geo.list
-        line_break
-        separator_line "="
-        content_line "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m"
-        content_line "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m"
-        content_line "\033[31m自定义数据库不支持定时任务及小闪存模式！\033[0m"
-        content_line "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
-        separator_line "-"
+        comp_box "\033[36m此处数据库均源自互联网采集，此处致谢各位开发者！\033[0m" \
+            "\033[32m请点击或复制链接前往项目页面查看具体说明！\033[0m" \
+            "\033[31m自定义数据库不支持定时任务及小闪存模式！\033[0m" \
+            "\033[33m如遇到网络错误请先启动ShellCrash服务！\033[0m"
+
         content_line "\033[0m请选择需要更新的数据库项目来源：\033[0m"
         separator_line "-"
         content_line "1) \033[36;4mhttps://github.com/MetaCubeX/meta-rules-dat\033[0m"
@@ -781,6 +724,7 @@ setcustgeo() {
         sub_content_line "（仅限Clash-GeoIP）"
 
         content_line "9) \033[33m自定义数据库链接 \033[0m"
+        content_line ""
         content_line "0) 返回上级菜单"
         separator_line "="
         read -r -p "请输入对应标号> " num
@@ -815,13 +759,12 @@ setcustgeo() {
             ;;
         9)
             line_break
-            read -r -p "请输入自定义数据库的链接地址 > " link
+            read -r -p "请输入自定义数据库的链接地址> " link
             [ -n "$link" ] && custgeolink="$link"
             getgeo
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -829,15 +772,13 @@ setcustgeo() {
 
 setgeo() {
     while true; do
-        line_break
         . $CFG_PATH >/dev/null
         [ -n "$cn_mini_v" ] && geo_type_des=精简版 || geo_type_des=全球版
-        separator_line "="
-        content_line "\033[33m注意：Mihomo内核和SingBox内核的数据库文件不通用\033[0m"
-        content_line "在线数据库最新版本（每日同步上游）：\033[32m$GeoIP_v\033[0m"
-        content_line ""
-        content_line "请选择需要更新的Geo数据库文件："
-        separator_line "="
+        comp_box "\033[33m注意：Mihomo内核和SingBox内核的数据库文件不通用\033[0m" \
+            "在线数据库最新版本（每日同步上游）：\033[32m$GeoIP_v\033[0m" \
+            "" \
+            "请选择需要更新的Geo数据库文件："
+
         content_line "1) CN-IP绕过文件（约0.1mb）	\033[33m$china_ip_list_v\033[0m"
         content_line "2) CN-IPV6绕过文件（约30kb）	\033[33m$china_ipv6_list_v\033[0m"
         content_line ""
@@ -892,12 +833,10 @@ setgeo() {
             ;;
         9)
             while true; do
-                comp_box "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m"
-                "清理后启动服务即可自动下载所需文件"
-
-                content_line "1) 确认清理"
-                content_line "0) 返回上级菜单"
-                separator_line "="
+                comp_box "\033[33m这将清理$CRASHDIR目录及/ruleset目录下所有数据库文件！\033[0m" \
+                    "清理后启动服务即可自动下载所需文件"
+                btm_box "1) 确认清理" \
+                    "0) 返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 case "$res" in
                 "" | 0)
@@ -916,14 +855,12 @@ setgeo() {
                     ;;
                 *)
                     errornum
-                    sleep 1
                     ;;
                 esac
             done
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -974,16 +911,10 @@ getdb() {
 }
 
 dbdir() {
-    line_break
-    separator_line "="
     if [ -f /www/clash/CNAME ] || [ -f "$CRASHDIR"/ui/CNAME ]; then
-        content_line "\033[33m检测到已经安装过本地面板\033[0m"
-        separator_line "="
-        content_line "请选择操作："
-        separator_line "-"
-        content_line "1) 升级/覆盖安装"
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        comp_box "\033[33m检测到已经安装过本地面板\033[0m"
+        btm_box "1) 升级/覆盖安装" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " res
         if [ "$res" = 1 ]; then
             rm -rf "$BINDIR"/ui
@@ -994,15 +925,12 @@ dbdir() {
             msg_alert "\033[33m安装已取消\033[0m"
             return 1
         fi
-
     elif [ -w /www ] && [ -n "$(pidof nginx)" ]; then
-        separator_line "请选择面板\033[33m安装目录：\033[0m"
-        separator_line "="
-        content_line "1) 在${CRASHDIR}/ui目录安装"
-        content_line "2) 在/www/clash目录安装"
-        content_line ""
-        separator_line "0) 返回上级菜单"
-        separator_line "="
+        comp_box "请选择面板\033[33m安装目录：\033[0m"
+        btm_box "1) 在${CRASHDIR}/ui目录安装" \
+            "2) 在/www/clash目录安装" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -1020,7 +948,6 @@ dbdir() {
             ;;
         *)
             errornum
-            sleep 1
             return 1
             ;;
         esac
@@ -1033,13 +960,10 @@ dbdir() {
 
 setdb() {
     while true; do
-        line_break
-        separator_line "="
-        content_line "\033[36m安装 dashboard 管理面板到本地\033[0m"
-        content_line "\033[32m打开管理面板的速度更快且更稳定\033[0m"
-        separator_line "="
-        content_line "请选择面板安装类型："
-        separator_line "-"
+        comp_box "\033[36m安装 dashboard 管理面板到本地\033[0m" \
+            "\033[32m打开管理面板的速度更快且更稳定\033[0m" \
+            "" \
+            "请选择面板安装类型："
         content_line "   - - - - - - -维护中- - - - - - -"
         content_line "1) 安装\033[32mzashboard面板\033[0m（约2.2mb）"
         content_line "2) 安装\033[32mMetaXD面板\033[0m（约1.5mb）"
@@ -1049,9 +973,9 @@ setdb() {
         content_line "5) 安装\033[32mMeta基础面板\033[0m（约800kb）"
         content_line "6) 安装\033[32mYacd面板\033[0m（约1.1mb）"
         content_line "9) \033[31m卸载本地面板\033[0m"
+        content_line ""
         content_line "0) 返回上级菜单"
         separator_line "="
-
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -1085,13 +1009,9 @@ setdb() {
             ;;
         9)
             while true; do
-                line_break
-                separator_line "="
-                content_line "是否卸载本地面板："
-                separator_line "="
-                content_line "1) 确认卸载"
-                content_line "0) 返回上级菜单"
-                separator_line "="
+                comp_box "是否卸载本地面板？"
+                btm_box "1) 确认卸载" \
+                    "0) 返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 case "$res" in
                 "" | 0)
@@ -1106,14 +1026,12 @@ setdb() {
                     ;;
                 *)
                     errornum
-                    sleep 1
                     ;;
                 esac
             done
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -1184,7 +1102,6 @@ setcrt() {
                 ;;
             *)
                 errornum
-                sleep 1
                 continue
                 ;;
             esac
@@ -1275,12 +1192,9 @@ setserver() {
             ;;
         c)
             while true; do
-                line_break
-                separator_line "="
-                content_line "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m"
-                content_line "\033[33m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m"
-                content_line "请务必加入我们的讨论组：\033[36;4mhttps://t.me/ShellClash\033[0m"
-                separator_line "="
+                comp_box "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m" \
+                    "\033[33m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m" \
+                    "请务必加入我们的讨论组：\033[36;4mhttps://t.me/ShellClash\033[0m"
                 content_line "是否依然切换到开发版："
                 separator_line "-"
                 content_line "1) 确认切换"
@@ -1299,18 +1213,13 @@ setserver() {
                     ;;
                 *)
                     errornum
-                    sleep 1
                     ;;
                 esac
             done
             ;;
         d)
-            line_break
-            separator_line "="
-            content_line "请直接输入个人源路径"
-            content_line ""
-            content_line "或者输入 0 返回上级菜单"
-            separator_line "="
+            comp_box "请直接输入个人源路径" \
+                "或者输入 0 返回上级菜单"
             read -r -p "请输入个人源路径> " update_url
             if [ "$update_url" = 0 ]; then
                 continue
@@ -1321,9 +1230,9 @@ setserver() {
             fi
             ;;
         e)
-            line_break
-            separator_line "="
             if [ -n "$url_id" ] && [ "$url_id" -lt 200 ]; then
+                line_break
+                separator_line "="
                 content_line "\033[32m正在获取版本信息......\033[0m"
                 . "$CRASHDIR"/libs/web_get_lite.sh
                 web_get_lite https://github.com/juewuy/ShellCrash/tags | grep -o 'releases/tag/.*data' | awk -F '/' '{print $3}' | sed 's/".*//g' >"$TMPDIR"/tags
@@ -1352,7 +1261,6 @@ setserver() {
                         saveserver
                     else
                         errornum
-                        sleep 1
                         continue
                     fi
                 else
@@ -1363,16 +1271,13 @@ setserver() {
                 fi
                 rm -rf "$TMPDIR"/tags
             else
-                content_line "\033[31m当前源不支持版本回退\033[0m"
-                content_line "\033[31m请尝试更换其他安装源！\033[0m"
-                separator_line "="
-                sleep 1
+                msg_alert "\033[31m当前源不支持版本回退\033[0m" \
+                    "\033[31m请尝试更换其他安装源！\033[0m"
                 continue
             fi
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
