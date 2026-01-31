@@ -2,6 +2,7 @@
 
 [ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
 . "$CRASHDIR"/libs/web_json.sh
+. "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/web_get_lite.sh
 . "$CRASHDIR"/menus/running_status.sh
 . "$CRASHDIR"/configs/gateway.cfg
