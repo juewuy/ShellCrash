@@ -7,11 +7,8 @@ load_lang 1_start
 
 # ===== 启动完成提示 =====
 startover() {
-    line_break
-    separator_line "="
-    content_line "\033[32m$START_SERVICE_OK\033[0m"
-    content_line "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m"
-
+    top_box "\033[32m$START_SERVICE_OK\033[0m" \
+        "$START_WEB_HINT \033[4;36mhttp://$host$hostdir\033[0m"
     if [ "$firewall_area" = 4 ]; then
         content_line ""
         content_line "$START_PAC_HINT \033[4;32mhttp://$host:$db_port/ui/pac\033[0m"
@@ -32,17 +29,14 @@ start_core() {
     fi
 
     if [ ! -s "$core_config" ] && [ -s "$CRASHDIR/configs/providers.cfg" ]; then
-        if [ "$crashcore" = singboxr ];then
-			CORE_TYPE=singbox
+        if [ "$crashcore" = singboxr ]; then
+            CORE_TYPE=singbox
         else
-			CORE_TYPE=clash
-		fi
+            CORE_TYPE=clash
+        fi
         . "$CRASHDIR/menus/providers_$CORE_TYPE.sh" && gen_providers
 
-        line_break
-        separator_line "="
-        content_line "\033[33m$START_NO_CORE_CFG_TRY_GEN\033[0m"
-        separator_line "="
+        comp_box "\033[33m$START_NO_CORE_CFG_TRY_GEN\033[0m"
     elif [ -s "$core_config" ] || [ -n "$Url" ] || [ -n "$Https" ]; then
         "$CRASHDIR/start.sh" start
 
@@ -57,10 +51,7 @@ start_core() {
             startover
         }
     else
-        line_break
-        separator_line "="
-        content_line "\033[31m$START_NO_CORE_CFG_IMPORT_FIRST\033[0m"
-        separator_line "="
+        comp_box "\033[31m$START_NO_CORE_CFG_IMPORT_FIRST\033[0m"
         . "$CRASHDIR/menus/6_core_config.sh" && set_core_config
     fi
 }
@@ -69,10 +60,7 @@ start_core() {
 start_service() {
     if [ "$firewall_area" = 5 ]; then
         "$CRASHDIR/start.sh" start
-        line_break
-        separator_line "="
-        content_line "\033[32m$START_FIREWALL_DONE\033[0m"
-        separator_line "="
+        comp_box "\033[32m$START_FIREWALL_DONE\033[0m"
         line_break
     else
         start_core
