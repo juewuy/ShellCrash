@@ -17,10 +17,7 @@ settings() {
         }
         [ -z "$dns_mod" ] && dns_mod='redir_host'
 
-        line_break
-        separator_line "="
-        content_line "\033[30;47m$SET_MENU_TITLE\033[0m"
-        separator_line "="
+        comp_box "\033[30;47m$SET_MENU_TITLE\033[0m"
         content_line "1) $SET_MENU_REDIR\t\033[36m$redir_mod$MENU_MOD\033[0m"
         content_line "2) $SET_MENU_DNS\t\033[36m$dns_mod\033[0m"
         content_line "3) $SET_MENU_FW_FILTER"
@@ -43,13 +40,9 @@ settings() {
             ;;
         1)
             if [ "$USER" != root ] && [ "$USER" != admin ]; then
-                line_break
-                separator_line "="
-                content_line "$SET_WARN_NONROOT"
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "$SET_WARN_NONROOT"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "$COMMON_INPUT> " res
                 if [ "$res" = 1 ]; then
                     set_redir_mod
@@ -70,44 +63,33 @@ settings() {
             line_break
             separator_line "="
             if [ "$skip_cert" = "OFF" ]; then
-                content_line "当前\033[33m已禁用\033[0m跳过本地证书验证，是否确认启用："
+                content_line "当前\033[33m已禁用\033[0m跳过本地证书验证，是否确认启用？"
             else
-                content_line "当前\033[33m已启用\033[0m跳过本地证书验证，是否确认禁用："
+                content_line "当前\033[33m已启用\033[0m跳过本地证书验证，是否确认禁用？"
             fi
             separator_line "="
-            content_line "1) 是"
-            content_line "0) 否，返回上级菜单"
-            separator_line "="
+            btm_box "1) 是" \
+                "0) 否，返回上级菜单"
             read -r -p "$COMMON_INPUT> " num
-
             if [ "$num" = 1 ]; then
-                line_break
-                separator_line "="
                 if [ "$skip_cert" = OFF ]; then
                     skip_cert=ON
-                    content_line "\033[33m$SET_SKIP_CERT_ON\033[0m"
+                    msg_alert "\033[33m$SET_SKIP_CERT_ON\033[0m"
                 else
                     skip_cert=OFF
-                    content_line "\033[33m$SET_SKIP_CERT_OFF\033[0m"
+                    msg_alert "\033[33m$SET_SKIP_CERT_OFF\033[0m"
                 fi
                 setconfig skip_cert $skip_cert
-                separator_line "="
             else
                 continue
             fi
-            sleep 1
             ;;
         5)
-            line_break
-            separator_line "="
             if [ "$sniffer" = "OFF" ]; then
-                content_line "当前\033[33m已禁用\033[0m域名嗅探，是否确认启用："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "当前\033[33m已禁用\033[0m域名嗅探，是否确认启用？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "$COMMON_INPUT> " num
-
                 if [ "$num" = 1 ]; then
                     line_break
                     separator_line "="
@@ -115,25 +97,20 @@ settings() {
                         rm -rf "$TMPDIR/CrashCore" "$CRASHDIR/CrashCore" "$CRASHDIR/CrashCore.tar.gz"
                         crashcore=meta
                         setconfig crashcore $crashcore
-                        line_break
-                        content_line "$SET_SNIFFER_CORE_SWITCH"
-                        content_line ""
+                        top_box "$SET_SNIFFER_CORE_SWITCH" \
+                            ""
                     fi
                     sniffer=ON
                 else
                     continue
                 fi
             elif [ "$crashcore" = clashpre ] && [ "$dns_mod" = redir_host ]; then
-                content_line "\033[31m$SET_SNIFFER_LOCKED\033[0m"
-                separator_line "="
-                sleep 1
+                msg_alert "\033[31m$SET_SNIFFER_LOCKED\033[0m"
                 continue
             else
-                content_line "当前\033[33m已启用\033[0m域名嗅探，是否确认禁用："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "当前\033[33m已启用\033[0m域名嗅探，是否确认禁用？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "$COMMON_INPUT> " num
                 if [ "$num" = 1 ]; then
                     sniffer=OFF
@@ -144,20 +121,15 @@ settings() {
                 fi
             fi
             setconfig sniffer "$sniffer"
-            content_line "\033[32m操作成功\033[0m"
-            separator_line "="
+            btm_box "\033[32m操作成功\033[0m"
             sleep 1
             ;;
         6)
             if pidof CrashCore >/dev/null; then
-                line_break
-                separator_line "="
-                content_line "\033[33m$SET_CORE_RUNNING\033[0m"
-                content_line "$SET_CORE_STOP_CONFIRM"
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "\033[33m$SET_CORE_RUNNING\033[0m" \
+                    "$SET_CORE_STOP_CONFIRM"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "$COMMON_INPUT> " res
                 if [ "$res" = 1 ]; then
                     "$CRASHDIR/start.sh" stop && set_adv_config
@@ -172,14 +144,12 @@ settings() {
             set_ipv6
             ;;
         a)
-			BACK_TAR="$CRASHDIR/configs.tar.gz"
-            line_break
-            separator_line "="
-            content_line "1) $SET_BACKUP"
-            content_line "2) $SET_RESTORE"
-            content_line "3) $SET_RESET"
-            content_line "0) $COMMON_BACK"
-            separator_line "="
+            BACK_TAR="$CRASHDIR/configs.tar.gz"
+            comp_box "1) $SET_BACKUP" \
+                "2) $SET_RESTORE" \
+                "3) $SET_RESET" \
+                "" \
+                "0) $COMMON_BACK"
             read -r -p "$COMMON_INPUT> " num
             case "$num" in
             "" | 0)
@@ -193,17 +163,18 @@ settings() {
                 else
                     content_line "\033[31m$SET_BACKUP_FAIL\033[0m"
                 fi
-				sleep 1
-				continue
+                separator_line "="
+                sleep 1
+                continue
                 ;;
             2)
                 line_break
                 separator_line "="
                 if [ -f "$BACK_TAR" ]; then
-					tar -zcf "$TMPDIR/configs.tar.gz" -C "$CRASHDIR/configs/" .
-					rm -rf "$CRASHDIR/configs/*"
+                    tar -zcf "$TMPDIR/configs.tar.gz" -C "$CRASHDIR/configs/" .
+                    rm -rf "$CRASHDIR/configs/*"
                     tar -zxf "$BACK_TAR" -C "$CRASHDIR"/configs
-					mv -f "$TMPDIR/configs.tar.gz" "$BACK_TAR"
+                    mv -f "$TMPDIR/configs.tar.gz" "$BACK_TAR"
                     content_line "\033[32m$SET_RESTORE_OK $BACK_TAR\033[0m"
                 else
                     content_line "\033[31m$SET_BACKUP_MISS\033[0m"
@@ -213,7 +184,7 @@ settings() {
                 line_break
                 separator_line "="
                 if tar -zcf "$BACK_TAR" -C "$CRASHDIR/configs/" .; then
-					rm -rf "$CRASHDIR/configs"
+                    rm -rf "$CRASHDIR/configs"
                     . "$CRASHDIR/init.sh" >/dev/null
                     content_lin e"\033[32m$SET_RESET_OK\033[0m"
                 else
@@ -221,52 +192,43 @@ settings() {
                 fi
                 ;;
             *)
-                errornub
-                sleep 1
+                errornum
                 continue
                 ;;
             esac
             content_line "\033[33m$SET_NEED_RESTART\033[0m"
+            separator_line "="
+            line_break
             sleep 1
             exit 0
             ;;
         b)
-            line_break
-            separator_line "="
-            content_line "1) 简体中文"
-            content_line "2) English"
-            content_line "0) $COMMON_BACK"
-            separator_line "="
+            comp_box "1) 简体中文"
+            "2) English" \
+                "" \
+                "0) $COMMON_BACK"
             read -r -p "$COMMON_INPUT> " num
             case "$num" in
             "" | 0)
                 continue
                 ;;
             1)
-                line_break
-                separator_line "="
                 echo chs >"$CRASHDIR"/configs/i18n.cfg
-                content_line "\033[32m切换成功！请重新运行脚本！\033[0m"
+                msg_alert "\033[32m切换成功！请重新运行脚本！\033[0m"
                 ;;
             2)
-                line_break
-                separator_line "="
                 echo en >"$CRASHDIR"/configs/i18n.cfg
-                content_line "\033[32mLanguage switched successfully! Please re-run the script!\033[0m"
+                msg_alert "\033[32mLanguage switched successfully! Please re-run the script!\033[0m"
                 ;;
             esac
-            separator_line "="
             line_break
-            sleep 1
             exit 0
             ;;
         c)
-            line_break
-            separator_line "="
-            content_line "1) New Design by Sofia-Riese"
-            content_line "2) TUI-lite"
-            content_line "0) $COMMON_BACK"
-            separator_line "="
+            comp_box "1) New Design by Sofia-Riese" \
+                "2) TUI-lite" \
+                "" \
+                "0) $COMMON_BACK"
             read -r -p "$COMMON_INPUT> " num
             case "$num" in
             "" | 0)
@@ -281,15 +243,10 @@ settings() {
                 . "$CRASHDIR"/menus/tui_lite.sh
                 ;;
             esac
-            line_break
-            separator_line "="
-            content_line "\033[32m切换成功！\033[0m"
-            separator_line "="
-            sleep 1
+            msg_alert "\033[32m切换成功！\033[0m"
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -298,11 +255,7 @@ settings() {
 set_redir_config() {
     setconfig redir_mod "$redir_mod"
     setconfig dns_mod "$dns_mod"
-    line_break
-    separator_line "="
-    content_line "\033[36m$SET_REDIR_APPLIED $redir_mod\033[0m"
-    separator_line "="
-    sleep 1
+    msg_alert "\033[36m$SET_REDIR_APPLIED $redir_mod\033[0m"
 }
 
 # 路由模式设置
@@ -313,11 +266,8 @@ set_redir_mod() {
         [ "$firewall_area" = 4 ] && redir_mod="$MENU_PURE_MOD"
         [ -z "$redir_mod" ] && redir_mod='Redir'
         firewall_area_dsc=$(echo "$SET_FW_AREA_DESC($bypass_host)" | cut -d'|' -f$firewall_area)
-        line_break
-        separator_line "="
-        content_line "\033[33m$SET_REDIR_RESTART_HINT\033[0m"
-        content_line "$SET_REDIR_CURRENT\033[47;30m$redir_mod$MENU_MOD\033[0m；  $SET_CORE_CURRENT\033[47;30m$crashcore\033[0m"
-        separator_line "="
+        comp_box "\033[33m$SET_REDIR_RESTART_HINT\033[0m" \
+            "$SET_REDIR_CURRENT\033[47;30m$redir_mod$MENU_MOD\033[0m；  $SET_CORE_CURRENT\033[47;30m$crashcore\033[0m"
         [ "$firewall_area" -le 3 ] && {
             content_line "1) \033[32m$SET_REDIR_REDIR\033[0m：\t$SET_REDIR_REDIRDES"
             content_line "2) \033[36m$SET_REDIR_MIX\033[0m：\t$SET_REDIR_MIXDES"
@@ -334,10 +284,9 @@ set_redir_mod() {
         content_line "8) $SET_VM_REDIR：\t\033[47;30m$vm_redir\033[0m"
         content_line "9) $SET_FW_SWITCH：\t\033[47;30m$firewall_mod\033[0m"
         content_line ""
-        content_line "0 $COMMON_BACK"
+        content_line "0) $COMMON_BACK"
         separator_line "="
         read -r -p "$COMMON_INPUT> " num
-
         case "$num" in
         "" | 0)
             break
@@ -351,12 +300,8 @@ set_redir_mod() {
                 redir_mod=Mix
                 set_redir_config
             else
-                line_break
-                separator_line "="
-                content_line "\033[31m${SET_NO_MOD}TUN\033[0m"
-                content_line "\033[31m$SET_NO_MOD2\033[0m"
-                separator_line "="
-                sleep 1
+                msg_alert "\033[31m${SET_NO_MOD}TUN\033[0m" \
+                    "\033[31m$SET_NO_MOD2\033[0m"
             fi
             ;;
         3)
@@ -372,24 +317,16 @@ set_redir_mod() {
                     redir_mod=Tproxy
                     set_redir_config
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m${SET_NO_MOD}iptables-mod-tproxy\033[0m"
-                    content_line "\033[31m$SET_NO_MOD2\033[0m"
-                    separator_line "="
-                    sleep 1
+                    msg_alert "\033[31m${SET_NO_MOD}iptables-mod-tproxy\033[0m" \
+                        "\033[31m$SET_NO_MOD2\033[0m"
                 fi
             elif [ "$firewall_mod" = "nftables" ]; then
                 if modprobe nft_tproxy >/dev/null 2>&1 || lsmod 2>/dev/null | grep -q nft_tproxy; then
                     redir_mod=Tproxy
                     set_redir_config
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m${SET_NO_MOD}nft_tproxy\033[0m"
-                    content_line "\033[31m$SET_NO_MOD2\033[0m"
-                    separator_line "="
-                    sleep 1
+                    msg_alert "\033[31m${SET_NO_MOD}nft_tproxy\033[0m" \
+                        "\033[31m$SET_NO_MOD2\033[0m"
                 fi
             fi
             ;;
@@ -398,11 +335,7 @@ set_redir_mod() {
                 redir_mod=Tun
                 set_redir_config
             else
-                line_break
-                separator_line "="
-                content_line "\033[31m$SET_NO_TUN\033[0m"
-                separator_line "="
-                sleep 1
+                msg_alert "\033[31m$SET_NO_TUN\033[0m"
             fi
             ;;
         5)
@@ -426,10 +359,7 @@ set_redir_mod() {
                     redir_mod=Redir
                     setconfig redir_mod $redir_mod
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m$FW_NO_NFTABLES\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m$FW_NO_NFTABLES\033[0m"
                 fi
             elif [ "$firewall_mod" = 'nftables' ]; then
                 if ckcmd iptables; then
@@ -437,10 +367,7 @@ set_redir_mod() {
                     redir_mod=Redir
                     setconfig redir_mod $redir_mod
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m$FW_NO_IPTABLES\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m$FW_NO_IPTABLES\033[0m"
                 fi
             else
                 iptables -j REDIRECT -h >/dev/null 2>&1 && firewall_mod=iptables
@@ -450,18 +377,13 @@ set_redir_mod() {
                     setconfig redir_mod $redir_mod
                     setconfig firewall_mod "$firewall_mod"
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m$FW_NO_FIREWALL_BACKEND\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m$FW_NO_FIREWALL_BACKEND\033[0m"
                 fi
             fi
-            sleep 1
             setconfig firewall_mod "$firewall_mod"
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -471,18 +393,12 @@ inputport() {
     line_break
     read -r -p "$INPUT_PORT（1～65535）> " portx
     . "$CRASHDIR"/menus/check_port.sh # 加载测试函数
-    line_break
-    separator_line "="
     if check_port "$portx"; then
         setconfig "$xport" "$portx"
-        content_line "\033[32m$COMMON_SUCCESS\033[0m"
-        separator_line "="
-        sleep 1
+        msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
         return 0
     else
-        content_line "\033[31m$COMMON_FAILED\033[0m"
-        separator_line "="
-        sleep 1
+        msg_alert "\033[31m$COMMON_FAILED\033[0m"
         return 1
     fi
 }
@@ -494,21 +410,17 @@ set_adv_config() {
         [ -z "$secret" ] && secret="$COMMON_UNSET"
         [ -z "$table" ] && table=100
         [ -z "$authentication" ] && auth="$COMMON_UNSET" || auth="******"
-
-        line_break
-        separator_line "="
-        content_line "1) $ADV_HTTP_PORT：\t\033[36m$mix_port\033[0m"
-        content_line "2) $ADV_HTTP_AUTH：\t\033[36m$auth\033[0m"
-        content_line "3) $ADV_REDIR_PORT：\t\033[36m$redir_port,$((redir_port + 1))\033[0m"
-        content_line "4) $ADV_DNS_PORT：\t\t\033[36m$dns_port\033[0m"
-        content_line "5) $ADV_PANEL_PORT：\t\t\033[36m$db_port\033[0m"
-        content_line "6) $ADV_PANEL_PASS：\t\t\033[36m$secret\033[0m"
-        content_line "8) $ADV_HOST：\t\033[36m$host\033[0m"
-        content_line "9) $ADV_TABLE：\t\t\033[36m$table,$((table + 1))\033[0m"
-        content_line "0) $COMMON_BACK"
-        separator_line "="
+        comp_box "1) $ADV_HTTP_PORT：\t\033[36m$mix_port\033[0m" \
+            "2) $ADV_HTTP_AUTH：\t\033[36m$auth\033[0m" \
+            "3) $ADV_REDIR_PORT：\t\033[36m$redir_port,$((redir_port + 1))\033[0m" \
+            "4) $ADV_DNS_PORT：\t\t\033[36m$dns_port\033[0m" \
+            "5) $ADV_PANEL_PORT：\t\t\033[36m$db_port\033[0m" \
+            "6) $ADV_PANEL_PASS：\t\t\033[36m$secret\033[0m" \
+            "8) $ADV_HOST：\t\033[36m$host\033[0m" \
+            "9) $ADV_TABLE：\t\t\033[36m$table,$((table + 1))\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
-
         case "$num" in
         "" | 0)
             break
@@ -523,35 +435,27 @@ set_adv_config() {
             fi
             ;;
         2)
-            line_break
-            separator_line "="
-            content_line "$ADV_AUTH_FORMAT_DESC"
-            content_line "$ADV_AUTH_WARN"
-            content_line "$ADV_AUTH_REMOVE_HINT"
-            separator_line "="
+            comp_box "$ADV_AUTH_FORMAT_DESC" \
+                "$ADV_AUTH_WARN" \
+                "$ADV_AUTH_REMOVE_HINT"
             read -r -p "$ADV_AUTH_INPUT> " input
-
-            line_break
-            separator_line "="
             if [ "$input" = "0" ]; then
                 authentication=""
                 setconfig authentication
-                content_line "\033[32m$ADV_AUTH_REMOVED\033[0m"
+                msg_alert "\033[32m$ADV_AUTH_REMOVED\033[0m"
             else
                 if [ "$local_proxy" = "ON" ] && [ "$local_type" = "$LOCAL_TYPE_ENV" ]; then
-                    content_line "\033[33m$ADV_AUTH_ENV_CONFLICT\033[0m"
+                    msg_alert "\033[33m$ADV_AUTH_ENV_CONFLICT\033[0m"
                 else
                     authentication=$(echo "$input" | grep :)
                     if [ -n "$authentication" ]; then
                         setconfig authentication "'$authentication'"
-                        content_line "\033[32m$COMMON_SUCCESS\033[0m"
+                        msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
                     else
-                        content_line "\033[31m$ADV_AUTH_INVALID\033[0m"
+                        msg_alert "\033[31m$ADV_AUTH_INVALID\033[0m"
                     fi
                 fi
             fi
-            separator_line "="
-            sleep 1
             ;;
         3)
             xport=redir_port
@@ -585,59 +489,48 @@ set_adv_config() {
             read -r -p "$ADV_PANEL_PASS_INPUT> " secret
             if [ -n "$secret" ]; then
                 [ "$secret" = "0" ] && secret=""
-                setconfig secret "$secret"
-                line_break
-                separator_line "="
-                content_line "\033[32m$COMMON_SUCCESS\033[0m"
-                separator_line "="
+                if setconfig secret "$secret"; then
+                    common_success
+                else
+                    common_failed
+                fi
             fi
             ;;
         8)
-            line_break
-            separator_line "="
-            content_line "\033[33m$ADV_HOST_WARN_LAN\033[0m"
-            content_line "\033[31m$ADV_HOST_WARN_CHANGE\033[0m"
-            separator_line "="
+            comp_box "\033[33m$ADV_HOST_WARN_LAN\033[0m" \
+                "\033[31m$ADV_HOST_WARN_CHANGE\033[0m"
             read -r -p "$ADV_HOST_INPUT> " host
-
-            line_break
-            separator_line "="
             if [ "$host" = "0" ]; then
                 host=""
                 setconfig host "$host"
-                content_line "\033[32m$ADV_HOST_REMOVED\033[0m"
-                separator_line "="
-                sleep 1
+                msg_alert "\033[32m$ADV_HOST_REMOVED\033[0m"
+                line_break
                 exit 0
             elif echo "$host" | grep -Eq '\<([1-9]|[1-9][0-9]|1[0-9]{2}|2[01][0-9]|22[0-3])\>(\.\<([0-9]|[0-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\>){2}\.\<([1-9]|[0-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-4])\>'; then
-                setconfig host "$host"
-                content_line "\033[32m$COMMON_SUCCESS\033[0m"
+                if setconfig host "$host"; then
+                    common_success
+                else
+                    common_failed
+                fi
             else
                 host=""
-                content_line "\033[31m$ADV_HOST_INVALID\033[0m"
+                msg_alert "\033[31m$ADV_HOST_INVALID\033[0m"
             fi
-            separator_line "="
-            sleep 1
             ;;
         9)
-            line_break
-            separator_line "="
-            content_line "\033[33m$ADV_TABLE_WARN\033[0m"
-            separator_line "="
+            comp_box "\033[33m$ADV_TABLE_WARN\033[0m"
             read -r -p "$ADV_TABLE_INPUT> " table
             if [ -n "$table" ]; then
                 [ "$table" = "0" ] && table="100"
-                setconfig table "$table"
-
-                line_break
-                separator_line "="
-                content_line "\033[32m$COMMON_SUCCESS\033[0m"
-                separator_line "="
+                if setconfig table "$table"; then
+                    common_success
+                else
+                    common_failed
+                fi
             fi
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -646,21 +539,17 @@ set_adv_config() {
 set_firewall_area() {
     while true; do
         [ -z "$vm_redir" ] && vm_redir='OFF'
-        line_break
-        separator_line "="
-        content_line "\033[33m$FW_AREA_NOTE_1\033[0m"
-        content_line "\033[33m$FW_AREA_NOTE_2\033[0m"
-        content_line ""
-        content_line "当前路由劫持范围：$firewall_area_dsc"
-        separator_line "="
-        content_line "1) \033[32m$FW_AREA_LAN\033[0m"
-        content_line "2) \033[36m$FW_AREA_LOCAL\033[0m"
-        content_line "3) \033[32m$FW_AREA_BOTH\033[0m"
-        content_line "4) $FW_AREA_NONE"
-        content_line "0) $COMMON_BACK"
-        separator_line "="
+        comp_box "\033[33m$FW_AREA_NOTE_1\033[0m" \
+            "\033[33m$FW_AREA_NOTE_2\033[0m" \
+            "" \
+            "当前路由劫持范围：$firewall_area_dsc"
+        btm_box "1) \033[32m$FW_AREA_LAN\033[0m" \
+            "2) \033[36m$FW_AREA_LOCAL\033[0m" \
+            "3) \033[32m$FW_AREA_BOTH\033[0m" \
+            "4) $FW_AREA_NONE" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
-
         case "$num" in
         "" | 0)
             break
@@ -682,23 +571,16 @@ set_firewall_area() {
             4) firewall_area_dsc="$FW_AREA_NONE" ;;
             esac
 
-            line_break
-            separator_line "="
-            content_line "\033[32m操作成功\033[0m"
-            separator_line "="
-            sleep 1
+            common_success
             ;;
         5)
-            line_break
-            separator_line "="
-            content_line "\033[31m注意：\033[0m"
-            content_line "此功能存在多种风险如无网络基础请勿尝试！"
-            content_line "如需代理UDP，请确保旁路由运行了支持UDP代理的模式！"
-            content_line "如使用systemd方式启动，内核依然会空载运行，建议使用保守模式！"
-            content_line "\033[33m说明：\033[0m"
-            content_line "此功能不启动内核仅配置防火墙转发，且子设备无需额外设置网关DNS"
-            content_line "支持防火墙分流及设备过滤，支持部分定时任务，但不支持ipv6"
-            separator_line "="
+            comp_box "\033[31m注意：\033[0m" \
+                "此功能存在多种风险如无网络基础请勿尝试！" \
+                "如需代理UDP，请确保旁路由运行了支持UDP代理的模式！" \
+                "如使用systemd方式启动，内核依然会空载运行，建议使用保守模式！" \
+                "\033[33m说明：\033[0m" \
+                "此功能不启动内核仅配置防火墙转发，且子设备无需额外设置网关DNS" \
+                "支持防火墙分流及设备过滤，支持部分定时任务，但不支持ipv6"
             read -r -p "请直接输入旁路由IPV4地址> " bypass_host
             [ -n "$bypass_host" ] && {
                 firewall_area=$num
@@ -710,7 +592,6 @@ set_firewall_area() {
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -718,50 +599,35 @@ set_firewall_area() {
 
 set_firewall_vm() {
     [ -z "$vm_ipv4" ] && vm_ipv4=$(ip a 2>&1 | grep -w 'inet' | grep 'global' | grep 'brd' | grep -E 'docker|podman|virbr|vnet|ovs|vmbr|veth|vmnic|vboxnet|lxcbr|xenbr|vEthernet' | sed 's/.*inet.//g' | sed 's/ br.*$//g' | sed 's/metric.*$//g' | tr '\n' ' ')
-    line_break
-    separator_line "="
-    content_line "$VM_DETECT_DESC\033[32m$vm_ipv4\033[0m"
-    separator_line "="
-    content_line "1) \033[32m$VM_ENABLE_AUTO\033[0m"
-    content_line "2) \033[36m$VM_ENABLE_MANUAL\033[0m"
-    content_line "3) \033[31m$VM_DISABLE\033[0m"
-    content_line "0) $COMMON_BACK"
-    separator_line "="
+    comp_box "$VM_DETECT_DESC\033[32m$vm_ipv4\033[0m"
+    btm_box "1) \033[32m$VM_ENABLE_AUTO\033[0m" \
+        "2) \033[36m$VM_ENABLE_MANUAL\033[0m" \
+        "3) \033[31m$VM_DISABLE\033[0m" \
+        "" \
+        "0) $COMMON_BACK"
     read -r -p "$COMMON_INPUT> " num
-
     case "$num" in
     1)
-        line_break
-        separator_line "="
         if [ -n "$vm_ipv4" ]; then
             vm_redir=ON
-            content_line "\033[32m操作成功\033[0m"
+            common_success
         else
-            content_line "\033[33m$VM_NO_NET_DETECTED\033[0m"
+            msg_alert "\033[33m$VM_NO_NET_DETECTED\033[0m"
         fi
-        separator_line "="
-        sleep 1
+
         ;;
     2)
-        line_break
-        separator_line "="
-        content_line "$VM_INPUT_DESC_1"
-        content_line "$VM_INPUT_DESC_2 \033[32m10.88.0.0/16 172.17.0.0/16\033[0m"
-        content_line ""
-        content_line "Tips：直接回车确认可返回上级菜单"
-        separator_line "="
+        comp_box "$VM_INPUT_DESC_1" \
+            "$VM_INPUT_DESC_2 \033[32m10.88.0.0/16 172.17.0.0/16\033[0m" \
+            "" \
+            "Tips：直接回车确认可返回上级菜单"
         read -r -p "$VM_INPUT_NET> " text
         [ -n "$text" ] && vm_ipv4="$text" && vm_redir=ON
         ;;
     3)
         vm_redir=OFF
         vm_ipv4=''
-
-        line_break
-        separator_line "="
-        content_line "\033[32m操作成功\033[0m"
-        separator_line "="
-        sleep 1
+        common_success
         ;;
     *) ;;
     esac
@@ -783,10 +649,10 @@ set_ipv6() {
         separator_line "="
         content_line "1) $IPV6_REDIR：\t\033[36m$ipv6_redir\033[0m"
         [ "$disoverride" != "1" ] && content_line "2) $IPV6_DNS：\t\033[36m$ipv6_dns\033[0m"
+        content_line ""
         content_line "0) $COMMON_BACK"
         separator_line "="
         read -r -p "$COMMON_INPUT> " num
-
         case "$num" in
         "" | 0)
             break
@@ -800,26 +666,18 @@ set_ipv6() {
             fi
             setconfig ipv6_redir $ipv6_redir
             setconfig ipv6_support "$ipv6_support"
-
-            line_break
-            separator_line "="
-            content_line "\033[32m操作成功\033[0m"
-            separator_line "="
-            sleep 1
+            common_success
             ;;
         2)
             [ "$ipv6_dns" = OFF ] && ipv6_dns=ON || ipv6_dns=OFF
-            setconfig ipv6_dns "$ipv6_dns"
-
-            line_break
-            separator_line "="
-            content_line "\033[32m操作成功\033[0m"
-            separator_line "="
-            sleep 1
+            if setconfig ipv6_dns "$ipv6_dns"; then
+                common_success
+            else
+                common_failed
+            fi
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
