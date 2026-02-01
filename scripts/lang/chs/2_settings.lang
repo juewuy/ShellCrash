@@ -24,7 +24,7 @@ SET_SNIFFER_CORE_SWITCH="已自动切换至Meta内核（域名嗅探需要）"
 SET_SNIFFER_LOCKED="当前内核与DNS模式组合下，域名嗅探无法关闭！"
 
 SET_CORE_RUNNING="检测到服务正在运行，需要先停止服务！"
-SET_CORE_STOP_CONFIRM="是否确认停止服务："
+SET_CORE_STOP_CONFIRM="是否确认停止服务？"
 
 # =================================================
 # Backup / Restore / Reset
