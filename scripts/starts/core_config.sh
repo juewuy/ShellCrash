@@ -65,7 +65,7 @@ get_core_config() { #下载内核配置文件
                 exit 1
             else
                 retry=$((retry + 1))
-                logger "配置文件获取失败！" 31
+                logger "配置文件获取失败！" 31 off on
                 if [ "$retry" = 1 ]; then
                     echo -e "\033[32m尝试更新服务器列表并使用其他服务器获取配置！\033[0m"
                     update_servers
