@@ -108,9 +108,7 @@ task_add(){ #任务添加
 }
 task_del(){ #任务删除
 	#删除定时任务
-	croncmd -l > "$TMPDIR"/cron
-	sed -i "/$1/d" "$TMPDIR"/cron && croncmd "$TMPDIR"/cron
-	rm -f "$TMPDIR"/cron
+	cronset "$1"
 	#删除条件任务
 	sed -i "/$1/d" "$CRASHDIR"/task/cron 2>/dev/null
 	sed -i "/$1/d" "$CRASHDIR"/task/bfstart 2>/dev/null
@@ -214,7 +212,7 @@ task_type(){ #任务条件选择菜单
 task_manager(){ #任务管理列表
 	echo "-----------------------------------------------"
 	#抽取并生成临时列表
-	croncmd -l > "$TMPDIR"/task_cronlist
+	cronload > "$TMPDIR"/task_cronlist
 	cat "$TMPDIR"/task_cronlist "$CRASHDIR"/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | awk -F ' ' '{print $2" "$3}' > "$TMPDIR"/task_list
 	cat "$CRASHDIR"/task/bfstart "$CRASHDIR"/task/afstart "$CRASHDIR"/task/affirewall 2>/dev/null | awk -F ' ' '{print $2" "$3}' >> "$TMPDIR"/task_list
 	cat "$TMPDIR"/task_cronlist 2>/dev/null | sort -u | grep -oE " #.*" | grep -v "守护" | awk -F '#' '{print "0 旧版任务-"$2}' >> "$TMPDIR"/task_list
@@ -254,9 +252,8 @@ task_manager(){ #任务管理列表
 				read -p "旧版任务不支持管理，是否移除?(1/0) > " res
 				[ "$res" = 1 ] && {
 					cronname=$(echo $task_txt | awk -F '-' '{print $2}')
-					croncmd -l > $TMPDIR/conf && sed -i "/$cronname/d" $TMPDIR/conf && croncmd $TMPDIR/conf
-					sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
-					rm -f $TMPDIR/conf
+					cronset "$cronname"
+					sed -i "/$cronname/d" "$CRASHDIR"/task/cron 2>/dev/null
 				}
 			else
 				task_des=$(echo $task_txt | awk '{print $2}')

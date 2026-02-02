@@ -4,7 +4,7 @@ PIDFILE="/tmp/ShellCrash/$1.pid"
 
 if [ -f "$PIDFILE" ]; then
 	PID="$(cat "$PIDFILE")"
-	if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+	if [ -n "$PID" ] && [ -d "/proc/$PID" ]; then
 		return 0
 	fi
 fi

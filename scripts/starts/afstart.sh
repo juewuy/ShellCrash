@@ -33,14 +33,12 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 		sleep 5
 		logger ShellCrash服务已启动！
 	} &
-	ckcmd mtd_storage.sh && mtd_storage.sh save >/dev/null 2>&1 & #Padavan保存/etc/storage
+	ckcmd mtd_storage.sh && mtd_storage.sh save >/dev/null 2>&1 #Padavan保存/etc/storage
 	#加载定时任务
-	[ -s "$CRASHDIR"/task/cron ] && croncmd "$CRASHDIR"/task/cron
+	[ -s "$CRASHDIR"/task/cron ] && cronadd "$CRASHDIR"/task/cron
 	[ -s "$CRASHDIR"/task/running ] && {
 		cronset '运行时每'
-		while read line; do
-			cronset '2fjdi124dd12s' "$line"
-		done <"$CRASHDIR"/task/running
+		cronadd "$CRASHDIR"/task/running
 	}
 	[ "$start_old" = "ON" ] && cronset '保守模式守护进程' "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh shellcrash #ShellCrash保守模式守护进程"
 	#加载条件任务
@@ -48,7 +46,7 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 	[ -s "$CRASHDIR"/task/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
 		#注入防火墙
 		line=$(grep -En "fw.* restart" /etc/init.d/firewall | cut -d ":" -f 1)
-		sed -i.bak "${line}a\\. "$CRASHDIR"/task/affirewall" /etc/init.d/firewall
+		sed -i.bak "${line}a\\. $CRASHDIR/task/affirewall" /etc/init.d/firewall
 		line=$(grep -En "fw.* start" /etc/init.d/firewall | cut -d ":" -f 1)
 		sed -i "${line}a\\. $CRASHDIR/task/affirewall" /etc/init.d/firewall
 	} &
