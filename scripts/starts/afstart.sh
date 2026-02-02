@@ -37,8 +37,9 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 	#加载定时任务
 	[ -s "$CRASHDIR"/task/cron ] && cronadd "$CRASHDIR"/task/cron
 	[ -s "$CRASHDIR"/task/running ] && {
-		cronset '运行时每'
-		cronadd "$CRASHDIR"/task/running
+		cronload | grep -v '^$' | grep -vF "运行时每" >/tmp/cron_tmp
+		cat "$CRASHDIR"/task/running >> /tmp/cron_tmp
+		cronadd /tmp/cron_tmp
 	}
 	[ "$start_old" = "ON" ] && cronset '保守模式守护进程' "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh shellcrash #ShellCrash保守模式守护进程"
 	#加载条件任务
