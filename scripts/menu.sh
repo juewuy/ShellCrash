@@ -130,18 +130,6 @@ ckstatus() {
 	# 检查执行权限
 	[ ! -x "$CRASHDIR"/start.sh ] && chmod +x "$CRASHDIR"/start.sh
 
-	line_break
-	separator_line "="
-	content_line "\033[30;43m$MENU_WELCOME\033[0m"
-	content_line "Ver: $versionsh_l"
-	content_line "$MENU_TG_CHANNEL\033[36;4mhttps://t.me/ShellClash\033[0m"
-	separator_line "-"
-	content_line "$corename$run\t  $auto"
-	if [ -n "$PID" ]; then
-		content_line "$MENU_MEM_USED\033[44m$VmRSS\033[0m\t  $MENU_RUNNING_TIME\033[46;30m$day\033[44;37m$time\033[0m"
-	fi
-	separator_line "="
-
 	# 检查/tmp内核文件
 	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -Ev ".*(zip|7z|tar)$" | grep -iE 'CrashCore|^clash$|^clash-linux.*|^mihomo.*|^sing.*box'); do
 		comp_box "$MENU_TMP_CORE_FOUND \033[36m/tmp/$file\033[0m" \
@@ -167,7 +155,7 @@ ckstatus() {
 	# 检查/tmp配置文件
 	for file in $(ls /tmp | grep -v [/$] | grep -v ' ' | grep -iE 'config.yaml$|config.yml$|config.json$'); do
 		tmp_file=/tmp/$file
-		comp_box "$MENU_TMP_CFG_FOUND \033[36m/tmp/$file\033[0m" \
+		comp_box "$MENU_TMP_CFG_FOUND\033[36m/tmp/$file\033[0m" \
 			"$MENU_TMP_CFG_ASK"
 		btm_box "1) 立即加载" \
 			"0) 暂不加载"
@@ -191,6 +179,16 @@ ckstatus() {
 		read -p "$COMMON_INPUT> " res
 		[ "$res" = 1 ] && unset disoverride && setconfig disoverride
 	}
+
+	top_box "\033[30;43m$MENU_WELCOME\033[0m" \
+		"Ver: $versionsh_l" \
+		"$MENU_TG_CHANNEL\033[36;4mhttps://t.me/ShellClash\033[0m"
+	separator_line "-"
+	content_line "$corename$run\t  $auto"
+	if [ -n "$PID" ]; then
+		content_line "$MENU_MEM_USED\033[44m$VmRSS\033[0m\t  $MENU_RUNNING_TIME\033[46;30m$day\033[44;37m$time\033[0m"
+	fi
+	separator_line "="
 }
 
 main_menu() {
