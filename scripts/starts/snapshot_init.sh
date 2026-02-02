@@ -71,7 +71,7 @@ auto_start(){
 		set_profile '/etc/profile' 
 	}
 	#启动服务
-	if [ ! -f "$CRASHDIR"/.dis_startup ]; then
+	if [ ! -f "$CRASHDIR"/.dis_startup ] && [ ! -f "$CRASHDIR"/.start_error ]; then
 		#AX6S/AX6000修复tun功能
 		[ -s "$CRASHDIR"/tools/tun.ko ] && tunfix
 		#小米7000/小米万兆修复tproxy

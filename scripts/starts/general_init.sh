@@ -23,7 +23,7 @@ fi
 #写入环境变量
 set_profile "$profile"
 #启动进程或删除守护进程
-if [ -f "$CRASHDIR"/.dis_startup ];then
+if [ -f "$CRASHDIR"/.dis_startup ] || [ -f "$CRASHDIR"/.start_error ];then
 	cronset "保守模式守护进程"
 else
 	"$CRASHDIR"/start.sh start
