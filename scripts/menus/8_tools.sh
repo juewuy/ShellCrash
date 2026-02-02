@@ -553,10 +553,11 @@ testcommand() {
             ;;
         2)
             line_break
+            echo "==========================================================="
             netstat -ntulp | grep 53
-            separator_line "="
+            echo
             content_line "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
-            separator_line "="
+            echo "==========================================================="
             ;;
         3)
             line_break
@@ -658,7 +659,7 @@ debug() {
     content_line "6) 后台运行完整启动流程，并配置防火墙劫持，且将错误日志打印到闪存：\033[32m$CRASHDIR/debug.log\033[0m"
     content_line ""
     content_line "8) 后台运行完整启动流程,输出执行错误并查找上下文，之后关闭进程"
-    [ -s "$TMPDIR"/jsons/inbounds.json ] && content_line " 9) 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
+    [ -s "$TMPDIR"/jsons/inbounds.json ] && content_line "9) 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
     content_line ""
     content_line "0) 返回上级目录"
     separator_line "="
