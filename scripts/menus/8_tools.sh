@@ -16,17 +16,13 @@ ssh_tools() {
     while true; do
         [ -n "$(cat /etc/firewall.user 2>&1 | grep '启用外网访问SSH服务')" ] && ssh_ol=禁止 || ssh_ol=开启
         [ -z "$ssh_port" ] && ssh_port=10022
-        line_break
-        separator_line "="
-        content_line "\033[33m此功能仅针对使用Openwrt系统的设备生效，且不依赖服务\033[0m"
-        content_line "\033[31m本功能不支持红米AX6S等镜像化系统设备，请勿尝试！\033[0m"
-        separator_line "="
-        content_line "1) \033[32m修改\033[0m外网访问端口：\033[36m$ssh_port\033[0m"
-        content_line "2) \033[32m修改\033[0mSSH访问密码(请连续输入2次后回车)"
-        content_line "3) \033[33m$ssh_ol\033[0m外网访问SSH"
-        content_line ""
-        content_line "0) 返回上级菜单 \033[0m"
-        separator_line "="
+        comp_box "\033[33m此功能仅针对使用Openwrt系统的设备生效，且不依赖服务\033[0m" \
+            "\033[31m本功能不支持红米AX6S等镜像化系统设备，请勿尝试！\033[0m"
+        btm_box "1) \033[32m修改\033[0m外网访问端口：\033[36m$ssh_port\033[0m" \
+            "2) \033[32m修改\033[0mSSH访问密码(请连续输入2次后回车)" \
+            "3) \033[33m$ssh_ol\033[0m外网访问SSH" \
+            "" \
+            "0) 返回上级菜单 \033[0m"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -38,56 +34,38 @@ ssh_tools() {
             if [ -z "$num" ]; then
                 errornum
             elif [ "$num" -gt 65535 ] || [ "$num" -le 999 ]; then
-                line_break
-                separator_line "="
-                content_line "\033[31m输入错误！请输入正确的数值(1000-65535)！\033[0m"
-                separator_line "="
+                msg_alert "\033[31m输入错误！请输入正确的数值(1000-65535)！\033[0m"
             elif [ -n "$(netstat -ntul | grep :$num)" ]; then
-                line_break
-                separator_line "="
-                content_line "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
-                separator_line "="
+                msg_alert "\033[31m当前端口已被其他进程占用，请重新输入！\033[0m"
             else
                 ssh_port=$num
                 setconfig ssh_port "$ssh_port"
                 sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
                 stop_iptables
 
-                line_break
-                separator_line "="
-                content_line "\033[32m设置成功，请重新开启外网访问SSH功能！"
-                separator_line "="
+                msg_alert "\033[32m设置成功，请重新开启外网访问SSH功能！"
             fi
-            sleep 1
             ;;
         2)
             passwd
             sleep 1
             ;;
         3)
-            line_break
             if [ "$ssh_ol" = "开启" ]; then
                 iptables -w -t nat -A PREROUTING -p tcp -m multiport --dports "$ssh_port" -j REDIRECT --to-ports 22
                 [ -n "$(ckcmd ip6tables)" ] && ip6tables -w -t nat -A PREROUTING -p tcp -m multiport --dports "$ssh_port" -j REDIRECT --to-ports 22
                 echo "iptables -w -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 #启用外网访问SSH服务" >>/etc/firewall.user
                 [ -n "$(ckcmd ip6tables)" ] && echo "ip6tables -w -t nat -A PREROUTING -p tcp -m multiport --dports $ssh_port -j REDIRECT --to-ports 22 #启用外网访问SSH服务" >>/etc/firewall.user
-                separator_line "="
-                content_line "已开启外网访问SSH功能！"
-                separator_line "="
+                comp_box "已开启外网访问SSH功能！"
             else
                 sed -i "/启用外网访问SSH服务/d" /etc/firewall.user
                 stop_iptables
-
-                separator_line "="
-                content_line "已禁止外网访问SSH！"
-                separator_line "="
+                comp_box "已禁止外网访问SSH！"
             fi
             break
             ;;
         *)
             errornum
-            sleep 1
-            break
             ;;
         esac
     done
@@ -100,15 +78,11 @@ tools() {
         grep -qE "^\s*[^#].*otapredownload" /etc/crontabs/root >/dev/null 2>&1 && mi_update=禁用 || mi_update=启用
         [ "$mi_mi_autoSSH" = "已配置" ] && mi_mi_autoSSH_type=32m已配置 || mi_mi_autoSSH_type=31m未配置
         [ -f "$CRASHDIR"/tools/tun.ko ] && mi_tunfix=32mON || mi_tunfix=31mOFF
-
-        line_break
-        separator_line "="
-        content_line "\033[30;47m工具与优化\033[0m"
-        separator_line "="
-        content_line "\033[33m本页工具可能无法兼容全部Linux设备，请酌情使用！\033[0m"
-        content_line "磁盘占用/所在目录："
-        content_line "$(du -sh "$CRASHDIR")"
-        separator_line "="
+        comp_box "\033[30;47m工具与优化\033[0m" \
+            "" \
+            "\033[33m本页工具可能无法兼容全部Linux设备，请酌情使用！\033[0m" \
+            "磁盘占用/所在目录：" \
+            "$(du -sh "$CRASHDIR")"
         content_line "1) ShellCrash\033[33m测试菜单\033[0m"
         content_line "2) ShellCrash\033[32m新手引导\033[0m"
         content_line "3) \033[36m日志及推送工具\033[0m"
@@ -149,21 +123,14 @@ tools() {
                         sed -i "/^\s*#.*otapredownload/ s/^\s*#//" /etc/crontabs/root ||
                         echo "15 3,4,5 * * * /usr/sbin/otapredownload >/dev/null 2>&1" >>/etc/crontabs/root
                 fi
-                line_break
-                separator_line "="
-                content_line "已\033[33m$mi_update\033[0m小米路由器的自动更新，如未生效，请在官方APP中同步设置！"
-                separator_line "="
-                sleep 1
+                msg_alert "已\033[33m$mi_update\033[0m小米路由器的自动更新，如未生效，请在官方APP中同步设置！"
             fi
             ;;
         6)
             if [ "$systype" = "mi_snapshot" ]; then
                 mi_autoSSH
             else
-                line_break
-                separator_line "="
-                content_line "不支持的设备！"
-                separator_line "="
+                msg_alert "不支持的设备！"
             fi
             ;;
         7)
@@ -185,29 +152,20 @@ tools() {
             sleep 1
             ;;
         8)
-            line_break
-            separator_line "="
             if [ -f "$CRASHDIR"/tools/tun.ko ]; then
-                content_line "是否禁用此功能并移除相关补丁："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否禁用此功能并移除相关补丁？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 [ "$res" = 1 ] && {
                     rm -rf "$CRASHDIR"/tools/tun.ko
-                    line_break
-                    separator_line "="
-                    content_line "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
-                    separator_line "="
+                    msg_alert "\033[33m补丁文件已移除，请立即重启设备以防止出错！\033[0m"
                 }
             elif ckcmd modinfo && [ -z "$(modinfo tun)" ]; then
-                content_line "\033[33m本功能需要修改系统文件，不保证没有任何风险！\033[0m"
-                content_line "\033[33m本功能采集的Tun模块并不一定适用于你的设备！\033[0m"
-                separator_line "="
-                content_line "1) 我已知晓，出现问题会自行承担！"
-                content_line "0) 返回上级菜单"
-                separator_line "="
+                comp_box "\033[33m本功能需要修改系统文件，不保证没有任何风险！\033[0m" \
+                    "\033[33m本功能采集的Tun模块并不一定适用于你的设备！\033[0m"
+                btm_box "1) 我已知晓，出现问题会自行承担！" \
+                    "0) 返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
                     line_break
@@ -226,28 +184,21 @@ tools() {
                     continue
                 fi
             else
-                content_line "\033[31m当前设备无需设置，请勿尝试！\033[0m"
-                separator_line "="
-                sleep 1
+                msg_alert "\033[31m当前设备无需设置，请勿尝试！\033[0m"
             fi
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
 }
 
 mi_autoSSH() {
-    line_break
-    separator_line "="
-    content_line "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m"
-    content_line "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
-    content_line ""
-    content_line "请输入需要还原的SSH密码（不影响当前密码）"
-    content_line "（回车可跳过）"
-    separator_line "="
+    comp_box "\033[33m本功能使用软件命令进行固化不保证100%成功！\033[0m" \
+        "\033[33m如有问题请加群反馈：\033[36;4mhttps://t.me/ShellClash\033[0m"
+    btm_box "请输入需要还原的SSH密码（不影响当前密码）" \
+        "（回车可跳过）"
     read -r -p "请输入> " mi_mi_autoSSH_pwd
     mi_mi_autoSSH=已配置
     cp -f /etc/dropbear/dropbear_rsa_host_key "$CRASHDIR"/configs/dropbear_rsa_host_key 2>/dev/null
@@ -259,13 +210,9 @@ mi_autoSSH() {
         nvram set boot_wait=on
         nvram commit
     }
-    line_break
-    separator_line "="
-    content_line "\033[32m设置成功！\033[0m"
-    separator_line "="
     setconfig mi_mi_autoSSH $mi_mi_autoSSH
     setconfig mi_mi_autoSSH_pwd "$mi_mi_autoSSH_pwd"
-    sleep 1
+    msg_alert "\033[32m设置成功！\033[0m"
 }
 
 # 日志菜单
@@ -280,37 +227,30 @@ log_pusher() {
         [ -n "$push_Gotify" ] && stat_Gotify=32mON || stat_Gotify=33mOFF
         [ "$task_push" = 1 ] && stat_task=32mON || stat_task=33mOFF
         [ -n "$device_name" ] && device_s=32m$device_name || device_s=33m未设置
-        line_break
-        separator_line "="
-        content_line "1) Telegram推送	——\033[$stat_TG\033[0m"
-        content_line "2) PushDeer推送	——\033[$stat_Deer\033[0m"
-        content_line "3) Bark推送-IOS	——\033[$stat_bark\033[0m"
-        content_line "4) Passover推送	——\033[$stat_Po\033[0m"
-        content_line "5) PushPlus推送	——\033[$stat_PP\033[0m"
-        content_line "6) SynoChat推送	——\033[$stat_SynoChat\033[0m"
-        content_line "7) Gotify推送	        ——\033[$stat_Gotify\033[0m"
-        content_line ""
-        content_line "a) 查看\033[36m运行日志\033[0m"
-        content_line "b) 推送任务日志	——\033[$stat_task\033[0m"
-        content_line "c) 设置设备名称	——\033[$device_s\033[0m"
-        content_line "d) 清空日志文件"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        comp_box "1) Telegram推送	——\033[$stat_TG\033[0m" \
+            "2) PushDeer推送	——\033[$stat_Deer\033[0m" \
+            "3) Bark推送-IOS	——\033[$stat_bark\033[0m" \
+            "4) Passover推送	——\033[$stat_Po\033[0m" \
+            "5) PushPlus推送	——\033[$stat_PP\033[0m" \
+            "6) SynoChat推送	——\033[$stat_SynoChat\033[0m" \
+            "7) Gotify推送	        ——\033[$stat_Gotify\033[0m" \
+            "" \
+            "a) 查看\033[36m运行日志\033[0m" \
+            "b) 推送任务日志	——\033[$stat_task\033[0m" \
+            "c) 设置设备名称	——\033[$device_s\033[0m" \
+            "d) 清空日志文件" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
             break
             ;;
         1)
-            line_break
-            separator_line "="
             if [ -n "$push_TG" ]; then
-                content_line "是否确认关闭TG日志推送："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否确认关闭TG日志推送？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
                     push_TG=
@@ -324,10 +264,10 @@ log_pusher() {
                 # echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
                 . "$CRASHDIR"/menus/bot_tg_bind.sh
                 chose_bot() {
-                    content_line "1) 使用公共机器人	——不依赖内核服务"
-                    content_line "2) 使用私人机器人	——需要额外申请"
-                    content_line "0) 返回上级菜单"
-                    separator_line "="
+                    comp_box "1) 使用公共机器人	——不依赖内核服务" \
+                        "2) 使用私人机器人	——需要额外申请" \
+                        "" \
+                        "0) 返回上级菜单"
                     read -r -p "请输入对应标号> " num
                     case "$num" in
                     0)
@@ -350,14 +290,10 @@ log_pusher() {
             fi
             ;;
         2)
-            line_break
-            separator_line "="
             if [ -n "$push_Deer" ]; then
-                content_line "是否确认关闭PushDeer日志推送："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否确认关闭PushDeer日志推送？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
                     push_Deer=
@@ -367,14 +303,12 @@ log_pusher() {
                 fi
             else
                 # echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-                content_line "1. 请先前往 \033[32;4mhttp://www.pushdeer.com/official.html\033[0m 扫码安装快应用或下载APP"
-                content_line "2. 打开快应用/APP，并完成登陆"
-                content_line "3. \033[33m切换到「设备」标签页，点击右上角的加号，注册当前设备\033[0m"
-                content_line "4. \033[36m切换到「秘钥」标签页，点击右上角的加号，创建一个秘钥，并复制\033[0m"
-                separator_line "="
-                content_line "请直接输入你复制的秘钥"
-                content_line "或输入 0 返回上级菜单"
-                separator_line "="
+                comp_box "1. 请先前往 \033[32;4mhttp://www.pushdeer.com/official.html\033[0m 扫码安装快应用或下载APP" \
+                    "2. 打开快应用/APP，并完成登陆" \
+                    "3. \033[33m切换到「设备」标签页，点击右上角的加号，注册当前设备\033[0m" \
+                    "4. \033[36m切换到「秘钥」标签页，点击右上角的加号，创建一个秘钥，并复制\033[0m"
+                btm_box "\033[36m请直接输入你复制的秘钥\033[0m" \
+                    "或输入 0 返回上级菜单"
                 read -r -p "请输入> " url
                 if [ "$url" = 0 ]; then
                     continue
@@ -383,25 +317,16 @@ log_pusher() {
                     setconfig push_Deer "$url"
                     logger "已完成PushDeer日志推送设置！" 32
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m输入错误，请重新输入！\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m输入错误，请重新输入！\033[0m"
                 fi
-                sleep 1
             fi
             ;;
         3)
-            line_break
-            separator_line "="
             if [ -n "$push_bark" ]; then
-                content_line "是否确认关闭Bark日志推送："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否确认关闭Bark日志推送？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
-
                 if [ "$res" = 1 ]; then
                     push_bark=
                     bark_param=
@@ -412,12 +337,10 @@ log_pusher() {
                 fi
             else
                 # echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-                content_line "\033[33mBark推送仅支持IOS系统，其他平台请使用其他推送方式！\033[0m"
-                content_line "\033[32m请安装Bark-IOS客户端，并在客户端中找到专属推送链接\033[0m"
-                separator_line "="
-                content_line "请直接输入你的Bark推送链接"
-                content_line "或输入 0 返回上级菜单"
-                separator_line "="
+                comp_box "\033[33mBark推送仅支持IOS系统，其他平台请使用其他推送方式！\033[0m" \
+                    "\033[32m请安装Bark-IOS客户端，并在客户端中找到专属推送链接\033[0m"
+                btm_box "\033[36m请直接输入你的Bark推送链接\033[0m" \
+                    "或输入 0 返回上级菜单"
                 read -r -p "请输入> " url
                 if [ "$url" = 0 ]; then
                     continue
@@ -426,25 +349,16 @@ log_pusher() {
                     setconfig push_bark "$url"
                     logger "已完成Bark日志推送设置！" 32
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m输入错误，请重新输入！\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m输入错误，请重新输入！\033[0m"
                 fi
-                sleep 1
             fi
             ;;
         4)
-            line_break
-            separator_line "="
             if [ -n "$push_Po" ]; then
-                content_line "是否确认关闭Pushover日志推送："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否确认关闭Pushover日志推送？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
-
                 if [ "$res" = 1 ]; then
                     push_Po=
                     push_Po_key=
@@ -455,11 +369,10 @@ log_pusher() {
                 fi
             else
                 # echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-                content_line "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m"
-                content_line ""
-                content_line "请直接请输入你的User Key"
-                content_line "或输入 0 返回上级菜单"
-                separator_line "="
+                comp_box "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m" \
+                    "" \
+                    "\033[33m请直接请输入你的User Key\033[0m" \
+                    "或输入 0 返回上级菜单"
                 read -r -p "请输入> " key
                 if [ "$key" = 0 ]; then
                     continue
@@ -470,10 +383,7 @@ log_pusher() {
                     read -r -p "我已经验证完成(1/0)> "
                     separator_line "="
 
-                    line_break
-                    separator_line "="
-                    content_line "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
-                    separator_line "="
+                    comp_box "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
                     read -r -p "请输入你的API Token> " Token
                     if [ -n "$Token" ]; then
                         push_Po=$Token
@@ -482,29 +392,18 @@ log_pusher() {
                         setconfig push_Po_key "$key"
                         logger "已完成Passover日志推送设置！" 32
                     else
-                        line_break
-                        separator_line "="
-                        content_line "\033[31m输入错误，请重新输入！\033[0m"
-                        separator_line "="
+                        msg_alert "\033[31m输入错误，请重新输入！\033[0m"
                     fi
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m输入错误，请重新输入！\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m输入错误，请重新输入！\033[0m"
                 fi
-                sleep 1
             fi
             ;;
         5)
-            line_break
-            separator_line "="
             if [ -n "$push_PP" ]; then
-                content_line "是否确认关闭PushPlus日志推送："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否确认关闭PushPlus日志推送？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
                     push_PP=
@@ -514,11 +413,9 @@ log_pusher() {
                 fi
             else
                 # echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
-                content_line "请先通过 \033[32;4mhttps://www.pushplus.plus/push1.html\033[0m 注册账号并获取\033[36mtoken\033[0m"
-                separator_line "="
-                content_line "请直接输入你的token"
-                content_line "或输入 0 返回上级菜单"
-                separator_line "="
+                comp_box "请先通过 \033[32;4mhttps://www.pushplus.plus/push1.html\033[0m 注册账号并获取\033[36mtoken\033[0m"
+                btm_box "\033[36m请直接输入你的token\033[0m" \
+                    "或输入 0 返回上级菜单"
                 read -r -p "请输入> " Token
                 if [ "$Token" = 0 ]; then
                     continue
@@ -527,23 +424,15 @@ log_pusher() {
                     setconfig push_PP "$Token"
                     logger "已完成PushPlus日志推送设置！" 32
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m输入错误，请重新输入！\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m输入错误，请重新输入！\033[0m"
                 fi
-                sleep 1
             fi
             ;;
         6)
-            line_break
             if [ -n "$push_SynoChat" ]; then
-                separator_line "="
-                content_line "是否确认关闭SynoChat日志推送："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否确认关闭SynoChat日志推送？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
                     push_SynoChat=
@@ -552,15 +441,11 @@ log_pusher() {
                     continue
                 fi
             else
+                line_break
                 read -r -p "请输入你的Synology DSM主页地址> " URL
                 line_break
-
                 read -r -p "请输入你的Synology Chat Token> " TOKEN
-
-                line_break
-                separator_line "="
-                content_line '请通过"你的群晖地址/webapi/entry.cgi?api=SYNO.Chat.External&method=user_list&version=2&token=你的TOKEN"获取user_id'
-                separator_line "="
+                comp_box '请通过"你的群晖地址/webapi/entry.cgi?api=SYNO.Chat.External&method=user_list&version=2&token=你的TOKEN"获取user_id'
                 read -r -p "请输入你的user_id> " USERID
                 if [ -n "$URL" ]; then
                     push_SynoChat=$USERID
@@ -576,24 +461,16 @@ log_pusher() {
                     push_SynoChat=
                     setconfig push_SynoChat
 
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m输入错误，请重新输入！\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m输入错误，请重新输入！\033[0m"
                 fi
-                sleep 1
             fi
             ;;
         # 在menu.sh的case $num in代码块中添加
         7)
-            line_break
-            separator_line "="
             if [ -n "$push_Gotify" ]; then
-                content_line "是否确认关闭Gotify日志推送："
-                separator_line "="
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                comp_box "是否确认关闭Gotify日志推送？"
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 if [ "$res" = 1 ]; then
                     push_Gotify=
@@ -602,12 +479,10 @@ log_pusher() {
                     continue
                 fi
             else
-                content_line "请先通过Gotify服务器获取推送URL"
-                content_line "格式示例: https://gotify.example.com/message?token=你的应用令牌"
-                content_line ""
-                content_line "请直接你的Gotify推送URL"
-                content_line "或输入 0 返回上级菜单"
-                separator_line "="
+                comp_box "请先通过Gotify服务器获取推送URL" \
+                    "格式示例: https://gotify.example.com/message?token=你的应用令牌"
+                btm_box "\033[36m请直接你的Gotify推送URL\033[0m" \
+                    "或输入 0 返回上级菜单"
                 read -r -p "请输入> " url
                 if [ "$url" = 0 ]; then
                     continue
@@ -616,24 +491,20 @@ log_pusher() {
                     setconfig push_Gotify "$url"
                     logger "已完成Gotify日志推送设置！" 32
                 else
-                    line_break
-                    separator_line "="
-                    content_line "\033[31m输入错误，请重新输入！\033[0m"
-                    separator_line "="
+                    msg_alert "\033[31m输入错误，请重新输入！\033[0m"
                 fi
-                sleep 1
             fi
             ;;
         a)
-            line_break
             if [ -s "$TMPDIR"/ShellCrash.log ]; then
+                line_break
+                echo "==========================================================="
                 cat "$TMPDIR"/ShellCrash.log
+                echo ""
+                echo "==========================================================="
             else
-                separator_line "="
-                content_line "\033[31m未找到相关日志！\033[0m"
-                separator_line "="
+                msg_alert "\033[31m未找到相关日志！\033[0m"
             fi
-            sleep 1
             ;;
         b)
             [ "$task_push" = 1 ] && task_push='' || task_push=1
@@ -641,11 +512,8 @@ log_pusher() {
             sleep 1
             ;;
         c)
-            line_break
-            separator_line "="
-            content_line "请直接输入本设备自定义推送名称"
-            content_line "或直接回车确认返回上级菜单"
-            separator_line "="
+            comp_box "请直接输入本设备自定义推送名称" \
+                "或直接回车确认返回上级菜单"
             read -r -p "请输入> " device_name
             if [ -n "$device_name" ]; then
                 setconfig device_name "$device_name"
@@ -653,15 +521,10 @@ log_pusher() {
             ;;
         d)
             rm -rf "$TMPDIR"/ShellCrash.log
-            line_break
-            separator_line "="
-            content_line "\033[33m运行日志及任务日志均已清空！\033[0m"
-            separator_line "="
-            sleep 1
+            msg_alert "\033[33m运行日志及任务日志均已清空！\033[0m"
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
@@ -670,20 +533,16 @@ log_pusher() {
 # 测试菜单
 testcommand() {
     while true; do
-        line_break
-        separator_line "="
-        content_line "\033[30;47m这里是测试命令菜单\033[0m"
-        content_line "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
-        separator_line "="
-        content_line "1) Debug模式运行内核"
-        content_line "2) 查看系统DNS端口(:53)占用 "
-        content_line "3) 测试ssl加密(aes-128-gcm)跑分"
-        content_line "4) 查看ShellCrash相关路由规则"
-        content_line "5) 查看内核配置文件前40行"
-        content_line "6) 测试代理服务器连通性(google.tw)"
-        content_line ""
-        content_line "0) 返回上级目录"
-        separator_line "="
+        comp_box "\033[30;47m这里是测试命令菜单\033[0m" \
+            "\033[33m如遇问题尽量运行相应命令后截图提交issue或TG讨论组\033[0m"
+        btm_box "1) Debug模式运行内核" \
+            "2) 查看系统DNS端口(:53)占用 " \
+            "3) 测试ssl加密(aes-128-gcm)跑分" \
+            "4) 查看ShellCrash相关路由规则" \
+            "5) 查看内核配置文件前40行" \
+            "6) 测试代理服务器连通性(google.tw)" \
+            "" \
+            "0) 返回上级目录"
         read -r -p "请输入对应数字> " num
         case "$num" in
         0)
@@ -691,7 +550,6 @@ testcommand() {
             ;;
         1)
             debug
-            testcommand
             ;;
         2)
             line_break
@@ -699,12 +557,10 @@ testcommand() {
             separator_line "="
             content_line "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
             separator_line "="
-            line_break
             ;;
         3)
             line_break
             openssl speed -multi 4 -evp aes-128-gcm
-            line_break
             ;;
         4)
             line_break
@@ -756,19 +612,14 @@ testcommand() {
                 echo "----------------本机防火墙---------------------"
                 iptables -L INPUT --line-numbers
             fi
-            line_break
             ;;
         5)
             echo "$crashcore" | grep -q 'singbox' && config_path="$CRASHDIR"/jsons/config.json || config_path="$CRASHDIR"/yamls/config.yaml
             line_break
             sed -n '1,40p' "$config_path"
-            line_break
             ;;
         6)
-            line_break
-            separator_line "="
-            content_line "\033[33m注意：依赖curl（不支持wget），且测试结果不保证一定准确！\033[0m"
-            separator_line "="
+            comp_box "\033[33m注意：依赖curl（不支持wget），且测试结果不保证一定准确！\033[0m"
             delay=$(
                 curl -kx ${authentication}@127.0.0.1:$mix_port -o /dev/null -s -w '%{time_starttransfer}' 'https://google.tw' &
                 {
@@ -795,21 +646,18 @@ testcommand() {
 
 debug() {
     echo "$crashcore" | grep -q 'singbox' && config_tmp="$TMPDIR"/jsons || config_tmp="$TMPDIR"/config.yaml
-    line_break
-    separator_line "="
-    content_line "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m"
-    content_line "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m"
-    content_line "如长时间运行后台监测，日志等级推荐error！防止文件过大！"
-    content_line "你亦可通过：\033[33mcrash -s debug 'warning'\033[0m命令使用其他日志等级"
-    separator_line "="
+    comp_box "\033[36m注意：Debug运行均会停止原本的内核服务\033[0m" \
+        "后台运行日志地址：\033[32m$TMPDIR/debug.log\033[0m" \
+        "如长时间运行后台监测，日志等级推荐error！防止文件过大！" \
+        "你亦可通过：\033[33mcrash -s debug 'warning'\033[0m命令使用其他日志等级"
     content_line "1) 仅测试\033[32m$config_tmp\033[0m配置文件可用性"
     content_line "2) 前台运行\033[32m$config_tmp\033[0m配置文件,不配置防火墙劫持(\033[33m使用Ctrl+C手动停止\033[0m)"
-    content_line "3) 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[31merror\033[0m"
-    content_line "4) 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[32minfo\033[0m"
-    content_line "5) 后台运行完整启动流程,并配置防火墙劫持,日志等级:\033[33mdebug\033[0m"
-    content_line "6) 后台运行完整启动流程,并配置防火墙劫持,且将错误日志打印到闪存：\033[32m$CRASHDIR/debug.log\033[0m"
+    content_line "3) 后台运行完整启动流程，并配置防火墙劫持，日志等级：\033[31merror\033[0m"
+    content_line "4) 后台运行完整启动流程，并配置防火墙劫持，日志等级：\033[32minfo\033[0m"
+    content_line "5) 后台运行完整启动流程，并配置防火墙劫持，日志等级：\033[33mdebug\033[0m"
+    content_line "6) 后台运行完整启动流程，并配置防火墙劫持，且将错误日志打印到闪存：\033[32m$CRASHDIR/debug.log\033[0m"
     content_line ""
-    content_line "8) 后台运行完整启动流程,输出执行错误并查找上下文,之后关闭进程"
+    content_line "8) 后台运行完整启动流程,输出执行错误并查找上下文，之后关闭进程"
     [ -s "$TMPDIR"/jsons/inbounds.json ] && content_line " 9) 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
     content_line ""
     content_line "0) 返回上级目录"
@@ -855,15 +703,10 @@ debug() {
         main_menu
         ;;
     6)
-        line_break
-        separator_line "="
-        content_line "频繁写入闪存会导致闪存寿命降低，如非遇到会导致设备死机或重启的bug，请勿使用此功能！"
-        separator_line "="
-        content_line "是否继续："
-        separator_line "-"
-        content_line "1) 是"
-        content_line "0) 否"
-        separator_line "="
+        comp_box "频繁写入闪存会导致闪存寿命降低，如非遇到会导致设备死机或重启的bug，请勿使用此功能！" \
+            "是否确认启用此功能？"
+        btm_box "1) 是" \
+            "0) 否"
         read -r -p "请输入对应标号> " res
         if [ "$res" = 1 ]; then
             "$CRASHDIR"/start.sh debug debug flash
@@ -876,9 +719,7 @@ debug() {
         ;;
     9)
         . "$CRASHDIR"/libs/core_webget.sh && core_find && "$TMPDIR"/CrashCore merge "$TMPDIR"/debug.json -C "$TMPDIR"/jsons && line_break
-        separator_line "="
-        content_line"\033[32m合并成功！\033[0m"
-        separator_line "="
+        comp_box "\033[32m合并成功！\033[0m"
         [ "$TMPDIR" = "$BINDIR" ] && rm -rf "$TMPDIR"/CrashCore
         main_menu
         ;;
