@@ -71,16 +71,36 @@ webget(){
 		[ "$3" = "echooff" ] && progress='-s' || progress='-#'
 		[ "$4" = "rediroff" ] && redirect='' || redirect='-L'
 		[ "$5" = "skipceroff" ] && certificate='' || certificate='-k'
+		
+		# 判断是否启用手搓进度条
+		has_cl=$(echo "$header" | grep -iq 'Content-Length' && echo "yes")
+		[ "$3" != "echooff" ] && [ "$has_cl" != "yes" ] && [ "$fsize_raw" -gt 0 ] && use_manual_bar="yes"
+
+		auth_arg=""
 		if curl --version | grep -q '^curl 8.' && ckcmd base64; then
 			auth_b64=$(printf '%s' "$authentication" | base64)
-			result=$(curl $agent -w '%{http_code}' --connect-timeout 3 --proxy-header "Proxy-Authorization: Basic $auth_b64" $progress $redirect $certificate -o "$1" "$url")
-		else
-			result=$(curl $agent -w '%{http_code}' --connect-timeout 3 $progress $redirect $certificate -o "$1" "$url")
+			[ -n "$auth_b64" ] && auth_arg="--proxy-header Proxy-Authorization:Basic $auth_b64"
 		fi
+
+		# 第一次下载
+		if [ "$use_manual_bar" = "yes" ]; then
+			result=$(execute_curl "$1" "$url" "$fsize_raw" "$agent $auth_arg")
+		else
+			result=$(curl $agent $auth_arg -w '%{http_code}' --connect-timeout 3 $progress $redirect $certificate -o "$1" "$url")
+		fi
+
 		[ "$result" = "200" ] && return 0 #成功则退出否则重试
+
+		# Fallback 重试
+		[ "$3" != "echooff" ] && echo "下载源异常(HTTP $result)，切换原始链接..."
 		export https_proxy=""
-		export http_proxy=""
-		result=$(curl $agent -w '%{http_code}' --connect-timeout 5 $progress $redirect $certificate -o "$1" "$2")
+        export http_proxy=""
+		
+		if [ "$use_manual_bar" = "yes" ]; then
+			result=$(execute_curl "$1" "$2" "$fsize_raw" "$agent")
+		else
+			result=$(curl $agent -w '%{http_code}' --connect-timeout 5 $progress $redirect $certificate -o "$1" "$2")
+		fi
 		[ "$result" = "200" ]
 		return $?
 	elif ckcmd wget;then
