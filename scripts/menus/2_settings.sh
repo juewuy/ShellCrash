@@ -203,7 +203,7 @@ settings() {
             exit 0
             ;;
         b)
-            comp_box "1) 简体中文"
+            comp_box "1) 简体中文" \
             "2) English" \
                 "" \
                 "0) $COMMON_BACK"

@@ -180,8 +180,7 @@ ckstatus() {
 		[ "$res" = 1 ] && unset disoverride && setconfig disoverride
 	}
 
-	top_box "\033[30;43m$MENU_WELCOME\033[0m" \
-		"Ver: $versionsh_l" \
+	top_box "\033[30;43m$MENU_WELCOME\033[0m\t\t  Ver: $versionsh_l" \
 		"$MENU_TG_CHANNEL\033[36;4mhttps://t.me/ShellClash\033[0m"
 	separator_line "-"
 	content_line "$corename$run\t  $auto"

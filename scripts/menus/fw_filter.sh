@@ -345,7 +345,7 @@ fw_filter_lan() {
     add_ip() {
         while true; do
             comp_box "手动输入时仅支持 \033[32m192.168.1.0/24\033[0m 或 \033[32m192.168.1.0\033[0m 的形式" \
-                "不支持ipv6地址过滤，如有需求请使用mac地址过滤"
+                "不支持ipv6地址过滤，可能导致过滤失败，建议使用mac地址过滤"
             content_line "已添加的IP地址（段）："
             content_line ""
             if [ -s "$CRASHDIR/configs/ip_filter" ]; then
