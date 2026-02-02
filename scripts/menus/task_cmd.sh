@@ -14,7 +14,11 @@ task_logger(){
 	[ "$task_push" = 1 ] && push= || push=off
 	[ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
 	[ "$3" = 'off' ] && push=off
-	echo "$1" |grep -qE '(每隔|时每)([1-9]|[1-9][0-9])分钟' || logger "$1" 0 "$push"
+	echo "$1" |grep -qE '(每隔|时每)([1-9]|[1-9][0-9])分钟' && {
+		push=off
+		cover=on
+	}
+	logger "$1" 0 "$push" "$cover"
 }
 
 #任务命令
@@ -31,7 +35,7 @@ update_core(){ #自动更新内核
 		task_logger "任务【自动更新内核】中止-未检测到版本更新"
 		return 0
 	else
-		. "$CRASHDIR"/libs/core_webget.sh && core_webget #调用下载工具
+		. "$CRASHDIR"/libs/core_tools.sh && core_webget #调用下载工具
 		case "$?" in
 		0)
 			task_logger "任务【自动更新内核】下载完成，正在重启服务！"
@@ -57,18 +61,18 @@ update_scripts(){ #自动更新脚本
 		task_logger "任务【自动更新脚本】中止-未检测到版本更新"
 		return 0
 	else
-		get_bin "$TMPDIR"/clashfm.tar.gz "bin/update.tar.gz"
+		get_bin "$TMPDIR"/ShellCrash.tar.gz "ShellCrash.tar.gz"
 		if [ "$?" != "0" ];then
-			rm -rf "$TMPDIR"/clashfm.tar.gz
+			rm -rf "$TMPDIR"/ShellCrash.tar.gz
 			task_logger "任务【自动更新内核】出错-下载失败！"
 			return 1
 		else
 			#停止服务
 			"$CRASHDIR"/start.sh stop
 			#解压
-			tar -zxf "$TMPDIR"/clashfm.tar.gz ${tar_para} -C "$CRASHDIR"/
+			tar -zxf "$TMPDIR"/ShellCrash.tar.gz ${tar_para} -C "$CRASHDIR"/
 			if [ $? -ne 0 ];then
-				rm -rf "$TMPDIR"/clashfm.tar.gz
+				rm -rf "$TMPDIR"/ShellCrash.tar.gz
 				task_logger "任务【自动更新内核】出错-解压失败！"
 				"$CRASHDIR"/start.sh start
 				return 1
@@ -115,7 +119,7 @@ reset_firewall(){ #重设透明路由防火墙
 	"$CRASHDIR"/start.sh afstart
 }
 ntp(){
-	[ "$crashcore" != singbox ] && ckcmd ntpd && ntpd -n -q -p 203.107.6.88 >/dev/null 2>&1 || exit 0
+	ckcmd ntpd && ntpd -n -q -p 203.107.6.88 >/dev/null 2>&1 || exit 0
 }
 web_save_auto(){
 	. "$CRASHDIR"/libs/web_save.sh && web_save

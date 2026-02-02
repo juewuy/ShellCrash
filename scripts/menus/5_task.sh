@@ -187,9 +187,7 @@ task_add() {
 # 任务删除
 task_del() {
     # 删除定时任务
-    croncmd -l >"$TMPDIR"/cron
-    sed -i "/$1/d" "$TMPDIR"/cron && croncmd "$TMPDIR"/cron
-    rm -f "$TMPDIR"/cron
+    cronset "$1"
     # 删除条件任务
     sed -i "/$1/d" "$CRASHDIR"/task/cron 2>/dev/null
     sed -i "/$1/d" "$CRASHDIR"/task/bfstart 2>/dev/null
@@ -312,7 +310,7 @@ task_manager() {
         line_break
         separator_line "="
         # 抽取并生成临时列表
-        croncmd -l >"$TMPDIR"/task_cronlist
+        cronload >"$TMPDIR"/task_cronlist
         cat "$TMPDIR"/task_cronlist "$CRASHDIR"/task/running 2>/dev/null | sort -u | grep -oE "task/task.sh .*" | cut -d ' ' -f 2- >"$TMPDIR"/task_list
         cat "$CRASHDIR"/task/bfstart "$CRASHDIR"/task/afstart "$CRASHDIR"/task/affirewall 2>/dev/null | cut -d ' ' -f 2- >>"$TMPDIR"/task_list
         cat "$TMPDIR"/task_cronlist 2>/dev/null | sort -u | grep -oE " #.*" | grep -v "守护" | awk -F '#' '{print "0 旧版任务-"$2}' >>"$TMPDIR"/task_list
@@ -368,9 +366,8 @@ task_manager() {
                     read -r -p "请输入对应标号> " res
                     if [ "$res" = 1 ]; then
                         cronname=$(echo "$task_txt" | awk -F '-' '{print $2}')
-                        croncmd -l >"$TMPDIR"/conf && sed -i "/$cronname/d" "$TMPDIR"/conf && croncmd "$TMPDIR"/conf
-                        sed -i "/$cronname/d" $clashdir/tools/cron 2>/dev/null
-                        rm -f "$TMPDIR"/conf
+                        cronset "$cronname"
+                        sed -i "/$cronname/d" "$CRASHDIR"/task/cron 2>/dev/null
 
                         break
                     fi
