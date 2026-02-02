@@ -1,6 +1,6 @@
 # ===== 通用提示 =====
 
-MENU_RESTART_NOTICE="检测到配置变更，是否立即重启服务以应用新配置："
+MENU_RESTART_NOTICE="检测到配置变更，是否立即重启服务以应用新配置？"
 
 MENU_PORT_CONFLICT_TITLE="检测到端口被以下进程占用！内核可能无法正常启动！"
 MENU_PORT_CONFLICT_HINT="请修改默认端口配置！"
@@ -12,7 +12,7 @@ MENU_CORE_REMOVED="内核文件已移除，请认真检查后重新上传！"
 MENU_CFG_LOADED_OK="配置文件加载完成！"
 
 MENU_OVERRIDE_WARN="你已经禁用了配置文件覆写功能，这会导致大量脚本功能无法使用！"
-MENU_OVERRIDE_ASK="是否取消禁用："
+MENU_OVERRIDE_ASK="是否取消禁用？"
 
 # ===== 欢迎与状态 =====
 MENU_WELCOME="欢迎使用ShellCrash！"
@@ -36,10 +36,10 @@ MENU_TG_CHANNEL="TG频道："
 
 # ===== /tmp 文件检测 =====
 MENU_TMP_CORE_FOUND="发现可用的内核文件："
-MENU_TMP_CORE_ASK="是否立即加载该内核（会停止当前服务）："
+MENU_TMP_CORE_ASK="是否立即加载该内核（会停止当前服务）？"
 
 MENU_TMP_CFG_FOUND="发现内核配置文件："
-MENU_TMP_CFG_ASK="是否立即加载为配置文件："
+MENU_TMP_CFG_ASK="是否立即加载为配置文件？"
 
 MENU_MAIN_1="启动/重启服务"
 MENU_MAIN_2="功能设置"
