@@ -556,7 +556,7 @@ testcommand() {
             echo "==========================================================="
             netstat -ntulp | grep 53
             echo
-            content_line "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
+            echo -e "可以使用\033[44m netstat -ntulp |grep xxx \033[0m来查询任意(xxx)端口"
             echo "==========================================================="
             ;;
         3)
