@@ -75,7 +75,7 @@ auto_start(){
 		#AX6S/AX6000修复tun功能
 		[ -s "$CRASHDIR"/tools/tun.ko ] && tunfix
 		#小米7000/小米万兆修复tproxy
-		[ -f /etc/init.d/qca-nss-ecm ] && [ "$redir_mod" = 'Tproxy' ] && tproxyfix
+		[ -f /etc/init.d/qca-nss-ecm ] && echo "$redir_mod" | grep -q 'Tproxy' && tproxyfix
 		#自动覆盖根证书文件
 		[ -s "$CRASHDIR"/tools/ca-certificates.crt ] && cp -f "$CRASHDIR"/tools/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 		#启动服务
