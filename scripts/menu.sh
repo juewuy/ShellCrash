@@ -194,17 +194,17 @@ main_menu() {
 	while true; do
 		ckstatus
 
-		content_line "1) \033[32m$MENU_MAIN_1\033[0m"
-		content_line "2) \033[36m$MENU_MAIN_2\033[0m"
-		content_line "3) \033[31m$MENU_MAIN_3\033[0m"
-		content_line "4) \033[33m$MENU_MAIN_4\033[0m"
-		content_line "5) \033[32m$MENU_MAIN_5\033[0m"
-		content_line "6) \033[36m$MENU_MAIN_6\033[0m"
-		content_line "7) \033[33m$MENU_MAIN_7\033[0m"
-		content_line "8) $MENU_MAIN_8"
-		content_line "9) \033[32m$MENU_MAIN_9\033[0m"
-		content_line "0) $MENU_MAIN_0"
-		separator_line "="
+		btm_box "1) \033[32m$MENU_MAIN_1\033[0m"\
+		"2) \033[36m$MENU_MAIN_2\033[0m"\
+		"3) \033[31m$MENU_MAIN_3\033[0m"\
+		"4) \033[33m$MENU_MAIN_4\033[0m"\
+		"5) \033[32m$MENU_MAIN_5\033[0m"\
+		"6) \033[36m$MENU_MAIN_6\033[0m"\
+		"7) \033[33m$MENU_MAIN_7\033[0m"\
+		"8) $MENU_MAIN_8"\
+		"9) \033[32m$MENU_MAIN_9\033[0m"\
+		""\
+		"0) $MENU_MAIN_0"
 		read -r -p "$MENU_MAIN_PROMPT" num
 
 		case "$num" in
@@ -308,8 +308,9 @@ case "$1" in
 		while read line; do
 			echo -e "$MENU_ERROR_FOUND\033[33;4m$line\033[0m"
 			grep -A 1 -B 3 "$line" "$TMPDIR"/debug_sh.log
-			echo "==========================================================="
+			echo
 		done <"$TMPDIR"/sh_bug
+		echo "==========================================================="
 		rm -rf "$TMPDIR"/sh_bug
 		comp_box "\033[32m$MENU_TEST_DONE_FAIL\033[0m" \
 			"$MENU_TEST_LOG_HINT\033[36m$TMPDIR/debug_sh.log\033[0m"

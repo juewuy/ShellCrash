@@ -3,9 +3,8 @@
 
 # 卸载
 uninstall() {
-    comp_box "\033[31m警告：\033[0m" \
-        "\033[31m该操作不可逆！\033" \
-        "是否确认卸载ShellCrash："
+    comp_box "\033[31m警告：该操作不可逆！\033[0m" \
+        "是否确认卸载ShellCrash？"
     btm_box "1) 是" \
         "0) 否"
     read -r -p "$COMMON_INPUT> " res
@@ -19,7 +18,7 @@ uninstall() {
 
         # 移除安装目录
         if [ -n "$CRASHDIR" ] && [ "$CRASHDIR" != '/' ]; then
-            comp_box "是否保留脚本配置及订阅文件："
+            comp_box "是否保留脚本配置及订阅文件？"
             btm_box "1) 是" \
                 "0) 否"
             read -r -p "$COMMON_INPUT> " res
