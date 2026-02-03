@@ -78,9 +78,8 @@ setrules() {
             while IFS= read -r line; do
                 content_line "$line"
             done
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0) ;;
@@ -112,9 +111,8 @@ setrules() {
             while IFS= read -r line; do
                 content_line "$line"
             done
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0) ;;
@@ -143,9 +141,8 @@ setrules() {
                 while IFS= read -r line; do
                     content_line "$line"
                 done
-            content_line ""
-            content_line "0) 返回上级菜单"
-            separator_line "="
+            btm_box "" \
+                "0) 返回上级菜单"
             read -r -p "请输入对应数字> " num
             case "$num" in
             "" | 0)
@@ -252,7 +249,7 @@ setgroups() {
         comp_box "\033[33m注意策略组名称必须和【自定义规则】或【自定义节点】功能中指定的策略组一致！\033[0m" \
             "\033[33m建议先创建策略组，之后可在【自定义规则】或【自定义节点】功能中智能指定\033[0m" \
             "\033[33m如需在当前策略组下添加节点，请手动编辑$YAMLSDIR/proxy-groups.yaml\033[0m"
-        btm_box "\033[32m请直接输入自定义策略组名称\033[0m\n（不支持纯数字且不要包含特殊字符！）" \
+        btm_box "\033[36m请直接输入自定义策略组名称\033[0m\n（不支持纯数字且不要包含特殊字符！）" \
             "或输入 0 返回上级菜单"
         read -r -p "请输入> " new_group_name
 
@@ -322,12 +319,11 @@ EOF
     while true; do
         comp_box "\033[33m你可以在这里快捷管理自定义策略组\033[0m" \
             "\033[36m如需修改或批量操作，请手动编辑：$YAMLSDIR/proxy-groups.yaml\033[0m"
-        content_line "1) 添加自定义策略组"
-        content_line "2) 查看自定义策略组"
-        content_line "3) 清空自定义策略组"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "1) 添加自定义策略组" \
+            "2) 查看自定义策略组" \
+            "3) 清空自定义策略组" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
@@ -398,9 +394,8 @@ setproxies() {
             while IFS= read -r line; do
                 content_line "$line"
             done
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应数字（多个用空格分隔）> " char
         case "$char" in
         "" | 0) ;;
@@ -423,13 +418,12 @@ setproxies() {
     while true; do
         comp_box "\033[33m你可以在这里快捷管理自定义节点\033[0m" \
             "\033[36m如需批量操作，请手动编辑：$YAMLSDIR/proxies.yaml\033[0m"
-        content_line "1) 添加自定义节点"
-        content_line "2) 管理自定义节点"
-        content_line "3) 清空自定义节点"
-        content_line "4) 配置节点绕过：	\033[36m$proxies_bypass\033[0m"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "1) 添加自定义节点" \
+            "2) 管理自定义节点" \
+            "3) 清空自定义节点" \
+            "4) 配置节点绕过：	\033[36m$proxies_bypass\033[0m" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
@@ -451,9 +445,8 @@ setproxies() {
                     while IFS= read -r line; do
                         content_line "$line"
                     done
-                content_line ""
-                content_line "0) 返回上级菜单"
-                separator_line "="
+                btm_box "" \
+                    "0) 返回上级菜单"
                 read -r -p "请输入对应数字> " num
                 if [ "$num" = 0 ]; then
                     continue

@@ -88,9 +88,8 @@ task_user_del() {
                 while IFS= read -r line; do
                     content_line "$line"
                 done
-            content_line ""
-            content_line "0) 返回上级菜单"
-            separator_line "="
+            btm_box "" \
+                "0) 返回上级菜单"
             read -r -p "请输入对应标号> " num
             if [ "$num" = 0 ]; then
                 break
@@ -114,9 +113,8 @@ task_add() {
         # 输出任务列表
         list=$(cat "$CRASHDIR"/task/task.list "$CRASHDIR"/task/task.user 2>/dev/null | grep -Ev '^(#|$)' | awk -F '#' '{print $3}')
         list_box "$list"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         0)
@@ -179,7 +177,6 @@ task_type() {
             "输入 1～5 代表\033[36m周一至周五\033[0m运行"
         read -r -p "在每周哪天执行？> " week
         # week=`echo ${week/7/0}` # 把7换成0
-        echo
         read -r -p "想在该日的具体哪个小时执行？（0～23）> " hour
         cron_time="在每周$week的$hour点整"
         # cron_time=`echo ${cron_time/周0/周日}` # 把0换成日
@@ -189,7 +186,6 @@ task_type() {
         comp_box "输入 1，7，15 代表\033[36m每到1，7，15点\033[0m运行" \
             "输入 6～18 代表\033[36m早6点至晚18点间每小时\033[0m运行"
         read -r -p "想在每日的具体哪个小时执行？（0~23）> " hour
-        echo
         read -r -p "想在具体哪分钟执行？（0～59的整数）> " min
         cron_time="在每日的$hour点$min分"
         [ -n "$min" ] && [ -n "$hour" ] && set_cron

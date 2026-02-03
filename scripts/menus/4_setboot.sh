@@ -43,10 +43,9 @@ setboot() {
         content_line "3) 设置自启延时：   \033[36m$(printf '%-7s' "$delay")\033[0m ———用于解决自启后服务受限"
         content_line "4) 启用小闪存模式： \033[36m$(printf '%-4s' "$mini_clash")\033[0m   ———用于闪存空间不足的设备"
         [ "${BINDIR}" != "$CRASHDIR" ] && content_line "5) 设置小闪存目录： \033[36m${BINDIR}\033[0m"
-        content_line "6) 自启网络检查：   \033[36m$(printf '%-4s' "$network_check")\033[0m   ———禁用则跳过自启时网络检查"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "6) 自启网络检查：   \033[36m$(printf '%-4s' "$network_check")\033[0m   ———禁用则跳过自启时网络检查" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -216,9 +215,8 @@ setboot() {
                 content_line "当前\033[33m已启用\033[0m自启网络检查，是否确认禁用？"
             fi
             separator_line "-"
-            content_line "1) 是"
-            content_line "0) 否，返回上级菜单"
-            separator_line "="
+            btm_box "1) 是" \
+                "0) 否，返回上级菜单"
             read -r -p "请输入对应标号> " res
             if [ "$res" = '1' ]; then
                 if [ "$network_check" = "OFF" ]; then

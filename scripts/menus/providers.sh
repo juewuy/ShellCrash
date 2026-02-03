@@ -21,11 +21,11 @@ providers() {
             [ -z "$provider_temp_des" ] && provider_temp_des=$provider_temp_file
         fi
 
-        top_box "1) \033[32m生成\033[0m包含全部提供者的配置文件" \
+        comp_box "1) \033[32m生成\033[0m包含全部提供者的配置文件" \
             "2) 选择\033[33m规则模版\033[0m     \033[32m$provider_temp_des\033[0m" \
             "3) \033[33m清理\033[0mproviders目录文件" \
-            ""
-        common_back
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "请输入对应字母或数字> " num
         case "$num" in
         "" | 0)
@@ -45,15 +45,15 @@ providers() {
             comp_box "当前规则模版为：\033[32m$provider_temp_des\033[0m" \
                 "\033[33m请选择在线模版：\033[0m"
             list_box "$list"
-            content_line ""
-            content_line "a) 使用\033[36m本地模版\033[0m"
-            content_line ""
-            common_back
+            btm_box "" \
+                "a) 使用\033[36m本地模版\033[0m" \
+                "" \
+                "0) $COMMON_BACK"
             read -r -p "请输入对应字母或数字> " num
             case "$num" in
             "" | 0) ;;
             a)
-                echo ""
+                line_break
                 read -r -p "请输入模版的路径（绝对路径）> " dir
                 if [ -s "$dir" ]; then
                     provider_temp_file=$dir

@@ -89,9 +89,9 @@ set_dns_mod() {
                 line_break
                 separator_line "="
                 if [ "$hosts_opt" = ON ]; then
-                    content_line "当前\033[33m已启用\033[0mHosts优化，是否确认禁用："
+                    content_line "当前\033[33m已启用\033[0mHosts优化，是否确认禁用？"
                 else
-                    content_line "当前\033[33m已禁用\033[0mHosts优化，是否确认启用："
+                    content_line "当前\033[33m已禁用\033[0mHosts优化，是否确认启用？"
                 fi
                 separator_line "="
                 btm_box "1) 是" \
@@ -127,9 +127,9 @@ set_dns_mod() {
                 line_break
                 separator_line "="
                 if [ "$ecs_subnet" = ON ]; then
-                    content_line "当前\033[33m已启用\033[0mHosts优化，是否确认禁用："
+                    content_line "当前\033[33m已启用\033[0mHosts优化，是否确认禁用？"
                 else
-                    content_line "当前\033[33m已禁用\033[0mHosts优化，是否确认启用："
+                    content_line "当前\033[33m已禁用\033[0mHosts优化，是否确认启用？"
                 fi
                 separator_line "="
                 btm_box "1) 是" \
@@ -164,7 +164,7 @@ set_dns_mod() {
                 comp_box "\033[31m$DNS_REDIR_WARN\033[0m" \
                     "\033[33m$DNS_REDIR_HINT 127.0.0.1:$dns_port\033[0m" \
                     "" \
-                    "请直接输入旁路由IPV4地址" \
+                    "\033[36m请直接输入旁路由IPV4地址\033[0m" \
                     "或输入 r 重置DNS劫持端口" \
                     "或输入 0 返回上级菜单"
                 read -r -p "请输入> " num
@@ -223,9 +223,8 @@ fake_ip_filter() {
         else
             content_line "\033[33m$DNS_FAKEIP_EMPTY\033[0m"
         fi
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "$DNS_FAKEIP_EDIT> " input
         case "$input" in
         "" | 0)

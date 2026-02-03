@@ -34,13 +34,13 @@ set_core_config() {
             list_box "$list"
             separator_line "-"
         }
-        content_line "a) \033[32m添加提供者\033[0m（支持订阅/分享链接及本地文件）"
-        content_line "b) \033[36m本地生成配置文件\033[0m"
-        content_line "c) \033[33m在线生成配置文件\033[0m"
-        content_line "d) \033[31m清空提供者列表\033[0m"
-        content_line "e) \033[36m自定义配置文件\033[0m"
-        content_line ""
-        common_back
+        btm_box "a) \033[32m添加提供者\033[0m（支持订阅/分享链接及本地文件）" \
+            "b) \033[36m本地生成配置文件\033[0m" \
+            "c) \033[33m在线生成配置文件\033[0m" \
+            "d) \033[31m清空提供者列表\033[0m" \
+            "e) \033[36m自定义配置文件\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT_L> " num
         case "$num" in
         "" | 0)
@@ -94,7 +94,6 @@ set_core_config() {
                 [ "$checkcfg" != "$checkcfg_new" ] && checkrestart
             fi
             ;;
-
         *)
             error_letter
             ;;
@@ -140,8 +139,8 @@ setproviders() {
         content_line ""
         content_line "a) \033[36m保存此提供者\033[0m"
         content_line "d) \033[31m删除此提供者\033[0m"
-		content_line ""
-		content_line "\033[36m以下方式的详细配置请前往对应功能页面进行设置！\033[0m"
+        content_line ""
+        content_line "\033[36m以下方式的详细配置请前往对应功能页面进行设置！\033[0m"
         [ -n "$link" ] &&
             content_line "b) \033[32m本地生成\033[0m仅包含此提供者的配置文件"
         echo "$link$link_uri" | grep -q '://' &&
@@ -150,8 +149,8 @@ setproviders() {
             content_line "e) 在线获取此配置文件（不使用订阅转换）"
         echo "$link" | grep -q '^./providers' &&
             content_line "e) 直接使用此文件作为配置文件（不使用本地生成）"
-        content_line ""
-        common_back
+        btm_box "" \
+            "0) $COMMON_BACK"
         read -r -p "请输入对应字母或数字> " input
         case "$input" in
         "" | 0)
@@ -274,7 +273,7 @@ setproviders() {
             ;;
         d)
             if [ -n "$name" ] && [ -n "$link" ]; then
-                sed -i "/^$name /d" "$CRASHDIR"/configs/providers.cfg 2>/dev/null 
+                sed -i "/^$name /d" "$CRASHDIR"/configs/providers.cfg 2>/dev/null
                 msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
             elif [ -n "$name" ] && [ -n "$link_uri" ]; then
                 sed -i "/^$name /d" "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null
@@ -341,16 +340,14 @@ saveproviders() {
 # 本地生成覆写
 custproviders() {
     while true; do
-        line_break
-        separator_line "="
-        content_line "1) 设置\033[33m健康检查间隔\033[0m：\t\033[47;30m$interval\033[0m 分钟"
-        content_line "2) 设置\033[36m自动更新间隔\033[0m：\t\033[47;30m$interval2\033[0m 小时"
+        top_box "1) 设置\033[33m健康检查间隔\033[0m：\t\033[47;30m$interval\033[0m 分钟" \
+            "2) 设置\033[36m自动更新间隔\033[0m：\t\033[47;30m$interval2\033[0m 小时"
         echo "$link" | grep -q '^http' &&
             content_line "3) 设置\033[33m虚拟浏览器UA\033[0m：\t\033[47;30m$ua\033[0m"
-        content_line "4) 设置\033[31m排除节点正则\033[0m：\t\033[47;30m$exclude_w\033[0m"
-        content_line "5) 设置\033[32m包含节点正则\033[0m：\t\033[47;30m$include_w\033[0m"
-        content_line ""
-        common_back
+        btm_box "4) 设置\033[31m排除节点正则\033[0m：\t\033[47;30m$exclude_w\033[0m" \
+            "5) 设置\033[32m包含节点正则\033[0m：\t\033[47;30m$include_w\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)

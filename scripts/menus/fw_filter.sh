@@ -93,13 +93,13 @@ set_common_ports() {
             content_line "当前已放行端口：\033[36m$multiport\033[0m"
         fi
         separator_line "="
-        content_line "1) 启用/关闭端口过滤:	\033[36m$common_ports\033[0m"
-        content_line "2) 添加放行端口"
-        content_line "3) 移除指定放行端口"
-        content_line "4) 重置默认放行端口"
-        content_line "5) 重置为旧版放行端口"
-        content_line ""
-        common_back
+        btm_box "1) 启用/关闭端口过滤:	\033[36m$common_ports\033[0m" \
+            "2) 添加放行端口" \
+            "3) 移除指定放行端口" \
+            "4) 重置默认放行端口" \
+            "5) 重置为旧版放行端口" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 0)
@@ -125,7 +125,7 @@ set_common_ports() {
                     comp_box "\033[31m最多支持设置放行15个端口，请先减少一些！\033[0m"
                 else
                     comp_box "当前已放行端口：\033[36m$multiport\033[0m"
-                    btm_box "请直接输入要放行的端口号\n（每次只能输入一个端口号，切勿一次添加多个端口号）" \
+                    btm_box "\033[36m请直接输入要放行的端口号\033[0m\n（每次只能输入一个端口号，切勿一次添加多个端口号）" \
                         "或输入 0 返回上级菜单"
                     read -r -p "请输入> " port
                     if [ "$port" = 0 ]; then
@@ -245,6 +245,7 @@ set_cust_host_ipv4() {
         esac
     done
 }
+
 set_reserve_ipv4() {
     while true; do
         [ -z "$reserve_ipv4" ] && reserve_ipv4="0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 240.0.0.0/4"
@@ -283,6 +284,7 @@ set_reserve_ipv4() {
         esac
     done
 }
+
 # 局域网设备过滤
 fw_filter_lan() {
     get_devinfo() {
@@ -290,7 +292,6 @@ fw_filter_lan() {
         dev_mac=$(cat "$dhcpdir" | grep " $dev " | awk '{print $2}') && [ -z "$dev_mac" ] && dev_mac=$dev
         dev_name=$(cat "$dhcpdir" | grep " $dev " | awk '{print $4}') && [ -z "$dev_name" ] && dev_name='未知设备'
     }
-
     add_mac() {
         while true; do
             comp_box "手动输入mac地址时仅支持\033[32mxx:xx:xx:xx:xx:xx\033[0m的形式"
@@ -313,9 +314,8 @@ fw_filter_lan() {
             else
                 content_line "无纪录"
             fi
-
-            content_line ""
-            common_back
+            btm_box "" \
+                "0) $COMMON_BACK"
             read -r -p "请输入对应序号或直接输入mac地址> " num
             if [ -z "$num" ] || [ "$num" = 0 ]; then
                 i=
@@ -363,9 +363,8 @@ fw_filter_lan() {
             else
                 content_line "无纪录"
             fi
-
-            content_line ""
-            common_back
+            btm_box "" \
+                "0) $COMMON_BACK"
             read -r -p "请输入对应序号或直接输入IP地址段> " num
             if [ -z "$num" ] || [ "$num" = 0 ]; then
                 i=
@@ -404,8 +403,8 @@ fw_filter_lan() {
                         "$i" "$dev_ip" "$dev_mac" "$dev_name")"
                     i=$((i + 1))
                 done
-                content_line ""
-                common_back
+                btm_box "" \
+                    "0) $COMMON_BACK"
                 read -r -p "$COMMON_INPUT> " num
                 mac_filter_rows=$(cat "$CRASHDIR"/configs/mac 2>/dev/null | wc -l)
                 ip_filter_rows=$(cat "$CRASHDIR"/configs/ip_filter 2>/dev/null | wc -l)

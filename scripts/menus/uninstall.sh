@@ -6,9 +6,8 @@ uninstall() {
     comp_box "\033[31m警告：\033[0m" \
         "\033[31m该操作不可逆！\033" \
         "是否确认卸载ShellCrash："
-    content_line "1) 是"
-    content_line "0) 否"
-    separator_line "="
+    btm_box "1) 是" \
+        "0) 否"
     read -r -p "$COMMON_INPUT> " res
     if [ "$res" = '1' ]; then
         # 停止服务
@@ -21,9 +20,8 @@ uninstall() {
         # 移除安装目录
         if [ -n "$CRASHDIR" ] && [ "$CRASHDIR" != '/' ]; then
             comp_box "是否保留脚本配置及订阅文件："
-            content_line "1) 是"
-            content_line "0) 否"
-            separator_line "="
+            btm_box "1) 是" \
+                "0) 否"
             read -r -p "$COMMON_INPUT> " res
             if [ "$res" = '1' ]; then
                 mv -f "$CRASHDIR"/configs /tmp/ShellCrash/configs_bak

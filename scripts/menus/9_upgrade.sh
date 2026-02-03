@@ -363,10 +363,8 @@ checkcustcore() {
                 while IFS= read -r line; do
                     content_line "$line"
                 done
-
-            content_line ""
-            content_line "0) 返回上级菜单"
-            separator_line "="
+            btm_box "" \
+                "0) 返回上级菜单"
             read -r -p "请输入对应标号> " num
             case "$num" in
             0)
@@ -530,13 +528,12 @@ setcore() {
             content_line "4) \033[43;30mClash\033[0m：\033[32m$clash_v \033[32m占用低\033[0m \033[33m不安全,已停止维护\033[0m"
             sub_content_line "说明文档：\033[36;4mhttps://lancellc.gitbook.io\033[0m"
         }
-        content_line "5) 切换版本分支及压缩方式：\033[32m$zip_type\033[0m"
-        content_line "6) \033[36m使用自定义内核\033[0m $custcore"
-        content_line "7) \033[32m更新当前内核\033[0m"
-        content_line "9) 手动指定处理器架构"
-        content_line ""
-        content_line "0 返回上级菜单"
-        separator_line "="
+        btm_box "5) 切换版本分支及压缩方式：\033[32m$zip_type\033[0m" \
+            "6) \033[36m使用自定义内核\033[0m $custcore" \
+            "7) \033[32m更新当前内核\033[0m" \
+            "9) 手动指定处理器架构" \
+            "" \
+            "0 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -1188,7 +1185,7 @@ setserver() {
                 comp_box "\033[33m开发版未经过妥善测试，可能依然存在大量bug！！！\033[0m" \
                     "\033[33m如果你没有足够的耐心或者测试经验，切勿使用此版本！\033[0m" \
                     "请务必加入我们的讨论组：\033[36;4mhttps://t.me/ShellClash\033[0m"
-                content_line "是否依然切换到开发版："
+                content_line "是否依然切换到开发版？"
                 separator_line "-"
                 btm_box "1) 确认切换" \
                     "0) 返回上级菜单"
@@ -1240,8 +1237,8 @@ setserver() {
                         while IFS= read -r line; do
                             content_line "$line"
                         done
-                    content_line ""
-                    content_line "0) 返回上级菜单"
+                    btm_box "" \
+                        "0) 返回上级菜单"
                     read -r -p "请输入对应标号> " num
                     if [ -z "$num" ] || [ "$num" = 0 ]; then
                         continue
