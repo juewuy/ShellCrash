@@ -22,26 +22,24 @@ upgrade() {
         fi
         [ -z "$core_v" ] && core_v=$crashcore
         core_v_new=$(eval echo \$"$crashcore"_v)
-
-        comp_box "\033[30;47m更新与支持\033[0m" \
+        top_box "\033[30;47m更新与支持\033[0m" \
             "" \
             "当前目录(\033[32m$CRASHDIR\033[0m)剩余空间：\033[36m$(dir_avail "$CRASHDIR" -h)\033[0m"
         [ "$(dir_avail "$CRASHDIR")" -le 5120 ] && [ "$CRASHDIR" = "$BINDIR" ] && {
             content_line "\033[33m当前目录剩余空间较低，建议开启小闪存模式！\033[0m"
         }
-        content_line "1) 更新\033[36m管理脚本\t\033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m"
-        content_line "2) 切换/更新\033[33m内核文件\t\033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m"
-        content_line "3) 安装/更新本地\033[32m数据库文件\033[0m"
-        content_line "4) 安装/更新本地\033[35mDashboard面板\033[0m"
-        content_line "5) 安装/更新本地\033[33m根证书文件\033[0m"
-        content_line "6) \033[32mPAC\033[0m自动代理查看"
-        content_line "7) 切换\033[36m安装源及版本分支\033[0m"
-        content_line "8) \033[31m卸载ShellCrash\033[0m"
-        content_line "9) \033[36m感谢列表！\033[0m"
-        content_line ""
-        content_line "0) 返回上级菜单"
         separator_line "="
-
+        btm_box "1) 更新\033[36m管理脚本\t\033[33m$versionsh_l\033[0m > \033[32m$version_new \033[36m$release_type\033[0m" \
+            "2) 切换/更新\033[33m内核文件\t\033[33m$core_v\033[0m > \033[32m$core_v_new\033[0m" \
+            "3) 安装/更新本地\033[32m数据库文件\033[0m" \
+            "4) 安装/更新本地\033[35mDashboard面板\033[0m" \
+            "5) 安装/更新本地\033[33m根证书文件\033[0m" \
+            "6) \033[32mPAC\033[0m自动代理查看" \
+            "7) 切换\033[36m安装源及版本分支\033[0m" \
+            "8) \033[31m卸载ShellCrash\033[0m" \
+            "9) \033[36m感谢列表！\033[0m" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
@@ -188,6 +186,7 @@ setscripts() {
             getscripts
             # 提示
             msg_alert "\033[32m管理脚本更新成功!\033[0m"
+            line_break
             exit 0
             ;;
         *)
@@ -231,13 +230,12 @@ setcoretype() {
     while true; do
         echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
         comp_box "\033[33m请确认该自定义内核的类型：\033[0m"
-        content_line "1) Mihomo(Meta)"
-        content_line "2) Singbox-reF1nd"
-        content_line "3) Singbox"
-        content_line "4) Clash"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "1) Mihomo(Meta)" \
+            "2) Singbox-reF1nd" \
+            "3) Singbox" \
+            "4) Clash" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0) ;;
@@ -415,14 +413,13 @@ setcustcore() {
         separator_line "="
         content_line "请选择需要使用的核心："
         separator_line "-"
-        content_line "1) \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核"
-        content_line "2) \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)"
-        content_line "3) \033[36mSagerNet/sing-box\033[32m@release\033[0m版本官方内核"
-        content_line "4) Premium-2023.08.17内核(已停止维护)"
-        content_line "9) \033[33m自定义内核链接 \033[0m"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "1) \033[36mMetaCubeX/mihomo\033[32m@release\033[0m版本官方内核" \
+            "2) \033[36mvernesong/mihomo\033[32m@alpha\033[0m版本内核(支持Smart策略)" \
+            "3) \033[36mSagerNet/sing-box\033[32m@release\033[0m版本官方内核" \
+            "4) Premium-2023.08.17内核(已停止维护)" \
+            "9) \033[33m自定义内核链接 \033[0m" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -779,20 +776,19 @@ setgeo() {
             "" \
             "请选择需要更新的Geo数据库文件："
 
-        content_line "1) CN-IP绕过文件（约0.1mb）	\033[33m$china_ip_list_v\033[0m"
-        content_line "2) CN-IPV6绕过文件（约30kb）	\033[33m$china_ipv6_list_v\033[0m"
-        content_line ""
-        content_line "3) Mihomo精简版GeoIP_cn数据库（约0.1mb）	\033[33m$cn_mini_v\033[0m"
-        content_line "4) Mihomo完整版GeoSite数据库（约5mb）	\033[33m$geosite_v\033[0m"
-        content_line ""
-        content_line "5) Mihomo-mrs数据库常用包（约1mb,非必要勿用）"
-        content_line "6) Singbox-srs数据库常用包（约0.8mb,非必要勿用）"
-        content_line ""
-        content_line "8) \033[36m自定义数据库文件\033[0m"
-        content_line "9) \033[31m清理数据库文件\033[0m"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "1) CN-IP绕过文件（约0.1mb）	\033[33m$china_ip_list_v\033[0m" \
+            "2) CN-IPV6绕过文件（约30kb）	\033[33m$china_ipv6_list_v\033[0m" \
+            "" \
+            "3) Mihomo精简版GeoIP_cn数据库（约0.1mb）	\033[33m$cn_mini_v\033[0m" \
+            "4) Mihomo完整版GeoSite数据库（约5mb）	\033[33m$geosite_v\033[0m" \
+            "" \
+            "5) Mihomo-mrs数据库常用包（约1mb,非必要勿用）" \
+            "6) Singbox-srs数据库常用包（约0.8mb,非必要勿用）" \
+            "" \
+            "8) \033[36m自定义数据库文件\033[0m" \
+            "9) \033[31m清理数据库文件\033[0m" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -964,18 +960,17 @@ setdb() {
             "\033[32m打开管理面板的速度更快且更稳定\033[0m" \
             "" \
             "请选择面板安装类型："
-        content_line "   - - - - - - -维护中- - - - - - -"
-        content_line "1) 安装\033[32mzashboard面板\033[0m（约2.2mb）"
-        content_line "2) 安装\033[32mMetaXD面板\033[0m（约1.5mb）"
-        content_line "3) 安装\033[32mYacd-Meta魔改面板\033[0m（约1.7mb）"
-        content_line "   - - - - - -已停止维护- - - - - -"
-        content_line "4) 安装\033[32m基础面板\033[0m（约500kb）"
-        content_line "5) 安装\033[32mMeta基础面板\033[0m（约800kb）"
-        content_line "6) 安装\033[32mYacd面板\033[0m（约1.1mb）"
-        content_line "9) \033[31m卸载本地面板\033[0m"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "   - - - - - - -维护中- - - - - - -" \
+            "1) 安装\033[32mzashboard面板\033[0m（约2.2mb）" \
+            "2) 安装\033[32mMetaXD面板\033[0m（约1.5mb）" \
+            "3) 安装\033[32mYacd-Meta魔改面板\033[0m（约1.7mb）" \
+            "   - - - - - -已停止维护- - - - - -" \
+            "4) 安装\033[32m基础面板\033[0m（约500kb）" \
+            "5) 安装\033[32mMeta基础面板\033[0m（约800kb）" \
+            "6) 安装\033[32mYacd面板\033[0m（约1.1mb）" \
+            "9) \033[31m卸载本地面板\033[0m" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -1145,16 +1140,15 @@ setserver() {
                 content_line "$line"
             done
 
-        content_line
-        content_line "a) 切换至\033[32m稳定版-stable\033[0m"
-        content_line "b) 切换至\033[36m公测版-master\033[0m"
-        content_line "c) 切换至\033[33m开发版-dev\033[0m"
-        content_line
-        content_line "d) 自定义源地址（用于本地源或自建源）"
-        content_line "e) \033[31m版本回退\033[0m"
-        content_line
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "a) 切换至\033[32m稳定版-stable\033[0m" \
+            "b) 切换至\033[36m公测版-master\033[0m" \
+            "c) 切换至\033[33m开发版-dev\033[0m" \
+            "" \
+            "d) 自定义源地址（用于本地源或自建源）" \
+            "e) \033[31m版本回退\033[0m" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -1165,7 +1159,6 @@ setserver() {
             url_id_new=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n "$num"p | awk '{print $1}')
             if [ -z "$url_id_new" ]; then
                 errornum
-                sleep 1
                 continue
             elif [ "$url_id_new" -ge 200 ]; then
                 update_url=$(grep -E "^1|$release_name" "$CRASHDIR"/configs/servers.list | sed -n "$num"p | awk '{print $3}')
@@ -1197,9 +1190,8 @@ setserver() {
                     "请务必加入我们的讨论组：\033[36;4mhttps://t.me/ShellClash\033[0m"
                 content_line "是否依然切换到开发版："
                 separator_line "-"
-                content_line "1) 确认切换"
-                content_line "0) 返回上级菜单"
-                separator_line "="
+                btm_box "1) 确认切换" \
+                    "0) 返回上级菜单"
                 read -r -p "请输入对应标号> " res
                 case "$res" in
                 "" | 0)
@@ -1218,7 +1210,7 @@ setserver() {
             done
             ;;
         d)
-            comp_box "请直接输入个人源路径" \
+            comp_box "\033[36m请直接输入个人源路径\033[0m" \
                 "或者输入 0 返回上级菜单"
             read -r -p "请输入个人源路径> " update_url
             if [ "$update_url" = 0 ]; then
@@ -1243,14 +1235,12 @@ setserver() {
                     line_break
                     separator_line "="
                     content_line "\033[31m请选择想要回退至的具体版本：\033[0m"
-
                     cat "$TMPDIR"/tags |
                         awk '{print NR") "$1}' |
                         while IFS= read -r line; do
                             content_line "$line"
                         done
-
-                    content_line
+                    content_line ""
                     content_line "0) 返回上级菜单"
                     read -r -p "请输入对应标号> " num
                     if [ -z "$num" ] || [ "$num" = 0 ]; then

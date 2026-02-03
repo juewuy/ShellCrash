@@ -13,9 +13,10 @@ forwhat() {
             "\033[33m$UG_CHOOSE_ENV\033[0m" \
             "\033[0m$UG_TIP_CONFIG\033[0m"
 
-        btm_box "1) \033[32m$UG_OPTION_1\033[0m" \
-            "2) \033[36m$UG_OPTION_2\033[0m"
-        [ -s "$CRASHDIR"/configs.tar.gz ] && content_line " 3 \033[33m$UG_OPTION_3\033[0m"
+        content_line "1) \033[32m$UG_OPTION_1\033[0m"
+        content_line "2) \033[36m$UG_OPTION_2\033[0m"
+        [ -s "$CRASHDIR"/configs.tar.gz ] && content_line "3) \033[33m$UG_OPTION_3\033[0m"
+        separator_line "="
         read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 1)
@@ -75,12 +76,12 @@ forwhat() {
             ;;
         3)
             tar -zxf "$CRASHDIR"/configs.tar.gz -C "$CRASHDIR"/configs
-            content_line "\033[32m$UG_RESTORE_OK\033[0m"
+            msg_alert "\033[32m$UG_RESTORE_OK\033[0m"
+            line_break
             exit 0
             ;;
         *)
             errornum
-            sleep 1
             ;;
         esac
     done
