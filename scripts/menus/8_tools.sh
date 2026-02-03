@@ -90,9 +90,8 @@ tools() {
         [ -x /usr/sbin/otapredownload ] && content_line "5) \033[33m$mi_update\033[0m小米系统自动更新"
         [ "$systype" = "mi_snapshot" ] && content_line "6) 小米设备软固化SSH ———— \033[$mi_mi_autoSSH_type \033[0m"
         [ "$systype" = "mi_snapshot" ] && content_line "8) 小米设备Tun模块修复 ———— \033[$mi_tunfix \033[0m"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -371,28 +370,30 @@ log_pusher() {
                 # echo -e "\033[33m详细设置指南请参考 https://juewuy.github.io/ \033[0m"
                 comp_box "请先通过 \033[32;4mhttps://pushover.net/\033[0m 注册账号并获取\033[36mUser Key\033[0m" \
                     "" \
-                    "\033[33m请直接请输入你的User Key\033[0m" \
+                    "\033[36m请直接请输入你的User Key\033[0m" \
                     "或输入 0 返回上级菜单"
                 read -r -p "请输入> " key
                 if [ "$key" = 0 ]; then
                     continue
                 elif [ -n "$key" ]; then
-                    line_break
-                    separator_line "="
-                    content_line "\033[33m请检查注册邮箱，完成账户验证\033[0m"
-                    read -r -p "我已经验证完成(1/0)> "
-                    separator_line "="
-
-                    comp_box "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
-                    read -r -p "请输入你的API Token> " Token
-                    if [ -n "$Token" ]; then
-                        push_Po=$Token
-                        push_Po_key=$key
-                        setconfig push_Po "$Token"
-                        setconfig push_Po_key "$key"
-                        logger "已完成Passover日志推送设置！" 32
+                    comp_box "\033[33m请检查注册邮箱，完成账户验证\033[0m"
+                    btm_box "1) 我已经验证完成" \
+                        "0) 返回上级菜单"
+                    read -r -p "我已经验证完成(1/0)> " res
+                    if [ "$res" = 1 ]; then
+                        comp_box "请通过 \033[32;4mhttps://pushover.net/apps/build\033[0m 生成\033[36mAPI Token\033[0m"
+                        read -r -p "请输入你的API Token> " Token
+                        if [ -n "$Token" ]; then
+                            push_Po=$Token
+                            push_Po_key=$key
+                            setconfig push_Po "$Token"
+                            setconfig push_Po_key "$key"
+                            logger "已完成Passover日志推送设置！" 32
+                        else
+                            msg_alert "\033[31m输入错误，请重新输入！\033[0m"
+                        fi
                     else
-                        msg_alert "\033[31m输入错误，请重新输入！\033[0m"
+                        continue
                     fi
                 else
                     msg_alert "\033[31m输入错误，请重新输入！\033[0m"
@@ -443,7 +444,6 @@ log_pusher() {
             else
                 line_break
                 read -r -p "请输入你的Synology DSM主页地址> " URL
-                line_break
                 read -r -p "请输入你的Synology Chat Token> " TOKEN
                 comp_box '请通过"你的群晖地址/webapi/entry.cgi?api=SYNO.Chat.External&method=user_list&version=2&token=你的TOKEN"获取user_id'
                 read -r -p "请输入你的user_id> " USERID
@@ -500,7 +500,6 @@ log_pusher() {
                 line_break
                 echo "==========================================================="
                 cat "$TMPDIR"/ShellCrash.log
-                echo ""
                 echo "==========================================================="
             else
                 msg_alert "\033[31m未找到相关日志！\033[0m"
@@ -660,9 +659,8 @@ debug() {
     content_line ""
     content_line "8) 后台运行完整启动流程,输出执行错误并查找上下文，之后关闭进程"
     [ -s "$TMPDIR"/jsons/inbounds.json ] && content_line "9) 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"
-    content_line ""
-    content_line "0) 返回上级目录"
-    separator_line "="
+    btm_box "" \
+        "0) 返回上级目录"
     read -r -p "请输入对应标号> " num
     case "$num" in
     0) ;;

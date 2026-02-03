@@ -21,9 +21,8 @@ gateway() {
             content_line "6) 配置\033[36mTailscale内网穿透\033[0m（限Singbox）	\033[32m$ts_service\033[0m"
             content_line "7) 配置\033[36mWireguard客户端\033[0m（限Singbox）	\033[32m$wg_service\033[0m"
         }
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -277,10 +276,9 @@ set_vmess() {
         content_line "5) 一键生成\033[32m随机秘钥\033[0m"
         gen_base64 1 >/dev/null 2>&1 &&
             content_line "6) 设置\033[36m混淆host（可选）\033[0m：	\033[33m$vms_host\033[0m"
-        content_line "7) 一键生成\033[32m分享链接\033[0m"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "7) 一键生成\033[32m分享链接\033[0m" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -402,9 +400,8 @@ set_shadowsocks() {
         content_line "4) 设置\033[36mpassword\033[0m：	\033[36m$sss_pwd\033[0m"
         gen_base64 1 >/dev/null 2>&1 &&
             content_line "5) 一键生成分享链接"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
@@ -450,9 +447,8 @@ set_shadowsocks() {
                 content_line "6) \033[32m2022-blake3-aes-128-gcm\033[0m"
                 content_line "7) \033[32m2022-blake3-aes-256-gcm\033[0m"
             }
-            content_line ""
-            content_line "0) 返回上级菜单"
-            separator_line "="
+            btm_box "" \
+                "0) 返回上级菜单"
             read -r -p "请输入对应标号> " num
             case "$num" in
             0) ;;

@@ -49,20 +49,15 @@ set_ddns() {
         read -r -p "请输入强制更新间隔(单位:小时；默认为24)> " force_interval
         [ -z "$force_interval" ] || [ "$force_interval" -lt 1 -o "$force_interval" -gt 240 ] && force_interval=24
 
-        line_break
-        separator_line "="
-        content_line "请核对如下信息："
-        content_line ""
-        content_line "服务商：		\033[32m$service\033[0m"
-        content_line "域名：			\033[32m$domain\033[0m"
-        content_line "用户名：		\033[32m$username\033[0m"
-        content_line "检测间隔：		\033[32m$check_interval\033[0m"
-        separator_line "="
-        content_line "是否确认添加："
-        separator_line "="
-        content_line "1) 是"
-        content_line "0) 否，重新輸入"
-        separator_line "="
+        comp_box "请核对如下信息：" \
+            "" \
+            "服务商：		\033[32m$service\033[0m" \
+            "域名：			\033[32m$domain\033[0m" \
+            "用户名：		\033[32m$username\033[0m" \
+            "检测间隔：		\033[32m$check_interval\033[0m"
+        btm_box "是否确认添加："
+        btm_box "1) 是" \
+            "0) 否，重新輸入"
         read -r -p "$COMMON_INPUT> " res
         if [ "$res" = 1 ]; then
             add_ddns
@@ -103,10 +98,10 @@ set_ddns_service() {
 set_ddns_type() {
     while true; do
         comp_box "\033[32m请选择网络模式：\033[0m"
-        content_line "1) \033[36mIPV4\033[0m"
-        content_line "2) \033[36mIPV6\033[0m"
-        content_line ""
-        common_back
+        btm_box "1) \033[36mIPV4\033[0m" \
+            "2) \033[36mIPV6\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
@@ -135,16 +130,13 @@ rev_ddns_service() {
     while true; do
         enabled=$(uci get ddns."$service".enabled)
         [ "$enabled" = 1 ] && enabled_b="停用" || enabled_b="启用"
-        line_break
-        separator_line "="
-        content_line "1) \033[32m立即更新\033[0m"
-        content_line "2) 编辑当前服务"
-        content_line "3) $enabled_b当前服务"
-        content_line "4) 移除当前服务"
-        content_line "5) 查看运行日志"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        comp_box "1) \033[32m立即更新\033[0m" \
+            "2) 编辑当前服务" \
+            "3) $enabled_b当前服务" \
+            "4) 移除当前服务" \
+            "5) 查看运行日志" \
+            "" \
+            "0) 返回上级菜单"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
@@ -176,11 +168,9 @@ rev_ddns_service() {
             ;;
         5)
             line_break
-            separator_line "="
+            echo "==========================================================="
             cat /var/log/ddns/"$service".log 2>/dev/null
-            content_line ""
-            separator_line "="
-            sleep 1
+            echo "==========================================================="
             break
             ;;
         *)

@@ -28,11 +28,11 @@ settings() {
         }
         content_line "8) $SET_MENU_IPV6\t\033[36m$ipv6_redir\033[0m"
         separator_line "-"
-        content_line "a) \033[31m$SET_MENU_RESET\033[0m"
-        content_line "b) \033[36m$SET_MENU_LANG\033[0m"
-        content_line "c) \033[33m$SET_MENU_UI\033[0m"
-        content_line "0) $COMMON_BACK"
-        separator_line "="
+        btm_box "a) \033[31m$SET_MENU_RESET\033[0m" \
+            "b) \033[36m$SET_MENU_LANG\033[0m" \
+            "c) \033[33m$SET_MENU_UI\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 0)
@@ -204,7 +204,7 @@ settings() {
             ;;
         b)
             comp_box "1) 简体中文" \
-            "2) English" \
+                "2) English" \
                 "" \
                 "0) $COMMON_BACK"
             read -r -p "$COMMON_INPUT> " num
@@ -280,12 +280,11 @@ set_redir_mod() {
             content_line "6) \033[36mT&U旁路转发\033[0m：    转发TCP&UDP流量至旁路由"
             content_line ""
         }
-        content_line "7) $SET_FW_AREA：\t\033[47;30m$firewall_area_dsc\033[0m"
-        content_line "8) $SET_VM_REDIR：\t\033[47;30m$vm_redir\033[0m"
-        content_line "9) $SET_FW_SWITCH：\t\033[47;30m$firewall_mod\033[0m"
-        content_line ""
-        content_line "0) $COMMON_BACK"
-        separator_line "="
+        btm_box "7) $SET_FW_AREA：\t\033[47;30m$firewall_area_dsc\033[0m" \
+            "8) $SET_VM_REDIR：\t\033[47;30m$vm_redir\033[0m" \
+            "9) $SET_FW_SWITCH：\t\033[47;30m$firewall_mod\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 0)
