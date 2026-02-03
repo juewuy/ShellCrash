@@ -12,16 +12,14 @@ set_fw_filter() {
         [ -z "$cn_ip_route" ] && cn_ip_route=OFF
         touch "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter
         [ -z "$(cat "$CRASHDIR"/configs/mac "$CRASHDIR"/configs/ip_filter 2>/dev/null)" ] && mac_return=OFF || mac_return=ON
-        line_break
-        separator_line "="
-        content_line "1) 过滤非常用端口： 	\033[36m$common_ports\033[0m	———用于过滤P2P流量"
-        content_line "2) 过滤局域网设备：	\033[36m$mac_return\033[0m	———使用黑/白名单进行过滤"
-        content_line "3) 过滤QUIC协议：	\033[36m$quic_rj\033[0m	———优化视频性能"
-        content_line "4) 过滤CN_IP(4/6)列表：\033[36m$cn_ip_route\033[0m	———优化性能"
-        content_line "5) 自定义透明路由ipv4网段：适合vlan等复杂网络环境"
-        content_line "6) 自定义保留地址ipv4网段：需要以保留地址为访问目标的环境"
-        content_line ""
-        common_back
+        comp_box "1) 过滤非常用端口： 	\033[36m$common_ports\033[0m	———用于过滤P2P流量" \
+            "2) 过滤局域网设备：	\033[36m$mac_return\033[0m	———使用黑/白名单进行过滤" \
+            "3) 过滤QUIC协议：	\033[36m$quic_rj\033[0m	———优化视频性能" \
+            "4) 过滤CN_IP(4/6)列表：\033[36m$cn_ip_route\033[0m	———优化性能" \
+            "5) 自定义透明路由ipv4网段：适合vlan等复杂网络环境" \
+            "6) 自定义保留地址ipv4网段：需要以保留地址为访问目标的环境" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 0)
@@ -30,9 +28,8 @@ set_fw_filter() {
         1)
             if [ -n "$(pidof CrashCore)" ] && [ "$firewall_mod" = 'iptables' ]; then
                 comp_box "切换时将停止服务，是否继续："
-                content_line "1) 是"
-                content_line "0) 否，返回上级菜单"
-                separator_line "="
+                btm_box "1) 是" \
+                    "0) 否，返回上级菜单"
                 read -r -p "$COMMON_INPUT> " res
                 [ "$res" = 1 ] && "$CRASHDIR"/start.sh stop && set_common_ports
             else
@@ -48,14 +45,14 @@ set_fw_filter() {
             fi
             ;;
         3)
-			if [ "$quic_rj" = "OFF" ]; then
-				quic_rj=ON
-				msg_alert "\033[33m已禁止QUIC流量通过ShellCrash内核！\033[0m"
-			else
-				quic_rj=OFF
-				msg_alert "\033[33m已取消禁止QUIC协议流量！\033[0m"
-			fi
-			setconfig quic_rj $quic_rj
+            if [ "$quic_rj" = "OFF" ]; then
+                quic_rj=ON
+                msg_alert "\033[33m已禁止QUIC流量通过ShellCrash内核！\033[0m"
+            else
+                quic_rj=OFF
+                msg_alert "\033[33m已取消禁止QUIC协议流量！\033[0m"
+            fi
+            setconfig quic_rj $quic_rj
             ;;
         4)
             if [ -n "$(ipset -v 2>/dev/null)" ] || [ "$firewall_mod" = 'nftables' ]; then
@@ -152,7 +149,7 @@ set_common_ports() {
         3)
             while true; do
                 comp_box "当前已放行端口：\033[36m$multiport\033[0m"
-                btm_box "请直接输入要移除的端口号\n（每次只能输入一个端口号，切勿一次添加多个端口号）" \
+                btm_box "\033[36m请直接输入要移除的端口号\033[0m\n（每次只能输入一个端口号，切勿一次添加多个端口号）" \
                     "或输入 0 返回上级菜单"
                 read -r -p "请输入> " port
                 if [ "$port" = 0 ]; then
@@ -203,9 +200,10 @@ set_cust_host_ipv4() {
         . "$CRASHDIR"/starts/fw_getlanip.sh && getlanip
         comp_box "当前默认透明路由的网段为：\033[32m$host_ipv4\033[0m" \
             "当前已添加的自定义网段为：\033[36m$cust_host_ipv4\033[0m"
-        content_line "1) 移除所有自定义网段"
-        content_line "2) 使用自定义网段覆盖默认网段	\033[36m$replace_default_host_ipv4\033[0m"
-        common_back
+        btm_box "1) 移除所有自定义网段" \
+            "2) 使用自定义网段覆盖默认网段	\033[36m$replace_default_host_ipv4\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "请输入对应的序号或需要额外添加的网段> " text
         case "$text" in
         "" | 0)
@@ -254,10 +252,10 @@ set_reserve_ipv4() {
             "" \
             "当前网段：" \
             "\033[36m$reserve_ipv4\033[0m"
-		btm_box "请直接输入自定义保留地址ipv4网段" \
+        btm_box "\033[36m请直接输入自定义保留地址ipv4网段\033[0m" \
             "或输入 1 重置默认网段" \
             "或输入 0 返回上级菜单"
-		read -r -p "请输入> " text
+        read -r -p "请输入> " text
         case "$text" in
         "" | 0)
             break
@@ -273,17 +271,17 @@ set_reserve_ipv4() {
         *)
             if echo "$text" | grep -Eq "(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/(3[0-2]|[1-2]?[0-9]))( +|$)+"; then
                 reserve_ipv4="$text"
-				if setconfig reserve_ipv4 "'$reserve_ipv4'"; then
-					msg_alert "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
-				else
-					msg_alert "\033[31m$COMMON_FAILED\033[0m"
-				fi
+                if setconfig reserve_ipv4 "'$reserve_ipv4'"; then
+                    msg_alert "已将保留地址网段设为：\033[32m$reserve_ipv4\033[0m"
+                else
+                    msg_alert "\033[31m$COMMON_FAILED\033[0m"
+                fi
             else
                 msg_alert "\033[31m输入有误，请重新输入！\033[0m"
             fi
             ;;
-        esac 
-	done
+        esac
+    done
 }
 # 局域网设备过滤
 fw_filter_lan() {
@@ -305,7 +303,6 @@ fw_filter_lan() {
             else
                 content_line "暫未添加任何mac地址"
             fi
-
             separator_line "="
             content_line "序号   \033[33m设备IP       设备mac地址       设备名称\033[0m"
             if [ -s "$dhcpdir" ]; then
@@ -464,13 +461,13 @@ fw_filter_lan() {
             done
             separator_line "="
         fi
-        content_line "1) 切换为\033[33m$fw_filter_lan_over模式\033[0m"
-        content_line "2) \033[32m添加指定设备（mac地址）\033[0m"
-        content_line "3) \033[32m添加指定设备（IP地址／网段）\033[0m"
-        content_line "4) \033[36m移除指定设备\033[0m"
-        content_line "9) \033[31m清空整个列表\033[0m"
-        content_line ""
-        common_back
+        btm_box "1) 切换为\033[33m$fw_filter_lan_over模式\033[0m" \
+            "2) \033[32m添加指定设备（mac地址）\033[0m" \
+            "3) \033[32m添加指定设备（IP地址／网段）\033[0m" \
+            "4) \033[36m移除指定设备\033[0m" \
+            "9) \033[31m清空整个列表\033[0m" \
+            "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 0)

@@ -10,16 +10,14 @@ __IS_MODULE_SUBCONVERTER=1
 # Subconverter在线订阅转换
 subconverter() {
     while true; do
-        line_break
-        separator_line "="
-        content_line "1) \033[32m生成\033[0m包含全部节点、订阅的配置文件"
-        content_line "2) 设置\033[31m排除节点正则\033[0m \033[47;30m$exclude\033[0m"
-        content_line "3) 设置\033[32m包含节点正则\033[0m \033[47;30m$include\033[0m"
-        content_line "4) 选择\033[33m在线规则模版\033[0m"
-        content_line "5) 选择\033[0mSubconverter服务器\033[0m"
-        content_line "6) 自定义浏览器UA  \033[32m$user_agent\033[0m"
-        content_line ""
-        common_back
+        comp_box "1) \033[32m生成\033[0m包含全部节点、订阅的配置文件"\
+         "2) 设置\033[31m排除节点正则\033[0m \033[47;30m$exclude\033[0m"\
+         "3) 设置\033[32m包含节点正则\033[0m \033[47;30m$include\033[0m"\
+         "4) 选择\033[33m在线规则模版\033[0m"\
+         "5) 选择\033[0mSubconverter服务器\033[0m"\
+         "6) 自定义浏览器UA  \033[32m$user_agent\033[0m"\
+         ""\
+         "0) $COMMON_BACK"
         read -r -p "请输入对应数字> " num
         case "$num" in
         "" | 0)
@@ -172,13 +170,12 @@ set_sub_ua() {
         comp_box "\033[36m无法正确获取配置文件时可尝试使用\033[0m" \
             "" \
             "当前UA：$user_agent"
-        content_line "1) 使用自动UA（默认）"
-        content_line "2) 不使用UA"
-        content_line "3) 使用自定义UA"
-        content_line "4) 清空UA"
-        content_line ""
-        content_line "0) 返回上级菜单"
-        separator_line "="
+        btm_box "1) 使用自动UA（默认）"\
+         "2) 不使用UA"\
+         "3) 使用自定义UA"\
+         "4) 清空UA"\
+         ""\
+         "0) 返回上级菜单"
         read -r -p "请输入对应数字> " num
         case "$num" in
         0)
