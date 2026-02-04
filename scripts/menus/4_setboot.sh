@@ -44,6 +44,7 @@ setboot() {
         content_line "4) 启用小闪存模式： \033[36m$(printf '%-4s' "$mini_clash")\033[0m   ———用于闪存空间不足的设备"
         [ "${BINDIR}" != "$CRASHDIR" ] && content_line "5) 设置小闪存目录： \033[36m${BINDIR}\033[0m"
         btm_box "6) 自启网络检查：   \033[36m$(printf '%-4s' "$network_check")\033[0m   ———禁用则跳过自启时网络检查" \
+            "7) 查看启动日志" \
             "" \
             "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
@@ -231,7 +232,18 @@ setboot() {
                 fi
             fi
             ;;
-        *)
+        7)
+            if [ -s "$TMPDIR"/ShellCrash.log ]; then
+                line_break
+                echo "==========================================================="
+                grep -v '任务' "$TMPDIR"/ShellCrash.log
+                echo "==========================================================="
+				exit
+            else
+                msg_alert "\033[31m未找到相关日志！\033[0m"
+            fi
+            ;;
+		*)
             errornum
             ;;
         esac
