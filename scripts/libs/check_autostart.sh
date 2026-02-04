@@ -3,6 +3,7 @@ check_autostart(){
 		[ ! -f "$CRASHDIR"/.dis_startup ] && return 0
 	elif [ -f /etc/rc.common -a "$(cat /proc/1/comm)" = "procd" ]; then
 		[ -n "$(find /etc/rc.d -name '*shellcrash')" ] && return 0
+		[ ! -f "$CRASHDIR"/.dis_startup ] && return 0
 	elif ckcmd systemctl; then
 		[ "$(systemctl is-enabled shellcrash.service 2>&1)" = enabled ] && return 0
 	elif grep -q 's6' /proc/1/comm; then

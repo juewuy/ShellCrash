@@ -125,6 +125,7 @@ ckstatus() {
 		userguide=1
 		. "$CRASHDIR"/menus/userguide.sh && userguide
 		setconfig userguide 1
+		. "$CRASHDIR"/configs/ShellCrash.cfg
 	fi
 
 	# 检查执行权限

@@ -8,7 +8,7 @@
 [ ! -f "$TMPDIR" ] && mkdir -p "$TMPDIR"
 
 #当上次启动失败时终止自启动
-[ -f "CRASHDIR"/.start_error ] && exit 1
+[ -f "$CRASHDIR"/.start_error ] && exit 1
 #加载工具
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/check_target.sh

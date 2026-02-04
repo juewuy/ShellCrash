@@ -16,9 +16,12 @@ services:
     sysctls:
       net.ipv4.ip_forward: 1
     volumes:
-      - /etc/ShellCrash:/root/ShellCrash
+      - shellcrash_configs:/etc/ShellCrash/configs:rw
     restart: unless-stopped
     
+volumes:
+  shellcrash_configs:
+  
 networks:
   macvlan_lan:
     name: macvlan_lan
