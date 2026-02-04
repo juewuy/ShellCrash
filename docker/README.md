@@ -87,13 +87,9 @@ mkdir -p /root/ShellCrash
 ```shell
 docker run -d \
   ………………
-  -v /root/ShellCrash:/etc/ShellCrash \
+  -v shellcrash_configs:/etc/ShellCrash/configs \
   ………………
 ```
-
-------
-
-
 
 ------
 
@@ -102,8 +98,8 @@ docker run -d \
 ### 1. 创建宿主机目录并进入目录
 
 ```shell
-mkdir -p /root/ShellCrash
-cd /root/ShellCrash
+mkdir -p /tmp/ShellCrash
+cd /tmp/ShellCrash
 ```
 
 ### 2. 下载Compose模版
@@ -126,7 +122,27 @@ docker compose up -d
 
 ------
 
-### Notes
+## Delete（移除容器镜像或删除卷）
+
+### Docker删除容器
+
+```shell
+docker rm -f shellcrash
+```
+
+### Docker删除卷
+
+```shell
+docker volume rm shellcrash_configs
+```
+
+### Compose删除容器&卷
+
+```shell
+docker-compose down -v
+```
+
+## Notes
 
 - 旁路由模式需要宿主机支持 `TUN`
 - macvlan 网络下宿主机默认无法直接访问容器 IP
