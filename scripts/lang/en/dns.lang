@@ -2,9 +2,9 @@
 DNS_CURRENT_MODE="Current DNS running mode:"
 DNS_RESTART_NOTICE="Changes require a manual service restart to take effect."
 
-DNS_MODE_MIX_DESC="CN domains use real-ip, others use fake-ip routing"
-DNS_MODE_ROUTE_DESC="CN domains use real-ip, others use dns2proxy routing"
-DNS_MODE_REDIR_DESC="Insecure. Must be used with a third-party DNS service."
+DNS_MODE_MIX_DESC="CN domains use DIRECT-DNS, others use fake-ip"
+DNS_MODE_ROUTE_DESC="CN domains use DIRECT-DNS, others use PROXY-DNS"
+DNS_MODE_REDIR_DESC="All domains use DIRECT-DNS"
 
 DNS_MENU_PROTECT="DNS Leak Protect"
 DNS_MENU_HOSTS="Hosts Optimization"
