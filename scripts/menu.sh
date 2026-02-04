@@ -97,6 +97,7 @@ ckstatus() { #脚本启动前检查
         userguide=1
         setconfig userguide 1
         . "$CRASHDIR"/menus/8_tools.sh && userguide
+		. "$CRASHDIR"/configs/ShellCrash.cfg
     fi
     #检查执行权限
     [ ! -x "$CRASHDIR"/start.sh ] && chmod +x "$CRASHDIR"/start.sh
