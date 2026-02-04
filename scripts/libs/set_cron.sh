@@ -10,17 +10,19 @@ touch "$tmpcron"
 cronadd() { #定时任务工具
 	if crontab -h 2>&1 | grep -q '\-l'; then
         crontab "$1"
-	else
+	elif [ -f "$crondir/$USER" ];then
 		cat "$1" >"$crondir"/"$USER" && cru a REFRESH "0 0 1 1 * /bin/true" 2>/dev/null
+	else
+		echo "找不到可用的crond或者crontab应用！No available crond or crontab application can be found!"
 	fi
 }
 cronload() { #定时任务工具
-	if [ -f "$crondir/$USER" ];then
-		cat "$crondir"/"$USER" 2>/dev/null
-	elif crontab -h 2>&1 | grep -q '\-l'; then
+	if crontab -h 2>&1 | grep -q '\-l'; then
         crontab -l
+	elif [ -f "$crondir/$USER" ];then
+		cat "$crondir"/"$USER" 2>/dev/null
 	else
-		echo "找不到可用的crond或者crontab应用！No available crond or crontab application can be found!"
+		return 1
 	fi
 }
 cronset() { #定时任务设置
