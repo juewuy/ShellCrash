@@ -2,6 +2,8 @@
 [ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
 PIDFILE="/tmp/ShellCrash/$1.pid"
 
+[ -f "$CRASHDIR"/.start_error ] && [ ! -f /tmp/ShellCrash/crash_start_time ] && exit 1 #当启动失败后禁止开机自启动
+
 if [ -f "$PIDFILE" ]; then
 	PID="$(cat "$PIDFILE")"
 	if [ -n "$PID" ] && [ -d "/proc/$PID" ]; then
