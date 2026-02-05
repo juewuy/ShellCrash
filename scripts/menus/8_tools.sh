@@ -501,7 +501,7 @@ log_pusher() {
                 echo "==========================================================="
                 cat "$TMPDIR"/ShellCrash.log
                 echo "==========================================================="
-				exit
+                exit
             else
                 msg_alert "\033[31m未找到相关日志！\033[0m"
             fi
@@ -652,11 +652,11 @@ debug() {
         "如长时间运行后台监测，日志等级推荐error！防止文件过大！" \
         "你亦可通过：\033[33mcrash -s debug 'warning'\033[0m命令使用其他日志等级"
     content_line "1) 仅测试\033[32m$config_tmp\033[0m配置文件可用性"
-    content_line "2) 前台运行\033[32m$config_tmp\033[0m配置文件,不配置防火墙劫持(\033[33m使用Ctrl+C手动停止\033[0m)"
-    content_line "3) 后台运行完整启动流程，并配置防火墙劫持，日志等级：\033[31merror\033[0m"
-    content_line "4) 后台运行完整启动流程，并配置防火墙劫持，日志等级：\033[32minfo\033[0m"
-    content_line "5) 后台运行完整启动流程，并配置防火墙劫持，日志等级：\033[33mdebug\033[0m"
-    content_line "6) 后台运行完整启动流程，并配置防火墙劫持，且将错误日志打印到闪存：\033[32m$CRASHDIR/debug.log\033[0m"
+    content_line "2) 前台运行\033[32m$config_tmp\033[0m配置文件，不配置防火墙劫持(\033[33m使用Ctrl+C手动停止\033[0m)"
+    content_line "3) 后台运行完整启动流程并配置防火墙劫持，日志等级：\033[31merror\033[0m"
+    content_line "4) 后台运行完整启动流程并配置防火墙劫持，日志等级：\033[32minfo\033[0m"
+    content_line "5) 后台运行完整启动流程并配置防火墙劫持，日志等级：\033[33mdebug\033[0m"
+    content_line "6) 后台运行完整启动流程并配置防火墙劫持，且将错误日志打印到闪存：\033[32m$CRASHDIR/debug.log\033[0m"
     content_line ""
     content_line "8) 后台运行完整启动流程,输出执行错误并查找上下文，之后关闭进程"
     [ -s "$TMPDIR"/jsons/inbounds.json ] && content_line "9) 将\033[32m$config_tmp\033[0m下json文件合并为$TMPDIR/debug.json"

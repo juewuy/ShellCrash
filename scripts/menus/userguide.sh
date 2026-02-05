@@ -108,9 +108,12 @@ userguide() {
 
     # 提示导入订阅或者配置文件
     if [ ! -s "$CRASHDIR"/yamls/config.yaml ] && [ ! -s "$CRASHDIR"/jsons/config.json ]; then
-        comp_box "\033[32m$UG_IMPORT_CONFIG\033[0m" \
-            "\033[0m$UG_CONFIG_TIP\033[0m"
-        read -r -p "$UG_CONFIG_RES(1/0)> " res
+        comp_box "\033[0m$UG_IMPORT_CONFIG\033[0m" \
+            "\033[32m$UG_CONFIG_TIP\033[0m" \
+            "$UG_CONFIG_RES"
+        btm_box "1) 立即导入" \
+            "0) 暂不导入"
+        read -r -p "$COMMON_INPUT> " res
         [ "$res" = 1 ] && inuserguide=1 && {
             . "$CRASHDIR"/menus/6_core_config.sh && set_core_config
             inuserguide=""

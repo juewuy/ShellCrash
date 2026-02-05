@@ -26,9 +26,9 @@ settings() {
             content_line "5) $SET_MENU_SNIFFER\t\033[36m$sniffer\033[0m"
             content_line "6) $SET_MENU_ADV_PORT"
         }
-        content_line "8) $SET_MENU_IPV6\t\033[36m$ipv6_redir\033[0m"
-        separator_line "-"
-        btm_box "a) \033[31m$SET_MENU_RESET\033[0m" \
+        content_line "7) $SET_MENU_IPV6\t\033[36m$ipv6_redir\033[0m"
+        btm_box "" \
+            "a) \033[31m$SET_MENU_RESET\033[0m" \
             "b) \033[36m$SET_MENU_LANG\033[0m" \
             "c) \033[33m$SET_MENU_UI\033[0m" \
             "" \
@@ -140,7 +140,7 @@ settings() {
                 set_adv_config
             fi
             ;;
-        8)
+        7)
             set_ipv6
             ;;
         a)
@@ -255,7 +255,7 @@ settings() {
 set_redir_config() {
     setconfig redir_mod "$redir_mod"
     setconfig dns_mod "$dns_mod"
-    msg_alert "\033[36m$SET_REDIR_APPLIED $redir_mod\033[0m"
+    msg_alert "\033[36m$SET_REDIR_APPLIED $redir_mod 模式\033[0m"
 }
 
 # 路由模式设置
@@ -269,10 +269,10 @@ set_redir_mod() {
         comp_box "\033[33m$SET_REDIR_RESTART_HINT\033[0m" \
             "$SET_REDIR_CURRENT\033[47;30m$redir_mod$MENU_MOD\033[0m；  $SET_CORE_CURRENT\033[47;30m$crashcore\033[0m"
         [ "$firewall_area" -le 3 ] && {
-            content_line "1) \033[32m$SET_REDIR_REDIR\033[0m：\t$SET_REDIR_REDIRDES"
-            content_line "2) \033[36m$SET_REDIR_MIX\033[0m：\t$SET_REDIR_MIXDES"
-            content_line "3) \033[32m$SET_REDIR_TPROXY\033[0m：$SET_REDIR_TPROXYDES"
-            content_line "4) \033[33m$SET_REDIR_TUN\033[0m：\t$SET_REDIR_TUNDES"
+            content_line "1) 设为\033[32m$SET_REDIR_REDIR\033[0m：\t$SET_REDIR_REDIRDES"
+            content_line "2) 设为\033[36m$SET_REDIR_MIX\033[0m：\t$SET_REDIR_MIXDES"
+            content_line "3) 设为\033[32m$SET_REDIR_TPROXY\033[0m：$SET_REDIR_TPROXYDES"
+            content_line "4) 设为\033[33m$SET_REDIR_TUN\033[0m：\t$SET_REDIR_TUNDES"
             content_line ""
         }
         [ "$firewall_area" = 5 ] && {
@@ -644,13 +644,10 @@ set_ipv6() {
         [ -z "$ipv6_redir" ] && ipv6_redir=OFF
         [ -z "$ipv6_dns" ] && ipv6_dns=ON
 
-        line_break
-        separator_line "="
-        content_line "1) $IPV6_REDIR：\t\033[36m$ipv6_redir\033[0m"
+        top_box "1) $IPV6_REDIR：\t\033[36m$ipv6_redir\033[0m"
         [ "$disoverride" != "1" ] && content_line "2) $IPV6_DNS：\t\033[36m$ipv6_dns\033[0m"
-        content_line ""
-        content_line "0) $COMMON_BACK"
-        separator_line "="
+        btm_box "" \
+            "0) $COMMON_BACK"
         read -r -p "$COMMON_INPUT> " num
         case "$num" in
         "" | 0)

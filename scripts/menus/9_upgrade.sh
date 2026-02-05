@@ -72,39 +72,30 @@ upgrade() {
             ;;
         9)
             comp_box "感谢以下项目及其开发者们的无私奉献！"
-
-            content_line "\033[32mClash              \033[0m开发：\033[36mDreamacro\033[0m"
-            content_line ""
-
-            content_line "\033[32msing-box           \033[0m开发：\033[36mSagerNet\033[0m"
-            content_line "项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m"
-            content_line ""
-
-            content_line "\033[32mMetaCubeX          \033[0m开发：\033[36mMetaCubeX\033[0m"
-            content_line "项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m"
-            content_line ""
-
-            content_line "\033[32mYACD面板           \033[0m开发：\033[36mhaishanh\033[0m"
-            content_line "项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m"
-            content_line ""
-
-            content_line "\033[32mZashboard          \033[0m开发：\033[36mZephyruso\033[0m"
-            content_line "项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m"
-            content_line ""
-
-            content_line "\033[32mSubconverter       \033[0m开发：\033[36mtindy2013\033[0m"
-            content_line "项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m"
-            content_line ""
-
-            content_line "\033[32msing-box-reF1nd    \033[0m开发：\033[36mreF1nd\033[0m"
-            content_line "项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m"
-            content_line ""
-
-            content_line "\033[32mDustinWin          \033[0m开发：\033[36mDustinWin\033[0m"
-            content_line "开发者地址：\033[32mhttps://github.com/DustinWin\033[0m"
-            content_line ""
-
-            comp_box "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
+            btm_box "\033[32mClash              \033[0m开发：\033[36mDreamacro\033[0m" \
+                "" \
+                "\033[32msing-box           \033[0m开发：\033[36mSagerNet\033[0m" \
+                "项目地址：\033[32mhttps://github.com/SagerNet/sing-box\033[0m" \
+                "" \
+                "\033[32mMetaCubeX          \033[0m开发：\033[36mMetaCubeX\033[0m" \
+                "项目地址：\033[32mhttps://github.com/MetaCubeX\033[0m" \
+                "" \
+                "\033[32mYACD面板           \033[0m开发：\033[36mhaishanh\033[0m" \
+                "项目地址：\033[32mhttps://github.com/haishanh/yacd\033[0m" \
+                "" \
+                "\033[32mZashboard          \033[0m开发：\033[36mZephyruso\033[0m" \
+                "项目地址：\033[32mhttps://github.com/Zephyruso/zashboard\033[0m" \
+                "" \
+                "\033[32mSubconverter       \033[0m开发：\033[36mtindy2013\033[0m" \
+                "项目地址：\033[32mhttps://github.com/tindy2013/subconverter\033[0m" \
+                "" \
+                "\033[32msing-box-reF1nd    \033[0m开发：\033[36mreF1nd\033[0m" \
+                "项目地址：\033[32mhttps://github.com/reF1nd/sing-box\033[0m" \
+                "" \
+                "\033[32mDustinWin          \033[0m开发：\033[36mDustinWin\033[0m" \
+                "开发者地址：\033[32mhttps://github.com/DustinWin\033[0m" \
+                ""
+            btm_box "特别感谢：\033[36m所有帮助及赞助过此项目的同仁们！\033[0m"
             sleep 2
             ;;
         *)
@@ -510,10 +501,10 @@ setcore() {
 
         comp_box "当前内核：\033[42;30m$crashcore\033[47;30m $core_v\033[0m" \
             "当前系统处理器架构：\033[32m$cpucore\033[0m" \
-            "\033[36m如需本地上传，请将.upx .gz .tar.gz文件上传至 /tmp 目录后重新运行crash命令\033[0m"
+            "\033[36m如需本地上传，请将.upx .gz .tar.gz文件上传至 /tmp 目录后重新运行crash命令\033[0m" \
+            "" \
+            "\033[33m请选择需要使用的核心版本：\033[0m"
 
-        content_line "\033[33m请选择需要使用的核心版本：\033[0m"
-        separator_line "-"
         content_line "1) \033[43;30mMihomo\033[0m：\033[32m$meta_v \033[32m（原meta内核）支持全面\033[0m \033[33m占用略高\033[0m"
         sub_content_line "说明文档：\033[36;4mhttps://wiki.metacubex.one\033[0m"
 
@@ -533,7 +524,7 @@ setcore() {
             "7) \033[32m更新当前内核\033[0m" \
             "9) 手动指定处理器架构" \
             "" \
-            "0 返回上级菜单"
+            "0) 返回上级菜单"
         read -r -p "请输入对应标号> " num
         case "$num" in
         "" | 0)
