@@ -238,12 +238,13 @@ setboot() {
                 echo "==========================================================="
                 grep -v '任务' "$TMPDIR"/ShellCrash.log
                 echo "==========================================================="
-				exit
+                line_break
+                exit
             else
                 msg_alert "\033[31m未找到相关日志！\033[0m"
             fi
             ;;
-		*)
+        *)
             errornum
             ;;
         esac
