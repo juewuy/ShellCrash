@@ -22,7 +22,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/cn.mrs
-    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn.mrs"
     interval: 86400
 
   private:
@@ -30,7 +30,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/private.mrs
-    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/private.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/private.mrs"
     interval: 86400
 
   tld-proxy:
@@ -38,7 +38,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/tld-proxy.mrs
-    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/tld-proxy.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/tld-proxy.mrs"
     interval: 86400
 
   proxy:
@@ -46,7 +46,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/proxy.mrs
-    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/proxy.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/proxy.mrs"
     interval: 86400
 
   privateip:
@@ -54,7 +54,7 @@ rule-providers:
     behavior: ipcidr
     format: mrs
     path: ./ruleset/privateip.mrs
-    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/privateip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/privateip.mrs"
     interval: 86400
 
   cnip:
@@ -62,7 +62,7 @@ rule-providers:
     behavior: ipcidr
     format: mrs
     path: ./ruleset/cnip.mrs
-    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cnip.mrs"
     interval: 86400
 
   telegramip:
@@ -70,7 +70,7 @@ rule-providers:
     behavior: ipcidr
     format: mrs
     path: ./ruleset/telegramip.mrs
-    url: "https://testingcf.jsdelivr.net/gh//DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/telegramip.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/telegramip.mrs"
     interval: 86400
 
 rules:

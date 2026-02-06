@@ -69,7 +69,7 @@ webget(){
 	#参数【$1】代表下载目录，【$2】代表在线地址
 	#参数【$3】代表输出显示，【$4】不启用重定向
 	#参数【$5】代表验证证书，【$6】使用自定义UA
-	[ -n "$6" ] && agent="--user-agent=$6"
+	[ -n "$6" ] && agent="--user-agent $6"
 	if wget --help 2>&1 | grep -q 'show-progress' >/dev/null 2>&1; then
 		[ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
 		[ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
