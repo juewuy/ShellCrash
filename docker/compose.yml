@@ -14,7 +14,8 @@ services:
     devices:
       - "/dev/net/tun:/dev/net/tun"
     sysctls:
-      net.ipv4.ip_forward: 1
+      - net.ipv4.ip_forward: 1
+      # - net.ipv6.conf.all.forwarding=1
     volumes:
       - shellcrash_configs:/etc/ShellCrash/configs:rw
     restart: unless-stopped

@@ -57,6 +57,7 @@ docker run -d \
   --cap-add NET_ADMIN \
   --cap-add NET_RAW \
   --cap-add SYS_ADMIN \
+  --sysctl net.ipv4.ip_forward=1 \
   --device /dev/net/tun:/dev/net/tun \
   --restart unless-stopped \
   juewuy/shellcrash:latest

@@ -57,8 +57,7 @@ RUN apk add --no-cache \
     ca-certificates \
     tzdata \
     nftables \
-    iproute2 \
-    dcron
+    iproute2
 
 RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
     echo "${TZ}" > /etc/timezone
