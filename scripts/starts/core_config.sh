@@ -41,6 +41,8 @@ get_core_config() { #下载内核配置文件
 		fi
         Https="${Server}/sub?target=${target}&${Server_ua}=${user_agent}&insert=true&new_name=true&scv=true&udp=true&${urlencodeUrl}"
         url_type=true
+	else
+		Https=$(echo $Https | sed 's/\\&/\&/g')   #还原转义
     fi
     #输出
     echo "-----------------------------------------------"
