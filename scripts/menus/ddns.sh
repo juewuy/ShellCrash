@@ -69,23 +69,25 @@ set_ddns() {
 set_ddns_service() {
     while true; do
         services_dir=/etc/ddns/"$serv"
+		[ -s "$services_dir" ] || services_dir=/etc/ddns/services
         [ -s "$services_dir" ] || services_dir=/usr/share/ddns/list
+		[ -s "$services_dir" ] || {
+		    msg_alert "\033[33m未找到DDNS列表文件，尝试在线获取……\033[0m"
+		    ddns service update >/dev/null || msg_alert "\033[31m下载失败，请重试！\033[0m"
+		}
         comp_box "\033[32m请选择服务提供商：\033[0m"
 
-        # cat "$services_dir" | grep -v '^#' | awk '{print NR") " $1}'
-        awk '!/^#/ {print NR") " $1}' "$services_dir" |
-            while IFS= read -r line; do
-                content_line "$line"
-            done
+        list=$(awk '/^#/ || !NF {next} {print $1}' "$services_dir")
+        list_box "$list"
 
-        nr=$(cat "$services_dir" | grep -v '^#' | wc -l)
+        nr=$(echo "$list" | wc -l)
         common_back
         read -r -p "请输入对应数字> " num
         if [ -z "$num" ] || [ "$num" = 0 ]; then
             i=
             break
         elif [ "$num" -gt 0 ] && [ "$num" -lt "$nr" ]; then
-            service_name=$(cat "$services_dir" | grep -v '^#' | awk '{print $1}' | sed -n "$num"p | sed 's/"//g')
+            service_name=$(echo "$list" | sed -n "$num"p | sed 's/"//g')
             service=$(echo "$service_name" | sed 's/\./_/g')
             set_ddns
             break

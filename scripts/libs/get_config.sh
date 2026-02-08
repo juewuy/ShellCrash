@@ -16,7 +16,7 @@ routing_mark=$((fwmark + 2))
 
 [ -z "$dns_nameserver" ] && {
 	dns_nameserver='223.5.5.5, 1.2.4.8'
-	nslookup localhost 127.0.0.1 >/dev/null 2>&1 && dns_nameserver='127.0.0.1'
+	netstat -ntlup 2>/dev/null | grep -q '127.0.0.1:53' && dns_nameserver='127.0.0.1'
 }
 [ -z "$dns_fallback" ] && dns_fallback="1.1.1.1, 8.8.8.8"
 [ -z "$dns_resolver" ] && dns_resolver="223.5.5.5, 2400:3200::1"
