@@ -5,4 +5,5 @@ set_profile() {
     echo "alias ${my_alias}=\"$shtype $CRASHDIR/menu.sh\"" >>"$1" #设置快捷命令环境变量
     sed -i '/export CRASHDIR=*/'d "$1"
     echo "export CRASHDIR=\"$CRASHDIR\"" >>"$1" #设置路径环境变量
+	. "$1" >/dev/null 2>&1 || true
 }
