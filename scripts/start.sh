@@ -67,10 +67,10 @@ start)
 stop)
     logger ShellCrash服务即将关闭......
     [ -n "$(pidof CrashCore)" ] && web_save #保存面板配置
-    #删除守护进程&面板配置自动保存
-    cronset '保守模式守护进程'
-    cronset '运行时每'
-    cronset '流媒体预解析'
+    #清理定时任务
+	cronload | grep -vE '^$|start_legacy_wd.sh|运行时每' > "$TMPDIR"/cron_tmp
+	cronadd "$TMPDIR"/cron_tmp
+	rm -f "$TMPDIR"/cron_tmp
     #停止tg_bot
     . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
     #多种方式结束进程
