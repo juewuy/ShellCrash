@@ -188,5 +188,4 @@ crash -h     # 查看命令帮助列表
 
 ## :airplane: 机场推荐
 
-- [**Dler-墙洞**](https://dler.pro/auth/register?affid=89698)，多年稳定运行，功能齐全。
 - [**大米**](https://1s.bigmeok.me/user#/register?code=2PuWY9I7)，群友力荐，流媒体解锁，月付推荐。
