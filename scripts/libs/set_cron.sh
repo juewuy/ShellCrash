@@ -36,5 +36,4 @@ cronset() { #定时任务设置
 	else
 		rm -f "$tmpcron"
 	fi
-	sleep 1
 }
