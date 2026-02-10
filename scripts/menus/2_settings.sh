@@ -271,7 +271,7 @@ set_redir_mod() {
         [ "$firewall_area" -le 3 ] && {
             content_line "1) 设为\033[32m$SET_REDIR_REDIR\033[0m：\t$SET_REDIR_REDIRDES"
             content_line "2) 设为\033[36m$SET_REDIR_MIX\033[0m：\t$SET_REDIR_MIXDES"
-            content_line "3) 设为\033[32m$SET_REDIR_TPROXY\033[0m：$SET_REDIR_TPROXYDES"
+            content_line "3) 设为\033[32m$SET_REDIR_TPROXY\033[0m：\t$SET_REDIR_TPROXYDES"
             content_line "4) 设为\033[33m$SET_REDIR_TUN\033[0m：\t$SET_REDIR_TUNDES"
             content_line ""
         }
