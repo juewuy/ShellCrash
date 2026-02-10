@@ -354,7 +354,7 @@ setcustcore(){ #自定义内核
 		checkcustcore
 	;;
 	9)
-		read -p "请输入自定义内核的链接地址(必须是以.tar.gz或.gz结尾的压缩文件) > " link
+		read -p "请输入自定义内核的链接地址(必须是以.tar.gz、.upx或.gz结尾的压缩文件) > " link
 		[ -n "$link" ] && custcorelink="$link"
 		setcoretype
 		getcore
@@ -398,7 +398,7 @@ setcore() {
         [ -z "$crashcore" ] && crashcore="unknow"
         [ -z "$zip_type" ] && zip_type="tar.gz"
         echo "$crashcore" | grep -q 'singbox' && core_old=singbox || core_old=clash
-        [ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#; s#-linux.*$##')"
+        [ -n "$custcorelink" ] && custcore="$(echo $custcorelink | sed 's#.*github.com##; s#/releases/download/#@#')"
         ###
         echo "-----------------------------------------------"
         [ -z "$cpucore" ] && check_cpucore
