@@ -230,7 +230,7 @@ set_bot_tg(){
 		else
 			TG_menupush=ON
 		fi
-		setconfig TG_menupush "$TG_menupush"
+		setconfig TG_menupush "$TG_menupush" "$GT_CFG_PATH"
 		set_bot_tg
 	;;
 	*)
