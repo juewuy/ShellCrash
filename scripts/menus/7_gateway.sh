@@ -195,6 +195,7 @@ set_bot_tg(){
 	echo "-----------------------------------------------"
 	echo -e " 1 启用/关闭TG-BOT服务	\033[32m$bot_tg_service\033[0m"
 	echo -e " 2 TG-BOT绑定设置	\033[32m$TG_CHATID_info\033[0m"
+	echo -e " 3 启动时推送菜单	\033[32m$TG_menupush\033[0m"
 	echo -e " 0 返回上级菜单 \033[0m"
 	echo "-----------------------------------------------"
 	read -p "请输入对应数字 > " num
@@ -221,6 +222,15 @@ set_bot_tg(){
 			fi
 		fi
 		set_bot_tg_init
+		set_bot_tg
+	;;
+	3)
+		if [ "$TG_menupush" = ON ];then
+			TG_menupush=OFF
+		else
+			TG_menupush=ON
+		fi
+		setconfig TG_menupush "$TG_menupush"
 		set_bot_tg
 	;;
 	*)
