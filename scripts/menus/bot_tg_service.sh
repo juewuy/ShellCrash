@@ -4,7 +4,6 @@
 bot_tg_start(){
 	. "$CRASHDIR"/starts/start_legacy.sh
 	start_legacy "$CRASHDIR/menus/bot_tg.sh" 'bot_tg'
-	bot_tg_cron
 }
 bot_tg_stop(){
 	cronload | grep -q 'TG_BOT' && cronset 'TG_BOT'
