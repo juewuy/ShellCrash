@@ -72,8 +72,11 @@ core_webget(){
 		[ -z "$zip_type" ] && zip_type='tar.gz'
 		get_bin "$TMPDIR/Coretmp.$zip_type" "bin/$crashcore/${target}-linux-${cpucore}.$zip_type"
 	else
-		zip_type=$(echo "$custcorelink" | grep -oE 'tar.gz$')
-		[ -z "$zip_type" ] && zip_type=$(echo "$custcorelink" | grep -oE 'gz$')
+		case "$custcorelink" in
+			*.tar.gz) zip_type="tar.gz" ;;
+			*.gz)     zip_type="gz" ;;
+			*.upx)    zip_type="upx" ;;
+		esac
 		[ -n "$zip_type" ] && webget "$TMPDIR/Coretmp.$zip_type" "$custcorelink"
 	fi
 	#校验内核

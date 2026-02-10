@@ -320,7 +320,7 @@ polling(){
 	done
 }
 
-#send_menu
+[ "$TG_menupush" = ON ] && send_menu
 
 polling
 
