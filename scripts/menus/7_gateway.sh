@@ -213,7 +213,8 @@ set_bot_tg_service() {
         . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
     else
         bot_tg_service=ON
-        [ -n "$(pidof CrashCore)" ] && . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_start
+        [ -n "$(pidof CrashCore)" ] && . "$CRASHDIR"/menus/bot_tg_service.sh && 
+            bot_tg_start && bot_tg_cron
     fi
     setconfig bot_tg_service "$bot_tg_service"
 }
