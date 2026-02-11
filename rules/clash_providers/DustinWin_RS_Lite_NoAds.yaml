@@ -104,7 +104,7 @@ rule-providers:
     behavior: domain
     format: mrs
     path: ./ruleset/cn.mrs
-    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn-lite.mrs"
+    url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/cn.mrs"
     interval: 86400
 
   privateip:
