@@ -11,7 +11,7 @@ if [ -f "$PIDFILE" ]; then
 	if [ -n "$PID" ] && [ "$PID" -eq "$PID" ] 2>/dev/null; then
 		if kill -0 "$PID" 2>/dev/null || [ -d "/proc/$PID" ]; then
 			rm -d "$LOCKDIR" 2>/dev/null
-			return 0
+			exit 0
 		fi
 	else
 		rm -f "$PIDFILE"
