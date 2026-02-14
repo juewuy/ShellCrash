@@ -1215,7 +1215,7 @@ setserver() {
                 separator_line "="
                 content_line "\033[32m正在获取版本信息......\033[0m"
                 . "$CRASHDIR"/libs/web_get_lite.sh
-                web_get_lite https://github.com/juewuy/ShellCrash/tags | grep -o 'releases/tag/.*data' | awk -F '/' '{print $3}' | sed 's/".*//g' >"$TMPDIR"/tags
+                list=$(web_get_lite https://api.github.com/repos/juewuy/ShellCrash/tags | grep -E '"name": "[0-9]' | cut -d '"' -f4)
                 if [ "$?" = "0" ]; then
                     content_line "\033[32m获取版本信息成功\033[0m"
                     separator_line "="
@@ -1223,18 +1223,14 @@ setserver() {
                     line_break
                     separator_line "="
                     content_line "\033[31m请选择想要回退至的具体版本：\033[0m"
-                    cat "$TMPDIR"/tags |
-                        awk '{print NR") "$1}' |
-                        while IFS= read -r line; do
-                            content_line "$line"
-                        done
+                    list_box "$list"
                     btm_box "" \
                         "0) 返回上级菜单"
                     read -r -p "请输入对应标号> " num
                     if [ -z "$num" ] || [ "$num" = 0 ]; then
                         continue
-                    elif [ "$num" -le $(cat "$TMPDIR"/tags 2>/dev/null | awk 'END{print NR}') ]; then
-                        release_type=$(cat "$TMPDIR"/tags | awk '{print $1}' | sed -n "$num"p)
+                    elif [ "$num" -le $(echo "$list" | awk 'END{print NR}') ]; then
+                        release_type=$(echo "$list" | sed -n "$num"p)
                         update_url=''
                         saveserver
                     else
