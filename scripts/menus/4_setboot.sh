@@ -129,7 +129,7 @@ setboot() {
                     msg_alert "\033[33m已经停用小闪存功能！\033[0m"
                 fi
             fi
-            setconfig BINDIR "$BINDIR" "$CRASHDIR"/configs/command.env
+            sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/command.env
             sleep 1
             ;;
         5)
@@ -201,7 +201,7 @@ setboot() {
                     continue
                     ;;
                 esac
-                setconfig BINDIR "$BINDIR" "$CRASHDIR"/configs/command.env
+                sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/command.env
                 break
             done
             ;;

@@ -81,11 +81,8 @@ done
 setconfig versionsh_l $version
 #生成用于执行启动服务的变量文件
 [ ! -f "$CRASHDIR"/configs/command.env ] && {
-    TMPDIR='/tmp/ShellCrash'
-    BINDIR="$CRASHDIR"
-    touch "$CRASHDIR"/configs/command.env
-    setconfig TMPDIR "$TMPDIR" "$CRASHDIR"/configs/command.env
-    setconfig BINDIR "$BINDIR" "$CRASHDIR"/configs/command.env
+    echo 'TMPDIR=/tmp/ShellCrash' > "$CRASHDIR"/configs/command.env
+    echo "BINDIR=$CRASHDIR" >> "$CRASHDIR"/configs/command.env
 }
 if [ -n "$(grep 'crashcore=singbox' "$CFG_PATH")" ]; then
     COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'

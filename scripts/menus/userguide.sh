@@ -99,7 +99,7 @@ userguide() {
         read -r -p "$COMMON_INPUT_R" res
         [ "$res" = 1 ] && {
             BINDIR=/tmp/ShellCrash
-            setconfig BINDIR /tmp/ShellCrash "$CRASHDIR"/configs/command.env
+            sed -i "s#BINDIR=.*#BINDIR=$BINDIR" "$CRASHDIR"/configs/command.env
         }
     fi
 
