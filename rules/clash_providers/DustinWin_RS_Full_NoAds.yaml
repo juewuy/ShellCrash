@@ -161,7 +161,7 @@ rule-providers:
 
   netflixip:
     type: http
-    behavior: domain
+    behavior: ipcidr
     format: mrs
     path: ./ruleset/netflixip.mrs
     url: "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@refs/heads/mihomo-ruleset/netflixip.mrs"
