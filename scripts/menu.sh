@@ -15,6 +15,7 @@ CFG_PATH="$CRASHDIR"/configs/ShellCrash.cfg
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/check_autostart.sh
+. "$CRASHDIR"/libs/check_process.sh
 . "$CRASHDIR"/menus/1_start.sh
 . "$CRASHDIR"/menus/running_status.sh
 errornum() {
@@ -69,7 +70,7 @@ ckstatus() { #脚本启动前检查
         auto1="\033[36m允许\033[0mShellCrash开机启动"
     fi
     #获取运行状态
-    PID=$(pidof CrashCore | awk '{print $NF}')
+    PID=$(check_crashcore_running)
     if [ -n "$PID" ]; then
         run="\033[32m正在运行（$redir_mod）\033[0m"
         running_status

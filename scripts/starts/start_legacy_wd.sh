@@ -1,30 +1,33 @@
+#!/bin/sh
+# Copyright (C) Juewuy
 
 [ -z "$CRASHDIR" ] && CRASHDIR=$(cd "$(dirname "$0")"/.. && pwd)
-PIDFILE="/tmp/ShellCrash/$1.pid"
-LOCKDIR="/tmp/ShellCrash/start_$1.lock"
+SERVICE_NAME="$1"
 
-[ -f "$CRASHDIR"/.start_error ] && [ ! -f /tmp/ShellCrash/crash_start_time ] && exit 1 #当启动失败后禁止开机自启动
-mkdir "$LOCKDIR" 2>/dev/null || exit 1
+. "$CRASHDIR"/libs/check_process.sh
 
-if [ -f "$PIDFILE" ]; then
-	PID="$(cat "$PIDFILE")"
-	if [ -n "$PID" ] && [ "$PID" -eq "$PID" ] 2>/dev/null; then
-		if kill -0 "$PID" 2>/dev/null || [ -d "/proc/$PID" ]; then
-			rm -d "$LOCKDIR" 2>/dev/null
-			exit 0
-		fi
-	else
-		rm -f "$PIDFILE"
-	fi
+#当启动失败后禁止开机自启动
+[ -f "$CRASHDIR"/.start_error ] && [ ! -f /tmp/ShellCrash/crash_start_time ] && exit 1
+
+if check_daemon_process "$SERVICE_NAME"; then
+    exit 0
 fi
 
 #如果没有进程则拉起
-if [ "$1" = "shellcrash" ]; then
-	"$CRASHDIR"/start.sh start
-else
-	[ -f "$CRASHDIR/starts/start_legacy.sh" ] && . "$CRASHDIR/starts/start_legacy.sh"
-	killall bot_tg.sh 2>/dev/null
-	start_legacy "$CRASHDIR/menus/bot_tg.sh" "$1"
-fi
+cleanup_daemon_state "$SERVICE_NAME" "false"
 
-rm -d "$LOCKDIR" 2>/dev/null
+if [ "$SERVICE_NAME" = "shellcrash" ]; then
+    if ! "$CRASHDIR"/start.sh start; then
+        [ -f "$CRASHDIR"/libs/logger.sh ] && . "$CRASHDIR"/libs/logger.sh && logger "守护进程：启动 $SERVICE_NAME 失败" 31
+        exit 1
+    fi
+else
+    if [ -f "$CRASHDIR/starts/start_legacy.sh" ]; then
+        . "$CRASHDIR"/starts/start_legacy.sh
+        killall bot_tg.sh 2>/dev/null
+        if ! start_legacy "$CRASHDIR/menus/bot_tg.sh" "$SERVICE_NAME"; then
+            [ -f "$CRASHDIR"/libs/logger.sh ] && . "$CRASHDIR"/libs/logger.sh && logger "守护进程：启动 $SERVICE_NAME 失败" 31
+            exit 1
+        fi
+    fi
+fi

@@ -4,6 +4,7 @@
 . "$CRASHDIR"/libs/web_json.sh
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/web_get_lite.sh
+. "$CRASHDIR"/libs/check_process.sh
 . "$CRASHDIR"/menus/running_status.sh
 . "$CRASHDIR"/configs/gateway.cfg
 . "$CRASHDIR"/configs/ShellCrash.cfg
@@ -49,7 +50,7 @@ EOF
 }
 send_menu(){
 	#获取运行状态
-	PID=$(pidof CrashCore | awk '{print $NF}')
+	PID=$(check_crashcore_running)
 	if [ -n "$PID" ]; then
 		run='🟢正在运行'
 		running_status
