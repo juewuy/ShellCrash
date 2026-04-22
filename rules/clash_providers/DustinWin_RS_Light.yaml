@@ -8,7 +8,7 @@ proxy-groups:
   - {name: 🎯 本地直连, type: select, proxies: [DIRECT], hidden: true}
 
   - {name: 👑 高级节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"}
-  - {name: 📉 省流节点, type: url-test, tolerance: 100, include-all: true, filter: "(0\\.[1-5]|低倍率|省流|大流量)"}
+  - {name: 📉 省流节点, type: url-test, tolerance: 100, include-all: true, filter: "(0\\.[1-5]|低倍率|省流|大流量|1x|1\\.0x)"}
   - {name: ♻️ 自动选择, type: url-test, tolerance: 100, include-all: true}
   - {name: 👉 手动选择, type: select, include-all: true}
   - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
