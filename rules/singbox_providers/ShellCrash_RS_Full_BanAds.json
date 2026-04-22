@@ -43,7 +43,7 @@
     { "tag": "🇸🇬 狮城节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇸🇬|新加坡|狮城|sg|singapore)" },
 
     { "tag": "👑 高级节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|[0-9][0-9]+))" },
-    { "tag": "📉 省流节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(0[.][1-5]|低倍率|省流|大流量|公益|免费|闲时|Low)" }
+    { "tag": "📉 省流节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(0[.][1-5]|1x|1\\.0x|低倍率|省流|大流量|公益|免费|闲时|Low)" }
   ],
   "route": {
     "rules": [
