@@ -1,0 +1,5 @@
+#!/bin/sh
+if [ ! -d "/etc/ShellCrash" ] || [ -z "$(ls -A /etc/ShellCrash 2>/dev/null)" ]; then
+    mkdir -p /etc/ShellCrash
+    cp -a /etc/ShellCrash_backup/. /etc/ShellCrash/
+fi

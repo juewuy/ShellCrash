@@ -88,7 +88,7 @@ mkdir -p /root/ShellCrash
 ```shell
 docker run -d \
   ………………
-  -v shellcrash_configs:/etc/ShellCrash/configs \
+  -v shellcrash_configs:/etc/ShellCrash \
   ………………
 ```
 
