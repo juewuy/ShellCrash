@@ -75,7 +75,6 @@ COPY --from=builder /tmp/s6_noarch.tar.xz /tmp/s6_noarch.tar.xz
 RUN tar -xJf /tmp/s6_noarch.tar.xz -C / && rm -rf /tmp/s6_noarch.tar.xz
 RUN tar -xJf /tmp/s6_arch.tar.xz -C / && rm -rf /tmp/s6_arch.tar.xz
 COPY docker/s6-rc.d /etc/s6-overlay/s6-rc.d
-RUN chmod +x /etc/s6-overlay/s6-rc.d/sc-init/up
 ENV S6_CMD_WAIT_FOR_SERVICES=1
 
 ENTRYPOINT ["/init"]
