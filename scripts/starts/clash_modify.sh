@@ -223,14 +223,16 @@ merger_yaml() {
     [ -s "$TMPDIR"/hosts.yaml ] && yaml_hosts="$TMPDIR"/hosts.yaml
     [ -s "$CRASHDIR"/yamls/others.yaml ] && yaml_others="$CRASHDIR"/yamls/others.yaml
     yaml_add=
+    yaml_ruleproviders=
     for char in $yaml_char; do #将额外配置文件合并
         [ -s "$TMPDIR"/${char}.yaml ] && {
             sed -i "1i\\${char}:" "$TMPDIR"/${char}.yaml
             yaml_add="$yaml_add $TMPDIR/${char}.yaml"
+            [ "$char" = "rule-providers" ] && yaml_ruleproviders="$TMPDIR/${char}.yaml" || yaml_add="$yaml_add $TMPDIR/${char}.yaml"
         }
     done
-    #合并完整配置文件
-    cut -c 1- "$TMPDIR"/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add >"$TMPDIR"/config.yaml
+    #合并完整配置文件, rule-providers 必须位于 dns 之前以确保 rule-set 引用可解析
+    cut -c 1- "$TMPDIR"/set.yaml $yaml_ruleproviders $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add >"$TMPDIR"/config.yaml
 }
 
 test_yaml() {
