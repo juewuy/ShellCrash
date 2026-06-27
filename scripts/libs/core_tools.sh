@@ -53,7 +53,7 @@ core_check(){
         fi
         if [ "$zip_type" = 'upx' ];then
             rm -f "$1" "$TMPDIR"/core_new
-            ln -sf "$TMPDIR/CrashCore.upx" "$TMPDIR/CrashCore"
+            ln -sf "$BINDIR/CrashCore.upx" "$TMPDIR/CrashCore"
         else
             mv -f "$TMPDIR/core_new" "$TMPDIR/CrashCore"
         fi
