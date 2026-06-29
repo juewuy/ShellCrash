@@ -3,7 +3,7 @@
 
 #特殊固件识别及标记
 [ -f "/etc/storage/started_script.sh" ] && { #老毛子固件
-    systype=Padavan 
+    systype=Padavan
     initdir='/etc/storage/started_script.sh'
 }
 [ -d "/jffs" ] && { #华硕固件
@@ -83,8 +83,8 @@ done
 setconfig versionsh_l $version
 #生成用于执行启动服务的变量文件
 [ ! -f "$CRASHDIR"/configs/command.env ] && {
-    echo 'TMPDIR=/tmp/ShellCrash' > "$CRASHDIR"/configs/command.env
-    echo "BINDIR=$CRASHDIR" >> "$CRASHDIR"/configs/command.env
+    echo 'TMPDIR=/tmp/ShellCrash' >"$CRASHDIR"/configs/command.env
+    echo "BINDIR=$CRASHDIR" >>"$CRASHDIR"/configs/command.env
 }
 if [ -n "$(grep 'crashcore=singbox' "$CFG_PATH")" ]; then
     COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
@@ -102,7 +102,7 @@ grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
 [ -n "$url" ] && setconfig update_url "$url"
 [ -n "$release_type" ] && setconfig release_type "$release_type"
 #设置语言
-[ -n "$language" ] && echo "$language" > "$CRASHDIR/configs/i18n.cfg"
+[ -n "$language" ] && echo "$language" >"$CRASHDIR/configs/i18n.cfg"
 #设置环境变量
 [ -w /opt/etc/profile ] && [ "$systype" = "Padavan" ] && profile=/opt/etc/profile
 [ -w /jffs/configs/profile.add ] && profile=/jffs/configs/profile.add
@@ -130,11 +130,11 @@ fi
 #镜像化OpenWrt(snapshot)额外设置
 if [ "$systype" = "mi_snapshot" -o "$systype" = "ng_snapshot" ]; then
     chmod 755 "$CRASHDIR"/starts/snapshot_init.sh
-    if [ "$systype" = "mi_snapshot" ];then
+    if [ "$systype" = "mi_snapshot" ]; then
         path="/data/shellcrash_init.sh"
         sed -i "s#^CRASHDIR=.*#CRASHDIR=$CRASHDIR#" "$CRASHDIR"/starts/snapshot_init.sh
         mv -f "$CRASHDIR"/starts/snapshot_init.sh "$path"
-        [ ! -f /data/auto_start.sh ] && echo '#用于自定义需要开机启动的功能或者命令，会在开机后自动运行' > /data/auto_start.sh
+        [ ! -f /data/auto_start.sh ] && echo '#用于自定义需要开机启动的功能或者命令，会在开机后自动运行' >/data/auto_start.sh
     else
         path="$CRASHDIR"/starts/snapshot_init.sh
     fi
@@ -166,14 +166,14 @@ fi
     setconfig firewall_mod 'nftables'
     setconfig release_type 'master'
     setconfig start_old 'OFF'
-    echo "$CRASHDIR/menu.sh" >> /etc/profile
-    cat > /usr/bin/crash <<'EOF'
+    echo "$CRASHDIR/menu.sh" >>/etc/profile
+    cat >/usr/bin/crash <<'EOF'
 #!/bin/sh
 CRASHDIR=${CRASHDIR:-/etc/ShellCrash}
 export CRASHDIR
 exec "$CRASHDIR/menu.sh" "$@"
 EOF
-    chmod 755 /usr/bin/crash	
+    chmod 755 /usr/bin/crash
 }
 setconfig systype $systype
 #删除临时文件
@@ -189,7 +189,7 @@ for file in config.yaml.bak user.yaml proxies.yaml proxy-groups.yaml rules.yaml 
     mv -f "$CRASHDIR"/"$file" "$CRASHDIR"/yamls/"$file" 2>/dev/null
 done
 [ ! -L "$CRASHDIR"/config.yaml ] && mv -f "$CRASHDIR"/config.yaml "$CRASHDIR"/yamls/config.yaml 2>/dev/null
-for file in fake_ip_filter mac web_save servers_chs.list servers_en.list fake_ip_filter.list singbox_providers.list clash_providers.list; do
+for file in fake_ip_filter mac servers_chs.list servers_en.list fake_ip_filter.list singbox_providers.list clash_providers.list; do
     mv -f "$CRASHDIR"/"$file" "$CRASHDIR"/configs/"$file" 2>/dev/null
 done
 #迁移任务状态文件到新目录
@@ -239,7 +239,7 @@ sed -i "s/redir_mod=Tun模式/redir_mod=Tun/g" "$CFG_PATH"
 sed -i "s/redir_mod=混合模式/redir_mod=Mix/g" "$CFG_PATH"
 sed -i "s/redir_mod=纯净模式/firewall_area=4/g" "$CFG_PATH"
 #变量统一使用ON/OFF
-sed -i 's/=\(已启用\|已开启\)$/=ON/'  "$CFG_PATH"
+sed -i 's/=\(已启用\|已开启\)$/=ON/' "$CFG_PATH"
 sed -i 's/=\(未启用\|未开启\)$/=OFF/' "$CFG_PATH"
 
 printf '\033[32m脚本初始化完成,请输入\033[30;47m %s \033[0;33m命令开始使用！\033[0m\n' "$my_alias"

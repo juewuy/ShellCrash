@@ -1,4 +1,3 @@
-
 #
 put_save() { #推送面板选择
     [ -z "$3" ] && request_type=PUT || request_type=$3
@@ -8,13 +7,6 @@ put_save() { #推送面板选择
         wget -q --method="$request_type" --header="Authorization: Bearer $secret" --header="Content-Type:application/json" --body-data="$2" "$1" >/dev/null
     fi
 }
-web_restore() { #还原面板选择
-    num=$(cat "$CRASHDIR"/configs/web_save | wc -l)
-    i=1
-    while [ "$i" -le "$num" ]; do
-        group_name=$(awk -F ',' 'NR=="'${i}'" {print $1}' "$CRASHDIR"/configs/web_save | sed 's/ /%20/g')
-        now_name=$(awk -F ',' 'NR=="'${i}'" {print $2}' "$CRASHDIR"/configs/web_save)
-        put_save "http://127.0.0.1:${db_port}/proxies/${group_name}" "{\"name\":\"${now_name}\"}"
-        i=$((i + 1))
-    done
+web_restore() { #还原面板配置(恢复 cache.db 到 $TMPDIR;tmpfs 已有则跳过,避免覆盖更新的)
+    [ ! -f "$TMPDIR"/cache.db ] && [ -s "$BINDIR"/configs/cache.db ] && cp -f "$BINDIR"/configs/cache.db "$TMPDIR"/cache.db
 }

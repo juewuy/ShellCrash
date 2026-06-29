@@ -2,7 +2,11 @@
 # Copyright (C) Juewuy
 
 #加载全局变量
-[ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
+[ -z "$CRASHDIR" ] && CRASHDIR=$(
+    cd $(dirname $0)
+    cd ..
+    pwd
+)
 . "$CRASHDIR"/libs/get_config.sh
 #加载工具
 . "$CRASHDIR"/libs/check_cmd.sh
@@ -14,11 +18,11 @@
 
 load_lang task_cmd
 
-task_logger(){
+task_logger() {
     [ "$task_push" = 1 ] && push= || push=off
     [ -n "$2" -a "$2" != 0 ] && echo -e "\033[$2m$1\033[0m"
     [ "$3" = 'off' ] && push=off
-    echo "$1" |grep -qE "($TASK_CMD_EVERY|$TASK_CMD_HOURLY)([1-9]|[1-9][0-9])$TASK_CMD_MIN" && {
+    echo "$1" | grep -qE "($TASK_CMD_EVERY|$TASK_CMD_HOURLY)([1-9]|[1-9][0-9])$TASK_CMD_MIN" && {
         push=off
         cover=on
     }
@@ -26,47 +30,47 @@ task_logger(){
 }
 
 #任务命令
-check_update(){ #检查更新工具
+check_update() { #检查更新工具
     get_bin "$TMPDIR"/crashversion "$1" echooff
     [ "$?" = "0" ] && . "$TMPDIR"/crashversion 2>/dev/null
     rm -rf "$TMPDIR"/crashversion
 }
-update_core(){ #自动更新内核
+update_core() { #自动更新内核
     #检查版本
     check_update bin/version
     crash_v_new=$(eval echo \$${crashcore}_v)
-    if [ -z "$crash_v_new" -o "$crash_v_new" = "$core_v" ];then
+    if [ -z "$crash_v_new" -o "$crash_v_new" = "$core_v" ]; then
         task_logger "$TASK_CMD_CORE_SKIP"
         return 0
     else
         . "$CRASHDIR"/libs/core_tools.sh && core_webget #调用下载工具
         case "$?" in
-        0)
-            task_logger "$TASK_CMD_CORE_DONE"
-            "$CRASHDIR"/start.sh start
-            return 0
-        ;;
-        1)
-            task_logger "$TASK_CMD_CORE_DL_FAIL"
-            return 1
-        ;;
-        *)
-            task_logger "$TASK_CMD_CORE_VERIFY_FAIL"
-            "$CRASHDIR"/start.sh start
-            return 1
-        ;;
+            0)
+                task_logger "$TASK_CMD_CORE_DONE"
+                "$CRASHDIR"/start.sh start
+                return 0
+                ;;
+            1)
+                task_logger "$TASK_CMD_CORE_DL_FAIL"
+                return 1
+                ;;
+            *)
+                task_logger "$TASK_CMD_CORE_VERIFY_FAIL"
+                "$CRASHDIR"/start.sh start
+                return 1
+                ;;
         esac
     fi
 }
-update_scripts(){ #自动更新脚本
+update_scripts() { #自动更新脚本
     #检查版本
     check_update version
-    if [ -z "$versionsh" -o "$versionsh" = "versionsh_l" ];then
+    if [ -z "$versionsh" -o "$versionsh" = "versionsh_l" ]; then
         task_logger "$TASK_CMD_SCRIPT_SKIP"
         return 0
     else
         get_bin "$TMPDIR"/ShellCrash.tar.gz "ShellCrash.tar.gz"
-        if [ "$?" != "0" ];then
+        if [ "$?" != "0" ]; then
             rm -rf "$TMPDIR"/ShellCrash.tar.gz
             task_logger "$TASK_CMD_CORE_DL_FAIL"
             return 1
@@ -75,7 +79,7 @@ update_scripts(){ #自动更新脚本
             "$CRASHDIR"/start.sh stop
             #解压
             tar -zxf "$TMPDIR"/ShellCrash.tar.gz ${tar_para} -C "$CRASHDIR"/
-            if [ $? -ne 0 ];then
+            if [ $? -ne 0 ]; then
                 rm -rf "$TMPDIR"/ShellCrash.tar.gz
                 task_logger "$TASK_CMD_SCRIPT_UNZIP_FAIL"
                 "$CRASHDIR"/start.sh start
@@ -88,19 +92,19 @@ update_scripts(){ #自动更新脚本
         fi
     fi
 }
-update_mmdb(){ #自动更新数据库
-    getgeo(){
+update_mmdb() { #自动更新数据库
+    getgeo() {
         #检查版本
         check_update bin/version
         geo_v="$(echo $2 | awk -F "." '{print $1}')_v" #获取版本号类型比如Country_v
         geo_v_new=$GeoIP_v
         geo_v_now=$(eval echo \$$geo_v)
-        if [ -z "$geo_v_new" -o "$geo_v_new" = "$geo_v_now" ];then
+        if [ -z "$geo_v_new" -o "$geo_v_new" = "$geo_v_now" ]; then
             task_logger "$TASK_CMD_DB_SKIP_PREFIX$2$TASK_CMD_DB_SKIP_SUFFIX"
         else
             #更新文件
             get_bin "$TMPDIR"/$1 "bin/geodata/$2"
-            if [ "$?" != "0" ];then
+            if [ "$?" != "0" ]; then
                 task_logger "$TASK_CMD_DB_DL_FAIL_PREFIX$2$TASK_CMD_DB_DL_FAIL_SUFFIX"
                 rm -rf "$TMPDIR"/$1
             else
@@ -118,14 +122,14 @@ update_mmdb(){ #自动更新数据库
     [ -n "${geosite_cn_v}" -a -s "$CRASHDIR"/geosite.db ] && getgeo geosite.db geosite_cn.db
     return 0
 }
-reset_firewall(){ #重设透明路由防火墙
+reset_firewall() { #重设透明路由防火墙
     "$CRASHDIR"/start.sh stop_firewall
     "$CRASHDIR"/start.sh afstart
 }
-ntp(){
+ntp() {
     ckcmd ntpd && ntpd -n -q -p 203.107.6.88 >/dev/null 2>&1 || exit 0
 }
-web_save_auto(){
+web_save_auto() {
     . "$CRASHDIR"/libs/web_save.sh && web_save
 }
 update_config() { #更新订阅并重启
@@ -133,9 +137,9 @@ update_config() { #更新订阅并重启
 }
 hotupdate() { #热更新订阅
     . "$CRASHDIR"/starts/core_config.sh && get_core_config &&
-    . "$CRASHDIR"/starts/check_core.sh && check_core &&
-    . "$CRASHDIR"/starts/"$target"_modify.sh && modify_"$format" && rm -rf "$TMPDIR"/CrashCore &&
-    . "$CRASHDIR"/libs/web_restore.sh && put_save "http://127.0.0.1:$db_port/configs" "{\"path\":\"$CRASHDIR/config.$format\"}"
+        . "$CRASHDIR"/starts/check_core.sh && check_core &&
+        . "$CRASHDIR"/starts/"$target"_modify.sh && modify_"$format" && rm -rf "$TMPDIR"/CrashCore &&
+        . "$CRASHDIR"/libs/web_restore.sh && put_save "http://127.0.0.1:$db_port/configs" "{\"path\":\"$CRASHDIR/config.$format\"}"
     exit $?
 }
 
@@ -146,8 +150,8 @@ case "$1" in
         #task_logger "任务$task_name 开始执行"
         eval $task_command && task_res="$TASK_CMD_RES_OK" || task_res="$TASK_CMD_RES_FAIL"
         task_logger "$TASK_CMD_EXEC_PREFIX$2$TASK_CMD_EXEC_MID$task_res"
-    ;;
+        ;;
     *)
         "$1"
-    ;;
+        ;;
 esac

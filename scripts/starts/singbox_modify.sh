@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
- #修饰singbox配置文件
+#修饰singbox配置文件
 parse_singbox_dns() { #dns转换
     first_dns=$(echo "$1" | cut -d',' -f1 | cut -d' ' -f1)
     type=""
@@ -32,9 +32,9 @@ parse_singbox_dns() { #dns转换
     esac
     if [ -z "$port" ]; then
         case "$type" in
-            udp|tcp) port=53 ;;
-            doh|https) port=443 ;;
-            dot|tls) port=853 ;;
+            udp | tcp) port=53 ;;
+            doh | https) port=443 ;;
+            dot | tls) port=853 ;;
             *) port=53 ;;
         esac
     fi
@@ -160,7 +160,7 @@ generate_dns_related_jsons() {
   }
 }
 EOF
-}
+    }
     cat >"$TMPDIR"/jsons/dns.json <<EOF
 {
   "dns": {
@@ -353,7 +353,8 @@ EOF
       "external_ui_download_url": "$external_ui_url",
       "secret": "$secret",
       "default_mode": "Rule"
-    }$urltest_unified_delay
+    }$urltest_unified_delay,
+    "cache_file": {"enabled": true, "store_fakeip": true, "path": "$TMPDIR/cache.db"}
   }
 }
 EOF
