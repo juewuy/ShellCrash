@@ -2,7 +2,11 @@
 # Copyright (C) Juewuy
 
 #初始化目录
-[ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
+[ -z "$CRASHDIR" ] && CRASHDIR=$(
+    cd $(dirname $0)
+    cd ..
+    pwd
+)
 . "$CRASHDIR"/libs/get_config.sh
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && . "$CRASHDIR"/init.sh >/dev/null 2>&1
 [ ! -d "$TMPDIR" ] && mkdir -p "$TMPDIR"
@@ -73,7 +77,6 @@ EOF
     [ "$?" = 0 ] && rm -rf "$TMPDIR"/shellcrash_pac || mv -f "$TMPDIR"/shellcrash_pac "$BINDIR"/ui/pac
 }
 
-
 #检测网络连接
 [ "$network_check" != "OFF" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && . "$CRASHDIR"/starts/check_network.sh && check_network
 [ ! -d "$BINDIR"/ui ] && mkdir -p "$BINDIR"/ui
@@ -104,19 +107,22 @@ catpac                                       #生成pac文件
 if echo "$crashcore" | grep -q 'singbox'; then
     . "$CRASHDIR"/starts/singbox_check.sh && singbox_check
     [ -d "$TMPDIR"/jsons ] && rm -rf "$TMPDIR"/jsons/* || mkdir -p "$TMPDIR"/jsons #准备目录
-    if [ "$disoverride" != "1" ];then
+    if [ "$disoverride" != "1" ]; then
         . "$CRASHDIR"/starts/singbox_modify.sh && modify_json
     else
         ln -sf "$core_config" "$TMPDIR"/jsons/config.json
     fi
 else
     . "$CRASHDIR"/starts/clash_check.sh && clash_check
-    if [ "$disoverride" != "1" ];then
+    if [ "$disoverride" != "1" ]; then
         . "$CRASHDIR"/starts/clash_modify.sh && modify_yaml
     else
         ln -sf "$core_config" "$TMPDIR"/config.yaml
     fi
 fi
+#恢复 cache.db 到 tmpfs(内核启动前);singbox 还原到 tmpfs,mihomo 新版(≥v1.19.28)原生支持
+#jffs2(堆镜像 fallback,cache.db 直接留 $BINDIR),此处对其无影响
+. "$CRASHDIR"/libs/web_restore.sh && web_restore
 #检查下载cnip绕过相关文件
 [ "$cn_ip_route" = "ON" ] && [ "$dns_mod" != "fake-ip" ] && {
     [ "$firewall_mod" = nftables ] || ckcmd ipset && {

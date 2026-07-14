@@ -18,7 +18,7 @@ prepare_clash_base_config() {
         #ecs优化
         [ "$ecs_subnet" = ON ] && {
             . "$CRASHDIR"/libs/get_ecsip.sh
-            if [ -n "$ecs_address" ];then
+            if [ -n "$ecs_address" ]; then
                 dns_fallback=$(echo "$dns_fallback, " | sed "s|, |#ecs-override=true\&ecs=$ecs_address, |g" | sed 's|, $||')
             else
                 logger "自动获取ecs网段失败！" 33
@@ -89,6 +89,9 @@ $sniffer_set
 $find_process
 routing-mark: $routing_mark
 unified-delay: true
+profile:
+  store-selected: true
+  store-fake-ip: true
 EOF
     #读取本机hosts并生成配置文件
     if [ "$hosts_opt" != "OFF" ] && [ -z "$(grep -aE '^hosts:' "$CRASHDIR"/yamls/user.yaml 2>/dev/null)" ]; then
@@ -133,7 +136,7 @@ split_and_customize_yaml_parts() {
         space_name=$(grep -aE '^ *- \{?name: ' "$TMPDIR"/proxy-groups.yaml | head -n 1 | grep -oE '^ *')
         space_proxy="$space_name    "
         #合并自定义策略组到proxy-groups.yaml
-        cat "$CRASHDIR"/yamls/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g"  | sed "s/^ *- {name: /${space_name}- {name: /g" >"$TMPDIR"/proxy-groups_add.yaml
+        cat "$CRASHDIR"/yamls/proxy-groups.yaml | sed "/^#/d" | sed "s/#.*//g" | sed '1i\ #自定义策略组开始' | sed '$a\ #自定义策略组结束' | sed "s/^ */${space_name}  /g" | sed "s/^ *- /${space_proxy}- /g" | sed "s/^ *- name: /${space_name}- name: /g" | sed "s/^ *- {name: /${space_name}- {name: /g" >"$TMPDIR"/proxy-groups_add.yaml
         cat "$TMPDIR"/proxy-groups.yaml >>"$TMPDIR"/proxy-groups_add.yaml
         mv -f "$TMPDIR"/proxy-groups_add.yaml "$TMPDIR"/proxy-groups.yaml
         oldIFS="$IFS"
