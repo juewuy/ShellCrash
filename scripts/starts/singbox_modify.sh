@@ -169,7 +169,7 @@ gen_dns() {
     #防泄露设置
     [ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
     #生成add_rule_set.json
-    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '"tag" *:[[:space:]]*"cn"' "$CRASHDIR"/jsons/*.json && {
+    [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '"tag" *:[[:space:]]*"cn"' "$CRASHDIR"/jsons/*.json && ! grep -Eq '"tag"[[:space:]]*:[[:space:]]*\[[^]]*"cn"' "$CRASHDIR"/jsons/*.json && {
         [ "$crashcore" = "singboxr" ] && srs_path='"path": "./ruleset/cn.srs",'
         cat >"$TMPDIR"/jsons/add_rule_set.json <<EOF
 {
