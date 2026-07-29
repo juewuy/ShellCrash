@@ -592,10 +592,17 @@ testcommand() {
         2)
             line_break
             echo "==========================================================="
-            netstat -ntulp | grep 53
+            if ckcmd netstat;then
+                netstat -ntulp | grep 53
+			elif ckcmd ss;then
+                ss -ntulp | grep 53
+			else
+                echo -e "Neither net-tools nor iproute2 is installed. Please install one of these packages and try again."
+            fi
             echo
             echo -e "$TOOLS_NETSTAT_HINT"
             echo "==========================================================="
+			sleep 2
             ;;
         3)
             line_break

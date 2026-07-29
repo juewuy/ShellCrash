@@ -1,13 +1,18 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+. "$CRASHDIR"/libs/check_cmd.sh
+
 load_lang check_port
 
 _get_netstat_cmd() {
+    local cmd=netstat
+    ckcmd ss && cmd=ss
+
     case "$1" in
-    tcp) echo "netstat -ntl" ;;
-    udp) echo "netstat -nul" ;;
-    *) echo "netstat -ntul" ;;
+    tcp) echo "$cmd -ntl" ;;
+    udp) echo "$cmd -nul" ;;
+    *) echo "$cmd -ntul" ;;
     esac
 }
 
