@@ -118,12 +118,12 @@ ckstatus() {
 
     PID=$(pidof CrashCore | awk '{print $NF}')
     if [ -n "$PID" ]; then
-        run="\033[32m$MENU_RUN_ON（$redir_mod$MENU_MOD）\033[0m"
+        run="\033[32m$MENU_RUN_ON ($redir_mod$MENU_MOD) \033[0m"
         running_status
     elif [ "$firewall_area" = 5 ] && [ -n "$(ip route list table 100)" ]; then
-        run="\033[32m$MENU_RUN_SET（$redir_mod$MENU_MOD）\033[0m"
+        run="\033[32m$MENU_RUN_SET ($redir_mod$MENU_MOD) \033[0m"
     else
-        run="\033[31m$MENU_RUN_OFF（$redir_mod$MENU_MOD）\033[0m"
+        run="\033[31m$MENU_RUN_OFF ($redir_mod$MENU_MOD) \033[0m"
         # 检测系统端口占用
         checkport
     fi

@@ -569,8 +569,6 @@ set_firewall_area() {
         [1-4])
             if [ "$firewall_area" -ge 4 ]; then
                 redir_mod=''
-            else
-                redir_mod=Redir
             fi
             firewall_area="$num"
             setconfig firewall_area "$firewall_area"

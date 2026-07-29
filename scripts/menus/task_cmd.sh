@@ -135,7 +135,7 @@ hotupdate() { #热更新订阅
     . "$CRASHDIR"/starts/core_config.sh && get_core_config &&
     . "$CRASHDIR"/starts/check_core.sh && check_core &&
     . "$CRASHDIR"/starts/"$target"_modify.sh && modify_"$format" && rm -rf "$TMPDIR"/CrashCore &&
-    . "$CRASHDIR"/libs/web_restore.sh && put_save "http://127.0.0.1:$db_port/configs" "{\"path\":\"$CRASHDIR/config.$format\"}"
+    . "$CRASHDIR"/libs/web_restore.sh && put_save "http://127.0.0.1:$db_port/configs" "{\"path\":\"$TMPDIR/config.$format\"}"
     exit $?
 }
 
