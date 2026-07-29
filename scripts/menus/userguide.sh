@@ -77,7 +77,7 @@ forwhat() {
                 content_line "\033[33m$UG_IP_FORWARD_WARN\033[0m"
                 read -r -p "$COMMON_INPUT_R" res
                 [ "$res" = 1 ] && {
-                    content_line 'net.ipv4.ip_forward = 1' >>/etc/sysctl.conf
+                    echo 'net.ipv4.ip_forward = 1' >>/etc/sysctl.conf
                     sysctl -w net.ipv4.ip_forward=1
                 }
             fi

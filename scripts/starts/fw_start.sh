@@ -38,7 +38,11 @@
 }
 #判断代理用途
 [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && local_proxy=true
-[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 ] && lan_proxy=true
+[ "$firewall_area" = 1 -o "$firewall_area" = 3 -o "$firewall_area" = 5 ] && {
+	lan_proxy=true
+	#检查IP转发
+	[ "$(cat /proc/sys/net/ipv4/ip_forward)" = "0" ] && echo 'net.ipv4.ip_forward = 1' >>/etc/sysctl.conf && sysctl -w net.ipv4.ip_forward=1
+}
 #防火墙配置
 [ "$firewall_mod" = 'iptables' ] && . "$CRASHDIR"/starts/fw_iptables.sh && start_iptables
 [ "$firewall_mod" = 'nftables' ] && . "$CRASHDIR"/starts/fw_nftables.sh && start_nftables
