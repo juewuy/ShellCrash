@@ -52,7 +52,7 @@ proxy-groups:
   - {name: 🇸🇬 狮城节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"}
 
   - {name: 👑 高级节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
-  - {name: 📉 省流节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(0\\.[1-6]|低倍率|省流|大流量|公益|免费|闲时|Low)"}
+  - {name: 📉 省流节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(0\\.[1-6]|低倍率|省流|大流量|公益|免费|闲时|Low|1x|1\\.0x)"}
 
 #规则提供者（更新mrs格式）
 rule-providers:

@@ -18,7 +18,7 @@
     { "tag": "🎯 本地直连", "type": "direct" },
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 本地直连" ] },
     { "tag": "👑 高级节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" },
-    { "tag": "📉 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量" },
+    { "tag": "📉 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量|1x|1\\.0x" },
     { "tag": "♻️ 自动选择", "type": "urltest", "tolerance": 100, "use_all_providers": true },
     { "tag": "👉 手动选择", "type": "selector", "use_all_providers": true },
     { "tag": "🇭🇰 香港节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
