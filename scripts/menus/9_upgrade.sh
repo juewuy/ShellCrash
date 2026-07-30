@@ -673,21 +673,21 @@ checkcustgeo() {
             "" | 0)
                 break
                 ;;
-            [1-99])
-                if [ "$num" -le "$(wc -l <"$TMPDIR"/geo.list)" ]; then
+            *[!0-9]*)
+                errornum
+                ;;
+            *)
+                if [ "$num" -le "$(wc -l < "$TMPDIR/geo.list")" ]; then
                     geotype=$(sed -n "$num"p "$TMPDIR"/geo.list)
-                    [ -n "$(echo "$geotype" | grep -oiE 'GeoSite.*dat')" ] && geoname=GeoSite.dat
-                    [ -n "$(echo "$geotype" | grep -oiE 'Country.*mmdb')" ] && geoname=Country.mmdb
-                    [ -n "$(echo "$geotype" | grep -oiE '.*(.srs|.mrs)')" ] && geoname=$geotype
+                    echo "$geotype" | grep -qiE 'GeoSite\.dat' && geoname=GeoSite.dat
+                    echo "$geotype" | grep -qiE 'Country\.mmdb' && geoname=Country.mmdb
+                    echo "$geotype" | grep -qiE '\.(srs|mrs)$' && geoname="$geotype"
                     custgeolink=https://github.com/${project}/releases/download/${release_tag}/${geotype}
                     getcustgeo
                 else
                     errornum
                     break
                 fi
-                ;;
-            *)
-                errornum
                 ;;
             esac
         else
