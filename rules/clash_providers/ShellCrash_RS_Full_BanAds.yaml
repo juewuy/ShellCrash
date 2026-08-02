@@ -43,13 +43,13 @@ proxy-groups:
   - {name: 🟢 放行, type: select, proxies: [PASS], hidden: true}
   - {name: 🎯 本地直连, type: select, proxies: [DIRECT], hidden: true}
 
-  - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
-  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)", exclude-filter: "(?i)(仙台)"}
-  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇺🇸|美|洛杉矶|圣何塞|西雅图|纽约|波特兰|旧金山|休斯|达拉斯|硅谷|堪萨斯|迈阿密|凤凰城|芝加哥|奥勒姆|us|unitedstates|united states)", exclude-filter: "(?i)(南美|中美|拉美|亚美尼亚|美属)"}
-  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇯🇵|日|东京|大阪|埼玉|九州|仙台|jp|japan)", exclude-filter: "(?i)(尼日利亚|尼日尔|日内瓦)"}
-  - {name: 🇪🇺 欧洲节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇪🇺|欧|德|英|法|荷|俄罗斯|西班牙|意大利|瑞士|瑞典|土耳其|挪威|芬兰|丹麦|比利时|爱尔兰|奥地利|波兰|葡萄牙|乌克兰|希腊|捷克|匈牙利|罗马尼亚|保加利亚|冰岛|克罗地亚|阿姆斯特丹)"}
-  - {name: 🇰🇷 韩国节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇰🇷|韩|韓|首尔|kr|kor)"}
-  - {name: 🇸🇬 狮城节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"}
+  - {name: 🇭🇰 香港节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
+  - {name: 🇹🇼 台湾节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)", exclude-filter: "(?i)(仙台)"}
+  - {name: 🇺🇸 美国节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇺🇸|美|洛杉矶|圣何塞|西雅图|纽约|波特兰|旧金山|休斯|达拉斯|硅谷|堪萨斯|迈阿密|凤凰城|芝加哥|奥勒姆|us|unitedstates|united states)", exclude-filter: "(?i)(南美|中美|拉美|亚美尼亚|美属)"}
+  - {name: 🇯🇵 日本节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇯🇵|日|东京|大阪|埼玉|九州|仙台|jp|japan)", exclude-filter: "(?i)(尼日利亚|尼日尔|日内瓦)"}
+  - {name: 🇪🇺 欧洲节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇪🇺|欧|德|英|法|荷|俄罗斯|西班牙|意大利|瑞士|瑞典|土耳其|挪威|芬兰|丹麦|比利时|爱尔兰|奥地利|波兰|葡萄牙|乌克兰|希腊|捷克|匈牙利|罗马尼亚|保加利亚|冰岛|克罗地亚|阿姆斯特丹)"}
+  - {name: 🇰🇷 韩国节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇰🇷|韩|韓|首尔|kr|kor)"}
+  - {name: 🇸🇬 狮城节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"}
 
   - {name: 👑 高级节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
   - {name: 📉 省流节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(0\\.[1-6]|低倍率|省流|大流量|公益|免费|闲时|Low)"}

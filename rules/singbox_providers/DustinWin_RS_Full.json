@@ -21,15 +21,15 @@
     { "tag": "🔴 全球拦截", "type": "block" },
     { "tag": "🎯 本地直连", "type": "direct" },
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 本地直连" ] },
-    { "tag": "👑 高级节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" },
-    { "tag": "📉 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量" },
-    { "tag": "♻️ 自动选择", "type": "urltest", "tolerance": 100, "use_all_providers": true },
+    { "tag": "👑 高级节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" },
+    { "tag": "📉 省流节点", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量" },
+    { "tag": "♻️ 自动选择", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true },
     { "tag": "👉 手动选择", "type": "selector", "use_all_providers": true },
-    { "tag": "🇭🇰 香港节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
-    { "tag": "🇹🇼 台湾节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇹🇼|台|tw|taiwan|tai wan)" },
-    { "tag": "🇯🇵 日本节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇯🇵|日|jp|japan)" },
-    { "tag": "🇸🇬 新加坡节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇸🇬|新|sg|singapore)" },
-    { "tag": "🇺🇸 美国节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "include": "(?i)(🇺🇸|美|us|unitedstates|united states)" }
+    { "tag": "🇭🇰 香港节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
+    { "tag": "🇹🇼 台湾节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇹🇼|台|tw|taiwan|tai wan)" },
+    { "tag": "🇯🇵 日本节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇯🇵|日|jp|japan)" },
+    { "tag": "🇸🇬 新加坡节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇸🇬|新|sg|singapore)" },
+    { "tag": "🇺🇸 美国节点", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true, "include": "(?i)(🇺🇸|美|us|unitedstates|united states)" }
   ],
   "route": {
     "rules": [
@@ -61,144 +61,126 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/ads.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ads.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ads.srs"
       },
       {
         "tag": "private",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/private.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs"
       },
       {
         "tag": "microsoft-cn",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/microsoft-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs"
       },
       {
         "tag": "apple-cn",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/apple-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs"
       },
       {
         "tag": "google-cn",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/google-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs"
       },
       {
         "tag": "games-cn",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/games-cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs"
       },
       {
         "tag": "games",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/games.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games.srs"
       },
       {
         "tag": "netflix",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/netflix.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflix.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflix.srs"
       },
       {
         "tag": "youtube",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/youtube.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/youtube.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/youtube.srs"
       },
       {
         "tag": "media",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/media.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/media.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/media.srs"
       },
       {
         "tag": "ai",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/ai.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs"
       },
       {
         "tag": "networktest",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/networktest.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs"
       },
       {
         "tag": "proxy",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/proxy.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs"
       },
       {
         "tag": "cn",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/cn.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs"
       },
       {
         "tag": "telegramip",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/telegramip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs"
       },
       {
         "tag": "cnip",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/cnip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs"
       },
       {
         "tag": "netflixip",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/netflixip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflixip.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflixip.srs"
       },
       {
         "tag": "mediaip",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/mediaip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/mediaip.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/mediaip.srs"
       }
     ],
     "final": "🐟 漏网之鱼"

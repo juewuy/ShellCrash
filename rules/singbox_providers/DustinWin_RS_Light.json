@@ -8,15 +8,15 @@
     { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags}, "🎯 本地直连" ] },
     { "tag": "🎯 本地直连", "type": "direct" },
     { "tag": "GLOBAL", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 本地直连" ] },
-    { "tag": "👑 高级节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" },
-    { "tag": "📉 省流节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量" },
-    { "tag": "♻️ 自动选择", "type": "urltest", "tolerance": 100, "use_all_providers": true },
+    { "tag": "👑 高级节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" },
+    { "tag": "📉 省流节点", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量" },
+    { "tag": "♻️ 自动选择", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true },
     { "tag": "👉 手动选择", "type": "selector", "use_all_providers": true },
-    { "tag": "🇭🇰 香港节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
-    { "tag": "🇹🇼 台湾节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇹🇼|台|tw|taiwan|tai wan)" },
-    { "tag": "🇯🇵 日本节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇯🇵|日|jp|japan)" },
-    { "tag": "🇸🇬 新加坡节点", "type": "urltest", "use_all_providers": true, "include": "(?i)(🇸🇬|新|sg|singapore)" },
-    { "tag": "🇺🇸 美国节点", "type": "urltest", "tolerance": 100, "use_all_providers": true, "include": "(?i)(🇺🇸|美|us|unitedstates|united states)" }
+    { "tag": "🇭🇰 香港节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
+    { "tag": "🇹🇼 台湾节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇹🇼|台|tw|taiwan|tai wan)" },
+    { "tag": "🇯🇵 日本节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇯🇵|日|jp|japan)" },
+    { "tag": "🇸🇬 新加坡节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇸🇬|新|sg|singapore)" },
+    { "tag": "🇺🇸 美国节点", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true, "include": "(?i)(🇺🇸|美|us|unitedstates|united states)" }
   ],
   "route": {
     "rules": [
@@ -35,40 +35,35 @@
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/private.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs"
       },
       {
         "tag": "tld-proxy",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/tld-proxy.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/tld-proxy.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/tld-proxy.srs"
       },
       {
         "tag": "proxy",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/proxy.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs"
       },
       {
         "tag": "telegramip",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/telegramip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs"
       },
       {
         "tag": "cnip",
         "type": "remote",
         "format": "binary",
         "path": "./ruleset/cnip.srs",
-        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs",
-        "download_detour": "DIRECT"
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs"
       }
     ],
     "final": "🐟 漏网之鱼"
