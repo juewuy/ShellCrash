@@ -225,8 +225,8 @@ settings() {
             exit 0
             ;;
         c)
-            comp_box "1) New Design by Sofia-Riese" \
-                "2) TUI-lite" \
+            comp_box "1) $SET_TUI_1" \
+                "2) $SET_TUI_2" \
                 "" \
                 "0) $COMMON_BACK"
             read -r -p "$COMMON_INPUT> " num

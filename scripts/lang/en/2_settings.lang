@@ -40,6 +40,9 @@ SET_RESET_OK="Script settings have been reset! (Old config has been backed up)"
 SET_BACKUP_MISS="Backup file not found. Please back up first!"
 SET_NEED_RESTART="Please restart the script for changes to take effect!"
 
+SET_TUI_1="New Design UI by Sofia-Riese"
+SET_TUI_2="Lite UI (use if line wrapping is broken)"
+
 # =================================================
 # Redir mode
 # =================================================
