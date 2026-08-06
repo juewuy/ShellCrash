@@ -10,6 +10,7 @@ SET_MENU_SKIP_CERT="Skip Cert Verify:"
 SET_MENU_SNIFFER="Enable Sniff:"
 SET_MENU_ADV_PORT="Custom Ports and Secrets"
 SET_MENU_IPV6="IPv6 Settings:"
+SET_MENU_UDP_BUFFER="Raise UDP Buffer Limit (16 MiB):"
 SET_MENU_RESET="Reset / Backup / Restore Script Settings"
 SET_MENU_LANG="Language"
 SET_MENU_UI="UI Switch"
@@ -26,6 +27,9 @@ SET_SNIFFER_LOCKED="Domain sniffing cannot be disabled with the current core and
 
 SET_CORE_RUNNING="Service is currently running and must be stopped first!"
 SET_CORE_STOP_CONFIRM="Do you want to stop the service?"
+SET_UDP_BUFFER_ON="UDP buffer limit optimization is now enabled!"
+SET_UDP_BUFFER_OFF="UDP buffer limit optimization is now disabled. Existing system values will not be lowered."
+SET_UDP_BUFFER_RESTART="Restart the service to apply it to new connections."
 
 # =================================================
 # Backup / Restore / Reset
