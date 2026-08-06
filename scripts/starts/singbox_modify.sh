@@ -158,6 +158,15 @@ gen_dns() {
         [ -n "$fake_ip_filter_domain" ] && fake_ip_filter_domain="{ \"domain\": [$fake_ip_filter_domain], \"server\": \"dns_direct\" },"
         [ -n "$fake_ip_filter_suffix" ] && fake_ip_filter_suffix="{ \"domain_suffix\": [$fake_ip_filter_suffix], \"server\": \"dns_direct\" },"
         [ -n "$fake_ip_filter_regex" ] && fake_ip_filter_regex="{ \"domain_regex\": [$fake_ip_filter_regex], \"server\": \"dns_direct\" },"
+        # 用户自定义直连域名
+        if [ -s "$CRASHDIR/configs/dns_direct_domains" ]; then
+            custom_direct_domain=$(cat "$CRASHDIR/configs/dns_direct_domains" | grep -Ev '#|\*|\+' | sed '/^\s*$/d' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+            custom_direct_suffix=$(cat "$CRASHDIR/configs/dns_direct_domains" | grep '\*' | grep -v '.\*' | sed 's/\*\.//' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+            custom_direct_regex=$(cat "$CRASHDIR/configs/dns_direct_domains" | grep '.\*' | sed 's/\./\\\\./g' | sed 's/\*/.\*/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+            [ -n "$custom_direct_domain" ] && custom_direct_domain_rule="{ \"domain\": [$custom_direct_domain], \"server\": \"dns_direct\" },"
+            [ -n "$custom_direct_suffix" ] && custom_direct_suffix_rule="{ \"domain_suffix\": [$custom_direct_suffix], \"server\": \"dns_direct\" },"
+            [ -n "$custom_direct_regex" ] && custom_direct_regex_rule="{ \"domain_regex\": [$custom_direct_regex], \"server\": \"dns_direct\" },"
+        fi
         proxy_dns='{ "query_type": ["A", "AAAA"], "server": "dns_fakeip", "rewrite_ttl": 1 }'
         #mix模式插入fakeip过滤规则
         [ "$dns_mod" = "mix" ] && direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" },'
@@ -165,6 +174,15 @@ gen_dns() {
     [ "$dns_mod" = "route" ] && {
         global_dns=dns_proxy
         direct_dns='{ "rule_set": ["cn"], "server": "dns_direct" }'
+        # 用户自定义直连域名
+        if [ -s "$CRASHDIR/configs/dns_direct_domains" ]; then
+            custom_direct_domain=$(cat "$CRASHDIR/configs/dns_direct_domains" | grep -Ev '#|\*|\+' | sed '/^\s*$/d' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+            custom_direct_suffix=$(cat "$CRASHDIR/configs/dns_direct_domains" | grep '\*' | grep -v '.\*' | sed 's/\*\.//' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+            custom_direct_regex=$(cat "$CRASHDIR/configs/dns_direct_domains" | grep '.\*' | sed 's/\./\\\\./g' | sed 's/\*/.\*/' | awk '{printf "\"%s\", ",$1}' | sed 's/, $//')
+            [ -n "$custom_direct_domain" ] && custom_direct_domain_rule="{ \"domain\": [$custom_direct_domain], \"server\": \"dns_direct\" },"
+            [ -n "$custom_direct_suffix" ] && custom_direct_suffix_rule="{ \"domain_suffix\": [$custom_direct_suffix], \"server\": \"dns_direct\" },"
+            [ -n "$custom_direct_regex" ] && custom_direct_regex_rule="{ \"domain_regex\": [$custom_direct_regex], \"server\": \"dns_direct\" },"
+        fi
     }
     #防泄露设置
     [ "$dns_protect" = "OFF" ] && sed -i 's/"server": "dns_proxy"/"server": "dns_direct"/g' "$TMPDIR"/jsons/route.json
@@ -228,6 +246,9 @@ EOF
       $fake_ip_filter_domain
       $fake_ip_filter_suffix
       $fake_ip_filter_regex
+      $custom_direct_domain_rule
+      $custom_direct_suffix_rule
+      $custom_direct_regex_rule
       { "clash_mode": "Global", "query_type": ["A", "AAAA"], "server": "$global_dns", "rewrite_ttl": 1 },
       $direct_dns
       $proxy_dns
