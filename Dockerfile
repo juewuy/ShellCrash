@@ -65,6 +65,7 @@ RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
 #复制文件
 COPY --from=builder /etc/ShellCrash /etc/ShellCrash
 COPY --from=builder /tmp/CrashCore.tar.gz /etc/ShellCrash/CrashCore.tar.gz
+RUN cp -a /etc/ShellCrash /etc/ShellCrash_backup
 COPY --from=builder /etc/profile /etc/profile
 COPY --from=builder /usr/bin/crash /usr/bin/crash
 

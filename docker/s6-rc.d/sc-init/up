@@ -1,0 +1,10 @@
+#!/command/execlineb -P
+foreground {
+  if { test ! -d /etc/ShellCrash }
+  mkdir -p /etc/ShellCrash
+}
+foreground {
+  if { sh -c "[ -z \"$(ls -A /etc/ShellCrash 2>/dev/null)\" ]" }
+  cp -a /etc/ShellCrash_backup/. /etc/ShellCrash/
+}
+exit 0
