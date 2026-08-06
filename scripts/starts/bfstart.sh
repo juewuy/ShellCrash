@@ -23,6 +23,22 @@
 [ -z "$redir_mod" ] && firewall_area='4'
 routing_mark=$((fwmark + 2))
 
+set_udp_buffer_limit() {
+    [ "$udp_buffer" = "ON" ] || return 0
+
+    udp_buffer_limit=16777216
+    for udp_buffer_file in /proc/sys/net/core/rmem_max /proc/sys/net/core/wmem_max; do
+        [ -w "$udp_buffer_file" ] || continue
+        udp_buffer_current=$(cat "$udp_buffer_file" 2>/dev/null)
+        case "$udp_buffer_current" in
+        '' | *[!0-9]*) continue ;;
+        esac
+        [ "$udp_buffer_current" -lt "$udp_buffer_limit" ] &&
+            printf '%s\n' "$udp_buffer_limit" >"$udp_buffer_file"
+    done
+    unset udp_buffer_limit udp_buffer_file udp_buffer_current
+}
+
 makehtml() { #生成面板跳转文件
     cat >"$BINDIR"/ui/index.html <<EOF
 <!DOCTYPE html>
@@ -78,6 +94,8 @@ EOF
 [ "$network_check" != "OFF" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && . "$CRASHDIR"/starts/check_network.sh && check_network
 [ ! -d "$BINDIR"/ui ] && mkdir -p "$BINDIR"/ui
 [ -z "$crashcore" ] && crashcore=meta
+#按需提高UDP套接字缓冲上限，改善Hysteria2等QUIC协议的吞吐
+set_udp_buffer_limit
 #执行条件任务
 [ -s "$TASKCFGDIR"/bfstart ] && . "$TASKCFGDIR"/bfstart
 #检查内核配置文件
