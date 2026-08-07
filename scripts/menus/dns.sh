@@ -316,7 +316,9 @@ set_dns_adv() {
             if echo "$crashcore" | grep -qE 'meta|singbox'; then
                 dns_nameserver='https://dns.alidns.com/dns-query, https://doh.pub/dns-query'
                 dns_fallback='https://cloudflare-dns.com/dns-query, https://dns.google/dns-query, https://doh.opendns.com/dns-query'
-                dns_resolver='https://223.5.5.5/dns-query, 2400:3200::1'
+                # Mihomo's default-nameserver resolver must be plain IPs;
+                # encrypted resolvers belong in dns_nameserver/dns_fallback.
+                dns_resolver='223.5.5.5, 2400:3200::1'
                 setconfig dns_nameserver "'$dns_nameserver'"
                 setconfig dns_fallback "'$dns_fallback'"
                 setconfig dns_resolver "'$dns_resolver'"
