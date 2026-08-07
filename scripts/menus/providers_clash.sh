@@ -7,6 +7,7 @@ __IS_PROVIDERS_CLASH=1
 load_lang providers
 
 . "$CRASHDIR"/libs/web_get_bin.sh
+. "$CRASHDIR"/libs/yaml_dns.sh
 
 # 生成clash的providers配置文件
 gen_providers() {
@@ -29,11 +30,14 @@ gen_providers() {
     fi
     # 生成proxy_providers模块
     mkdir -p "$TMPDIR"/providers
+    # Keep an optional DNS section from the provider template. It is otherwise
+    # lost when the template is reduced to proxy providers, groups and rules.
+    yaml_dns_extract "$TMPDIR"/provider_temp_file >"$TMPDIR"/providers/dns.yaml
     # 预创建文件并写入对应文件头
     echo 'proxy-providers:' >"$TMPDIR"/providers/providers.yaml
     # 切割模版文件
     sed -n '/^proxy-groups:/,/^[a-z]/ { /^rule/d; p; }' "$TMPDIR"/provider_temp_file >"$TMPDIR"/providers/proxy-groups.yaml
-    sed -n '/^rule/,$p' "$TMPDIR"/provider_temp_file >"$TMPDIR"/providers/rules.yaml
+    yaml_top_level_section "$TMPDIR"/provider_temp_file '^rule' >"$TMPDIR"/providers/rules.yaml
     rm -rf "$TMPDIR"/provider_temp_file
     # 基于单订阅生成providers模块
     if [ -n "$1" ]; then
@@ -58,7 +62,7 @@ gen_providers() {
     fi
     # 修饰模版文件并合并
     sed -i "s/{providers_tags}/$providers_tags/g" "$TMPDIR"/providers/proxy-groups.yaml
-    cut -c 1- "$TMPDIR"/providers/providers.yaml "$TMPDIR"/providers/proxy-groups.yaml "$TMPDIR"/providers/rules.yaml >"$TMPDIR"/config.yaml
+    cut -c 1- "$TMPDIR"/providers/providers.yaml "$TMPDIR"/providers/proxy-groups.yaml "$TMPDIR"/providers/rules.yaml "$TMPDIR"/providers/dns.yaml >"$TMPDIR"/config.yaml
     rm -rf "$TMPDIR"/providers
     # 调用内核测试
     . "$CRASHDIR"/starts/check_core.sh && check_core && "$TMPDIR"/CrashCore -t -d "$BINDIR" -f "$TMPDIR"/config.yaml
