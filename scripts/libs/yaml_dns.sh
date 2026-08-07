@@ -18,6 +18,7 @@ yaml_dns_extract() {
                 else if (quote == "\042" && c == "\\") escaped = 1
                 else if (c == quote) quote = 0
             } else if (c == "\047" || c == "\042") quote = c
+            else if (c == "#" && (i == 1 || substr(line, i - 1, 1) ~ /[[:space:]]/)) break
             else if (c == "{") delta++
             else if (c == "}") delta--
         }
@@ -63,6 +64,7 @@ yaml_dns_without() {
                 else if (quote == "\042" && c == "\\") escaped = 1
                 else if (c == quote) quote = 0
             } else if (c == "\047" || c == "\042") quote = c
+            else if (c == "#" && (i == 1 || substr(line, i - 1, 1) ~ /[[:space:]]/)) break
             else if (c == "{") delta++
             else if (c == "}") delta--
         }
@@ -118,6 +120,19 @@ yaml_dns_merge() {
         sub(/[[:space:]]+$/, "", value)
         return value
     }
+    function strip_comment(line, i, c, quote, escaped) {
+        for (i = 1; i <= length(line); i++) {
+            c = substr(line, i, 1)
+            if (quote) {
+                if (quote == "\042" && escaped) escaped = 0
+                else if (quote == "\042" && c == "\\") escaped = 1
+                else if (c == quote) quote = 0
+            } else if (c == "\047" || c == "\042") quote = c
+            else if (c == "#" && (i == 1 || substr(line, i - 1, 1) ~ /[[:space:]]/))
+                return substr(line, 1, i - 1)
+        }
+        return line
+    }
     function brace_delta(line, i, c, quote, escaped, delta) {
         for (i = 1; i <= length(line); i++) {
             c = substr(line, i, 1)
@@ -126,6 +141,7 @@ yaml_dns_merge() {
                 else if (quote == "\042" && c == "\\") escaped = 1
                 else if (c == quote) quote = 0
             } else if (c == "\047" || c == "\042") quote = c
+            else if (c == "#" && (i == 1 || substr(line, i - 1, 1) ~ /[[:space:]]/)) break
             else if (c == "{") delta++
             else if (c == "}") delta--
         }
@@ -174,7 +190,7 @@ yaml_dns_merge() {
         add_entry(source, key, "  " key ": " value)
     }
     function parse_flow(source, text, i, c, depth_brace, depth_square, quote, escaped, start) {
-        text = trim(text)
+        text = trim(strip_comment(text))
         if (substr(text, 1, 1) == "{") text = substr(text, 2)
         if (substr(text, length(text), 1) == "}") text = substr(text, 1, length(text) - 1)
         start = 1
@@ -210,7 +226,7 @@ yaml_dns_merge() {
                 if (line ~ /^dns:[[:space:]]*\{/) {
                     rest = line
                     sub(/^dns:[[:space:]]*/, "", rest)
-                    flow_text = rest
+                    flow_text = strip_comment(rest)
                     flow = 1
                     balance = brace_delta(line)
                     started = 1
@@ -224,7 +240,7 @@ yaml_dns_merge() {
                 continue
             }
             if (flow) {
-                flow_text = flow_text " " trim(line)
+                flow_text = flow_text " " trim(strip_comment(line))
                 balance += brace_delta(line)
                 if (balance <= 0) {
                     parse_flow(source, flow_text)

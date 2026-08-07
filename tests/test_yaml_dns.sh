@@ -52,6 +52,14 @@ assert_contains '"+.flow": [1.1.1.1]' "$test_tmp/flow.out"
 assert_contains 'fallback-filter: {geoip: true}' "$test_tmp/flow.out"
 [ "$(grep -c '^dns:' "$test_tmp/flow.out")" = 1 ] || fail 'flow output has duplicate dns keys'
 
+printf '%s\n' \
+    'dns: {nameserver-policy: {"+.comment": [1.1.1.1]}, fallback-filter: {geoip: true}} # trailing comment' \
+    'proxies: []' >"$test_tmp/flow-comment.yaml"
+yaml_dns_merge "$test_tmp/flow-comment.yaml" "$test_tmp/managed.yaml" /dev/null >"$test_tmp/flow-comment.out"
+assert_contains '"+.comment": [1.1.1.1]' "$test_tmp/flow-comment.out"
+assert_contains 'fallback-filter: {geoip: true}' "$test_tmp/flow-comment.out"
+assert_not_contains 'fallback-filter: {geoip: true}}' "$test_tmp/flow-comment.out"
+
 # No subscription DNS still produces the managed DNS section.
 : >"$test_tmp/empty.yaml"
 yaml_dns_merge "$test_tmp/empty.yaml" "$test_tmp/managed.yaml" /dev/null >"$test_tmp/empty.out"
