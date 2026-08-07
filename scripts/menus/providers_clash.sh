@@ -37,7 +37,7 @@ gen_providers() {
     echo 'proxy-providers:' >"$TMPDIR"/providers/providers.yaml
     # 切割模版文件
     sed -n '/^proxy-groups:/,/^[a-z]/ { /^rule/d; p; }' "$TMPDIR"/provider_temp_file >"$TMPDIR"/providers/proxy-groups.yaml
-    sed -n '/^rule/,$p' "$TMPDIR"/provider_temp_file >"$TMPDIR"/providers/rules.yaml
+    yaml_top_level_section "$TMPDIR"/provider_temp_file '^rule' >"$TMPDIR"/providers/rules.yaml
     rm -rf "$TMPDIR"/provider_temp_file
     # 基于单订阅生成providers模块
     if [ -n "$1" ]; then

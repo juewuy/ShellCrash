@@ -97,6 +97,18 @@ yaml_dns_without() {
     }' "$1"
 }
 
+yaml_top_level_section() {
+    awk -v section="$2" '
+    function top_level(line) {
+        return line !~ /^[[:space:]#]/ && line ~ /^[^:]+:/
+    }
+    {
+        if (!started && $0 ~ section) started = 1
+        if (started && top_level($0) && $0 !~ section) exit
+        if (started) print
+    }' "$1"
+}
+
 yaml_dns_merge() {
     awk -v original="${1:-/dev/null}" \
         -v managed="${2:-/dev/null}" \

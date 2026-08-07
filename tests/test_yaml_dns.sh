@@ -73,6 +73,24 @@ if grep -q '^dns:' "$test_tmp/user-without.out"; then
     fail 'user overlay still contains dns'
 fi
 
+# A provider template may place dns after rules. Section extraction must stop
+# at that next top-level key before dns.yaml is appended.
+printf '%s\n' \
+    'proxy-groups: []' \
+    'rule-providers:' \
+    '  sample: {type: http, behavior: classical}' \
+    'rules:' \
+    '  - MATCH,DIRECT' \
+    'dns:' \
+    '  nameserver-policy: {"+.provider": [1.1.1.1]}' >"$test_tmp/provider.yaml"
+yaml_top_level_section "$test_tmp/provider.yaml" '^rule' >"$test_tmp/provider-rules.out"
+assert_contains 'rules:' "$test_tmp/provider-rules.out"
+assert_not_contains 'dns:' "$test_tmp/provider-rules.out"
+yaml_dns_extract "$test_tmp/provider.yaml" >"$test_tmp/provider-dns.out"
+cat "$test_tmp/provider-rules.out" "$test_tmp/provider-dns.out" >"$test_tmp/provider-config.out"
+[ "$(grep -c '^dns:' "$test_tmp/provider-config.out")" = 1 ] ||
+    fail 'provider output has duplicate dns keys'
+
 # The one-click encrypted DNS preset must keep the resolver as IP literals.
 assert_not_contains "dns_resolver='https://" "$(dirname "$0")/../scripts/menus/dns.sh"
 assert_contains "dns_resolver='223.5.5.5, 2400:3200::1'" "$(dirname "$0")/../scripts/menus/dns.sh"
