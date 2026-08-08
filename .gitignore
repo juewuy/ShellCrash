@@ -1,1 +1,17 @@
+# Operating system files
 .DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+.#*
+
+# Workflow temporary files
+bin/dashboard/.tmp/
