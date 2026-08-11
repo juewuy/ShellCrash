@@ -69,6 +69,7 @@ forwhat() {
             fi
 
             ckcmd systemctl && [ "$(cat /proc/1/comm)" = "systemd" ] && systemctl enable shellcrash.service >/dev/null 2>&1
+            grep -q 's6' /proc/1/comm && enable_s6_autostart_marks
             rm -rf "$CRASHDIR"/.dis_startup
             autostart=enable
             # 检测IP转发

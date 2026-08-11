@@ -89,6 +89,8 @@ mkdir -p /root/ShellCrash
 docker run -d \
   ………………
   -v shellcrash_configs:/etc/ShellCrash/configs \
+  -v shellcrash_yamls:/etc/ShellCrash/yamls \
+  -v shellcrash_jsons:/etc/ShellCrash/jsons \
   ………………
 ```
 
@@ -134,7 +136,7 @@ docker rm -f shellcrash
 ### Docker删除卷
 
 ```shell
-docker volume rm shellcrash_configs
+docker volume rm shellcrash_configs shellcrash_yamls shellcrash_jsons
 ```
 
 ### Compose删除容器&卷
