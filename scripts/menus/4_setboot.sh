@@ -12,7 +12,7 @@ allow_autostart() {
     fi
 
     ckcmd systemctl && systemctl enable shellcrash.service >/dev/null 2>&1
-    grep -q 's6' /proc/1/comm && touch /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+    grep -q 's6' /proc/1/comm && enable_s6_autostart_marks
     rc-status -r >/dev/null 2>&1 && rc-update add shellcrash default >/dev/null 2>&1
     rm -rf "$CRASHDIR"/.dis_startup
 }
@@ -20,7 +20,7 @@ allow_autostart() {
 disable_autostart() {
     [ -d /etc/rc.d ] && cd /etc/rc.d && rm -rf *shellcrash >/dev/null 2>&1 && cd - >/dev/null
     ckcmd systemctl && systemctl disable shellcrash.service >/dev/null 2>&1
-    grep -q 's6' /proc/1/comm && rm -rf /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+    grep -q 's6' /proc/1/comm && disable_s6_autostart_marks
     rc-status -r >/dev/null 2>&1 && rc-update del shellcrash default >/dev/null 2>&1
     touch "$CRASHDIR"/.dis_startup
 }

@@ -11,6 +11,7 @@
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/set_cron.sh
 . "$CRASHDIR"/libs/check_cmd.sh
+. "$CRASHDIR"/libs/check_autostart.sh
 . "$CRASHDIR"/libs/compare.sh
 . "$CRASHDIR"/libs/logger.sh
 . "$CRASHDIR"/libs/web_save.sh
@@ -54,7 +55,7 @@ start)
         systemctl start shellcrash.service || . "$CRASHDIR"/starts/start_error.sh
     elif grep -q 's6' /proc/1/comm; then
         bfstart && /command/s6-svc -u /run/service/shellcrash && {
-            [ ! -f "$CRASHDIR"/.dis_startup ] && touch /etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+            [ ! -f "$CRASHDIR"/.dis_startup ] && enable_s6_autostart_marks
             afstart &
         }
     elif rc-status -r >/dev/null 2>&1; then
