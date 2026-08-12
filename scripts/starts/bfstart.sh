@@ -27,7 +27,9 @@ set_udp_buffer_limit() {
     [ "$udp_buffer" = "ON" ] || return 0
 
     udp_buffer_limit=16777216
-    for udp_buffer_file in /proc/sys/net/core/rmem_max /proc/sys/net/core/wmem_max; do
+    #同时提高上限与默认值：部分Mihomo/quic-go构建不显式setsockopt，仅继承default
+    for udp_buffer_file in /proc/sys/net/core/rmem_max /proc/sys/net/core/wmem_max \
+        /proc/sys/net/core/rmem_default /proc/sys/net/core/wmem_default; do
         [ -w "$udp_buffer_file" ] || continue
         udp_buffer_current=$(cat "$udp_buffer_file" 2>/dev/null)
         case "$udp_buffer_current" in
