@@ -1,0 +1,11 @@
+dns:
+  proxy-server-nameserver:
+    - https://resolver-a.example/dns-query
+    - "https://resolver-b.example/dns-query"
+proxies:
+  - name: Node 1
+    type: ss
+    server: edge-a.nodes.example
+    port: 443
+  - {name: Node 2, type: vmess, server: edge-b.nodes.example, port: 443}
+proxy-groups: []

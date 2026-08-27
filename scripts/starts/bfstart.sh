@@ -17,6 +17,10 @@
 . "$CRASHDIR"/libs/compare.sh
 . "$CRASHDIR"/starts/check_geo.sh
 . "$CRASHDIR"/starts/check_core.sh
+[ "$crashcore" = meta ] && [ -s "$CRASHDIR/configs/providers.cfg" ] && [ -s "$CRASHDIR/libs/provider_dns.sh" ] && {
+    . "$CRASHDIR/libs/provider_dns.sh"
+    provider_dns_enable
+}
 #缺省值
 [ -z "$redir_mod" ] && [ "$USER" = "root" -o "$USER" = "admin" ] && redir_mod='Redir'
 [ -z "$dns_mod" ] && dns_mod='redir_host'

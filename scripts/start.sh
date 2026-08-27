@@ -69,7 +69,7 @@ stop)
     logger ShellCrash服务即将关闭......
     [ -n "$(pidof CrashCore)" ] && web_save #保存面板配置
     #清理定时任务
-    cronload | grep -vE '^$|start_legacy_wd.sh|运行时每' > "$TMPDIR"/cron_tmp
+    cronload | grep -vE '^$|start_legacy_wd.sh|运行时每|ShellCrash-provider-dns' > "$TMPDIR"/cron_tmp
     cronadd "$TMPDIR"/cron_tmp
     rm -f "$TMPDIR"/cron_tmp
     #停止tg_bot

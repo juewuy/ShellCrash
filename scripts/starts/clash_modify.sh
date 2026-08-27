@@ -231,6 +231,10 @@ merger_yaml() {
     done
     #合并完整配置文件
     cut -c 1- "$TMPDIR"/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add >"$TMPDIR"/config.yaml
+    [ "$crashcore" = meta ] && [ -s "$CRASHDIR/libs/provider_dns.sh" ] && {
+        . "$CRASHDIR/libs/provider_dns.sh"
+        provider_dns_apply_config "$TMPDIR/config.yaml"
+    }
 }
 
 test_yaml() {
