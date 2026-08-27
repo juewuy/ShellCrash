@@ -4,7 +4,7 @@
     { "tag": "🚀 节点选择", "type": "selector", "outbounds": ["♻️ 自动选择", "✨ 自动选择（去高倍率）", "🛠️ 手动切换", "🎯 本地直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
     { "tag": "🛠️ 手动切换", "type": "selector", "use_all_providers": true, "outbounds": ["🎯 本地直连", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
     { "tag": "♻️ 自动选择", "type": "urltest", "interval": "2m", "use_all_providers": true, "exclude": "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)" },
-    { "tag": "✨ 自动选择（去高倍率）", "type": "urltest", "interval": "2m", "use_all_providers": true, "exclude": "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|[0-9][0-9]+))" },
+    { "tag": "✨ 自动选择（去高倍率）", "type": "urltest", "interval": "2m", "use_all_providers": true, "exclude": "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|(x([2-9]|[1-9][0-9]+)|([2-9]|[1-9][0-9]+)x))" },
 
     { "tag": "🤖 AI 平台", "type": "selector", "outbounds": ["🚀 节点选择", "🤖 AI节点（过滤港澳）", "🎯 本地直连", "♻️ 自动选择", "🛠️ 手动切换", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇺🇸 美国节点", "🇯🇵 日本节点", "🇪🇺 欧洲节点", "🇰🇷 韩国节点", "🇸🇬 狮城节点", "👑 高级节点", "📉 省流节点", {providers_tags}] },
     { "tag": "🤖 AI节点（过滤港澳）", "type": "urltest", "interval": "2m", "use_all_providers": true, "exclude": "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www|🇭🇰|港|🇲🇴|澳门|hk|hongkong|hong kong)" },
@@ -42,7 +42,7 @@
     { "tag": "🇰🇷 韩国节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇰🇷|韩|韓|首尔|kr|kor)" },
     { "tag": "🇸🇬 狮城节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇸🇬|新加坡|狮城|sg|singapore)" },
 
-    { "tag": "👑 高级节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|[0-9][0-9]+))" },
+    { "tag": "👑 高级节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|(x([2-9]|[1-9][0-9]+)|([2-9]|[1-9][0-9]+)x))" },
     { "tag": "📉 省流节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(0[.][1-5]|低倍率|省流|大流量|公益|免费|闲时|Low)" }
   ],
   "route": {
