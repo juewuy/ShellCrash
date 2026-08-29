@@ -25,10 +25,16 @@ prepare_clash_base_config() {
             fi
         }
     }
-    #dns配置
-    [ -z "$(cat "$CRASHDIR"/yamls/user.yaml 2>/dev/null | grep '^dns:')" ] && {
-        [ "$crashcore" != meta ] && dns_resolver='223.5.5.5'
-        cat >"$TMPDIR"/dns.yaml <<EOF
+    . "$CRASHDIR"/libs/yaml_dns.sh
+    # Build one DNS section from the subscription, ShellCrash defaults and
+    # user overrides. This avoids duplicate top-level dns keys in config.yaml.
+    yaml_dns_extract "$core_config" >"$TMPDIR"/original-dns.yaml
+    if [ -s "$CRASHDIR"/yamls/user.yaml ]; then
+        yaml_dns_extract "$CRASHDIR"/yamls/user.yaml >"$TMPDIR"/user-dns.yaml
+        yaml_dns_without "$CRASHDIR"/yamls/user.yaml >"$TMPDIR"/user.yaml
+    fi
+    [ "$crashcore" != meta ] && dns_resolver='223.5.5.5'
+    cat >"$TMPDIR"/managed-dns.yaml <<EOF
 dns:
   enable: true
   listen: :$dns_port
@@ -42,27 +48,29 @@ dns:
   fake-ip-filter:
 EOF
         if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "fake-ip" ]; then
-            cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep -v '#' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
+            cat "$CRASHDIR"/configs/fake_ip_filter "$CRASHDIR"/configs/fake_ip_filter.list 2>/dev/null | grep -v '#' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/managed-dns.yaml
         else
-            echo "    - '+.*'" >>"$TMPDIR"/dns.yaml #使用fake-ip模拟redir_host
+            echo "    - '+.*'" >>"$TMPDIR"/managed-dns.yaml #使用fake-ip模拟redir_host
         fi
         #mix模式fakeip绕过cn
-        [ "$dns_mod" = "mix" ] && echo '    - "rule-set:cn"' >>"$TMPDIR"/dns.yaml
+        [ "$dns_mod" = "mix" ] && echo '    - "rule-set:cn"' >>"$TMPDIR"/managed-dns.yaml
         #mix模式和route模式插入分流设置
         if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ]; then
             [ "$dns_protect" != "OFF" ] && dns_final="$dns_fallback" || dns_final="$dns_nameserver"
-            cat >>"$TMPDIR"/dns.yaml <<EOF
+            cat >>"$TMPDIR"/managed-dns.yaml <<EOF
   respect-rules: true
   nameserver-policy: {'rule-set:cn': [ $dns_nameserver ]}
   proxy-server-nameserver : [ $dns_proxy_server ]
   nameserver: [ $dns_final ]
 EOF
         else
-            cat >>"$TMPDIR"/dns.yaml <<EOF
+            cat >>"$TMPDIR"/managed-dns.yaml <<EOF
   nameserver: [ $dns_nameserver ]
 EOF
         fi
-    }
+    # nameserver-policy is intentionally preserved from the subscription;
+    # its provider-specific routes are outside ShellCrash's managed fields.
+    yaml_dns_merge "$TMPDIR"/original-dns.yaml "$TMPDIR"/managed-dns.yaml "$TMPDIR"/user-dns.yaml >"$TMPDIR"/dns.yaml
     #域名嗅探配置
     [ "$sniffer" = "ON" ] && [ "$crashcore" = "meta" ] && sniffer_set="sniffer: {enable: true, parse-pure-ip: true, skip-domain: ['+.push.apple.com', 'Mijia Cloud'], sniff: {http: {ports: [80, 8080-8880], override-destination: true}, tls: {ports: [443, 8443]}, quic: {ports: [443, 8443]}}}"
     [ "$crashcore" = "clashpre" ] && [ "$dns_mod" = "redir_host" -o "$sniffer" = "ON" ] && exper="experimental: {ignore-resolve-fail: true, interface-name: en0,sniff-tls-sni: true}"
@@ -212,7 +220,7 @@ merger_yaml() {
     sed -i 's/^ *-/ -/g' "$TMPDIR"/rules.yaml
     #合并文件
     [ -s "$CRASHDIR"/yamls/user.yaml ] && {
-        yaml_user="$CRASHDIR"/yamls/user.yaml
+        yaml_user="$TMPDIR"/user.yaml
         #set和user去重,且优先使用user.yaml
         cp -f "$TMPDIR"/set.yaml "$TMPDIR"/set_bak.yaml
         for char in mode allow-lan log-level tun experimental external-ui-url interface-name dns store-selected unified-delay; do
@@ -253,7 +261,7 @@ finalize_clash_yaml() {
     #建立软连接
     [ ""$TMPDIR"" = ""$BINDIR"" ] || ln -sf "$TMPDIR"/config.yaml "$BINDIR"/config.yaml 2>/dev/null || cp -f "$TMPDIR"/config.yaml "$BINDIR"/config.yaml
     #清理缓存
-    for char in $yaml_char set set_bak dns hosts; do
+    for char in $yaml_char set set_bak dns managed-dns original-dns user-dns user hosts; do
         rm -f "$TMPDIR"/${char}.yaml
     done
 }
