@@ -48,12 +48,27 @@ EOF
         fi
         #mix模式fakeip绕过cn
         [ "$dns_mod" = "mix" ] && echo '    - "rule-set:cn"' >>"$TMPDIR"/dns.yaml
+        #mix和route模式插入用户自定义直连域名
+        if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ]; then
+            if [ -s "$CRASHDIR/configs/dns_direct_domains" ]; then
+                cat "$CRASHDIR/configs/dns_direct_domains" | grep -v '^#' | sed "s/^/    - '/" | sed "s/$/'/" >>"$TMPDIR"/dns.yaml
+            fi
+        fi
         #mix模式和route模式插入分流设置
         if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ]; then
             [ "$dns_protect" != "OFF" ] && dns_final="$dns_fallback" || dns_final="$dns_nameserver"
+            # 构建nameserver-policy
+            echo "  respect-rules: true" >>"$TMPDIR"/dns.yaml
+            echo "  nameserver-policy:" >>"$TMPDIR"/dns.yaml
+            # 添加用户自定义直连域名
+            if [ -s "$CRASHDIR/configs/dns_direct_domains" ]; then
+                cat "$CRASHDIR/configs/dns_direct_domains" | grep -v '^#' | while read domain; do
+                    [ -n "$domain" ] && echo "    '$domain': [ $dns_nameserver ]" >>"$TMPDIR"/dns.yaml
+                done
+            fi
+            # 添加CN规则集
+            echo "    'rule-set:cn': [ $dns_nameserver ]" >>"$TMPDIR"/dns.yaml
             cat >>"$TMPDIR"/dns.yaml <<EOF
-  respect-rules: true
-  nameserver-policy: {'rule-set:cn': [ $dns_nameserver ]}
   proxy-server-nameserver : [ $dns_proxy_server ]
   nameserver: [ $dns_final ]
 EOF
