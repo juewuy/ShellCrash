@@ -23,7 +23,7 @@ set_cron() {
         "0) $TASK5_NO"
     read -r -p "$COMMON_INPUT> " res
     if [ "$res" = '1' ]; then
-        task_txt="$min $hour * * $week $CRASHDIR/task/task.sh $task_id $cron_time$task_name"
+        task_txt="$min $hour * * $week $CRASHDIR/task/task.sh $task_id \"$cron_time$task_name\""
         cronset "$cron_time$task_name" "$task_txt"
         msg_alert -t 0 "$TASK5_TASK_PREFIX$cron_time$task_name$TASK5_TASK_ADDED"
     fi
@@ -38,11 +38,11 @@ set_service() {
     [ -s "$task_file" ] && sed -i "/$3/d" "$task_file"
     # 运行时每分钟执行的任务特殊处理
     if [ "$1" = "running" ]; then
-        task_txt="$4 $CRASHDIR/task/task.sh $2 $3"
+        task_txt="$4 $CRASHDIR/task/task.sh $2 \"$3\""
         echo "$task_txt" >>"$task_file"
         [ -n "$(pidof CrashCore)" ] && cronset "$3" "$task_txt"
     else
-        echo "$CRASHDIR/task/task.sh $2 $3" >>"$task_file"
+        echo "$CRASHDIR/task/task.sh $2 \"$3\"" >>"$task_file"
     fi
     content_line "【$3】\033[32m$COMMON_SUCCESS\033[0m"
     sleep 1
@@ -144,11 +144,12 @@ task_del() {
     # 删除定时任务
     cronset "$1"
     # 删除条件任务
-    sed -i "/$1/d" "$TASKCFGDIR"/cron 2>/dev/null
-    sed -i "/$1/d" "$TASKCFGDIR"/bfstart 2>/dev/null
-    sed -i "/$1/d" "$TASKCFGDIR"/afstart 2>/dev/null
-    sed -i "/$1/d" "$TASKCFGDIR"/running 2>/dev/null
-    sed -i "/$1/d" "$TASKCFGDIR"/affirewall 2>/dev/null
+    [ -f "$TASKCFGDIR"/cron ] && sed -i "/$1/d" "$TASKCFGDIR"/cron 2>/dev/null
+    [ -f "$TASKCFGDIR"/bfstart ] && sed -i "/$1/d" "$TASKCFGDIR"/bfstart 2>/dev/null
+    [ -f "$TASKCFGDIR"/afstart ] && sed -i "/$1/d" "$TASKCFGDIR"/afstart 2>/dev/null
+    [ -f "$TASKCFGDIR"/running ] && sed -i "/$1/d" "$TASKCFGDIR"/running 2>/dev/null
+    [ -f "$TASKCFGDIR"/affirewall ] && sed -i "/$1/d" "$TASKCFGDIR"/affirewall 2>/dev/null
+    return 0
 }
 
 # 任务条件选择菜单
@@ -293,7 +294,10 @@ task_manager() {
                         break
                     fi
                 else
-                    task_des=$(echo "$task_txt" | awk '{print $2}')
+                    task_des=${task_txt#* }
+                    task_des=${task_des#"${task_des%%[! ]*}"}
+                    task_des=${task_des#\"}
+                    task_des=${task_des%\"}
                     task_name=$(cat "$CRASHDIR"/task/task_${i18n}.list "$TASKCFGDIR"/task.user 2>/dev/null | grep "$task_id" | awk -F '#' '{print $3}')
                     comp_box "$TASK5_CURRENT_TASK\033[36m$task_des\033[0m"
                     btm_box "1) $TASK5_EDIT_TASK" \
@@ -359,7 +363,7 @@ task_recom() {
         separator_line "="
         set_service running "106" "$TASK_RECOM_ITEM_1" "*/10 * * * *"
         set_service afstart "107" "$TASK_RECOM_ITEM_2"
-        cronset "$TASK_RECOM_ITEM_3" "0 3 * * * ${CRASHDIR}/task/task.sh 103 $TASK_RECOM_ITEM_3" &&
+        cronset "$TASK_RECOM_ITEM_3" "0 3 * * * ${CRASHDIR}/task/task.sh 103 \"$TASK_RECOM_ITEM_3\"" &&
             content_line "【$TASK_RECOM_ITEM_3】\033[32m$COMMON_SUCCESS\033[0m"
         separator_line "="
     }
