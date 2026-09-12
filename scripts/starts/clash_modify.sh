@@ -201,6 +201,25 @@ add_custom_inbounds_and_rules() {
     }
 }
 
+preserve_geodata_yaml() {
+    #保留订阅规则依赖的Geo数据设置，本地自定义同名配置优先
+    : >"$TMPDIR"/geodata_base.yaml
+    : >"$TMPDIR"/geodata.yaml
+    for char in geodata-mode geodata-loader geosite-matcher geo-auto-update geo-update-interval geox-url; do
+        awk -v key="$char" '
+            /^[^[:space:]#]/ { emit = ($0 ~ ("^" key ":")) }
+            emit { print }
+        ' "$core_config" >>"$TMPDIR"/geodata_base.yaml
+    done
+    for char in geodata-mode geodata-loader geosite-matcher geo-auto-update geo-update-interval geox-url; do
+        grep -qE "^$char:" "$CRASHDIR"/yamls/user.yaml "$CRASHDIR"/yamls/others.yaml 2>/dev/null && continue
+        awk -v key="$char" '
+            /^[^[:space:]#]/ { emit = ($0 ~ ("^" key ":")) }
+            emit { print }
+        ' "$TMPDIR"/geodata_base.yaml >>"$TMPDIR"/geodata.yaml
+    done
+}
+
 merger_yaml() {
     #mix和route模式生成rule-providers
     [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '^[[:space:]]*cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
@@ -229,8 +248,9 @@ merger_yaml() {
             yaml_add="$yaml_add $TMPDIR/${char}.yaml"
         }
     done
+    preserve_geodata_yaml
     #合并完整配置文件
-    cut -c 1- "$TMPDIR"/set.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add >"$TMPDIR"/config.yaml
+    cut -c 1- "$TMPDIR"/set.yaml "$TMPDIR"/geodata.yaml $yaml_dns $yaml_hosts $yaml_user $yaml_others $yaml_add >"$TMPDIR"/config.yaml
 }
 
 test_yaml() {
@@ -244,7 +264,7 @@ test_yaml() {
         sed -i "/#自定义策略组开始/,/#自定义策略组结束/d" "$TMPDIR"/proxy-groups.yaml
         mv -f "$TMPDIR"/set_bak.yaml "$TMPDIR"/set.yaml >/dev/null 2>&1
         #合并基础配置文件
-        cut -c 1- "$TMPDIR"/set.yaml $yaml_dns $yaml_add >"$TMPDIR"/config.yaml
+        cut -c 1- "$TMPDIR"/set.yaml "$TMPDIR"/geodata_base.yaml $yaml_dns $yaml_add >"$TMPDIR"/config.yaml
         sed -i "/#自定义/d" "$TMPDIR"/config.yaml
     fi
 }
@@ -253,7 +273,7 @@ finalize_clash_yaml() {
     #建立软连接
     [ ""$TMPDIR"" = ""$BINDIR"" ] || ln -sf "$TMPDIR"/config.yaml "$BINDIR"/config.yaml 2>/dev/null || cp -f "$TMPDIR"/config.yaml "$BINDIR"/config.yaml
     #清理缓存
-    for char in $yaml_char set set_bak dns hosts; do
+    for char in $yaml_char set set_bak dns hosts geodata geodata_base; do
         rm -f "$TMPDIR"/${char}.yaml
     done
 }
