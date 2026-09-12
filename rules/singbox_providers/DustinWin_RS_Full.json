@@ -1,0 +1,188 @@
+//DustinWin-ruleset全分组规则+去广告
+{
+  "outbounds": [
+    { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ "♻️ 自动选择", "👉 手动选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", "🎯 本地直连", {providers_tags} ] },
+    { "tag": "📈 网络测试", "type": "selector", "outbounds": [ "🎯 本地直连", "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "🕹️ 游戏平台", "type": "selector", "outbounds": [ "🚀 节点选择", "👑 高级节点", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "🤖 AI 平台", "type": "selector", "outbounds": [ "🚀 节点选择", "👑 高级节点", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "🎮 游戏服务", "type": "selector", "outbounds": [ "🎯 本地直连", "👑 高级节点", "🚀 节点选择" ] },
+    { "tag": "🪟 微软服务", "type": "selector", "outbounds": [ "🎯 本地直连", "🚀 节点选择" ] },
+    { "tag": "🇬 谷歌服务", "type": "selector", "outbounds": [ "🎯 本地直连", "🚀 节点选择" ] },
+    { "tag": "🍎 苹果服务", "type": "selector", "outbounds": [ "🎯 本地直连", "🚀 节点选择" ] },
+    { "tag": "🎥 奈飞视频", "type": "selector", "outbounds": [ "🚀 节点选择", "👑 高级节点", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "📹 油管视频", "type": "selector", "outbounds": [ "🚀 节点选择", "👑 高级节点", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "🌍 国外媒体", "type": "selector", "outbounds": [ "🚀 节点选择", "👑 高级节点", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "🇨🇳 国内域名", "type": "selector", "outbounds": [ "🎯 本地直连", "🚀 节点选择" ] },
+    { "tag": "🀄️ 国内 IP", "type": "selector", "outbounds": [ "🎯 本地直连", "🚀 节点选择" ] },
+    { "tag": "🌎 国外域名", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "📲 电报消息", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags} ] },
+    { "tag": "🐟 漏网之鱼", "type": "selector", "outbounds": [ "🚀 节点选择", "🇭🇰 香港节点", "🇹🇼 台湾节点", "🇯🇵 日本节点", "🇸🇬 新加坡节点", "🇺🇸 美国节点", "👑 高级节点", "📉 省流节点", {providers_tags}, "🎯 本地直连" ] },
+    { "tag": "🛑 广告域名", "type": "selector", "outbounds": [ "🔴 全球拦截", "🎯 本地直连" ] },
+    { "tag": "🔴 全球拦截", "type": "block" },
+    { "tag": "🎯 本地直连", "type": "direct" },
+    { "tag": "GLOBAL", "type": "selector", "outbounds": [ "🚀 节点选择", "🎯 本地直连" ] },
+    { "tag": "👑 高级节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)" },
+    { "tag": "📉 省流节点", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true, "include": "0\\.[1-5]|低倍率|省流|大流量" },
+    { "tag": "♻️ 自动选择", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true },
+    { "tag": "👉 手动选择", "type": "selector", "use_all_providers": true },
+    { "tag": "🇭🇰 香港节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇭🇰|港|hk|hongkong|hong kong)" },
+    { "tag": "🇹🇼 台湾节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇹🇼|台|tw|taiwan|tai wan)" },
+    { "tag": "🇯🇵 日本节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇯🇵|日|jp|japan)" },
+    { "tag": "🇸🇬 新加坡节点", "type": "urltest", "interval": "2m", "use_all_providers": true, "include": "(?i)(🇸🇬|新|sg|singapore)" },
+    { "tag": "🇺🇸 美国节点", "type": "urltest", "interval": "2m", "tolerance": 100, "use_all_providers": true, "include": "(?i)(🇺🇸|美|us|unitedstates|united states)" }
+  ],
+  "route": {
+    "rules": [
+      { "rule_set": [ "private" ], "outbound": "🎯 本地直连" },
+      { "rule_set": [ "ads" ], "outbound": "🛑 广告域名" },
+      { "rule_set": [ "microsoft-cn" ], "outbound": "🪟 微软服务" },
+      { "rule_set": [ "apple-cn" ], "outbound": "🍎 苹果服务" },
+      { "rule_set": [ "google-cn" ], "outbound": "🇬 谷歌服务" },
+      { "rule_set": [ "games-cn" ], "outbound": "🎮 游戏服务" },
+      { "rule_set": [ "games" ], "outbound": "🕹️ 游戏平台" },
+      { "rule_set": [ "netflix" ], "outbound": "🎥 奈飞视频" },
+      { "rule_set": [ "youtube" ], "outbound": "📹 油管视频" },
+      { "rule_set": [ "media" ], "outbound": "🌍 国外媒体" },
+      { "rule_set": [ "ai" ], "outbound": "🤖 AI 平台" },
+      { "rule_set": [ "networktest" ], "outbound": "📈 网络测试" },
+      { "rule_set": [ "proxy" ], "outbound": "🌎 国外域名" },
+      { "rule_set": [ "cn" ], "outbound": "🇨🇳 国内域名" },
+      { "ip_is_private": true, "outbound": "🎯 本地直连" },
+      { "rule_set": [ "telegramip" ], "outbound": "📲 电报消息" },
+
+      { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4", "match_only": true},
+      { "rule_set": [ "cnip" ], "outbound": "🀄️ 国内 IP" },
+      { "rule_set": [ "netflixip" ], "outbound": "🎥 奈飞视频" },
+      { "rule_set": [ "mediaip" ], "outbound": "🌍 国外媒体" }
+    ],
+    "rule_set": [
+      {
+        "tag": "ads",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/ads.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ads.srs"
+      },
+      {
+        "tag": "private",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/private.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs"
+      },
+      {
+        "tag": "microsoft-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/microsoft-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs"
+      },
+      {
+        "tag": "apple-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/apple-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs"
+      },
+      {
+        "tag": "google-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/google-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs"
+      },
+      {
+        "tag": "games-cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/games-cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs"
+      },
+      {
+        "tag": "games",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/games.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games.srs"
+      },
+      {
+        "tag": "netflix",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/netflix.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflix.srs"
+      },
+      {
+        "tag": "youtube",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/youtube.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/youtube.srs"
+      },
+      {
+        "tag": "media",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/media.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/media.srs"
+      },
+      {
+        "tag": "ai",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/ai.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs"
+      },
+      {
+        "tag": "networktest",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/networktest.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs"
+      },
+      {
+        "tag": "proxy",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/proxy.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs"
+      },
+      {
+        "tag": "cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs"
+      },
+      {
+        "tag": "telegramip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/telegramip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs"
+      },
+      {
+        "tag": "cnip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/cnip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs"
+      },
+      {
+        "tag": "netflixip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/netflixip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/netflixip.srs"
+      },
+      {
+        "tag": "mediaip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/mediaip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/mediaip.srs"
+      }
+    ],
+    "final": "🐟 漏网之鱼"
+  }
+}
