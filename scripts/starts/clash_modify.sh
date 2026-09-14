@@ -7,7 +7,7 @@ prepare_clash_base_config() {
     external="external-controller: 0.0.0.0:$db_port"
     if [ "$redir_mod" = "Mix" -o "$redir_mod" = "Tun" ]; then
         [ "$crashcore" = 'meta' ] && tun_meta=', device: utun, auto-route: false, auto-detect-interface: false'
-        tun="tun: {enable: true, stack: system$tun_meta}"
+        tun="tun: {enable: true, stack: mips$tun_meta}"
     else
         tun='tun: {enable: false}'
     fi
