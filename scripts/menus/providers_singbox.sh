@@ -53,7 +53,8 @@ EOF
         # 基于全部节点分享链接生成
         [ -s "$CRASHDIR"/configs/providers_uri.cfg ] && {
             mkdir -p "$CRASHDIR"/providers
-            awk '{ print ($1=="vmess" ? $2 : $2 "#" $1) }' "$CRASHDIR"/configs/providers_uri.cfg >"$CRASHDIR"/providers/uri_group
+            # vmess分享链接(base64编码的json)的节点名在ps字段中，不能追加#名称，否则内核无法识别
+            awk '{ print ($2 ~ "^vmess://[A-Za-z0-9+/=_-]+$" ? $2 : $2 "#" $1) }' "$CRASHDIR"/configs/providers_uri.cfg >"$CRASHDIR"/providers/uri_group
             gen_providers_txt "Uri_group" "./providers/uri_group" "3" "12"
             providers_tags=$(echo "$providers_tags, \"Uri_group\"" | sed 's/^, //')
         }

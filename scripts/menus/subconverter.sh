@@ -29,7 +29,8 @@ subconverter() {
             ;;
         1)
             providers_link=$(grep -v '\./providers/' "$CRASHDIR"/configs/providers.cfg 2>/dev/null | awk '{print $2}' | tr '\n' '|')
-            uri_link=$(grep -v '^#' "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null | awk '{ print ($1=="vmess" ? $2 : $2 "#" $1) }' | tr '\n' '|')
+            # vmess分享链接(base64编码的json)的节点名在ps字段中，不能追加#名称
+            uri_link=$(grep -v '^#' "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null | awk '{ print ($2 ~ "^vmess://[A-Za-z0-9+/=_-]+$" ? $2 : $2 "#" $1) }' | tr '\n' '|')
             Url=$(echo "$providers_link|$uri_link" | sed 's/||*/|/g; s/^|//; s/|$//')
             setconfig Url "'$Url'"
             Https=''
