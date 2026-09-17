@@ -263,7 +263,8 @@ setproviders() {
             if [ -n "$name" ] && [ -n "$link$link_uri" ]; then
                 saveproviders
                 [ -n "$link" ] && Url="$link"
-                [ -n "$link_uri" ] && Url=$(echo "$name $link_uri" | awk '{ print ($1=="vmess" ? $2 : $2 "#" $1) }')
+                # vmess分享链接(base64编码的json)的节点名在ps字段中，不能追加#名称
+                [ -n "$link_uri" ] && Url=$(echo "$name $link_uri" | awk '{ print ($2 ~ "^vmess://[A-Za-z0-9+/=_-]+$" ? $2 : $2 "#" $1) }')
                 Https=''
                 setconfig Url "'$Url'"
                 setconfig Https
