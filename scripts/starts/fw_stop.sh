@@ -5,6 +5,8 @@
 [ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
 . "$CRASHDIR"/libs/get_config.sh
 . "$CRASHDIR"/libs/check_cmd.sh
+#停止IPv6前缀监听
+[ -f "$CRASHDIR"/starts/fw_ipv6_watch.sh ] && /bin/sh "$CRASHDIR"/starts/fw_ipv6_watch.sh stop
 . "$CRASHDIR"/starts/fw_getlanip.sh && getlanip #获取局域网host地址
 #缺省值
 [ -z "$common_ports" ] && common_ports='ON'
@@ -172,4 +174,3 @@ ckcmd nft && nft delete table inet shellcrash >/dev/null 2>&1
 [ -s /etc/init.d/firewall.bak ] && mv -f /etc/init.d/firewall.bak /etc/init.d/firewall
 #others
 sed -i '/shellcrash-dns-repair/d' /etc/resolv.conf 2>/dev/null
-
