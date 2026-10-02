@@ -6,10 +6,11 @@
     cd $(dirname $0)
     pwd
 )
+. "$CRASHDIR"/libs/set_cron.sh
+croncheck || exit 1
 . "$CRASHDIR"/libs/get_config.sh
 #加载工具
 . "$CRASHDIR"/libs/set_config.sh
-. "$CRASHDIR"/libs/set_cron.sh
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/check_autostart.sh
 . "$CRASHDIR"/libs/compare.sh
@@ -36,7 +37,9 @@ start_l(){
 case "$1" in
 
 start)
-    [ -n "$(pidof CrashCore)" ] && $0 stop #禁止多实例
+    if [ -n "$(pidof CrashCore)" ]; then #禁止多实例
+        "$0" stop || exit 1
+    fi
     stop_firewall                          #清理路由策略
     rm -f "$CRASHDIR"/\.start_error #移除自启失败标记
     #使用不同方式启动服务
@@ -69,9 +72,7 @@ stop)
     logger ShellCrash服务即将关闭......
     [ -n "$(pidof CrashCore)" ] && web_save #保存面板配置
     #清理定时任务
-    cronload | grep -vE '^$|start_legacy_wd.sh|运行时每' > "$TMPDIR"/cron_tmp
-    cronadd "$TMPDIR"/cron_tmp
-    rm -f "$TMPDIR"/cron_tmp
+    cronupdate awk 'NF && !/start_legacy_wd.sh|运行时每/' || exit 1
     #停止tg_bot
     . "$CRASHDIR"/menus/bot_tg_service.sh && bot_tg_stop
     #多种方式结束进程
@@ -96,8 +97,7 @@ stop)
     rm -rf "$TMPDIR"/CrashCore
     ;;
 restart)
-    $0 stop
-    $0 start
+    "$0" stop && "$0" start
     ;;
 init)
     . "$CRASHDIR"/starts/general_init.sh
@@ -110,7 +110,9 @@ daemon)
     fi
     ;;
 debug)
-    [ -n "$(pidof CrashCore)" ] && $0 stop >/dev/null #禁止多实例
+    if [ -n "$(pidof CrashCore)" ]; then #禁止多实例
+        "$0" stop >/dev/null || exit 1
+    fi
     stop_firewall >/dev/null                          #清理路由策略
     bfstart
     if [ -n "$2" ]; then
