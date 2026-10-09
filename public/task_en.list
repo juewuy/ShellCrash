@@ -1,0 +1,19 @@
+#TaskID#TaskCommand#TaskDescription (use # as separator; # is not allowed in command or description)
+
+101#$CRASHDIR/start.sh start#Start ShellCrash
+102#$CRASHDIR/start.sh stop#Stop ShellCrash service
+103#$CRASHDIR/start.sh restart#Restart ShellCrash service
+104#$CRASHDIR/task/task.sh update_config#Update online subscriptions and restart service
+105#$CRASHDIR/task/task.sh hotupdate#Hot update online subscriptions (without restart)
+106#$CRASHDIR/task/task.sh web_save_auto#Automatically save panel configuration
+107#$CRASHDIR/task/task.sh ntp#Automatically sync NTP time
+
+111#$CRASHDIR/task/task.sh update_core#Automatically update core
+112#$CRASHDIR/task/task.sh update_scripts#Automatically update scripts
+113#$CRASHDIR/task/task.sh update_mmdb#Automatically update database files
+
+121#$CRASHDIR/task/task.sh reset_firewall#Reset transparent routing firewall
+122#sleep 70 && touch /etc/banner && reboot#Reboot router device – use with caution
+
+
+

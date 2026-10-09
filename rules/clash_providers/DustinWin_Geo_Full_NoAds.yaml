@@ -1,0 +1,46 @@
+#DustinWin-geosite全分组规则
+proxy-groups:
+  - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, 👉 手动选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 📈 网络测试, type: select, proxies: [🎯 本地直连, 🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🕹️ 游戏平台, type: select, proxies: [🚀 节点选择, 👑 高级节点, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🤖 AI 平台, type: select, proxies: [🚀 节点选择, 👑 高级节点, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🎮 游戏服务, type: select, proxies: [🎯 本地直连, 👑 高级节点, 🚀 节点选择]}
+  - {name: 🪟 微软服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择]}
+  - {name: 🇬 谷歌服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择]}
+  - {name: 🍎 苹果服务, type: select, proxies: [🎯 本地直连, 🚀 节点选择]}
+  - {name: 🌍 国外媒体, type: select, proxies: [🚀 节点选择, 👑 高级节点, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🇨🇳 国内域名, type: select, proxies: [🎯 本地直连, 🚀 节点选择]}
+  - {name: 🀄️ 国内 IP, type: select, proxies: [🎯 本地直连, 🚀 节点选择]}
+  - {name: 🌎 国外域名, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 📲 电报消息, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
+  - {name: 🔒 私有网络, type: select, proxies: [🎯 本地直连], hidden: true}
+  - {name: 🐟 漏网之鱼, type: select, proxies: [🚀 节点选择, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇯🇵 日本节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 👑 高级节点, 📉 省流节点, {providers_tags}, 🎯 本地直连]}
+  - {name: 🎯 本地直连, type: select, proxies: [DIRECT], hidden: true}
+
+  - {name: 👑 高级节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"}
+  - {name: 📉 省流节点, type: url-test, tolerance: 100, include-all: true, filter: "(0\\.[1-5]|低倍率|省流|大流量)"}
+  - {name: ♻️ 自动选择, type: url-test, tolerance: 100, include-all: true}
+  - {name: 👉 手动选择, type: select, include-all: true}
+  - {name: 🇭🇰 香港节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇭🇰|港|hk|hongkong|hong kong)"}
+  - {name: 🇹🇼 台湾节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇹🇼|台|tw|taiwan|tai wan)"}
+  - {name: 🇯🇵 日本节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇯🇵|日|jp|japan)"}
+  - {name: 🇸🇬 新加坡节点, type: url-test, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新|sg|singapore)"}
+  - {name: 🇺🇸 美国节点, type: url-test, tolerance: 100, include-all: true, filter: "(?i)(🇺🇸|美|us|unitedstates|united states)"}
+
+rules:
+  - GEOSITE,private,🔒 私有网络
+  - GEOSITE,microsoft-cn,🪟 微软服务
+  - GEOSITE,apple-cn,🍎 苹果服务
+  - GEOSITE,google-cn,🇬 谷歌服务
+  - GEOSITE,games-cn,🎮 游戏服务
+  - GEOSITE,games,🕹️ 游戏平台
+  - GEOSITE,media,🌍 国外媒体
+  - GEOSITE,ai,🤖 AI 平台
+  - GEOSITE,networktest,📈 网络测试
+  - GEOSITE,proxy,🌎 国外域名
+  - GEOSITE,cn,🇨🇳 国内域名
+  - GEOIP,private,🔒 私有网络,no-resolve
+  - GEOIP,cn,🀄️ 国内 IP
+  - GEOIP,telegram,📲 电报消息,no-resolve
+  - GEOIP,media,🌍 国外媒体
+  - MATCH,🐟 漏网之鱼
