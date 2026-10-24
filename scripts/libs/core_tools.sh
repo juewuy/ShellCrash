@@ -6,10 +6,10 @@
 #$1=裸二进制字节数。仅当$TMPDIR在内存(tmpfs)时裸存才省RAM；
 #再按$BINDIR文件系统估算裸二进制落盘体积(透明压缩fs约2:1)，需留有余量($raw_margin,默认8M)
 store_raw_worth_it(){
-    case "$(df -T "$TMPDIR" 2>/dev/null | awk 'END{print $2}')" in tmpfs|ramfs) ;; *) return 1 ;; esac
-    rom_free=$(df -k "$BINDIR" 2>/dev/null | awk 'END{print $4}')          #KB
+    case "$(df -P -T "$TMPDIR" 2>/dev/null | awk 'END{print $2}')" in tmpfs|ramfs) ;; *) return 1 ;; esac
+    rom_free=$(df -P -k "$BINDIR" 2>/dev/null | awk 'END{print $4}')          #KB
     [ -z "$rom_free" ] && return 1
-    case "$(df -T "$BINDIR" 2>/dev/null | awk 'END{print $2}')" in
+    case "$(df -P -T "$BINDIR" 2>/dev/null | awk 'END{print $2}')" in
         squashfs|ubifs|overlay|overlayfs) est=$(( ${1:-0}/1024/2 )) ;;    #透明压缩，约2:1
         *) est=$(( ${1:-0}/1024 )) ;;                                     #无压缩，全量
     esac

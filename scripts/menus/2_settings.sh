@@ -16,6 +16,7 @@ settings() {
             echo "$crashcore" | grep -q 'singbox' && sniffer=ON
         }
         [ -z "$dns_mod" ] && dns_mod='redir_host'
+        [ -z "$udp_buffer" ] && udp_buffer=OFF
 
         comp_box "\033[30;47m$SET_MENU_TITLE\033[0m"
         content_line "1) $SET_MENU_REDIR\t\033[36m$redir_mod$MENU_MOD\033[0m"
@@ -27,6 +28,7 @@ settings() {
             content_line "6) $SET_MENU_ADV_PORT"
         }
         content_line "7) $SET_MENU_IPV6\t\033[36m$ipv6_redir\033[0m"
+        content_line "8) $SET_MENU_UDP_BUFFER\t\033[36m$udp_buffer\033[0m"
         btm_box "" \
             "a) \033[31m$SET_MENU_RESET\033[0m" \
             "b) \033[36m$SET_MENU_LANG\033[0m" \
@@ -142,6 +144,18 @@ settings() {
             ;;
         7)
             set_ipv6
+            ;;
+        8)
+            if [ "$udp_buffer" = "ON" ]; then
+                udp_buffer=OFF
+                msg_alert "\033[33m$SET_UDP_BUFFER_OFF\033[0m" \
+                    "$SET_UDP_BUFFER_RESTART"
+            else
+                udp_buffer=ON
+                msg_alert "\033[32m$SET_UDP_BUFFER_ON\033[0m" \
+                    "$SET_UDP_BUFFER_RESTART"
+            fi
+            setconfig udp_buffer "$udp_buffer"
             ;;
         a)
             BACK_TAR="$CRASHDIR/configs.tar.gz"
