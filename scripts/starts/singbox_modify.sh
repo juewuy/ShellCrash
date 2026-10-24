@@ -317,7 +317,8 @@ EOF
         . "$CRASHDIR"/libs/sb_inbounds.sh
     }
     if [ "$redir_mod" = "Mix" ] || [ "$redir_mod" = "Tun" ]; then
-        [ "$ipv6_redir" = 'ON' ] && ipv6_address='"fd00:face:b00c::1/126",'
+        [ "$ipv6_redir" = 'ON' ] && [ -n "$(ip -6 rule show)" ] && ipv6_address='"fd00:face:b00c::1/126",'
+		[ "$(printf '%s' "$core_v" | cut -d. -f2)" -le 14 ] && stack='"stack": "system",'
         cat >>"$TMPDIR"/jsons/tun.json <<EOF
 {
   "inbounds": [
@@ -329,8 +330,8 @@ EOF
         $ipv6_address
         "198.18.0.1/15"
       ],
-      "auto_route": false,
-      "stack": "system"
+      $stack
+      "auto_route": false
     }
   ]
 }
