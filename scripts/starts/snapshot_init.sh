@@ -4,7 +4,6 @@
 CRASHDIR="$(uci get firewall.ShellCrash.path | sed 's/\/starts.*//')"
 #防止提前自启
 /etc/init.d/shellcrash disable
-crontab -l | grep -v 'start_legacy_wd.sh shellcrash' | crontab -
 #防止usb未加载
 i=0
 while [ ! -f "$CRASHDIR/configs/ShellCrash.cfg" ]; do
@@ -13,6 +12,8 @@ while [ ! -f "$CRASHDIR/configs/ShellCrash.cfg" ]; do
     sleep 3
 done
 . "$CRASHDIR"/configs/ShellCrash.cfg
+. "$CRASHDIR"/libs/set_cron.sh
+cronset 'start_legacy_wd.sh shellcrash' || exit 1
 
 autoSSH() {
     #自动开启SSH
