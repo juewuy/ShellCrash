@@ -7,7 +7,7 @@ running_status(){
     if [ -n "$start_time" ]; then
         time=$(($(date +%s) - start_time))
         day=$((time / 86400))
-        [ "$day" = "0" ] && day='' || day="$dayD"
+        [ "$day" = "0" ] && day='' || day="${day}D"
         time=$(date -u -d @${time} +%H:%M:%S)
     fi
 }
