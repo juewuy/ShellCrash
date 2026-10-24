@@ -131,7 +131,7 @@ setboot() {
                     msg_alert "\033[33m$SETBOOT_MINI_DISABLED\033[0m"
                 fi
             fi
-            sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/command.env
+            sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/directories.env
             sleep 1
             ;;
         5)
@@ -203,7 +203,7 @@ setboot() {
                     continue
                     ;;
                 esac
-                sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/command.env
+                sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/directories.env
                 break
             done
             ;;

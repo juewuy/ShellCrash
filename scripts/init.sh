@@ -83,16 +83,27 @@ for file in start.sh starts/bfstart.sh starts/afstart.sh starts/fw_stop.sh menu.
 done
 setconfig versionsh_l $version
 #生成用于执行启动服务的变量文件
-[ ! -f "$CRASHDIR"/configs/command.env ] && {
-    echo 'TMPDIR=/tmp/ShellCrash' > "$CRASHDIR"/configs/command.env
-    echo "BINDIR=$CRASHDIR" >> "$CRASHDIR"/configs/command.env
-}
+DIRECTORIES_FILE="$CRASHDIR"/configs/directories.env
+COMMAND_FILE="$CRASHDIR"/configs/command.env
+if [ ! -f "$DIRECTORIES_FILE" ]; then
+    #迁移旧版中与启动命令混放的目录变量
+    if [ -f "$COMMAND_FILE" ]; then
+        . "$COMMAND_FILE"
+    fi
+    [ -z "$TMPDIR" ] && TMPDIR=/tmp/ShellCrash
+    [ -z "$BINDIR" ] && BINDIR=$CRASHDIR
+    printf 'TMPDIR=%s\nBINDIR=%s\n' "$TMPDIR" "$BINDIR" > "$DIRECTORIES_FILE"
+    [ -f "$COMMAND_FILE" ] && sed -i '/^TMPDIR=.*/d; /^BINDIR=.*/d' "$COMMAND_FILE"
+else
+    . "$DIRECTORIES_FILE"
+fi
+[ -f "$COMMAND_FILE" ] || : > "$COMMAND_FILE"
 if [ -n "$(grep 'crashcore=singbox' "$CFG_PATH")" ]; then
     COMMAND='"$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"'
 else
     COMMAND='"$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"'
 fi
-setconfig COMMAND "$COMMAND" "$CRASHDIR"/configs/command.env
+setconfig COMMAND "$COMMAND" "$COMMAND_FILE"
 #设置防火墙执行模式
 grep -q 'firewall_mod' "$CRASHDIR/configs/ShellClash.cfg" 2>/dev/null || {
     firewall_mod=iptables

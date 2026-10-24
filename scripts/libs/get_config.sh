@@ -2,6 +2,7 @@
 # 检查配置文件
 [ -z "$TASKCFGDIR" ] && TASKCFGDIR="$CRASHDIR"/configs/task
 [ -f "$CRASHDIR"/configs/ShellCrash.cfg ] || . "$CRASHDIR"/init.sh >/dev/null 2>&1
+[ -f "$CRASHDIR"/configs/directories.env ] && . "$CRASHDIR"/configs/directories.env >/dev/null 2>&1
 . "$CRASHDIR"/configs/command.env >/dev/null 2>&1
 . "$CRASHDIR"/configs/ShellCrash.cfg
 
