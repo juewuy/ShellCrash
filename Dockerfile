@@ -74,7 +74,10 @@ COPY --from=builder /tmp/s6_noarch.tar.xz /tmp/s6_noarch.tar.xz
 RUN tar -xJf /tmp/s6_noarch.tar.xz -C / && rm -rf /tmp/s6_noarch.tar.xz
 RUN tar -xJf /tmp/s6_arch.tar.xz -C / && rm -rf /tmp/s6_arch.tar.xz
 COPY docker/s6-rc.d /etc/s6-overlay/s6-rc.d
+COPY docker/s6-overlay/scripts/sync-autostart /etc/s6-overlay/scripts/sync-autostart
+RUN chmod +x /etc/s6-overlay/scripts/sync-autostart
 ENV S6_CMD_WAIT_FOR_SERVICES=1
+ENV S6_STAGE2_HOOK=/etc/s6-overlay/scripts/sync-autostart
 
 ENTRYPOINT ["/init"]
 

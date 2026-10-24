@@ -11,7 +11,7 @@ proxy-groups:
   - {name: 🚀 节点选择, type: select, proxies: [♻️ 自动选择, ✨ 自动选择（去高倍率）, 🛠️ 手动切换, ⚖️ 负载均衡, 🚑 故障转移, 🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: 🛠️ 手动切换, type: select, include-all: true, proxies: [🎯 本地直连, 🇭🇰 香港节点, 🇹🇼 台湾节点, 🇺🇸 美国节点, 🇯🇵 日本节点, 🇪🇺 欧洲节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 👑 高级节点, 📉 省流节点, {providers_tags}]}
   - {name: ♻️ 自动选择, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)"}
-  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)`(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
+  - {name: ✨ 自动选择（去高倍率）, type: url-test, interval: 1800, tolerance: 50, include-all: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)`(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|(x([2-9]|[1-9][0-9]+)|([2-9]|[1-9][0-9]+)x))"}
   - {name: ⚖️ 负载均衡, type: load-balance, interval: 1800, include-all: true, hidden: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)"}
   - {name: 🚑 故障转移, type: fallback, interval: 1800, include-all: true, hidden: true, exclude-filter: "(?i)(剩余|重置|到期|防失联|官网|导航|客服|http|www)"}
   #
@@ -51,7 +51,7 @@ proxy-groups:
   - {name: 🇰🇷 韩国节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇰🇷|韩|韓|首尔|kr|kor)"}
   - {name: 🇸🇬 狮城节点, type: url-test, interval: 120, tolerance: 50, include-all: true, filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"}
 
-  - {name: 👑 高级节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|x([2-9]|\\d{2,}))"}
+  - {name: 👑 高级节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(专线|专用|高级|直连|急速|高速|高倍率|游戏|铂金|钻石|企业|VIP|Ultra|Game|IEPL|IPLC|AIA|BGP|GIA|CN2|CMI|HGC|HKT|CTM|CC|AC|(x([2-9]|[1-9][0-9]+)|([2-9]|[1-9][0-9]+)x))"}
   - {name: 📉 省流节点, type: url-test, interval: 1800, tolerance: 50, include-all: true, filter: "(?i)(0\\.[1-6]|低倍率|省流|大流量|公益|免费|闲时|Low)"}
 
 #规则提供者（更新mrs格式）

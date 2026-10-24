@@ -18,10 +18,14 @@ services:
       # - net.ipv6.conf.all.forwarding=1
     volumes:
       - shellcrash_configs:/etc/ShellCrash/configs:rw
+      - shellcrash_yamls:/etc/ShellCrash/yamls:rw
+      - shellcrash_jsons:/etc/ShellCrash/jsons:rw
     restart: unless-stopped
     
 volumes:
   shellcrash_configs:
+  shellcrash_yamls:
+  shellcrash_jsons:
   
 networks:
   macvlan_lan:

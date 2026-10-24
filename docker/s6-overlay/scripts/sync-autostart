@@ -1,0 +1,22 @@
+#!/bin/sh
+# 在 s6-rc 编译 user bundle 之前，把 configs 卷中的自启状态同步到 contents.d
+# 由 S6_STAGE2_HOOK 调用；删除重建容器后仍可按 volume 恢复开机自启
+
+CRASHDIR=/etc/ShellCrash
+CFG_MARK="$CRASHDIR/configs/.autostart"
+S6_MARK=/etc/s6-overlay/s6-rc.d/user/contents.d/afstart
+
+mkdir -p "$CRASHDIR/configs" /etc/s6-overlay/s6-rc.d/user/contents.d
+
+# 兼容旧容器：仅有 s6 标记时迁移到 configs
+if [ -f "$S6_MARK" ] && [ ! -f "$CFG_MARK" ]; then
+    touch "$CFG_MARK"
+fi
+
+if [ -f "$CFG_MARK" ] && [ ! -f "$CRASHDIR/.dis_startup" ]; then
+    touch "$S6_MARK"
+else
+    rm -f "$S6_MARK"
+fi
+
+exit 0
