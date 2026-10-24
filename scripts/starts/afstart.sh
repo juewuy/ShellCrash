@@ -7,11 +7,12 @@
 	cd ..
 	pwd
 )
+. "$CRASHDIR"/libs/set_cron.sh
+croncheck || exit 1
 . "$CRASHDIR"/libs/get_config.sh
 #加载工具
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/logger.sh
-. "$CRASHDIR"/libs/set_cron.sh
 #缺省值
 [ -z "$firewall_area" ] && firewall_area=1
 #延迟启动
@@ -37,14 +38,24 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 	} &
 	ckcmd mtd_storage.sh && mtd_storage.sh save >/dev/null 2>&1 #Padavan保存/etc/storage
 	#加载定时任务
-	cronload | grep -v '^$' >"$TMPDIR"/cron_tmp
-	[ -s "$TASKCFGDIR"/cron ] && cat "$TASKCFGDIR"/cron >>"$TMPDIR"/cron_tmp
-	[ -s "$TASKCFGDIR"/running ] && cat "$TASKCFGDIR"/running >>"$TMPDIR"/cron_tmp
-	[ "$bot_tg_service" = ON ] && echo "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh bot_tg #ShellCrash-TG_BOT守护进程" >>"$TMPDIR"/cron_tmp
-	[ "$start_old" = ON ] && echo "* * * * * /bin/sh $CRASHDIR/starts/start_legacy_wd.sh shellcrash #ShellCrash保守模式守护进程" >>"$TMPDIR"/cron_tmp
-	awk '!x[$0]++' "$TMPDIR"/cron_tmp >"$TMPDIR"/cron_tmp2 #删除重复行
-	cronadd "$TMPDIR"/cron_tmp2
-	rm -f "$TMPDIR"/cron_tmp "$TMPDIR"/cron_tmp2
+	set -- -
+	for cron_file in "$TASKCFGDIR/cron" "$TASKCFGDIR/running"; do
+		[ ! -e "$cron_file" ] || set -- "$@" "$cron_file"
+	done
+	# shellcheck disable=SC2016
+	CRON_BOT="$bot_tg_service" CRON_LEGACY="$start_old" CRON_DIR="$CRASHDIR" cronupdate awk '
+		NF && !seen[$0]++ { print }
+		END {
+			if (ENVIRON["CRON_BOT"] == "ON") {
+				line = "* * * * * /bin/sh " ENVIRON["CRON_DIR"] "/starts/start_legacy_wd.sh bot_tg #ShellCrash-TG_BOT守护进程"
+				if (!seen[line]++) print line
+			}
+			if (ENVIRON["CRON_LEGACY"] == "ON") {
+				line = "* * * * * /bin/sh " ENVIRON["CRON_DIR"] "/starts/start_legacy_wd.sh shellcrash #ShellCrash保守模式守护进程"
+				if (!seen[line]++) print line
+			}
+		}
+	' "$@" || exit 1
 	#加载条件任务
 	[ -s "$TASKCFGDIR"/afstart ] && { . "$TASKCFGDIR"/afstart; } &
 	[ -s "$TASKCFGDIR"/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
