@@ -226,8 +226,8 @@ EOF
       {
         "tag": "dns_fakeip",
         "type": "fakeip",
-        "inet4_range": "198.18.0.0/15",
-        "inet6_range": "fc00::/16"
+        "inet4_range": "$fakeip4",
+        "inet6_range": "$fakeip6"
       },
       {
         "tag": "dns_resolver",

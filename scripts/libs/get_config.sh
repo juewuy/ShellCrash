@@ -15,6 +15,9 @@
 routing_mark=$((fwmark + 2))
 [ -z "$table" ] && table=100
 
+[ -z "$fakeip4" ] && fakeip4="198.18.0.0/15"
+[ -z "$fakeip6" ] && fakeip6="2001:2::/64"
+
 [ -z "$dns_nameserver" ] && {
     dns_nameserver='223.5.5.5, 1.2.4.8'
     netstat -ntlup 2>/dev/null | grep -q '127.0.0.1:53' || ss -ntlup 2>/dev/null | grep -q '127.0.0.1:53' && dns_nameserver='127.0.0.1'
