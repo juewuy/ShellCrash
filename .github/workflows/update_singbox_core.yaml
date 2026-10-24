@@ -83,12 +83,24 @@ jobs:
 
       - name: get sing-box version
         id: sing-box
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git remote add sekai https://github.com/SagerNet/sing-box.git
-          git fetch --tags sekai
-          version=$(CGO_ENABLED=0 go run ./cmd/internal/read_tag)
-          [ -z "$version" ] &&  version=${{ inputs.tag2 }}
-          version=$(echo ${version%-*})
+          if [ "$REPO" = 'SagerNet/sing-box' ]; then
+            version=$(gh api --paginate "repos/${REPO}/tags?per_page=100" --jq '.[].name' \
+              | sort -V \
+              | tail -n 1) || true
+          elif [ "$REPO" = 'reF1nd/sing-box' ]; then
+            version=$(gh api --paginate "repos/${REPO}/tags?per_page=100" --jq '.[].name' \
+              | grep -F 'reF1nd' \
+              | sort -V \
+              | tail -n 1) || true
+          else
+            version=''
+          fi
+          if [ -z "$version" ]; then
+            version='${{ inputs.tag2 }}'
+          fi
           echo version=$version >> $GITHUB_OUTPUT
           if [ -z "$TAGS" ];then
             if [ "$REPO" = 'SagerNet/sing-box' ];then
