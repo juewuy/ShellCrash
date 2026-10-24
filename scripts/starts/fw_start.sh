@@ -1,6 +1,8 @@
 #!/bin/sh
 # Copyright (C) Juewuy
 
+#停止旧的IPv6前缀监听，避免防火墙重建期间并发更新
+[ -f "$CRASHDIR"/starts/fw_ipv6_watch.sh ] && /bin/sh "$CRASHDIR"/starts/fw_ipv6_watch.sh stop
 #获取局域网host地址
 . "$CRASHDIR"/starts/fw_getlanip.sh && getlanip
 #缺省值
@@ -46,6 +48,9 @@
 #防火墙配置
 [ "$firewall_mod" = 'iptables' ] && . "$CRASHDIR"/starts/fw_iptables.sh && start_iptables
 [ "$firewall_mod" = 'nftables' ] && . "$CRASHDIR"/starts/fw_nftables.sh && start_nftables
+#动态更新nftables中的IPv6局域网前缀集合
+[ "$firewall_mod" = 'nftables' -a "$ipv6_redir" = "ON" ] &&
+    /bin/sh "$CRASHDIR"/starts/fw_ipv6_watch.sh start
 #修复部分虚拟机dns查询失败的问题
 [ "$firewall_area" = 2 -o "$firewall_area" = 3 ] && [ -z "$(grep '127.0.0.1' /etc/resolv.conf 2>/dev/null)" ] && [ "$systype" != 'container' ] && {
     line=$(grep -n 'nameserver' /etc/resolv.conf | awk -F: 'FNR==1{print $1}')
