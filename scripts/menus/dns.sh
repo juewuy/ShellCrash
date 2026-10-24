@@ -25,6 +25,8 @@ set_dns_mod() {
         [ "$dns_mod" = "mix" ] &&
             content_line "8) \033[33m$DNS_FAKEIP_MENU\033[0m"
         content_line "9) \033[36m$DNS_ADV_MENU\033[0m"
+        [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] &&
+            content_line "a) \033[32m$DNS_DIRECT_MENU\033[0m"
         content_line ""
         content_line "0) $COMMON_BACK"
         separator_line "="
@@ -116,6 +118,13 @@ set_dns_mod() {
         9)
             set_dns_adv
             ;;
+        a)
+            if [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ]; then
+                dns_direct_domains
+            else
+                msg_alert "\033[33m直连域名功能仅在 mix/route 模式下可用！\033[0m"
+            fi
+            ;;
         *)
             errornum
             ;;
@@ -165,6 +174,96 @@ fake_ip_filter() {
                     fi
                 else
                     break
+                fi
+            fi
+            ;;
+        esac
+    done
+}
+
+# 直连域名管理
+dns_direct_domains() {
+    while true; do
+        comp_box "\033[32m$DNS_DIRECT_DESC\033[0m" \
+            "\033[36m$DNS_DIRECT_TIP\033[0m" \
+            "$DNS_DIRECT_EXAMPLE"
+        if [ -s "$CRASHDIR/configs/dns_direct_domains" ]; then
+            content_line "\033[33m$DNS_DIRECT_EXIST\033[0m"
+            content_line ""
+            awk '{print NR") "$1}' "$CRASHDIR/configs/dns_direct_domains" |
+                while IFS= read -r line; do
+                    content_line "$line"
+                done
+        else
+            content_line "\033[33m$DNS_DIRECT_EMPTY\033[0m"
+        fi
+        btm_box "" \
+            "a) $DNS_DIRECT_ADD_LAN" \
+            "r) $DNS_DIRECT_LOAD_PRESET" \
+            "t) $DNS_DIRECT_TEST" \
+            "0) $COMMON_BACK"
+        read -r -p "$DNS_DIRECT_EDIT> " input
+        case "$input" in
+        "" | 0)
+            break
+            ;;
+        a)
+            comp_box "$DNS_DIRECT_INPUT_HINT"
+            btm_box "1) $DNS_CONFIRM_OK" \
+                "0) $COMMON_BACK"
+            read -r -p "$DNS_INPUT> " domain
+            case "$domain" in
+            0)
+                continue
+                ;;
+            *)
+                if echo "$domain" >>"$CRASHDIR/configs/dns_direct_domains"; then
+                    msg_alert "\033[32m$DNS_ADD_OK\033[0m"
+                else
+                    msg_alert "\033[31m$DNS_ADD_FAIL\033[0m"
+                fi
+                ;;
+            esac
+            ;;
+        r)
+            if [ -s "$CRASHDIR/public/dns_direct_domains.list" ]; then
+                cat "$CRASHDIR/public/dns_direct_domains.list" >>"$CRASHDIR/configs/dns_direct_domains"
+                msg_alert "\033[32m$DNS_DIRECT_LOAD_OK\033[0m"
+            else
+                msg_alert "\033[31m预设文件不存在！\033[0m"
+            fi
+            ;;
+        t)
+            comp_box "$DNS_DIRECT_TEST_INPUT"
+            btm_box "1) $DNS_CONFIRM_OK" \
+                "0) $COMMON_BACK"
+            read -r -p "$DNS_INPUT> " test_domain
+            case "$test_domain" in
+            0)
+                continue
+                ;;
+            *)
+                # 使用本地 DNS 解析
+                result=$(nslookup "$test_domain" 127.0.0.1:$dns_port 2>&1 || echo "解析失败")
+                comp_box "$DNS_DIRECT_TEST_RESULT" \
+                    "$result"
+                # 判断是否在直连列表中
+                if [ -f "$CRASHDIR/configs/dns_direct_domains" ] && grep -qF "$test_domain" "$CRASHDIR/configs/dns_direct_domains"; then
+                    content_line "\033[32m$DNS_DIRECT_TEST_IN_LIST\033[0m"
+                else
+                    content_line "\033[33m$DNS_DIRECT_TEST_NOT_IN_LIST\033[0m"
+                fi
+                btm_box "0) $COMMON_BACK"
+                read -r -p "$COMMON_INPUT> " res
+                ;;
+            esac
+            ;;
+        *)
+            if [ "$input" -ge 1 ] 2>/dev/null; then
+                if sed -i "${input}d" "$CRASHDIR/configs/dns_direct_domains"; then
+                    msg_alert "\033[32m$DNS_REMOVE_OK\033[0m"
+                else
+                    msg_alert "\033[31m$DNS_REMOVE_FAIL\033[0m"
                 fi
             fi
             ;;
