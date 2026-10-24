@@ -15,3 +15,17 @@ $RECYCLE.BIN/
 
 # Workflow temporary files
 bin/dashboard/.tmp/
+
+#Others
+/一键同步.bat
+/一键打包.bash
+/刷新CDN.bash
+/一键同步列表.scp
+/v2b_api.sh
+/login.sh
+/tools/login.sh
+/tools/v2b_api.sh
+tools
+/检出dev.bash
+/list.scp
+/.codex
