@@ -24,6 +24,7 @@
 - **Multi-Kernel Support**: Easily manage and switch between **mihomo** and **sing-box** kernels directly within the Shell environment.
 - **Flexible Configuration Management**: Supports online import of subscription links and configuration files to simplify the setup process.
 - **Automated Tasks**: Configure scheduled tasks for automatic updates of configuration files and rules.
+- **Provider DNS Sync**: Mihomo proxy providers can resolve their own proxy hostnames with subscription-supplied DoH and refresh the results after provider updates.
 - **Graphical Dashboard**: Support for online installation and use of local Web Dashboards to intuitively manage built-in rules and traffic.
 - **Multiple Operation Modes**: Supports switching between various traffic forwarding modes, including Router mode and Local mode.
 - **One-Click Maintenance**: Built-in online update functionality to keep the script and features up to date.

@@ -7,6 +7,7 @@
 105#$CRASHDIR/task/task.sh hotupdate#Hot update online subscriptions (without restart)
 106#$CRASHDIR/task/task.sh web_save_auto#Automatically save panel configuration
 107#$CRASHDIR/task/task.sh ntp#Automatically sync NTP time
+108#$CRASHDIR/task/task.sh sync_provider_dns#Sync proxy provider DNS
 
 111#$CRASHDIR/task/task.sh update_core#Automatically update core
 112#$CRASHDIR/task/task.sh update_scripts#Automatically update scripts
@@ -14,6 +15,5 @@
 
 121#$CRASHDIR/task/task.sh reset_firewall#Reset transparent routing firewall
 122#sleep 70 && touch /etc/banner && reboot#Reboot router device – use with caution
-
 
 

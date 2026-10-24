@@ -47,6 +47,9 @@ if [ -n "$test" -o -n "$(pidof CrashCore)" ]; then
 	rm -f "$TMPDIR"/cron_tmp "$TMPDIR"/cron_tmp2
 	#加载条件任务
 	[ -s "$TASKCFGDIR"/afstart ] && { . "$TASKCFGDIR"/afstart; } &
+	[ "$crashcore" = meta ] && [ -s "$CRASHDIR/configs/providers.cfg" ] && [ -s "$CRASHDIR/libs/provider_dns.sh" ] && {
+		(sleep 10; "$CRASHDIR/task/task.sh" sync_provider_dns) &
+	}
 	[ -s "$TASKCFGDIR"/affirewall -a -s /etc/init.d/firewall -a ! -f /etc/init.d/firewall.bak ] && {
 		#注入防火墙
 		line=$(grep -En "fw.* restart" /etc/init.d/firewall | cut -d ":" -f 1)

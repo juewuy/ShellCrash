@@ -1,0 +1,5 @@
+dns:
+  nameserver-policy: {unrelated.example: ['https://public-resolver.example/dns-query'], '+.nodes.example': ['https://resolver-c.example/token/dns-query']}
+proxies:
+  - {name: Node 3, type: trojan, server: gateway.nodes.example, port: 443}
+proxy-groups: []

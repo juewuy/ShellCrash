@@ -138,6 +138,9 @@ hotupdate() { #热更新订阅
     . "$CRASHDIR"/libs/web_restore.sh && put_save "http://127.0.0.1:$db_port/configs" "{\"path\":\"$TMPDIR/config.$format\"}"
     exit $?
 }
+sync_provider_dns() { #同步节点提供者的DNS
+    . "$CRASHDIR"/libs/provider_dns.sh && provider_dns_sync
+}
 
 case "$1" in
     [1-9][0-9][0-9])

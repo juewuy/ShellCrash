@@ -1,0 +1,5 @@
+dns:
+  proxy-server-nameserver: [https://resolver-d.example/dns-query]
+proxies:
+  - {name: Node 4, type: ss, server: edge-a.nodes.example, port: 8443}
+proxy-groups: []
