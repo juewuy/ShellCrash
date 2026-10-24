@@ -228,8 +228,8 @@ task_type() {
         [ -n "$cron_time" ] && set_service running "$task_id" "$TASK5_RUNNING_PREFIX$time_des$task_name" "$cron_time"
         ;;
     8)
-        comp_box "$TASK5_AFFW_HINT"
-        "$TASK5_CONFIRM_CONTINUE"
+        comp_box "$TASK5_AFFW_HINT" \
+            "$TASK5_CONFIRM_CONTINUE"
         btm_box "1) $TASK5_YES" \
             "0) $TASK5_NO"
         read -r -p "$COMMON_INPUT> " res
