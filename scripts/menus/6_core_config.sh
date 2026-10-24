@@ -15,6 +15,19 @@ else
 fi
 URI_EXP='ss|vmess|vless|trojan|tuic|anytls|shadowtls|hysteria(2)?'
 
+# 按变量名字面值删除订阅配置
+delete_provider() {
+    provider_name=$1
+    provider_file=$2
+    [ -f "$provider_file" ] || return 0
+    provider_tmp="$provider_file.tmp.$$"
+    NAME="$provider_name" awk 'index($0, ENVIRON["NAME"] " ") != 1' "$provider_file" >"$provider_tmp" &&
+        cat "$provider_tmp" >"$provider_file"
+    provider_status=$?
+    rm -f "$provider_tmp"
+    return "$provider_status"
+}
+
 # 配置文件主界面
 set_core_config() {
     while true; do
@@ -275,10 +288,10 @@ setproviders() {
             ;;
         d)
             if [ -n "$name" ] && [ -n "$link" ]; then
-                sed -i "/^$name /d" "$CRASHDIR"/configs/providers.cfg 2>/dev/null
+                delete_provider "$name" "$CRASHDIR"/configs/providers.cfg 2>/dev/null
                 msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
             elif [ -n "$name" ] && [ -n "$link_uri" ]; then
-                sed -i "/^$name /d" "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null
+                delete_provider "$name" "$CRASHDIR"/configs/providers_uri.cfg 2>/dev/null
                 msg_alert "\033[32m$COMMON_SUCCESS\033[0m"
             fi
             break
@@ -324,8 +337,8 @@ setproviders() {
 # 保存
 saveproviders() {
     [ -n "$name" ] && {
-        [ -s "$CRASHDIR"/configs/providers.cfg ] && sed -i "/^$last_name /d" "$CRASHDIR"/configs/providers.cfg
-        [ -s "$CRASHDIR"/configs/providers_uri.cfg ] && sed -i "/^$last_name /d" "$CRASHDIR"/configs/providers_uri.cfg
+        [ -s "$CRASHDIR"/configs/providers.cfg ] && delete_provider "$last_name" "$CRASHDIR"/configs/providers.cfg
+        [ -s "$CRASHDIR"/configs/providers_uri.cfg ] && delete_provider "$last_name" "$CRASHDIR"/configs/providers_uri.cfg
     }
     if [ -n "$name" ] && [ -n "$link" ]; then
         echo "$name $link $interval $interval2 $ua #$exclude_w #$include_w" >>"$CRASHDIR"/configs/providers.cfg
