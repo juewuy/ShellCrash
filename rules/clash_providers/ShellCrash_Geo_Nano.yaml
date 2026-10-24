@@ -1,0 +1,7 @@
+#ShellCrash-geosite极简规则
+proxy-groups:
+  - {name: 🚀 节点选择, type: select, proxies: [{providers_tags}], include-all: true}
+  - {name: 🎯 本地直连, type: select, proxies: [DIRECT, 🚀 节点选择]}
+rules:
+  - GEOIP,cn,🎯 本地直连
+  - MATCH,🚀 节点选择
