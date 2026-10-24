@@ -121,6 +121,10 @@ split_and_customize_yaml_parts() {
     yaml_char='proxies proxy-groups proxy-providers rules rule-providers sub-rules listeners'
     for char in $yaml_char; do
         sed -n "/^$char:/,/^[a-z]/ { /^[a-z]/d; p; }" $core_config >"$TMPDIR"/${char}.yaml
+        #支持 Clash 常见的单行 flow-style 节点列表，例如 proxies: [{name: ..., type: ...}]
+        if [ "$char" = proxies ] && [ ! -s "$TMPDIR"/proxies.yaml ]; then
+            sed -n 's/^proxies:[[:space:]]*\[\(.*\)\][[:space:]]*$/  - \1/p' "$core_config" >"$TMPDIR"/proxies.yaml
+        fi
     done
     #跳过本地tls证书验证
     [ "$skip_cert" != "OFF" ] && sed -i 's/skip-cert-verify: false/skip-cert-verify: true/' "$TMPDIR"/proxies.yaml ||

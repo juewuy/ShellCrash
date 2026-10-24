@@ -4,6 +4,9 @@
 check_config() { #检查clash配置文件
     #检测节点或providers
     sed -n "/^proxies:/,/^[a-z]/ { /^[a-z]/d; p; }" "$core_config_new" >"$TMPDIR"/proxies.yaml
+    if [ ! -s "$TMPDIR"/proxies.yaml ]; then
+        sed -n 's/^proxies:[[:space:]]*\[\(.*\)\][[:space:]]*$/  - \1/p' "$core_config_new" >"$TMPDIR"/proxies.yaml
+    fi
     if ! grep -Eq 'server:|server":|server'\'':' "$TMPDIR"/proxies.yaml && ! grep -q 'proxy-providers:' "$core_config_new"; then
         echo "-----------------------------------------------"
         logger "获取到了配置文件【$core_config_new】，但似乎并不包含正确的节点信息！" 31
