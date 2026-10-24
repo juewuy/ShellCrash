@@ -6,7 +6,8 @@ description="Custom proxy service for ShellCrash"
 #获取目录
 CRASHDIR=$(cat /etc/profile | grep CRASHDIR | awk -F "\"" '{print $2}')
 [ -z "$CRASHDIR" ] && CRASHDIR=$(cat ~/.bashrc | grep CRASHDIR | awk -F "\"" '{print $2}')
-. ${CRASHDIR}/configs/command.env #加载启动命令和启动目录
+. "${CRASHDIR}"/configs/directories.env #加载启动目录
+. "${CRASHDIR}"/configs/command.env #加载启动命令
 
 # PID 文件
 pidfile="/run/shellcrash.pid"

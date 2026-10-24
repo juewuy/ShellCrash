@@ -1,6 +1,7 @@
 
 . "$CRASHDIR"/libs/check_target.sh
 . "$CRASHDIR"/libs/core_tools.sh
+. "$CRASHDIR"/configs/directories.env
 . "$CRASHDIR"/configs/command.env
 
 check_core() { #检查及下载内核文件

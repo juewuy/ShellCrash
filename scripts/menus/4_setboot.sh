@@ -131,7 +131,7 @@ setboot() {
                     msg_alert "\033[33m$SETBOOT_MINI_DISABLED\033[0m"
                 fi
             fi
-            sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/command.env
+            sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/directories.env
             sleep 1
             ;;
         5)
@@ -155,8 +155,8 @@ setboot() {
                     set_usb_dir() {
                         while true; do
                             comp_box "$SETBOOT_SELECT_INSTALL_DIR"
-                            du -hL /mnt |
-                                awk '{print NR") "$2"  ($SETBOOT_SPACE_USED$1")"}' |
+                            du -hL -d 2 /mnt |
+                                awk '{print NR") "$2"  ($SETBOOT_SPACE_USED"$1"）"}' |
                                 while IFS= read -r line; do
                                     content_line "$line"
                                 done
@@ -164,7 +164,7 @@ setboot() {
                             content_line "0) $COMMON_BACK"
                             separator_line "="
                             read -r -p "$COMMON_INPUT> " num
-                            BINDIR=$(du -hL /mnt | awk '{print $2}' | sed -n "$num"p)
+                            BINDIR=$(du -hL -d 2 /mnt | awk '{print $2}' | sed -n "$num"p)
                             if [ "$num" = 0 ]; then
                                 return 1
                             elif [ -z "$BINDIR" ]; then
@@ -203,7 +203,7 @@ setboot() {
                     continue
                     ;;
                 esac
-                sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/command.env
+                sed -i "s#BINDIR=.*#BINDIR=$BINDIR#" "$CRASHDIR"/configs/directories.env
                 break
             done
             ;;
