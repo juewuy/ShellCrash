@@ -29,7 +29,12 @@ cronadd() ( #定时任务工具；子 shell 隔离临时变量和清理 trap
     elif [ -w "$crondir" ]; then
         cron_user=$(id -un 2>/dev/null || echo "$USER")
         [ -z "$cron_user" ] && exit 1
-        cron_stage=$(mktemp "$crondir/.shellcrash.XXXXXX") || exit 1
+        cron_stage="$crondir/.shellcrash.$$"
+        (
+            umask 077
+            set -C
+            : >"$cron_stage"
+        ) || exit 1
         trap 'rm -f "$cron_stage"' 0
         trap 'exit 1' 1 2 3 15
         [ ! -e "$crondir/$cron_user" ] || cp -p "$crondir/$cron_user" "$cron_stage" || exit 1
@@ -69,7 +74,8 @@ cronload() (
 
 cronupdate() ( #成功读取、生成后才提交；参数是读取 stdin 的过滤命令
     croncheck || exit 1
-    cron_tmp=$(mktemp -d /tmp/ShellCrash-cron.XXXXXX) || exit 1
+    cron_tmp="/tmp/ShellCrash-cron.$$"
+    mkdir -m 700 "$cron_tmp" || exit 1
     cron_saved=
     trap 'rm -rf "$cron_tmp"; [ -z "$cron_saved" ] || rm -f "$cron_saved"' 0
     trap 'exit 1' 1 2 3 15
@@ -78,7 +84,12 @@ cronupdate() ( #成功读取、生成后才提交；参数是读取 stdin 的过
     #先准备华硕/Padavan 的持久化副本；任何提交前的写入失败都保留原表。
     if [ "$cron_persist" = true ] && { [ -d /jffs ] || [ -d /etc/storage/ShellCrash ]; }; then
         mkdir -p "$TASKCFGDIR" || exit 1
-        cron_saved=$(mktemp "$TASKCFGDIR/.cron.XXXXXX") || exit 1
+        cron_saved="$TASKCFGDIR/.cron.$$"
+        (
+            umask 077
+            set -C
+            : >"$cron_saved"
+        ) || exit 1
         cat "$cron_tmp/new" >"$cron_saved" || exit 1
     fi
     cronadd "$cron_tmp/new" || exit 1
