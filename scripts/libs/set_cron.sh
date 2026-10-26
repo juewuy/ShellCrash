@@ -1,15 +1,14 @@
-crondir="$(crond -h 2>&1 | grep -oE 'Default:.*' | awk -F ":" '{print $2}'| tr -d ' ')"
+crondir="$(crond -h 2>&1 | grep -oE 'Default:.*' | awk -F ":" '{print $2}' | tr -d ' ')"
 [ ! -w "$crondir" ] && crondir="/etc/storage/cron/crontabs"
 [ ! -w "$crondir" ] && crondir="/var/spool/cron/crontabs"
 [ ! -w "$crondir" ] && crondir="/var/spool/cron"
-[ -z "$USER" ] && USER=$(id -un)
+[ -z "$USER" ] && USER=$(id -un 2>/dev/null || whoami 2>/dev/null)
 [ -z "$TASKCFGDIR" ] && TASKCFGDIR="$CRASHDIR"/configs/task
 
 # ShellCrash 使用的 ash/bash（以及 dash）均支持 test -O。
 # shellcheck disable=SC3067
 croncheck() { #在任何写操作前检查实例管理权限，保留普通用户自己的安装
-    cron_uid=$(id -u) || return 1
-    [ "$cron_uid" = 0 ] && return 0
+    [ -O /proc/1 ] && return 0
     if [ ! -O "$CRASHDIR/configs/ShellCrash.cfg" ] || [ ! -w "$CRASHDIR/configs/ShellCrash.cfg" ]; then
         echo '无权管理此 ShellCrash 实例，请使用安装用户或 root。' >&2
         return 1
@@ -28,7 +27,8 @@ cronadd() ( #定时任务工具；子 shell 隔离临时变量和清理 trap
     if crontab -h 2>&1 | grep -q '\-l'; then
         crontab "$1"
     elif [ -w "$crondir" ]; then
-        cron_user=$(id -un) || exit 1
+        cron_user=$(id -un 2>/dev/null || echo "$USER")
+        [ -z "$cron_user" ] && exit 1
         cron_stage=$(mktemp "$crondir/.shellcrash.XXXXXX") || exit 1
         trap 'rm -f "$cron_stage"' 0
         trap 'exit 1' 1 2 3 15
@@ -44,7 +44,7 @@ cronadd() ( #定时任务工具；子 shell 隔离临时变量和清理 trap
 )
 
 cronload() (
-    cron_user=$(id -un) || exit 1
+    cron_user=$(id -un 2>/dev/null || echo "$USER")
     if crontab -h 2>&1 | grep -q '\-l'; then
         cron_text=$(LC_ALL=C crontab -l 2>&1)
         cron_status=$?
