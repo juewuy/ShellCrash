@@ -2,7 +2,11 @@
 # Copyright (C) Juewuy
 
 #初始化目录
-[ -z "$CRASHDIR" ] && CRASHDIR=$( cd $(dirname $0);cd ..;pwd)
+[ -z "$CRASHDIR" ] && CRASHDIR=$(
+    cd $(dirname $0)
+    cd ..
+    pwd
+)
 . "$CRASHDIR"/libs/get_config.sh
 [ -z "$BINDIR" -o -z "$TMPDIR" -o -z "$COMMAND" ] && . "$CRASHDIR"/init.sh >/dev/null 2>&1
 [ ! -d "$TMPDIR" ] && mkdir -p "$TMPDIR"
@@ -33,7 +37,7 @@ set_udp_buffer_limit() {
         [ -w "$udp_buffer_file" ] || continue
         udp_buffer_current=$(cat "$udp_buffer_file" 2>/dev/null)
         case "$udp_buffer_current" in
-        '' | *[!0-9]*) continue ;;
+            '' | *[!0-9]*) continue ;;
         esac
         [ "$udp_buffer_current" -lt "$udp_buffer_limit" ] &&
             printf '%s\n' "$udp_buffer_limit" >"$udp_buffer_file"
@@ -91,7 +95,6 @@ EOF
     [ "$?" = 0 ] && rm -rf "$TMPDIR"/shellcrash_pac || mv -f "$TMPDIR"/shellcrash_pac "$BINDIR"/ui/pac
 }
 
-
 #检测网络连接
 [ "$network_check" != "OFF" ] && [ ! -f "$TMPDIR"/crash_start_time ] && ckcmd ping && . "$CRASHDIR"/starts/check_network.sh && check_network
 [ ! -d "$BINDIR"/ui ] && mkdir -p "$BINDIR"/ui
@@ -124,14 +127,14 @@ catpac                                       #生成pac文件
 if echo "$crashcore" | grep -q 'singbox'; then
     . "$CRASHDIR"/starts/singbox_check.sh && singbox_check
     [ -d "$TMPDIR"/jsons ] && rm -rf "$TMPDIR"/jsons/* || mkdir -p "$TMPDIR"/jsons #准备目录
-    if [ "$disoverride" != "1" ];then
+    if [ "$disoverride" != "1" ]; then
         . "$CRASHDIR"/starts/singbox_modify.sh && modify_json
     else
         ln -sf "$core_config" "$TMPDIR"/jsons/config.json
     fi
 else
     . "$CRASHDIR"/starts/clash_check.sh && clash_check
-    if [ "$disoverride" != "1" ];then
+    if [ "$disoverride" != "1" ]; then
         . "$CRASHDIR"/starts/clash_modify.sh && modify_yaml
     else
         ln -sf "$core_config" "$TMPDIR"/config.yaml
@@ -147,7 +150,7 @@ fi
 }
 #添加shellcrash用户
 [ "$firewall_area" = 2 ] || [ "$firewall_area" = 3 ] || [ "$(cat /proc/1/comm)" = "systemd" ] &&
-    [ -z "$(id shellcrash 2>/dev/null | grep 'root')" ] && {
+    ! grep -q '^shellcrash:[^:]*:0:' /etc/passwd 2>/dev/null && {
     ckcmd userdel && userdel shellcrash 2>/dev/null
     sed -i '/0:7890/d' /etc/passwd
     sed -i '/x:7890/d' /etc/group
