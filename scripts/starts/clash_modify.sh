@@ -242,6 +242,7 @@ preserve_geodata_yaml() {
 merger_yaml() {
     #mix和route模式生成rule-providers
     [ "$dns_mod" = "mix" ] || [ "$dns_mod" = "route" ] && ! grep -Eq '^[[:space:]]*cn:' "$TMPDIR"/rule-providers.yaml && ! grep -q '^rule-providers' "$CRASHDIR"/yamls/others.yaml 2>/dev/null && {
+        [ -n "$(tail -c1 "$TMPDIR"/rule-providers.yaml)" ] && echo >>"$TMPDIR"/rule-providers.yaml #结尾无换行时先补换行，防止下方追加内容粘行
         space=$(sed -n "1p" "$TMPDIR"/rule-providers.yaml | grep -oE '^ *') #获取空格数
         [ -z "$space" ] && space='  '
         echo "${space}cn: {type: http, behavior: domain, format: mrs, path: ./ruleset/cn.mrs, interval: 86400, url: https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@update/bin/geodata/mrs_geosite_cn.mrs}" >>"$TMPDIR"/rule-providers.yaml
