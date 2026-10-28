@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 
+. /etc/ShellCrash/configs/directories.env
 . /etc/ShellCrash/configs/command.env
 
 exec /bin/sh -c "${COMMAND} > /dev/null"
