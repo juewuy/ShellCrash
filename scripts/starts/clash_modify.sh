@@ -4,7 +4,12 @@
 prepare_clash_base_config() {
     ##########需要变更的配置###########
     [ "$ipv6_dns" != "OFF" ] && dns_v6='true' || dns_v6='false'
-    external="external-controller: 0.0.0.0:$db_port"
+    #仅代理本机时限制管理接口，透明代理端口仍需接收IPv6/虚拟机转发
+    clash_controller_address=
+    if [ "$firewall_area" = 2 ]; then
+        clash_controller_address=127.0.0.1
+    fi
+    external="external-controller: ${clash_controller_address:-0.0.0.0}:$db_port"
     if [ "$redir_mod" = "Mix" -o "$redir_mod" = "Tun" ]; then
         [ "$crashcore" = 'meta' ] && tun_meta=', device: utun, auto-route: false, auto-detect-interface: false'
         tun="tun: {enable: true, stack: mips$tun_meta}"
@@ -84,9 +89,14 @@ EOF
 }
 
 generate_set_and_hosts_yaml() {
+    #使用独立mixed入站，不让allow-lan同时改变透明代理端口的绑定
+    clash_mixed_port=$mix_port
+    if [ "$firewall_area" = 2 ] && [ "$crashcore" = meta ]; then
+        clash_mixed_port=0
+    fi
     #生成set.yaml
     cat >"$TMPDIR"/set.yaml <<EOF
-mixed-port: $mix_port
+mixed-port: $clash_mixed_port
 redir-port: $redir_port
 tproxy-port: $tproxy_port
 authentication: ["$authentication"]
@@ -94,7 +104,7 @@ allow-lan: true
 mode: Rule
 log-level: info
 ipv6: true
-external-controller: :$db_port
+external-controller: $clash_controller_address:$db_port
 external-ui: ui
 external-ui-url: "$external_ui_url"
 secret: $secret
@@ -198,6 +208,26 @@ split_and_customize_yaml_parts() {
 }
 
 add_custom_inbounds_and_rules() {
+    #mixed监听与透明代理分开，空认证时也不能从外部使用本机代理
+    #不设置users，沿用全局authentication及skip-auth-prefixes
+    if [ "$firewall_area" = 2 ] && [ "$crashcore" = meta ]; then
+        cat >>"$TMPDIR"/listeners.yaml <<EOF
+ - name: shellcrash-local-mixed
+   type: mixed
+   listen: 127.0.0.1
+   port: $mix_port
+   udp: true
+EOF
+        if [ "$ipv6_redir" = ON ] || [ "$ipv6_support" = ON ]; then
+            cat >>"$TMPDIR"/listeners.yaml <<EOF
+ - name: shellcrash-local-mixed-ipv6
+   type: mixed
+   listen: ::1
+   port: $mix_port
+   udp: true
+EOF
+        fi
+    fi
     #添加自定义入站
     [ "$vms_service" = ON ] || [ "$sss_service" = ON ] && {
         . "$CRASHDIR"/configs/gateway.cfg
