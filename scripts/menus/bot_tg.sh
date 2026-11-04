@@ -23,7 +23,7 @@ web_download(){
     if curl --version >/dev/null 2>&1; then
         curl -kfsSl "$1" -o "$2"
     else
-        wget -Y on -q --timeout=3 -O "$2" "$1"
+        wget_proxy on -q --timeout=3 -O "$2" "$1"
     fi
 }
 web_upload(){
