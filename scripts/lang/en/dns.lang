@@ -85,3 +85,7 @@ DNS_DIRECT_TEST_INPUT="Enter domain to test"
 DNS_DIRECT_TEST_RESULT="Resolution result:"
 DNS_DIRECT_TEST_IN_LIST="✓ This domain is configured for direct DNS resolution"
 DNS_DIRECT_TEST_NOT_IN_LIST="✗ This domain is not in the direct DNS list"
+
+#===== DNS Failover =====
+DNS_ADV_FAILOVER="PROXY-DNS Failover"
+DNS_ADV_FAILOVER_TIP="Fallback to DIRECT-DNS when proxy DNS fails or returns no IP (Mihomo Route mode + Leak Protect ON only)"

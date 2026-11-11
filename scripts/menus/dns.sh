@@ -273,6 +273,7 @@ dns_direct_domains() {
 
 # DNS详细设置
 set_dns_adv() {
+    [ -z "$dns_failover" ] && dns_failover=OFF
     while true; do
         comp_box "\033[31m$DNS_ADV_SINGBOX_LIMIT\033[0m" \
             "$DNS_ADV_SPLIT" \
@@ -295,6 +296,7 @@ set_dns_adv() {
             "3) $DNS_ADV_EDIT_RESOLVER" \
 			"4) $DNS_ADV_EDIT_PROXY_SERVER" \
             "5) \033[32m$DNS_ADV_AUTO_ENCRYPT\033[0m" \
+            "6) $DNS_ADV_FAILOVER：\t\033[36m$dns_failover\033[0m" \
             "9) \033[33m$DNS_ADV_RESET\033[0m" \
             "" \
             "0) $COMMON_BACK"
@@ -424,6 +426,15 @@ set_dns_adv() {
                 content_line "\033[31m$DNS_CORE_REQUIRE\033[0m"
             fi
             separator_line "="
+            ;;
+        6)
+            [ "$dns_failover" = "ON" ] && dns_failover=OFF || dns_failover=ON
+            setconfig dns_failover "$dns_failover"
+            if [ "$dns_failover" = "ON" ]; then
+                msg_alert "\033[33m$DNS_ADV_FAILOVER_TIP\033[0m"
+            else
+                common_success
+            fi
             ;;
         9)
             setconfig dns_nameserver

@@ -72,6 +72,14 @@ EOF
   proxy-server-nameserver : [ $dns_proxy_server ]
   nameserver: [ $dns_final ]
 EOF
+            if [ "$crashcore" = "meta" ] && [ "$dns_mod" = "route" ] && [ "$dns_protect" != "OFF" ] && [ "$dns_failover" = "ON" ]; then
+                cat >>"$TMPDIR"/dns.yaml <<EOF
+  fallback: [ $dns_nameserver ]
+  fallback-filter:
+    geoip: false
+  fallback-lazy-query: true
+EOF
+            fi
         else
             cat >>"$TMPDIR"/dns.yaml <<EOF
   nameserver: [ $dns_nameserver ]

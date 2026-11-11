@@ -83,3 +83,7 @@ DNS_DIRECT_TEST_INPUT="请输入要测试的域名"
 DNS_DIRECT_TEST_RESULT="解析结果："
 DNS_DIRECT_TEST_IN_LIST="✓ 该域名已配置为直连解析"
 DNS_DIRECT_TEST_NOT_IN_LIST="✗ 该域名未在直连列表中"
+
+#=====DNS故障回退=====
+DNS_ADV_FAILOVER="PROXY-DNS故障回退"
+DNS_ADV_FAILOVER_TIP="代理DNS查询失败或无可用IP时，回退到DIRECT-DNS解析（仅Mihomo Route模式且开启DNS防泄漏时生效）"
