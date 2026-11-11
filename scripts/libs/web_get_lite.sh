@@ -5,6 +5,6 @@ web_get_lite() (
     if curl --version >/dev/null 2>&1; then
         curl -ksSl --connect-timeout 3 "$1" 2>/dev/null
     else
-        wget -Y on -q --timeout=3 -O - "$1"
+        wget_proxy on -q --timeout=3 -O - "$1"
     fi
 )

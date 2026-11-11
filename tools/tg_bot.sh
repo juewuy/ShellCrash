@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . ${CRASHDIR}/configs/ShellCrash.cfg
+. "$CRASHDIR"/libs/set_proxy.sh
 OFFSET=0
 API="https://api.telegram.org/bot$TGBOT_TOKEN"
 STATE_FILE="/tmp/ShellCrash/tgbot_state"
@@ -24,7 +25,7 @@ webget() {
 	if curl --version >/dev/null 2>&1; then
 		curl -kfsSl --connect-timeout 3 $1 2>/dev/null
 	else
-		wget -Y on -q --timeout=3 -O - $1
+		wget_proxy on -q --timeout=3 -O - $1
 	fi
 }
 webpost() {
@@ -32,7 +33,7 @@ webpost() {
 	if curl --version >/dev/null 2>&1; then
 		curl -kfsSl -X POST --connect-timeout 3 -H "Content-Type: application/json; charset=utf-8" "$1" -d "$2" >/dev/null 2>&1
 	else
-		wget -Y on -q --timeout=3 --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1"
+		wget_proxy on -q --timeout=3 --method=POST --header="Content-Type: application/json; charset=utf-8" --body-data="$2" "$1"
 	fi
 }
 send_msg() {
