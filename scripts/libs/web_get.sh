@@ -1,14 +1,14 @@
 . "$CRASHDIR"/libs/set_proxy.sh
 
-webget(){	
+webget() (
     if pidof CrashCore >/dev/null; then
         setproxy #设置临时代理，【$1】代表下载目录，【$2】代表在线地址
         url=$(printf '%s\n' "$2" |
-        sed -e 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' \
-            -e 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
+            sed -e 's#https://.*jsdelivr.net/gh/juewuy/ShellCrash[@|/]#https://raw.githubusercontent.com/juewuy/ShellCrash/#' \
+                -e 's#https://gh.jwsc.eu.org/#https://raw.githubusercontent.com/juewuy/ShellCrash/#')
     else
         url=$(printf '%s\n' "$2" |
-        sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@#')
+            sed 's#https://raw.githubusercontent.com/juewuy/ShellCrash/#https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@#')
     fi
     # ===============================================
 
@@ -19,7 +19,7 @@ webget(){
     if wget --help 2>&1 | grep -q 'show-progress' >/dev/null 2>&1; then
         [ "$3" = "echooff" ] && progress='-q' || progress='-q --show-progress'
         [ "$4" = "rediroff" ] && redirect='--max-redirect=0' || redirect=''
-        if [ "$5" = "skipceroff" ] || [ "$skip_cert" = OFF ];then
+        if [ "$5" = "skipceroff" ] || [ "$skip_cert" = OFF ]; then
             certificate=''
         else
             certificate='--no-check-certificate'
@@ -28,16 +28,16 @@ webget(){
         wget -Y off $agent $progress $redirect $certificate --timeout=5 -O "$1" "$2"
         return $?
     elif curl --version >/dev/null 2>&1; then
-        if [ "$3" = "echooff" ];then
+        if [ "$3" = "echooff" ]; then
             progress='-s'
-        elif echo "$url" | grep -q 'jsdelivr.net';then
+        elif echo "$url" | grep -q 'jsdelivr.net'; then
             progress='-#'
             . "$CRASHDIR"/libs/web_get_curlbar.sh && curl_fsize
         else
             progress='-#'
         fi
         [ "$4" = "rediroff" ] && redirect='' || redirect='-L'
-        if [ "$5" = "skipceroff" ] || [ "$skip_cert" = OFF ];then
+        if [ "$5" = "skipceroff" ] || [ "$skip_cert" = OFF ]; then
             certificate=''
         else
             certificate='-k'
@@ -57,7 +57,7 @@ webget(){
         [ "$result" = "200" ] && return 0 #成功则退出否则重试
         export https_proxy=""
         export http_proxy=""
-        
+
         if [ -n "$fsize_raw" ] && [ "$fsize_raw" -gt 204800 ]; then
             result=$(execute_curl "$1" "$2" "$fsize_raw" "$agent $redirect $certificate")
         else
@@ -65,7 +65,7 @@ webget(){
         fi
         [ "$result" = "200" ]
         return $?
-    elif ckcmd wget;then
+    elif ckcmd wget; then
         [ "$3" = "echooff" ] && progress='-q'
         wget -Y on $progress -O "$1" "$url" && return 0 #成功则退出否则重试
         wget -Y off $progress -O "$1" "$2"
@@ -74,4 +74,4 @@ webget(){
         echo "No Curl or Wget！！！"
         return 1
     fi
-}
+)
