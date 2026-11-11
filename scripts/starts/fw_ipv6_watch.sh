@@ -82,6 +82,12 @@ run_iproute2_monitor() {
 }
 
 run_ipv6_watch() {
+    # OpenWrt rc.common holds the procd service lock on fd 1000. A watcher
+    # launched from start_service inherits that descriptor and would keep the
+    # lock alive forever, deadlocking the next stop/restart. BusyBox ash
+    # supports multi-digit descriptors; eval keeps other shells from parsing
+    # the redirection unless the inherited descriptor actually exists.
+    [ -e "/proc/$$/fd/1000" ] && eval "exec 1000>&-"
     mkdir -p "$TMPDIR"
     echo $$ >"$ipv6_watch_pid"
     trap cleanup_ipv6_watch EXIT INT TERM
