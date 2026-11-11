@@ -28,7 +28,8 @@ start_service() {
 			procd_set_param stdout 0
 			procd_close_instance
 			#启动结束执行
-			"$CRASHDIR"/starts/afstart.sh &
+			#关闭rc.common的procd锁，避免后台子进程继承fd 1000导致停止服务死锁
+			"$CRASHDIR"/starts/afstart.sh 1000>&- &
 		fi
 	fi
 }
