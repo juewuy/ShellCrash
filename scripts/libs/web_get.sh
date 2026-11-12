@@ -28,6 +28,9 @@ webget() (
         wget_proxy off $agent $progress $redirect $certificate --timeout=5 -O "$1" "$2"
         return $?
     elif curl --version >/dev/null 2>&1; then
+        #记录目标原本是否存在，下载失败时只清理本次新建的文件
+        target_existed=''
+        if [ -e "$1" ] || [ -L "$1" ]; then target_existed=1; fi
         if [ "$3" = "echooff" ]; then
             progress='-s'
         elif echo "$url" | grep -q 'jsdelivr.net'; then
@@ -53,8 +56,9 @@ webget() (
         else
             result=$(curl $agent $auth_arg -w '%{http_code}' --connect-timeout 3 $progress $redirect $certificate -o "$1" "$url")
         fi
-
-        [ "$result" = "200" ] && return 0 #成功则退出否则重试
+        rc=$?
+        #传输中断时状态码仍可能是200，须同时检查curl退出码
+        [ "$rc" = 0 ] && [ "$result" = "200" ] && return 0 #成功则退出否则重试
         export https_proxy=""
         export http_proxy=""
 
@@ -63,8 +67,11 @@ webget() (
         else
             result=$(curl $agent -w '%{http_code}' --connect-timeout 5 $progress $redirect $certificate -o "$1" "$2")
         fi
-        [ "$result" = "200" ]
-        return $?
+        rc=$?
+        [ "$rc" = 0 ] && [ "$result" = "200" ] && return 0
+        #下载失败：只删除本次新建的普通文件；原有文件、符号链接、设备文件(如/dev/null)一律保留
+        [ -z "$target_existed" ] && [ -f "$1" ] && [ ! -L "$1" ] && rm -f -- "$1"
+        return 1 #调用方以返回值1判定失败
     elif ckcmd wget; then
         [ "$3" = "echooff" ] && progress='-q'
         wget_proxy on $progress -O "$1" "$url" && return 0 #成功则退出否则重试

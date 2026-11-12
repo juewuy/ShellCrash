@@ -14,21 +14,31 @@ ckcmd() {
     [ "$backend" = basic_wget ] && [ "$1" = wget ]
 }
 
-wget() {
-    if [ "$1" = --help ]; then
-        [ "$backend" != gnu_wget ] || printf '%s\n' '--show-progress'
-        return 0
-    fi
-    if [ "${operation:-webget}" = lite ]; then
-        [ "$scenario" = success ] && return 0
-        return 8
-    fi
-    case "$scenario" in
-        success) return 0 ;;
-        retry) [ "$2" = off ] ;;
-        failure) return 8 ;;
+# wget_proxy 用 exec 调用外部 wget，函数替身拦不住，替身必须放在 PATH 中
+FAKEBIN=$(mktemp -d)
+trap 'rm -rf "$FAKEBIN"' EXIT
+cat >"$FAKEBIN/wget" <<'EOF'
+#!/bin/sh
+if [ "$1" = --help ]; then
+    case "$backend" in
+        gnu_wget) printf '%s\n' '--show-progress' ;;
+        basic_wget) printf '%s\n' '-Y on/off' ;;
     esac
-}
+    exit 0
+fi
+if [ "${operation:-webget}" = lite ]; then
+    [ "$scenario" = success ] && exit 0
+    exit 8
+fi
+case "$scenario" in
+    success) exit 0 ;;
+    retry) [ "$1" = --proxy=off ] || { [ "$1" = -Y ] && [ "$2" = off ]; } ;;
+    failure) exit 8 ;;
+esac
+EOF
+chmod +x "$FAKEBIN/wget"
+PATH="$FAKEBIN:$PATH"
+export backend scenario operation
 
 curl() {
     if [ "$1" = --version ]; then
