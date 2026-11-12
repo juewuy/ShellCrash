@@ -35,13 +35,15 @@ execute_curl(){ # 手搓curl进度条
         fi
         usleep 200000 2>/dev/null || sleep 1
     done
-    
+    wait $pid #取回后台curl的退出码，传输中断时状态码仍可能是200
+    local rc=$?
     local code=$(cat /tmp/webget_res 2>/dev/null)
-    if [ "$code" = "200" ] || [ "$code" = "206" ]; then
+    if [ "$rc" = 0 ] && { [ "$code" = "200" ] || [ "$code" = "206" ]; }; then
         local full=$(printf "%${bar_max}s" | tr ' ' '#')
         printf "\r\033[2K%s 100.0%%(%s)\n" "$full" "$fs" >&2
     else
-        printf "\r\033[2K" >&2; [ -f "$path" ] && rm -f "$path"
+        printf "\r\033[2K" >&2 #失败文件由webget按规则统一清理
     fi
     echo "$code"
+    return $rc
 }
