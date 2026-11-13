@@ -88,11 +88,7 @@ for backend in curl gnu_wget basic_wget; do
                 fi
                 expected_rc=0
                 if [ "$scenario" = failure ]; then
-                    if [ "$backend" = curl ]; then
-                        expected_rc=1
-                    else
-                        expected_rc=8
-                    fi
+                    expected_rc=1 #webget 失败统一返回 1，不透传 wget 的退出码
                 fi
                 if [ "$actual_rc" != "$expected_rc" ]; then
                     printf 'FAIL %s/%s/%s: expected rc=%s, got rc=%s\n' \
