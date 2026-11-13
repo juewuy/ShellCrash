@@ -64,8 +64,8 @@ sb_filters() {
 # 模板分组里实际填入的订阅标签
 tags() {
     case "$1" in
-    singbox) sed -n 's/^{"tags": \(.*\)}$/\1/p' "$OUT/outbounds.json" ;;
-    clash) sed -n 's/^  - {name: P, use: \(.*\)}$/\1/p' "$OUT/config.yaml" ;;
+        singbox) sed -n 's/^{"tags": \(.*\)}$/\1/p' "$OUT/outbounds.json" ;;
+        clash) sed -n 's/^  - {name: P, use: \(.*\)}$/\1/p' "$OUT/config.yaml" ;;
     esac
 }
 
@@ -116,8 +116,8 @@ for core in singbox clash; do
         printf '%s | %s' "$first" "$(tags "$core")"
     )
     case "$core" in
-    singbox) want='["A"] | ["Uri_group"]' ;;
-    clash) want='[A] | [Uri_group]' ;;
+        singbox) want='["A"] | ["Uri_group"]' ;;
+        clash) want='[A] | [Uri_group]' ;;
     esac
     check "$core/tags_uri_only" "$want" "$got"
 done
