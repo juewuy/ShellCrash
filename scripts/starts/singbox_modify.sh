@@ -295,22 +295,44 @@ gen_certificate() { #生成certificate.json
 EOF
 }
 
+set_singbox_listen_address() {
+    singbox_listen_address='::'
+    singbox_controller_address=0.0.0.0
+    if [ "$firewall_area" = 2 ]; then
+        singbox_listen_address=127.0.0.1
+        singbox_controller_address=127.0.0.1
+    fi
+}
+
 gen_inbounds() { #生成inbounds.json
+    set_singbox_listen_address
     [ -n "$authentication" ] && {
         username=$(echo $authentication | awk -F ':' '{print $1}') #混合端口账号密码
         password=$(echo $authentication | awk -F ':' '{print $2}')
         userpass='"users": [{ "username": "'$username'", "password": "'$password'" }], '
     }
+    #本机mixed的IPv6监听单独配置，不改变透明代理和DNS的双栈绑定
+    local_mixed_ipv6=
+    if [ "$firewall_area" = 2 ] && { [ "$ipv6_redir" = ON ] || [ "$ipv6_support" = ON ]; }; then
+        local_mixed_ipv6="{
+      \"type\": \"mixed\",
+      \"tag\": \"mixed-in-ipv6\",
+      \"listen\": \"::1\",
+      $userpass
+      \"listen_port\": $mix_port
+    },"
+    fi
     cat >"$TMPDIR"/jsons/inbounds.json <<EOF
 {
   "inbounds": [
     {
       "type": "mixed",
       "tag": "mixed-in",
-      "listen": "::",
+      "listen": "$singbox_listen_address",
       $userpass
       "listen_port": $mix_port
     },
+    $local_mixed_ipv6
     {
       "type": "direct",
       "tag": "dns-in",
@@ -381,12 +403,13 @@ EOF
 }
 
 gen_experimental() { #生成experimental.json
+    set_singbox_listen_address
     [ "$crashcore" = "singboxr" ] && urltest_unified_delay=',"urltest_unified_delay": true'
     cat >"$TMPDIR"/jsons/experimental.json <<EOF
 {
   "experimental": {
     "clash_api": {
-      "external_controller": "0.0.0.0:$db_port",
+      "external_controller": "$singbox_controller_address:$db_port",
       "external_ui": "ui",
       "external_ui_download_url": "$external_ui_url",
       "secret": "$secret",
