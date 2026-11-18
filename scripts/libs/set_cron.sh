@@ -59,7 +59,7 @@ cronload() (
         fi
         #首次使用没有 crontab 是合法空表，其他错误必须传回调用者。
         case "$cron_text" in
-            "no crontab for $cron_user" | "crontab: can't open '$cron_user': No such file or directory") exit 0 ;;
+        "no crontab for $cron_user" | "crontab: can't open '$cron_user': No such file or directory") exit 0 ;;
         esac
         printf '%s\n' "$cron_text" >&2
         exit "$cron_status"
@@ -80,6 +80,8 @@ cronupdate() ( #成功读取、生成后才提交；参数是读取 stdin 的过
     trap 'rm -rf "$cron_tmp"; [ -z "$cron_saved" ] || rm -f "$cron_saved"' 0
     trap 'exit 1' 1 2 3 15
     cronload >"$cron_tmp/old" || exit 1
+    #busybox ash 不把函数前缀赋值导出给孙进程，需显式导出供过滤命令读取
+    export CRON_BOT CRON_LEGACY CRON_DIR CRON_KEY CRON_TASK
     "$@" <"$cron_tmp/old" >"$cron_tmp/new" || exit 1
     #先准备华硕/Padavan 的持久化副本；任何提交前的写入失败都保留原表。
     if [ "$cron_persist" = true ] && { [ -d /jffs ] || [ -d /etc/storage/ShellCrash ]; }; then
