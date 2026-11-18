@@ -118,6 +118,8 @@ set_core_config() {
 
 # 添加/管理提供者
 setproviders() {
+    # 先清空上一次编辑的状态，避免残留 link/link_uri 影响保存、删除和生成
+    unset name link link_uri interval interval2 ua exclude_w include_w
     case "$(echo "$@" | cut -d ' ' -f 2)" in
     http* | ./providers*)
         set -- $@
@@ -133,9 +135,6 @@ setproviders() {
         set -- $@
         name=$1
         link_uri=$2
-        ;;
-    *)
-        unset name link link_uri interval interval2 ua exclude_w include_w
         ;;
     esac
     last_name="$name"
