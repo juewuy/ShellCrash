@@ -42,9 +42,9 @@ EOF
         gen_providers_txt "$@"
         providers_tags=\"$1\"
     else
+        providers_tags=''
         # 基于全部订阅/本地文件生成
         [ -s "$CRASHDIR"/configs/providers.cfg ] && {
-            providers_tags=''
             while read -r line; do
                 gen_providers_txt $line
                 providers_tags=$(echo "$providers_tags, \"$tag\"" | sed 's/^, //')
@@ -93,6 +93,7 @@ gen_providers_txt() {
     ua=${5:-clash.meta}
     exclude=${6#\#}
     include=${7#\#}
+    exclude_ele='' include_ele='' # 不沿用上一个订阅的过滤词
     [ -n "$exclude" ] && exclude_ele="\"exclude\": \"$exclude\","
     [ -n "$include" ] && include_ele="\"include\": \"$include\","
     if [ -n "$(echo "$2" | grep -E '^./')" ]; then

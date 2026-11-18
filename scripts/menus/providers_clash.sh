@@ -40,9 +40,9 @@ gen_providers() {
         gen_providers_txt "$@"
         providers_tags=$1
     else
+        providers_tags=''
         # 基于全部订阅/本地文件生成
         [ -s "$CRASHDIR"/configs/providers.cfg ] && {
-            providers_tags=''
             while read -r line; do
                 gen_providers_txt $line
                 providers_tags=$(echo "$providers_tags, $tag" | sed 's/^, //')
@@ -111,6 +111,7 @@ gen_providers_txt() {
       interval: $((interval * 60))
 EOF
     [ "$crashcore" = 'meta' ] && {
+        skip_cert_verify='' # 不沿用上一次生成的设置
         [ "$skip_cert" != "OFF" ] && skip_cert_verify='skip-cert-verify: true'
         cat >>"$TMPDIR"/providers/providers.yaml <<EOF
     header:
