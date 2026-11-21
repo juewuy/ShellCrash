@@ -8,6 +8,9 @@
 . "$CRASHDIR"/libs/check_cmd.sh
 . "$CRASHDIR"/libs/set_config.sh
 . "$CRASHDIR"/libs/web_get_bin.sh
+#tar兼容：包内文件属主可能超出当前uid映射范围（如非特权容器），chown失败会让tar返回非0
+tar_para=''
+[ -n "$(tar --help 2>&1 | grep -o 'no-same-owner')" ] && tar_para='--no-same-owner'
 . "$CRASHDIR"/libs/logger.sh
 . "$CRASHDIR"/libs/i18n.sh
 [ -z "$TASKCFGDIR" ] && TASKCFGDIR="$CRASHDIR"/configs/task
@@ -75,7 +78,7 @@ update_scripts(){ #自动更新脚本
             "$CRASHDIR"/start.sh stop
             #解压
             tar -zxf "$TMPDIR"/ShellCrash.tar.gz ${tar_para} -C "$CRASHDIR"/
-            if [ $? -ne 0 ];then
+            if [ ! -f "$CRASHDIR"/init.sh ];then #解压成败以关键文件为准，chown失败不影响内容
                 rm -rf "$TMPDIR"/ShellCrash.tar.gz
                 task_logger "$TASK_CMD_SCRIPT_UNZIP_FAIL"
                 "$CRASHDIR"/start.sh start

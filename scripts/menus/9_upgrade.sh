@@ -7,6 +7,9 @@ __IS_MODULE_9_UPGRADE_LOADED=1
 . "$CRASHDIR"/libs/check_dir_avail.sh
 . "$CRASHDIR"/libs/check_cpucore.sh
 . "$CRASHDIR"/libs/web_get_bin.sh
+#tar兼容：包内文件属主可能超出当前uid映射范围（如非特权容器），chown失败会让tar返回非0
+tar_para=''
+[ -n "$(tar --help 2>&1 | grep -o 'no-same-owner')" ] && tar_para='--no-same-owner'
 load_lang 9_upgrade
 
 error_down() {
@@ -146,7 +149,7 @@ getscripts() {
         content_line "$UPG_EXTRACTING"
         mkdir -p "$CRASHDIR" >/dev/null
         tar -zxf "$TMPDIR/ShellCrash.tar.gz" ${tar_para} -C "$CRASHDIR"/
-        if [ $? -ne 0 ]; then
+        if [ ! -f "$CRASHDIR"/init.sh ]; then #解压成败以关键文件为准，chown失败不影响内容
             content_line "\033[33m$UPG_EXTRACT_FAIL\033[0m"
             error_down
         else

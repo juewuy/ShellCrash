@@ -1,7 +1,9 @@
 
 . "$CRASHDIR"/libs/check_target.sh
 . "$CRASHDIR"/libs/core_tools.sh
-. "$CRASHDIR"/configs/directories.env
+[ -f "$CRASHDIR"/configs/directories.env ] && . "$CRASHDIR"/configs/directories.env
+[ -z "$TMPDIR" ] && TMPDIR=/tmp/ShellCrash
+[ -z "$BINDIR" ] && BINDIR=$CRASHDIR
 . "$CRASHDIR"/configs/command.env
 
 check_core() { #检查及下载内核文件
