@@ -1,0 +1,13 @@
+#LAN域名 - 局域网常见域名后缀
+*.lan
+*.local
+*.localdomain
+*.home
+*.internal
+*.home.arpa
+*.localnet
+
+#私有网络域名示例
+router.lan
+nas.lan
+*.home.lan

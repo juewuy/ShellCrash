@@ -1,0 +1,33 @@
+//ShellCrash-ruleset极简规则
+{
+  "outbounds": [
+    { "tag": "🚀 节点选择", "type": "selector", "outbounds": [ {providers_tags}, "🎯 本地直连" ], "use_all_providers": true },
+    { "tag": "🎯 本地直连", "type": "direct" }
+  ],
+  "route": {
+    "rules": [
+      { "ip_is_private": true, "outbound": "🎯 本地直连" },
+      { "rule_set": [ "cn" ], "outbound": "🎯 本地直连" },
+
+      { "action": "resolve", "server": "dns_proxy", "strategy": "prefer_ipv4", "match_only": true},
+      { "rule_set": [ "cnip" ], "outbound": "🎯 本地直连" }
+    ],
+    "rule_set": [
+      {
+        "tag": "cn",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/cn.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs"
+      },
+      {
+        "tag": "cnip",
+        "type": "remote",
+        "format": "binary",
+        "path": "./ruleset/cnip.srs",
+        "url": "https://testingcf.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs"
+      }
+    ],
+    "final": "🚀 节点选择"
+  }
+}
