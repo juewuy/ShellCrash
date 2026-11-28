@@ -25,6 +25,17 @@ stop_ipv6_watch() {
         if [ ! -r "/proc/$ipv6_watch_old_pid/cmdline" ] ||
             tr '\0' ' ' <"/proc/$ipv6_watch_old_pid/cmdline" 2>/dev/null | grep -q 'fw_ipv6_watch.sh'; then
             kill "$ipv6_watch_old_pid" 2>/dev/null
+            # Reap the previous watcher before returning. Dropping the PID
+            # file while it is still alive lets the replacement start next to
+            # it, and the orphan keeps polling and rewriting the nftables set
+            # for the rest of the uptime. The poll loop is interruptible, so
+            # this normally completes in well under a second.
+            ipv6_watch_stop_wait=0
+            while [ -d "/proc/$ipv6_watch_old_pid" ] && [ "$ipv6_watch_stop_wait" -lt 5 ]; do
+                sleep 1
+                ipv6_watch_stop_wait=$((ipv6_watch_stop_wait + 1))
+            done
+            [ -d "/proc/$ipv6_watch_old_pid" ] && kill -9 "$ipv6_watch_old_pid" 2>/dev/null
         fi
         ;;
     esac
@@ -33,6 +44,7 @@ stop_ipv6_watch() {
 
 cleanup_ipv6_watch() {
     trap - EXIT INT TERM
+    [ -n "$ipv6_watch_sleep_pid" ] && kill "$ipv6_watch_sleep_pid" 2>/dev/null
     [ -n "$ipv6_monitor_pid" ] && kill "$ipv6_monitor_pid" 2>/dev/null
     [ -p "$ipv6_watch_fifo" ] && rm -f "$ipv6_watch_fifo"
     if [ "$(cat "$ipv6_watch_pid" 2>/dev/null)" = "$$" ]; then
@@ -100,7 +112,13 @@ run_ipv6_watch() {
         run_iproute2_monitor
     fi
     while :; do
-        sleep 30
+        # A foreground sleep is not interrupted by a signal: ash runs the trap
+        # only after the command returns, so stop would wait out the whole poll
+        # interval. Backgrounding it and waiting keeps the loop interruptible.
+        sleep 30 &
+        ipv6_watch_sleep_pid=$!
+        wait "$ipv6_watch_sleep_pid"
+        ipv6_watch_sleep_pid=
         update_ipv6_set
     done
 }
